@@ -13,6 +13,104 @@ import org.jlab.io.base.DataBank;
 import org.jlab.io.base.DataEvent;
 import org.jlab.io.hipo.*;
 
+/* Handler of all input-output of the program. */
+public final class IO_handler {
+    // No global static classes are allowed in java so this is the closest second...
+    private IO_handler() {}
+
+    private static char[] argnames = ['n', 'c'];
+    static Map<String, Character> argmap;
+
+    /* Associate char-indexed args with String-indexed args. */
+    private static int initialize_argmap() {
+        argmap = new HashMap<>();
+        for (argname in argnames) {
+            if      (argname == 'n') argmap.put("--nevents", 'n');
+            else if (argname == 'c') argmap.put("--cut",     'c');
+            else {
+                System.err.printf("Silly programmer, you forgot to associate all single ");
+                System.err.printf("char-indexed args to String-indexed args. Fix this in ");
+                System.err.printf(" IO_handler.parse_args().\n");
+                return 1;
+            }
+        }
+        return 0;
+    }
+
+    /* Print usage to stdout and exit. */
+    public static int usage() {
+        System.out.printf("Usage: acceptance [-n --nevents] [-c --cut] <inputfile>\n");
+        System.out.printf("You dun goofed mate.\n"); // TODO.
+        return 1;
+    }
+
+    /* Arguments parser. Arguments are detailed in usage(). */
+    public static int parse_args(String[] args, Map<Character, String> params) {
+        // NOTE: Better error messages here would be cool, but not necessary atm.
+        if (initialize_argmap()) return 1;
+        if (args.length<1) return usage();
+
+        // Get args. Can't believe that Java doesn't have a standard method for this.
+        for (int i=0; i<args.length; ++i) {
+            final String a = args[i];
+            if (args[i].charAt(0) == '-') {
+                if (args[i].length()<2) return usage();
+                if (args[i].charAt(1)=='-') { // string-indexed argument.
+                    if (args[i].length()<3) return usage();
+                    if (argmap.get(args[i]) == null) return usage();
+                    params.put(argmap.get(args[i]), args[++i]);
+                }
+                else { // char-indexed argument.
+                    if (args[i].length()>2) return usage();
+                    params.put(args[i].substring(args[i].length()-1), args[++i]);
+                }
+            }
+            else { // positional argument.
+                params.put('f', args[i]);
+            }
+        }
+
+        // Check that args are what's expected.
+        // NOTE: There is no check on repeated keys, but I hope planning for that case is not
+        //       necessary.
+        if (params.get('f') == null) return usage();
+        for (Character key in params.keySet()) {
+            if (key == 'f') continue;
+
+            boolean accept = false;
+            for (argname in argnames) {
+                if (key == argname) {
+                    accept = true;
+                    break;
+                }
+            }
+            if (!accept) return usage();
+        }
+
+        // Check that args are of correct type.
+        if (params.get('n') != null) {
+            try {Integer.parseInt(params.get('n'));}
+            catch (NumberFormatException e) {return usage();}
+            // TODO: Check on 'c'.
+            // TODO: Check that 'f' exists.
+        }
+
+        return 0;
+    }
+}
+
+Map<Character, String> params = new HashMap<>();
+if (IO_handler.parse_args(args, params)) System.exit(1);
+
+// for (Map.Entry<Character, String> entry : params.entrySet()) {
+//     System.out.printf(entry.getKey() + " : " + entry.getValue() + "\n");
+// }
+// System.out.printf("\n");
+
+String infile = params.get('f');
+int n_events = (params.get('n') == null) ? 10000000 : Integer.parseInt(params.get('n'));
+// TODO: Setup cut.
+
 // Groot setup.
 GStyle.getAxisAttributesX().setTitleFontSize(24);
 GStyle.getAxisAttributesX().setLabelFontSize(18);
@@ -28,12 +126,6 @@ GStyle.getAxisAttributesZ().setTitleFontName("Arial");
 GStyle.setGraphicsFrameLineWidth(1);
 GStyle.getH1FAttributes().setLineWidth(2);
 GStyle.getH1FAttributes().setOptStat("1111");
-
-// Process user input.
-String infile = args[0];
-int n_events  = 10000000;
-if (args.length > 1) n_events = Integer.parseInt(args[1]);
-// TODO: Add some error checking and write usage() method.
 
 // Initial setup.
 Constants C = new Constants();
@@ -51,7 +143,7 @@ reader.open(infile);
 while (reader.hasEvent() && i_event < n_events) {
     DataEvent event = reader.getNextEvent();
     i_event++;
-    // TODO: Update this to get  a e s t h e t i c   p r i n t i n g.
+    // TODO: Update this to get  a e s t h e t i c   p r i n t i n g .
     if (i_event%10000 == 0) System.out.println("Analyzed " + i_event + " events");
 
     // Get relevant data banks.
@@ -65,7 +157,7 @@ while (reader.hasEvent() && i_event < n_events) {
     if (event.hasBank("FMT::Tracks"))   fmt_tracks = event.getBank("FMT::Tracks");
 
     // Ignore events that don't have the minimum required banks.
-    if (rec_part==null || rec_track==null || rec_traj==null || fmt_tracks==null) continue;
+    if (rec_part==null || rec_track==null || rec_traj==null /*|| */) continue;
 
     // Loop through trajectory points.
     for (int loop = 0; loop < rec_track.rows(); loop++) {
@@ -84,7 +176,8 @@ while (reader.hasEvent() && i_event < n_events) {
 
         // Apply general cuts.
         if (status != 2) continue; // TODO: Remember what this is.
-        if (Math.abs(chi2pid) >= 5) continue; // Ignore tracks with insanely high chi2.
+        if (Math.abs(chi2pid) >= 3) continue; // Ignore spurious particles.
+        // TODO: Add a vertex cut for tracks far away from the target.
         // if (vz > (C.FMT_Z[0]+C.FMT_DZ[0])/10) continue; // Ignore tracks further downstream than FMT.
         // if (pid != 11) continue; // Use only electrons.
         if (pid != 211) continue; // Use only pions.
@@ -121,6 +214,7 @@ while (reader.hasEvent() && i_event < n_events) {
         }
 
         // === PROCESS FMT TRACKS ==================================================================
+        if (fmt_tracks==null) continue;
         Particle fmt_part = new Particle(pid, fmt_tracks.getFloat("p0_x",   index),
                                               fmt_tracks.getFloat("p0_y",   index),
                                               fmt_tracks.getFloat("p0_z",   index),
@@ -155,8 +249,8 @@ while (reader.hasEvent() && i_event < n_events) {
 reader.close();
 
 System.out.printf("# of DC tracks:  %7d\n# of FMT tracks: %7d\n", n_DC_tracks, n_FMT_tracks);
-System.out.printf("% of dropped tracks: %2.5f",
-        ((double) (n_DC_tracks - n_FMT_tracks)) / ((double) n_DC_tracks));
+// System.out.printf("% of dropped tracks: %2.5f",
+//         ((double) (n_DC_tracks - n_FMT_tracks)) / ((double) n_DC_tracks));
 
 // Setup plots and draw.
 EmbeddedCanvasTabbed canvas = new EmbeddedCanvasTabbed(
