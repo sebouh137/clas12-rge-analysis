@@ -71,15 +71,14 @@ public final class IO_handler {
         }
 
         // Check that args are what's expected.
-        // NOTE: There is no check on repeated keys, but I hope planning for that case is not
-        //       necessary.
         if (params.get('f') == null) return usage();
+
+        // Check that all args are within accepted keys.
         for (Character key in params.keySet()) {
             if (key == 'f') continue;
-
             boolean accept = false;
-            for (argname in argnames) {
-                if (key == argname) {
+            for (int i = 0; i < argnames.length; ++i) {
+                if (key == argnames[i]) {
                     accept = true;
                     break;
                 }
@@ -91,8 +90,7 @@ public final class IO_handler {
         if (params.get('n') != null) {
             try {Integer.parseInt(params.get('n'));}
             catch (NumberFormatException e) {return usage();}
-            // TODO: Check on 'c'.
-            // TODO: Check that 'f' exists.
+            // NOTE: c could be checked with Regex, but I'm too lazy to implement that.
         }
 
         return 0;
@@ -109,7 +107,26 @@ if (IO_handler.parse_args(args, params)) System.exit(1);
 
 String infile = params.get('f');
 int n_events = (params.get('n') == null) ? 10000000 : Integer.parseInt(params.get('n'));
-// TODO: Setup cut.
+String cut = (params.get('c') == null) ? null : params.get('c');
+
+// Setup cut.
+String[] ops = ["<", "==", ">"];
+String param;
+int value;
+int op_i; // 0: <, 1: ==, 2: >
+
+String[] spltcut;
+for (int i = 0; i < ops.length; ++i) {
+    if (cut.split(ops[i]).length == 2) {
+        op_i = i;
+        spltcut = cut.split(ops[i]);
+    }
+}
+if (op_i == null) return usage();
+
+param = spltcut[0];
+try {value = Integer.parseInt(spltcut[1]);}
+catch (NumberFormatException e) {return usage();}
 
 // Groot setup.
 GStyle.getAxisAttributesX().setTitleFontSize(24);
@@ -157,7 +174,7 @@ while (reader.hasEvent() && i_event < n_events) {
     if (event.hasBank("FMT::Tracks"))   fmt_tracks = event.getBank("FMT::Tracks");
 
     // Ignore events that don't have the minimum required banks.
-    if (rec_part==null || rec_track==null || rec_traj==null /*|| */) continue;
+    if (rec_part==null || rec_track==null || rec_traj==null) continue;
 
     // Loop through trajectory points.
     for (int loop = 0; loop < rec_track.rows(); loop++) {
@@ -179,10 +196,13 @@ while (reader.hasEvent() && i_event < n_events) {
         if (Math.abs(chi2pid) >= 3) continue; // Ignore spurious particles.
         // TODO: Add a vertex cut for tracks far away from the target.
         // if (vz > (C.FMT_Z[0]+C.FMT_DZ[0])/10) continue; // Ignore tracks further downstream than FMT.
-        // if (pid != 11) continue; // Use only electrons.
-        if (pid != 211) continue; // Use only pions.
         if (chi2/ndf >= 15) continue; // Ignore tracks with high chi2.
         // if (rec_track.rows() < 1) continue; // Ignore tracks with no tracks... wait a minute...
+
+        // Apply user-selected cut.
+        if (op_i == 0) if (rec_part.getInt(param.toLowerCase(), pindex) >= value) continue;
+        if (op_i == 1) if (rec_part.getInt(param.toLowerCase(), pindex) != value) continue;
+        if (op_i == 2) if (rec_part.getInt(param.toLowerCase(), pindex) <= value) continue;
 
         // === PROCESS DC TRACKS ===================================================================
         Particle dc_part = new Particle(pid,
@@ -203,15 +223,14 @@ while (reader.hasEvent() && i_event < n_events) {
             dg_vz.getH2F("hi_vz_theta_dc").fill(dc_part.vz(), Math.toDegrees(dc_part.theta()));
             dg_vz.getH2F("hi_vz_phi_dc").fill(dc_part.vz(), Math.toDegrees(dc_part.phi()));
 
-            // Vertex z per sector datagroup.
-            dg_vzsector.getH1F("hi_vz_dc_sec"+sector).fill(dc_part.vz());
-
             // Vertex momentum datagroup.
             dc_beta = beta;
             dg_vp.getH1F("hi_vp_dc").fill(dc_part.p());
             dg_vp.getH1F("hi_vbeta_dc").fill(dc_beta);
             dg_vp.getH2F("hi_vp_vbeta_dc").fill(dc_part.p(), dc_beta);
         }
+        // Vertex z per sector datagroup.
+        dg_vzsector.getH1F("hi_vz_dc_sec"+sector).fill(dc_part.vz());
 
         // === PROCESS FMT TRACKS ==================================================================
         if (fmt_tracks==null) continue;
@@ -235,15 +254,14 @@ while (reader.hasEvent() && i_event < n_events) {
             dg_vz.getH2F("hi_vz_theta_fmt").fill(fmt_part.vz(), Math.toDegrees(fmt_part.theta()));
             dg_vz.getH2F("hi_vz_phi_fmt")  .fill(fmt_part.vz(), Math.toDegrees(fmt_part.phi()));
 
-            // Vertex z sector datagroup.
-            dg_vzsector.getH1F("hi_vz_fmt_sec"+sector).fill(fmt_part.vz());
-
             // Vertex momentum datagroup.
-            double fmt_beta = beta; // TODO: Figure out how to calculate this from FMT data.
+            double fmt_beta = beta; // TODO: Figure out how to calculate beta from FMT data.
             dg_vp.getH1F("hi_vp_fmt").fill(fmt_part.p());
             dg_vp.getH1F("hi_vbeta_fmt").fill(fmt_beta);
             dg_vp.getH2F("hi_vp_vbeta_fmt").fill(fmt_part.p(), fmt_beta);
         }
+        // Vertex z sector datagroup.
+        dg_vzsector.getH1F("hi_vz_fmt_sec"+sector).fill(fmt_part.vz());
 	}
 }
 reader.close();
@@ -414,8 +432,8 @@ DataGroup gen_dg_vp() {
     // Beta distribution:
     xax = "#beta";
     yax = "Counts";
-    H1F hi_vbeta_dc  = new H1F("hi_vbeta_dc",  "DC  " + xax, yax, 500, 0, 12);
-    H1F hi_vbeta_fmt = new H1F("hi_vbeta_fmt", "FMT " + xax, yax, 500, 0, 12);
+    H1F hi_vbeta_dc  = new H1F("hi_vbeta_dc",  "DC  " + xax, yax, 500, 0, 1);
+    H1F hi_vbeta_fmt = new H1F("hi_vbeta_fmt", "FMT " + xax, yax, 500, 0, 1);
     hi_vbeta_dc .setFillColor(43);
     hi_vbeta_fmt.setFillColor(44);
     dg.addDataSet(hi_vbeta_dc,  1);
@@ -424,8 +442,8 @@ DataGroup gen_dg_vp() {
     // Momentum vs Beta:
     xax = "#beta";
     yax = "p (GeV)";
-    H2F hi_vp_vbeta_dc  = new H2F("hi_vp_vbeta_dc",  200, 0, 12, 200, 0, 12);
-    H2F hi_vp_vbeta_fmt = new H2F("hi_vp_vbeta_fmt", 200, 0, 12, 200, 0, 12);
+    H2F hi_vp_vbeta_dc  = new H2F("hi_vp_vbeta_dc",  200, 0, 1, 200, 0, 12);
+    H2F hi_vp_vbeta_fmt = new H2F("hi_vp_vbeta_fmt", 200, 0, 1, 200, 0, 12);
     hi_vp_vbeta_dc.setTitleX ("DC  " + xax);
     hi_vp_vbeta_fmt.setTitleX("FMT " + xax);
     hi_vp_vbeta_dc.setTitleY (yax);
