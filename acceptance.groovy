@@ -13,6 +13,193 @@ import org.jlab.io.base.DataBank;
 import org.jlab.io.base.DataEvent;
 import org.jlab.io.hipo.*;
 
+Map<Character, String> params = new HashMap<>();
+if (IO_handler.parse_args(args, params)) System.exit(1);
+
+String infile = params.get('f');
+int n_events = (params.get('n') == null) ? 10000000 : Integer.parseInt(params.get('n'));
+String cut = (params.get('c') == null) ? null : params.get('c');
+
+// Setup user cut.
+String[] ops = ["<", "==", ">"];
+String param;
+int value;
+int op_i; // 0: <, 1: ==, 2: >
+
+String[] spltcut;
+for (int i = 0; i < ops.length; ++i) {
+    if (cut.split(ops[i]).length == 2) {
+        op_i = i;
+        spltcut = cut.split(ops[i]);
+    }
+}
+if (op_i == null) return usage();
+
+param = spltcut[0];
+try {value = Integer.parseInt(spltcut[1]);}
+catch (NumberFormatException e) {return usage();}
+
+// Groot setup.
+GStyle.getAxisAttributesX().setTitleFontSize(24);
+GStyle.getAxisAttributesX().setLabelFontSize(18);
+GStyle.getAxisAttributesY().setTitleFontSize(24);
+GStyle.getAxisAttributesY().setLabelFontSize(18);
+GStyle.getAxisAttributesZ().setLabelFontSize(14);
+GStyle.getAxisAttributesX().setLabelFontName("Arial");
+GStyle.getAxisAttributesY().setLabelFontName("Arial");
+GStyle.getAxisAttributesZ().setLabelFontName("Arial");
+GStyle.getAxisAttributesX().setTitleFontName("Arial");
+GStyle.getAxisAttributesY().setTitleFontName("Arial");
+GStyle.getAxisAttributesZ().setTitleFontName("Arial");
+GStyle.setGraphicsFrameLineWidth(1);
+GStyle.getH1FAttributes().setLineWidth(2);
+GStyle.getH1FAttributes().setOptStat("1111");
+
+// Initial setup.
+Constants C = new Constants();
+DataGroup dg_vz       = gen_dg_vz(C);
+DataGroup dg_vzsector = gen_dg_vzsector();
+DataGroup dg_vp       = gen_dg_vp();
+
+// Loop through events.
+int i_event      = -1;
+int n_DC_tracks  = 0;
+int n_FMT_tracks = 0;
+HipoDataSource reader = new HipoDataSource();
+reader.open(infile);
+
+while (reader.hasEvent() && i_event < n_events) {
+    DataEvent event = reader.getNextEvent();
+    i_event++;
+    // TODO: Update this to get  a e s t h e t i c   p r i n t i n g .
+    if (i_event%10000 == 0) System.out.println("Analyzed " + i_event + " events");
+
+    // Get relevant data banks.
+    DataBank rec_part   = null;
+    DataBank rec_track  = null;
+    DataBank rec_traj   = null;
+    DataBank fmt_tracks = null;
+    if (event.hasBank("REC::Particle")) rec_part   = event.getBank("REC::Particle");
+    if (event.hasBank("REC::Track"))    rec_track  = event.getBank("REC::Track");
+    if (event.hasBank("REC::Traj"))     rec_traj   = event.getBank("REC::Traj");
+    if (event.hasBank("FMT::Tracks"))   fmt_tracks = event.getBank("FMT::Tracks");
+
+    // Ignore events that don't have the minimum required banks.
+    if (rec_part==null || rec_track==null || rec_traj==null) continue;
+
+    // Loop through trajectory points.
+    for (int loop = 0; loop < rec_track.rows(); loop++) {
+        int index      = rec_track.getShort("index",  loop);
+        int pindex     = rec_track.getShort("pindex", loop);
+        int sector     = rec_track.getByte ("sector", loop);
+        int ndf        = rec_track.getInt  ("NDF",    loop);
+        double chi2    = rec_track.getFloat("chi2",   loop);
+
+        int charge     = rec_part.getByte  ("charge",  pindex);
+        int pid        = rec_part.getInt   ("pid",     pindex);
+        int status     = rec_part.getShort ("status",  pindex);
+        double vz      = rec_part.getFloat ("vz",      pindex);
+        double chi2pid = rec_part.getFloat ("chi2pid", pindex);
+        status = (int) (Math.abs(status)/1000);
+
+        // Apply general cuts.
+        if (status != 2) continue; // TODO: IDK what this is.
+        if (Math.abs(chi2pid) >= 3) continue; // Ignore spurious particles.
+        if (vz < -40 || vz > (C.FMT_Z[0]+C.FMT_DZ[0])/10) continue; // Geometry cut.
+        if (chi2/ndf >= 15) continue; // Ignore tracks with high chi2.
+
+        // Apply user-selected cut.
+        if (op_i == 0) if (rec_part.getInt(param.toLowerCase(), pindex) >= value) continue;
+        if (op_i == 1) if (rec_part.getInt(param.toLowerCase(), pindex) != value) continue;
+        if (op_i == 2) if (rec_part.getInt(param.toLowerCase(), pindex) <= value) continue;
+
+        // === PROCESS DC TRACKS ===================================================================
+        Particle dc_part = new Particle(pid,
+                rec_part.getFloat("px", pindex),
+                rec_part.getFloat("py", pindex),
+                rec_part.getFloat("pz", pindex),
+                rec_part.getFloat("vx", pindex),
+                rec_part.getFloat("vy", pindex),
+                rec_part.getFloat("vz", pindex));
+        // TODO: Why is this cut here?
+        if (Math.sqrt(dc_part.vx()*dc_part.vx() + dc_part.vy()*dc_part.vy()) > 2) continue;
+        double beta = (double) rec_part.getFloat("beta", pindex);
+
+        n_DC_tracks++;
+        if (sector==1) { // NOTE: No beam alignment for run yet, so we only use one sector for now.
+            // Vertex z datagroup.
+            dg_vz.getH1F("hi_vz_dc").fill(dc_part.vz());
+            dg_vz.getH2F("hi_vz_theta_dc").fill(dc_part.vz(), Math.toDegrees(dc_part.theta()));
+
+            // Vertex momentum datagroup.
+            dc_beta = beta;
+            dg_vp.getH1F("hi_vp_dc").fill(dc_part.p());
+            dg_vp.getH1F("hi_vbeta_dc").fill(dc_beta);
+            dg_vp.getH2F("hi_vp_vbeta_dc").fill(dc_part.p(), dc_beta);
+        }
+        // Vertex z datagroup (It doesn't make sense to select one sector for phi angle analysis.)
+        dg_vz.getH2F("hi_vz_phi_dc").fill(dc_part.vz(), Math.toDegrees(dc_part.phi()));
+
+        // Vertex z per sector datagroup.
+        dg_vzsector.getH1F("hi_vz_dc_sec"+sector).fill(dc_part.vz());
+
+        // === PROCESS FMT TRACKS ==================================================================
+        if (fmt_tracks == null) continue;
+        Particle fmt_part = new Particle(pid, fmt_tracks.getFloat("p0_x",   index),
+                                              fmt_tracks.getFloat("p0_y",   index),
+                                              fmt_tracks.getFloat("p0_z",   index),
+                                              fmt_tracks.getFloat("Vtx0_x", index),
+                                              fmt_tracks.getFloat("Vtx0_y", index),
+                                              fmt_tracks.getFloat("Vtx0_z", index));
+        double fchi2 = fmt_tracks.getFloat("chi2", index);
+        int nmeas    = fmt_tracks.getInt("NDF", index);
+
+        // Apply FMT cuts.
+        if (nmeas != 3) continue; // only use track which pass through the three FMT layers.
+        if (fmt_tracks.rows() < 1) continue; // abandon all hope if there are no FMT tracks.
+
+        n_FMT_tracks++;
+        if (sector == 1) { // NOTE: No beam alignment yet, so we only use one sector for now.
+            // Vertex z datagroup.
+            dg_vz.getH1F("hi_vz_fmt")      .fill(fmt_part.vz());
+            dg_vz.getH2F("hi_vz_theta_fmt").fill(fmt_part.vz(), Math.toDegrees(fmt_part.theta()));
+
+            // Vertex momentum datagroup.
+            double fmt_beta = beta; // TODO: Figure out how to calculate beta from FMT data.
+            dg_vp.getH1F("hi_vp_fmt").fill(fmt_part.p());
+            dg_vp.getH1F("hi_vbeta_fmt").fill(fmt_beta);
+            dg_vp.getH2F("hi_vp_vbeta_fmt").fill(fmt_part.p(), fmt_beta);
+        }
+        // Vertex z datagroup (It doesn't make sense to select one sector for phi angle analysis.)
+        dg_vz.getH2F("hi_vz_phi_fmt")  .fill(fmt_part.vz(), Math.toDegrees(fmt_part.phi()));
+
+        // Vertex z sector datagroup.
+        dg_vzsector.getH1F("hi_vz_fmt_sec"+sector).fill(fmt_part.vz());
+	}
+}
+reader.close();
+
+System.out.printf("# of DC tracks:  %7d\n# of FMT tracks: %7d\n", n_DC_tracks, n_FMT_tracks);
+// System.out.printf("% of dropped tracks: %2.5f",
+//         ((double) (n_DC_tracks - n_FMT_tracks)) / ((double) n_DC_tracks));
+
+// Setup plots and draw.
+EmbeddedCanvasTabbed canvas = new EmbeddedCanvasTabbed(
+        "z", "sector z", "p"
+);
+
+setup_canvas(canvas, "z",        dg_vz);
+setup_canvas(canvas, "sector z", dg_vzsector);
+setup_canvas(canvas, "p",        dg_vp);
+// canvas.getCanvas("p").cd(0).getPad(1).getAxisY().setLog(true);
+// canvas.getCanvas("p").cd(0).getPad(4).getAxisY().setLog(true);
+
+JFrame frame = new JFrame("Acceptance Study Results");
+frame.setSize(1500, 1000);
+frame.add(canvas);
+frame.setLocationRelativeTo(null);
+frame.setVisible(true);
+
 /* Handler of all input-output of the program. */
 public final class IO_handler {
     // No global static classes are allowed in java so this is the closest second...
@@ -96,197 +283,6 @@ public final class IO_handler {
         return 0;
     }
 }
-
-Map<Character, String> params = new HashMap<>();
-if (IO_handler.parse_args(args, params)) System.exit(1);
-
-// for (Map.Entry<Character, String> entry : params.entrySet()) {
-//     System.out.printf(entry.getKey() + " : " + entry.getValue() + "\n");
-// }
-// System.out.printf("\n");
-
-String infile = params.get('f');
-int n_events = (params.get('n') == null) ? 10000000 : Integer.parseInt(params.get('n'));
-String cut = (params.get('c') == null) ? null : params.get('c');
-
-// Setup cut.
-String[] ops = ["<", "==", ">"];
-String param;
-int value;
-int op_i; // 0: <, 1: ==, 2: >
-
-String[] spltcut;
-for (int i = 0; i < ops.length; ++i) {
-    if (cut.split(ops[i]).length == 2) {
-        op_i = i;
-        spltcut = cut.split(ops[i]);
-    }
-}
-if (op_i == null) return usage();
-
-param = spltcut[0];
-try {value = Integer.parseInt(spltcut[1]);}
-catch (NumberFormatException e) {return usage();}
-
-// Groot setup.
-GStyle.getAxisAttributesX().setTitleFontSize(24);
-GStyle.getAxisAttributesX().setLabelFontSize(18);
-GStyle.getAxisAttributesY().setTitleFontSize(24);
-GStyle.getAxisAttributesY().setLabelFontSize(18);
-GStyle.getAxisAttributesZ().setLabelFontSize(14);
-GStyle.getAxisAttributesX().setLabelFontName("Arial");
-GStyle.getAxisAttributesY().setLabelFontName("Arial");
-GStyle.getAxisAttributesZ().setLabelFontName("Arial");
-GStyle.getAxisAttributesX().setTitleFontName("Arial");
-GStyle.getAxisAttributesY().setTitleFontName("Arial");
-GStyle.getAxisAttributesZ().setTitleFontName("Arial");
-GStyle.setGraphicsFrameLineWidth(1);
-GStyle.getH1FAttributes().setLineWidth(2);
-GStyle.getH1FAttributes().setOptStat("1111");
-
-// Initial setup.
-Constants C = new Constants();
-DataGroup dg_vz       = gen_dg_vz(C);
-DataGroup dg_vzsector = gen_dg_vzsector();
-DataGroup dg_vp       = gen_dg_vp();
-
-// Loop through events.
-int i_event      = -1;
-int n_DC_tracks  = 0;
-int n_FMT_tracks = 0;
-HipoDataSource reader = new HipoDataSource();
-reader.open(infile);
-
-while (reader.hasEvent() && i_event < n_events) {
-    DataEvent event = reader.getNextEvent();
-    i_event++;
-    // TODO: Update this to get  a e s t h e t i c   p r i n t i n g .
-    if (i_event%10000 == 0) System.out.println("Analyzed " + i_event + " events");
-
-    // Get relevant data banks.
-    DataBank rec_part   = null;
-    DataBank rec_track  = null;
-    DataBank rec_traj   = null;
-    DataBank fmt_tracks = null;
-    if (event.hasBank("REC::Particle")) rec_part   = event.getBank("REC::Particle");
-    if (event.hasBank("REC::Track"))    rec_track  = event.getBank("REC::Track");
-    if (event.hasBank("REC::Traj"))     rec_traj   = event.getBank("REC::Traj");
-    if (event.hasBank("FMT::Tracks"))   fmt_tracks = event.getBank("FMT::Tracks");
-
-    // Ignore events that don't have the minimum required banks.
-    if (rec_part==null || rec_track==null || rec_traj==null) continue;
-
-    // Loop through trajectory points.
-    for (int loop = 0; loop < rec_track.rows(); loop++) {
-        int index      = rec_track.getShort("index",  loop);
-        int pindex     = rec_track.getShort("pindex", loop);
-        int sector     = rec_track.getByte ("sector", loop);
-        int ndf        = rec_track.getInt  ("NDF",    loop);
-        double chi2    = rec_track.getFloat("chi2",   loop);
-
-        int charge     = rec_part.getByte  ("charge",  pindex);
-        int pid        = rec_part.getInt   ("pid",     pindex);
-        int status     = rec_part.getShort ("status",  pindex);
-        double vz      = rec_part.getFloat ("vz",      pindex);
-        double chi2pid = rec_part.getFloat ("chi2pid", pindex);
-        status = (int) (Math.abs(status)/1000);
-
-        // Apply general cuts.
-        if (status != 2) continue; // TODO: Remember what this is.
-        if (Math.abs(chi2pid) >= 3) continue; // Ignore spurious particles.
-        // TODO: Add a vertex cut for tracks far away from the target.
-        // if (vz > (C.FMT_Z[0]+C.FMT_DZ[0])/10) continue; // Ignore tracks further downstream than FMT.
-        if (chi2/ndf >= 15) continue; // Ignore tracks with high chi2.
-        // if (rec_track.rows() < 1) continue; // Ignore tracks with no tracks... wait a minute...
-
-        // Apply user-selected cut.
-        if (op_i == 0) if (rec_part.getInt(param.toLowerCase(), pindex) >= value) continue;
-        if (op_i == 1) if (rec_part.getInt(param.toLowerCase(), pindex) != value) continue;
-        if (op_i == 2) if (rec_part.getInt(param.toLowerCase(), pindex) <= value) continue;
-
-        // === PROCESS DC TRACKS ===================================================================
-        Particle dc_part = new Particle(pid,
-                rec_part.getFloat("px", pindex),
-                rec_part.getFloat("py", pindex),
-                rec_part.getFloat("pz", pindex),
-                rec_part.getFloat("vx", pindex),
-                rec_part.getFloat("vy", pindex),
-                rec_part.getFloat("vz", pindex));
-        // NOTE: Why is this cut here?
-        if (Math.sqrt(dc_part.vx()*dc_part.vx() + dc_part.vy()*dc_part.vy()) > 2) continue;
-        double beta = (double) rec_part.getFloat("beta", pindex);
-
-        n_DC_tracks++;
-        if (sector==1) { // NOTE: No beam alignment yet, so we only use one sector for now.
-            // Vertex z datagroup.
-            dg_vz.getH1F("hi_vz_dc").fill(dc_part.vz());
-            dg_vz.getH2F("hi_vz_theta_dc").fill(dc_part.vz(), Math.toDegrees(dc_part.theta()));
-            dg_vz.getH2F("hi_vz_phi_dc").fill(dc_part.vz(), Math.toDegrees(dc_part.phi()));
-
-            // Vertex momentum datagroup.
-            dc_beta = beta;
-            dg_vp.getH1F("hi_vp_dc").fill(dc_part.p());
-            dg_vp.getH1F("hi_vbeta_dc").fill(dc_beta);
-            dg_vp.getH2F("hi_vp_vbeta_dc").fill(dc_part.p(), dc_beta);
-        }
-        // Vertex z per sector datagroup.
-        dg_vzsector.getH1F("hi_vz_dc_sec"+sector).fill(dc_part.vz());
-
-        // === PROCESS FMT TRACKS ==================================================================
-        if (fmt_tracks==null) continue;
-        Particle fmt_part = new Particle(pid, fmt_tracks.getFloat("p0_x",   index),
-                                              fmt_tracks.getFloat("p0_y",   index),
-                                              fmt_tracks.getFloat("p0_z",   index),
-                                              fmt_tracks.getFloat("Vtx0_x", index),
-                                              fmt_tracks.getFloat("Vtx0_y", index),
-                                              fmt_tracks.getFloat("Vtx0_z", index));
-        double fchi2 = fmt_tracks.getFloat("chi2", index);
-        int nmeas    = fmt_tracks.getInt("NDF", index);
-
-        // Apply FMT cuts.
-        if (nmeas != 3) continue; // only use track which pass through the three FMT layers.
-        if (fmt_tracks.rows() < 1) continue; // abandon all hope if there are no FMT tracks.
-
-        n_FMT_tracks++;
-        if (sector==1) { // NOTE: No beam alignment yet, so we only use one sector for now.
-            // Vertex z datagroup.
-            dg_vz.getH1F("hi_vz_fmt")      .fill(fmt_part.vz());
-            dg_vz.getH2F("hi_vz_theta_fmt").fill(fmt_part.vz(), Math.toDegrees(fmt_part.theta()));
-            dg_vz.getH2F("hi_vz_phi_fmt")  .fill(fmt_part.vz(), Math.toDegrees(fmt_part.phi()));
-
-            // Vertex momentum datagroup.
-            double fmt_beta = beta; // TODO: Figure out how to calculate beta from FMT data.
-            dg_vp.getH1F("hi_vp_fmt").fill(fmt_part.p());
-            dg_vp.getH1F("hi_vbeta_fmt").fill(fmt_beta);
-            dg_vp.getH2F("hi_vp_vbeta_fmt").fill(fmt_part.p(), fmt_beta);
-        }
-        // Vertex z sector datagroup.
-        dg_vzsector.getH1F("hi_vz_fmt_sec"+sector).fill(fmt_part.vz());
-	}
-}
-reader.close();
-
-System.out.printf("# of DC tracks:  %7d\n# of FMT tracks: %7d\n", n_DC_tracks, n_FMT_tracks);
-// System.out.printf("% of dropped tracks: %2.5f",
-//         ((double) (n_DC_tracks - n_FMT_tracks)) / ((double) n_DC_tracks));
-
-// Setup plots and draw.
-EmbeddedCanvasTabbed canvas = new EmbeddedCanvasTabbed(
-        "z", "sector z", "p"
-);
-
-setup_canvas(canvas, "z",        dg_vz);
-setup_canvas(canvas, "sector z", dg_vzsector);
-setup_canvas(canvas, "p",        dg_vp);
-// canvas.getCanvas("p").cd(0).getPad(1).getAxisY().setLog(true);
-// canvas.getCanvas("p").cd(0).getPad(4).getAxisY().setLog(true);
-
-JFrame frame = new JFrame("Acceptance Study Results");
-frame.setSize(1500, 1000);
-frame.add(canvas);
-frame.setLocationRelativeTo(null);
-frame.setVisible(true);
-
 class Constants {
     int    FMT_NLAYERS; // Number of FMT layers (3 for RG-F).
     int    FMT_NSTRIPS; // Number of strips per FMT layer (1024).
