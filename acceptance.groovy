@@ -22,22 +22,24 @@ String cut = (params.get('c') == null) ? null : params.get('c');
 
 // Setup user cut.
 String[] ops = ["<", "==", ">"];
-String param;
-int value;
-int op_i; // 0: <, 1: ==, 2: >
+String study_param;
+int study_value;
+int study_op; // 0: <, 1: ==, 2: >
 
 String[] spltcut;
 for (int i = 0; i < ops.length; ++i) {
     if (cut.split(ops[i]).length == 2) {
-        op_i = i;
+        study_op = i;
         spltcut = cut.split(ops[i]);
     }
 }
-if (op_i == null) return usage();
+if (study_op == null) return usage();
 
-param = spltcut[0];
-try {value = Integer.parseInt(spltcut[1]);}
+study_param = spltcut[0].toLowerCase();
+try {study_value = Integer.parseInt(spltcut[1]);}
 catch (NumberFormatException e) {return usage();}
+
+boolean electron = study_param.equals("pid") && study_value == 11;
 
 // Groot setup.
 GStyle.getAxisAttributesX().setTitleFontSize(24);
@@ -60,7 +62,8 @@ Constants C = new Constants();
 DataGroup dg_vz       = gen_dg_vz(C);
 DataGroup dg_vzsector = gen_dg_vzsector();
 DataGroup dg_vp       = gen_dg_vp();
-// TODO: If PID==11 add a datagroup with electron variables.
+DataGroup dg_e;
+if (!electron) dg_e = gen_dg_e();
 
 // Loop through events.
 int i_event      = -1;
@@ -110,9 +113,9 @@ while (reader.hasEvent() && i_event < n_events) {
         if (chi2/ndf >= 15) continue; // Ignore tracks with high chi2.
 
         // Apply user-selected cut.
-        if (op_i == 0) if (rec_part.getInt(param.toLowerCase(), pindex) >= value) continue;
-        if (op_i == 1) if (rec_part.getInt(param.toLowerCase(), pindex) != value) continue;
-        if (op_i == 2) if (rec_part.getInt(param.toLowerCase(), pindex) <= value) continue;
+        if (study_op == 0) if (rec_part.getInt(study_param, pindex) >= study_value) continue;
+        if (study_op == 1) if (rec_part.getInt(study_param, pindex) != study_value) continue;
+        if (study_op == 2) if (rec_part.getInt(study_param, pindex) <= study_value) continue;
 
         // === PROCESS DC TRACKS ===================================================================
         Particle dc_part = new Particle(pid,
@@ -137,6 +140,9 @@ while (reader.hasEvent() && i_event < n_events) {
             dg_vp.getH1F("hi_vp_dc").fill(dc_part.p());
             dg_vp.getH1F("hi_vbeta_dc").fill(dc_beta);
             dg_vp.getH2F("hi_vp_vbeta_dc").fill(dc_part.p(), dc_beta);
+
+            // Get electron variables.
+            // if (!electron) TODO: Obtain electron variables.
         }
         // Vertex z datagroup (It doesn't make sense to select one sector for phi angle analysis.)
         dg_vz.getH2F("hi_vz_phi_dc").fill(dc_part.vz(), Math.toDegrees(dc_part.phi()));
@@ -170,6 +176,8 @@ while (reader.hasEvent() && i_event < n_events) {
             dg_vp.getH1F("hi_vp_fmt").fill(fmt_part.p());
             dg_vp.getH1F("hi_vbeta_fmt").fill(fmt_beta);
             dg_vp.getH2F("hi_vp_vbeta_fmt").fill(fmt_part.p(), fmt_beta);
+
+            // if (!electron) TODO: Obtain electron variables.
         }
         // Vertex z datagroup (It doesn't make sense to select one sector for phi angle analysis.)
         dg_vz.getH2F("hi_vz_phi_fmt")  .fill(fmt_part.vz(), Math.toDegrees(fmt_part.phi()));
@@ -181,23 +189,28 @@ while (reader.hasEvent() && i_event < n_events) {
 reader.close();
 
 System.out.printf("# of DC tracks:  %7d\n# of FMT tracks: %7d\n", n_DC_tracks, n_FMT_tracks);
-// System.out.printf("% of dropped tracks: %2.5f",
-//         ((double) (n_DC_tracks - n_FMT_tracks)) / ((double) n_DC_tracks));
+System.out.printf("%% of lost tracks: %5.2f%%\n",
+        100*((n_DC_tracks - n_FMT_tracks) / (double) n_DC_tracks));
 
 // Fit vertex z.
 fit_upstream(dg_vz.getH1F("hi_vz_dc"),  dg_vz.getF1D("fit_vz_dc"),  -36, -30);
 fit_upstream(dg_vz.getH1F("hi_vz_fmt"), dg_vz.getF1D("fit_vz_fmt"), -36, -30);
 
 // Setup plots and draw.
-EmbeddedCanvasTabbed canvas = new EmbeddedCanvasTabbed(
-        "z", "sector z", "p"
-);
+EmbeddedCanvasTabbed
+if (electron) canvas = new EmbeddedCanvasTabbed("z", "sector z", "p");
+else          canvas = new EmbeddedCanvasTabbed("z", "sector z", "p", "e");
 
 setup_canvas(canvas, "z",        dg_vz);
 setup_canvas(canvas, "sector z", dg_vzsector);
 setup_canvas(canvas, "p",        dg_vp);
-// canvas.getCanvas("p").cd(0).getPad(1).getAxisY().setLog(true);
-// canvas.getCanvas("p").cd(0).getPad(4).getAxisY().setLog(true);
+if (!electron) setup_canvas(canvas, "e", dg_e)
+
+// NOTE: I should figure out how to better display beta and momentum vs beta.
+canvas.getCanvas("p").cd(0).getPad(1).getAxisY().setLog(true);
+canvas.getCanvas("p").cd(0).getPad(4).getAxisY().setLog(true);
+// canvas.getCanvas("p").cd(0).getPad(2).getAxisY().setLog(true);
+// canvas.getCanvas("p").cd(0).getPad(5).getAxisY().setLog(true);
 
 JFrame frame = new JFrame("Acceptance Study Results");
 frame.setSize(1500, 1000);
@@ -445,6 +458,35 @@ DataGroup gen_dg_vp() {
     hi_vp_vbeta_fmt.setTitleX("FMT " + xax);
     hi_vp_vbeta_fmt.setTitleY(yax);
     dg.addDataSet(hi_vp_vbeta_fmt, 5);
+
+    return dg;
+}
+DataGroup gen_dg_e() {
+    DataGroup dg = new DataGroup(3,2);
+
+    // Q2.
+    H1F hi_Q2_dc  = new H1F("hi_Q2_dc",  "Q^2 (?)" , "Counts", 500, -50, 50);
+    hi_Q2_dc.setFillColor(43);
+    dg.addDataSet(hi_Q2_dc,  0);
+    H1F hi_Q2_fmt = new H1F("hi_Q2_fmt", "Q^2 (?)", "Counts", 500, -50, 50);
+    hi_Q2_fmt.setFillColor(44);
+    dg.addDataSet(hi_Q2_fmt, 3);
+
+    // nu
+    H1F hi_nu_dc  = new H1F("hi_nu_dc",  "#nu (?)" , "Counts", 500, -50, 50);
+    hi_nu_dc.setFillColor(43);
+    dg.addDataSet(hi_nu_dc,  1);
+    H1F hi_nu_fmt = new H1F("hi_nu_fmt", "#nu (?)", "Counts", 500, -50, 50);
+    hi_nu_fmt.setFillColor(44);
+    dg.addDataSet(hi_nu_fmt, 4);
+
+    // X_bjorken
+    H1F hi_Xb_dc  = new H1F("hi_Xb_dc",  "Xb (?)" , "Counts", 500, -50, 50);
+    hi_Xb_dc.setFillColor(43);
+    dg.addDataSet(hi_Xb_dc,  2);
+    H1F hi_Xb_fmt = new H1F("hi_Xb_fmt", "Xb (?)", "Counts", 500, -50, 50);
+    hi_Xb_fmt.setFillColor(44);
+    dg.addDataSet(hi_Xb_fmt, 5);
 
     return dg;
 }
