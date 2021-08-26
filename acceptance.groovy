@@ -75,9 +75,11 @@ reader.open(infile);
 while (reader.hasEvent() && i_event < n_events) {
     DataEvent event = reader.getNextEvent();
     i_event++;
-    // TODO: Update this to get  a e s t h e t i c   p r i n t i n g .
-    if (i_event%10000 == 0) System.out.println("Analyzed " + i_event + " events");
-
+    if (i_event == 0) System.out.printf("Analyzed %10d events...", i_event);
+    else if (i_event%10000 == 0) {
+        System.out.printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
+        System.out.printf("Analyzed %10d events...", i_event);
+    }
     // Get relevant data banks.
     DataBank rec_part   = null;
     DataBank rec_track  = null;
@@ -187,10 +189,11 @@ while (reader.hasEvent() && i_event < n_events) {
 	}
 }
 reader.close();
-
-System.out.printf("# of DC tracks:  %7d\n# of FMT tracks: %7d\n", n_DC_tracks, n_FMT_tracks);
-System.out.printf("%% of lost tracks: %5.2f%%\n",
-        100*((n_DC_tracks - n_FMT_tracks) / (double) n_DC_tracks));
+System.out.printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
+System.out.printf("Analyzed %10d events. Done!\n", i_event);
+System.out.printf("%% of lost tracks: %5.2f%% (%d/%d)\n",
+        100*((n_DC_tracks - n_FMT_tracks) / (double) n_DC_tracks),
+        n_DC_tracks - n_FMT_tracks, n_DC_tracks);
 
 // Fit vertex z.
 fit_upstream(dg_vz.getH1F("hi_vz_dc"),  dg_vz.getF1D("fit_vz_dc"),  -36, -30);
