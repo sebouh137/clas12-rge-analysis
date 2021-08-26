@@ -60,6 +60,7 @@ Constants C = new Constants();
 DataGroup dg_vz       = gen_dg_vz(C);
 DataGroup dg_vzsector = gen_dg_vzsector();
 DataGroup dg_vp       = gen_dg_vp();
+// TODO: If PID==11 add a datagroup with electron variables.
 
 // Loop through events.
 int i_event      = -1;
@@ -103,7 +104,7 @@ while (reader.hasEvent() && i_event < n_events) {
         status = (int) (Math.abs(status)/1000);
 
         // Apply general cuts.
-        if (status != 2) continue; // TODO: IDK what this is.
+        if (status != 2) continue; // Only use particles that passes through DC and FMT.
         if (Math.abs(chi2pid) >= 3) continue; // Ignore spurious particles.
         if (vz < -40 || vz > (C.FMT_Z[0]+C.FMT_DZ[0])/10) continue; // Geometry cut.
         if (chi2/ndf >= 15) continue; // Ignore tracks with high chi2.
@@ -121,8 +122,8 @@ while (reader.hasEvent() && i_event < n_events) {
                 rec_part.getFloat("vx", pindex),
                 rec_part.getFloat("vy", pindex),
                 rec_part.getFloat("vz", pindex));
-        // TODO: Why is this cut here?
-        if (Math.sqrt(dc_part.vx()*dc_part.vx() + dc_part.vy()*dc_part.vy()) > 2) continue;
+        // Ignore particles too far from the beamline.
+        if (dc_part.vx()*dc_part.vx() + dc_part.vy()*dc_part.vy() > 4) continue;
         double beta = (double) rec_part.getFloat("beta", pindex);
 
         n_DC_tracks++;
@@ -182,6 +183,10 @@ reader.close();
 System.out.printf("# of DC tracks:  %7d\n# of FMT tracks: %7d\n", n_DC_tracks, n_FMT_tracks);
 // System.out.printf("% of dropped tracks: %2.5f",
 //         ((double) (n_DC_tracks - n_FMT_tracks)) / ((double) n_DC_tracks));
+
+// Fit vertex z.
+fit_upstream(dg_vz.getH1F("hi_vz_dc"),  dg_vz.getF1D("fit_vz_dc"),  -36, -30);
+fit_upstream(dg_vz.getH1F("hi_vz_fmt"), dg_vz.getF1D("fit_vz_fmt"), -36, -30);
 
 // Setup plots and draw.
 EmbeddedCanvasTabbed canvas = new EmbeddedCanvasTabbed(
@@ -330,70 +335,64 @@ DataGroup gen_dg_vz(Constants C) {
 
     // 1D vz.
     H1F hi_vz_dc  = new H1F("hi_vz_dc",  "DC vz (cm)" , "Counts", 500, -50, 50);
-    H1F hi_vz_fmt = new H1F("hi_vz_fmt", "FMT vz (cm)", "Counts", 500, -50, 50);
     hi_vz_dc.setFillColor(43);
-    hi_vz_fmt.setFillColor(44);
     dg.addDataSet(hi_vz_dc,  0);
+    H1F hi_vz_fmt = new H1F("hi_vz_fmt", "FMT vz (cm)", "Counts", 500, -50, 50);
+    hi_vz_fmt.setFillColor(44);
     dg.addDataSet(hi_vz_fmt, 3);
-    // TODO: Add upstream fit for DC and FMT tracks.
+
+    // Upstream fit for DC and FMT tracks.
+    F1D f_vz_dc = new F1D("fit_vz_dc",
+            "[amp1]*gaus(x,[mean],[sigma])+[amp2]*gaus(x,[mean]-2.4,[sigma])+[p0]+[p1]*x+[p2]*x*x",
+            -50, 50);
+    f_vz_dc.setLineWidth(2);
+    f_vz_dc.setLineColor(2);
+    f_vz_dc.setOptStat("1111");
+    dg.addDataSet(f_vz_dc, 0);
+
+    F1D f_vz_fmt = new F1D("fit_vz_fmt",
+            "[amp1]*gaus(x,[mean],[sigma])+[amp2]*gaus(x,[mean]-2.4,[sigma])+[p0]+[p1]*x+[p2]*x*x",
+            -50, 50);
+    f_vz_fmt.setLineWidth(2);
+    f_vz_fmt.setLineColor(2);
+    f_vz_fmt.setOptStat("1111");
+    dg.addDataSet(f_vz_fmt, 3);
 
     // 2D vz vs theta.
     H2F hi_vz_theta_dc  = new H2F("hi_vz_theta_dc", 200, -50, 50, 100, 0, 40);
-    H2F hi_vz_theta_fmt = new H2F("hi_vz_theta_fmt", 200, -50, 50, 100, 0, 40);
     hi_vz_theta_dc .setTitleX("DC vz (cm)");
-    hi_vz_theta_fmt.setTitleX("FMT vz (cm)");
     hi_vz_theta_dc .setTitleY("#theta (deg)");
-    hi_vz_theta_fmt.setTitleY("#theta (deg)");
     dg.addDataSet(hi_vz_theta_dc,  1);
+    H2F hi_vz_theta_fmt = new H2F("hi_vz_theta_fmt", 200, -50, 50, 100, 0, 40);
+    hi_vz_theta_fmt.setTitleX("FMT vz (cm)");
+    hi_vz_theta_fmt.setTitleY("#theta (deg)");
     dg.addDataSet(hi_vz_theta_fmt, 4);
 
     // Draw lines showing FMT acceptance.
     F1D ftheta1 = new F1D("ftheta","57.29*atan([r]/([z0]-x))",  -50, 20.5);
-    F1D ftheta2 = new F1D("ftheta2","57.29*atan([r]/([z0]-x))", -50, 3);
     ftheta1.setParameter(0, C.FMT_RMIN/10);
-    ftheta2.setParameter(0, C.FMT_RMAX/10);
     ftheta1.setParameter(1, (C.FMT_Z[0]+C.FMT_DZ[0])/10);
-    ftheta2.setParameter(1, (C.FMT_Z[0]+C.FMT_DZ[0])/10);
     ftheta1.setLineColor(2);
-    ftheta2.setLineColor(2);
     ftheta1.setLineWidth(2);
-    ftheta2.setLineWidth(2);
     dg.addDataSet(ftheta1, 1);
-    dg.addDataSet(ftheta2, 1);
     dg.addDataSet(ftheta1, 4);
+    F1D ftheta2 = new F1D("ftheta2","57.29*atan([r]/([z0]-x))", -50, 3);
+    ftheta2.setParameter(0, C.FMT_RMAX/10);
+    ftheta2.setParameter(1, (C.FMT_Z[0]+C.FMT_DZ[0])/10);
+    ftheta2.setLineColor(2);
+    ftheta2.setLineWidth(2);
+    dg.addDataSet(ftheta2, 1);
     dg.addDataSet(ftheta2, 4);
 
     // 2D vz vs phi angle.
     H2F hi_vz_phi_dc  = new H2F("hi_vz_phi_dc",  200, -50, 50, 100, -180, 180);
-    H2F hi_vz_phi_fmt = new H2F("hi_vz_phi_fmt", 200, -50, 50, 100, -180, 180);
     hi_vz_phi_dc.setTitleX ("DC vz (cm)");
-    hi_vz_phi_fmt.setTitleX("FMT vz (cm)");
     hi_vz_phi_dc.setTitleY ("#phi (deg)");
-    hi_vz_phi_fmt.setTitleY("#phi (deg)");
     dg.addDataSet(hi_vz_phi_dc,  2);
+    H2F hi_vz_phi_fmt = new H2F("hi_vz_phi_fmt", 200, -50, 50, 100, -180, 180);
+    hi_vz_phi_fmt.setTitleX("FMT vz (cm)");
+    hi_vz_phi_fmt.setTitleY("#phi (deg)");
     dg.addDataSet(hi_vz_phi_fmt, 5);
-
-    // NOTE: fit
-    // F1D f1 = new F1D("upstream fit",
-    //       "[amp1]*gaus(x,[mean],[sigma])+[amp2]*gaus(x,[mean]-2.4,[sigma])+[p0]+[p1]*x+[p2]*x*x",
-    //         -r, r);
-    //
-    // f1.setLineWidth(2);
-    // f1.setLineColor(2);
-    // f1.setOptStat("1111");
-    // dg_vzsector[0].addDataSet(f1, 0);
-    //
-    // Data.fitUpstream(dg_vzsector[0].getH1F("FMT tracks"), dg_vzsector[0].getF1D("upstream fit"),
-    //     -36, -30);
-    // double amp = hires.getBinContent(hires.getMaximumBin());
-    //
-    // f1res.setParameter(0, 2*amp);  // amp1
-    // f1res.setParameter(1, -32.085); // mean
-    // f1res.setParameter(2, 0.2);  // sigma
-    //
-    // f1res.setRange(min, max);
-    // DataFitter.fit(f1res, hires, "Q"); // No options use error for sigma.
-    // hires.setFunction(null);
 
     return dg;
 }
@@ -403,12 +402,12 @@ DataGroup gen_dg_vzsector() {
     String yax = "Counts";
     for (int sec=1; sec<=6; sec++) {
         H1F hi_vz_dc  = new H1F("hi_vz_dc_sec"  + sec, xax + sec, yax, 500, -50, 50);
-        H1F hi_vz_fmt = new H1F("hi_vz_fmt_sec" + sec, xax + sec, yax, 500, -50, 50);
         hi_vz_dc .setFillColor(43);
-        hi_vz_fmt.setFillColor(44);
         dg.addDataSet(hi_vz_dc,  sec-1);
+        H1F hi_vz_fmt = new H1F("hi_vz_fmt_sec" + sec, xax + sec, yax, 500, -50, 50);
+        hi_vz_fmt.setFillColor(44);
         dg.addDataSet(hi_vz_fmt, sec-1);
-        // Add a fit for DC and for FMT for each sector.
+        // NOTE: Maybe add a fit for DC and for FMT for each sector?
     }
     return dg;
 }
@@ -419,37 +418,51 @@ DataGroup gen_dg_vp() {
     String xax = "p (GeV)";
     String yax = "Counts";
     H1F hi_vp_dc  = new H1F("hi_vp_dc",  "DC  " + xax, yax, 100, 0, 12);
-    H1F hi_vp_fmt = new H1F("hi_vp_fmt", "FMT " + xax, yax, 100, 0, 12);
     hi_vp_dc .setFillColor(43);
-    hi_vp_fmt.setFillColor(44);
     dg.addDataSet(hi_vp_dc,  0);
+    H1F hi_vp_fmt = new H1F("hi_vp_fmt", "FMT " + xax, yax, 100, 0, 12);
+    hi_vp_fmt.setFillColor(44);
     dg.addDataSet(hi_vp_fmt, 3);
 
     // Beta distribution:
     xax = "#beta";
     yax = "Counts";
     H1F hi_vbeta_dc  = new H1F("hi_vbeta_dc",  "DC  " + xax, yax, 500, 0, 1);
-    H1F hi_vbeta_fmt = new H1F("hi_vbeta_fmt", "FMT " + xax, yax, 500, 0, 1);
     hi_vbeta_dc .setFillColor(43);
-    hi_vbeta_fmt.setFillColor(44);
     dg.addDataSet(hi_vbeta_dc,  1);
+    H1F hi_vbeta_fmt = new H1F("hi_vbeta_fmt", "FMT " + xax, yax, 500, 0, 1);
+    hi_vbeta_fmt.setFillColor(44);
     dg.addDataSet(hi_vbeta_fmt, 4);
 
     // Momentum vs Beta:
     xax = "#beta";
     yax = "p (GeV)";
     H2F hi_vp_vbeta_dc  = new H2F("hi_vp_vbeta_dc",  200, 0, 1, 200, 0, 12);
-    H2F hi_vp_vbeta_fmt = new H2F("hi_vp_vbeta_fmt", 200, 0, 1, 200, 0, 12);
     hi_vp_vbeta_dc.setTitleX ("DC  " + xax);
-    hi_vp_vbeta_fmt.setTitleX("FMT " + xax);
     hi_vp_vbeta_dc.setTitleY (yax);
-    hi_vp_vbeta_fmt.setTitleY(yax);
     dg.addDataSet(hi_vp_vbeta_dc,  2);
+    H2F hi_vp_vbeta_fmt = new H2F("hi_vp_vbeta_fmt", 200, 0, 1, 200, 0, 12);
+    hi_vp_vbeta_fmt.setTitleX("FMT " + xax);
+    hi_vp_vbeta_fmt.setTitleY(yax);
     dg.addDataSet(hi_vp_vbeta_fmt, 5);
 
     return dg;
 }
-int setup_canvas(EmbeddedCanvasTabbed canvas, String name, DataGroup tab) {
+public static int fit_upstream(H1F hist, F1D fit, double min, double max) {
+    double amp = hist.getBinContent(hist.getMaximumBin());
+
+    // Initial guesses for fit.
+    fit.setParameter(0, 2*amp);   // amp1
+    fit.setParameter(1, -32.085); // mean
+    fit.setParameter(2, 1);       // sigma
+
+    fit.setRange(min, max);
+    DataFitter.fit(fit, hist, "Q"); // No options use error for sigma.
+    hist.setFunction(null);
+
+    return 0;
+}
+public static int setup_canvas(EmbeddedCanvasTabbed canvas, String name, DataGroup tab) {
     canvas.getCanvas(name).draw(tab);
     canvas.getCanvas(name).setGridX(false);
     canvas.getCanvas(name).setGridY(false);
