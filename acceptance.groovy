@@ -20,6 +20,24 @@ String infile = params.get('f');
 int n_events = (params.get('n') == null) ? 10000000 : Integer.parseInt(params.get('n'));
 String cut = (params.get('c') == null) ? null : params.get('c');
 
+// Define run data. It would be sweet to ask this to clas12mon, but is not an urgent necesity atm.
+// All beam energies are in GeV.
+double beam_energy;
+switch (IO_handler.get_runno(infile)) {
+    case 11983:
+        beam_energy = 10.3894;
+        break;
+    case 12016:
+        beam_energy = 10389.4;
+        break;
+    case 12439:
+        beam_energy =  2.1864;
+        break;
+    default:
+        System.err.printf("Run number not in database. Add from clas12mon.");
+        System.exit(1);
+}
+
 // Setup user cut.
 String[] ops = ["<", "==", ">"];
 String study_param;
@@ -39,23 +57,11 @@ study_param = spltcut[0].toLowerCase();
 try {study_value = Integer.parseInt(spltcut[1]);}
 catch (NumberFormatException e) {return usage();}
 
+// Check if we are dealing with an electron.
 boolean electron = study_param.equals("pid") && study_value == 11;
 
 // Groot setup.
-GStyle.getAxisAttributesX().setTitleFontSize(24);
-GStyle.getAxisAttributesX().setLabelFontSize(18);
-GStyle.getAxisAttributesY().setTitleFontSize(24);
-GStyle.getAxisAttributesY().setLabelFontSize(18);
-GStyle.getAxisAttributesZ().setLabelFontSize(14);
-GStyle.getAxisAttributesX().setLabelFontName("Arial");
-GStyle.getAxisAttributesY().setLabelFontName("Arial");
-GStyle.getAxisAttributesZ().setLabelFontName("Arial");
-GStyle.getAxisAttributesX().setTitleFontName("Arial");
-GStyle.getAxisAttributesY().setTitleFontName("Arial");
-GStyle.getAxisAttributesZ().setTitleFontName("Arial");
-GStyle.setGraphicsFrameLineWidth(1);
-GStyle.getH1FAttributes().setLineWidth(2);
-GStyle.getH1FAttributes().setOptStat("1111");
+setup_groot();
 
 // Initial setup.
 Constants C = new Constants();
@@ -144,7 +150,9 @@ while (reader.hasEvent() && i_event < n_events) {
             dg_vp.getH2F("hi_vp_vbeta_dc").fill(dc_part.p(), dc_beta);
 
             // Get electron variables.
-            // if (!electron) TODO: Obtain electron variables.
+            if (!electron) {
+                dg_e.getH1F("hi_Q2_dc").fill(get_Q2(beam_energy, dc_part));
+            }
         }
         // Vertex z datagroup (It doesn't make sense to select one sector for phi angle analysis.)
         dg_vz.getH2F("hi_vz_phi_dc").fill(dc_part.vz(), Math.toDegrees(dc_part.phi()));
@@ -179,7 +187,10 @@ while (reader.hasEvent() && i_event < n_events) {
             dg_vp.getH1F("hi_vbeta_fmt").fill(fmt_beta);
             dg_vp.getH2F("hi_vp_vbeta_fmt").fill(fmt_part.p(), fmt_beta);
 
-            // if (!electron) TODO: Obtain electron variables.
+            // Get electron variables.
+            if (!electron) {
+                dg_e.getH1F("hi_Q2_fmt").fill(get_Q2(beam_energy, fmt_part));
+            }
         }
         // Vertex z datagroup (It doesn't make sense to select one sector for phi angle analysis.)
         dg_vz.getH2F("hi_vz_phi_fmt")  .fill(fmt_part.vz(), Math.toDegrees(fmt_part.phi()));
@@ -303,8 +314,16 @@ public final class IO_handler {
 
         return 0;
     }
+
+    /* Get run number from file name. */
+    public static int get_runno(String path) {
+        // This assumes that filename has the format "/path/to/out_clas_<RUNNO>.hipo".
+        String[] splitpath = path.split("/");
+        return Integer.parseInt(splitpath[splitpath.length-1].split("\\.")[0].split("_")[2]);
+    }
 }
-class Constants {
+/* Repository of constants. Currently only used for FMT geometry. */
+public class Constants {
     int    FMT_NLAYERS; // Number of FMT layers (3 for RG-F).
     int    FMT_NSTRIPS; // Number of strips per FMT layer (1024).
     double FMT_PITCH;   // Pitch of the entire detector.
@@ -468,10 +487,10 @@ DataGroup gen_dg_e() {
     DataGroup dg = new DataGroup(3,2);
 
     // Q2.
-    H1F hi_Q2_dc  = new H1F("hi_Q2_dc",  "Q^2 (?)" , "Counts", 500, -50, 50);
+    H1F hi_Q2_dc  = new H1F("hi_Q2_dc",  "Q^2 (?)" , "Counts", 20, 0, 1);
     hi_Q2_dc.setFillColor(43);
     dg.addDataSet(hi_Q2_dc,  0);
-    H1F hi_Q2_fmt = new H1F("hi_Q2_fmt", "Q^2 (?)", "Counts", 500, -50, 50);
+    H1F hi_Q2_fmt = new H1F("hi_Q2_fmt", "Q^2 (?)", "Counts", 20, 0, 1);
     hi_Q2_fmt.setFillColor(44);
     dg.addDataSet(hi_Q2_fmt, 3);
 
@@ -492,6 +511,29 @@ DataGroup gen_dg_e() {
     dg.addDataSet(hi_Xb_fmt, 5);
 
     return dg;
+}
+/* Get Q2 from beam energy and particle. */
+public static double get_Q2(double beam_e, Particle p) {
+    double Q2 = 4 * beam_e * p.p() * Math.sin(p.theta() * Math.PI/180 /2)**2;
+    return Q2;
+}
+public static int setup_groot() {
+    GStyle.getAxisAttributesX().setTitleFontSize(24);
+    GStyle.getAxisAttributesX().setLabelFontSize(18);
+    GStyle.getAxisAttributesY().setTitleFontSize(24);
+    GStyle.getAxisAttributesY().setLabelFontSize(18);
+    GStyle.getAxisAttributesZ().setLabelFontSize(14);
+    GStyle.getAxisAttributesX().setLabelFontName("Arial");
+    GStyle.getAxisAttributesY().setLabelFontName("Arial");
+    GStyle.getAxisAttributesZ().setLabelFontName("Arial");
+    GStyle.getAxisAttributesX().setTitleFontName("Arial");
+    GStyle.getAxisAttributesY().setTitleFontName("Arial");
+    GStyle.getAxisAttributesZ().setTitleFontName("Arial");
+    GStyle.setGraphicsFrameLineWidth(1);
+    GStyle.getH1FAttributes().setLineWidth(2);
+    GStyle.getH1FAttributes().setOptStat("1111");
+
+    return 0;
 }
 public static int fit_upstream(H1F hist, F1D fit, double min, double max) {
     double amp = hist.getBinContent(hist.getMaximumBin());
