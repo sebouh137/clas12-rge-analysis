@@ -18,12 +18,13 @@ if (IO_handler.parse_args(args, params)) System.exit(1);
 
 String infile = params.get('f');
 int n_events  = (params.get('n') == null) ? 10000000 : Integer.parseInt(params.get('n'));
-String cut    = (params.get('c') == null) ? null     : params.get('c');
+boolean FMT = false;
+if (params.get('d') != null && params.get('d').toLowerCase().equals("fmt")) FMT = true;
 
 // Define run data. It would be sweet to ask this to clas12mon, but is not an urgent necesity atm.
 // All beam energies are in GeV.
 double beam_energy;
-switch (IO_handler.get_runno(infile)) {
+switch (IO_handler.get_runno(infile)) { // TODO. Move to Constants I guess.
     case 11983:
         beam_energy = 10.3894;
         break;
@@ -38,39 +39,15 @@ switch (IO_handler.get_runno(infile)) {
         System.exit(1);
 }
 
-// Setup user cut.
-String[] ops = ["<", "==", ">"];
-String study_param;
-int study_value;
-int study_op; // 0: <, 1: ==, 2: >
-
-String[] spltcut;
-for (int i = 0; i < ops.length; ++i) {
-    if (cut.split(ops[i]).length == 2) {
-        study_op = i;
-        spltcut = cut.split(ops[i]);
-    }
-}
-if (study_op == null) return usage();
-
-study_param = spltcut[0].toLowerCase();
-try {study_value = Integer.parseInt(spltcut[1]);}
-catch (NumberFormatException e) {return usage();}
-
-// Check if we are dealing with an electron.
-boolean electron = study_param.equals("pid") && study_value == 11;
-
-// Groot setup.
-setup_groot();
-
 // Initial setup.
+setup_groot();
 Constants C = new Constants();
-DataGroup dg_vz       = gen_dg_vz(C);
-DataGroup dg_vzsector = gen_dg_vzsector();
-DataGroup dg_vp       = study_param.equals("pid") ? gen_dg_vp(C, study_value) : gen_dg_vp(C, 0);
-DataGroup dg_E        = study_param.equals("pid") ? gen_dg_E (C, study_value) : gen_dg_E (C, 0);
-DataGroup dg_e;
-if (electron) dg_e = gen_dg_e();
+String[] names = new String[5];  DataGroup[] dg = new DataGroup[5]; boolean[] hists = new boolean[5];
+names[0] = "e";                  dg[0] = gen_dg(C,  11);            hists[0] = false;
+names[1] = "pi+";                dg[1] = gen_dg(C, 211);            hists[1] = false;
+names[2] = "pi-";                dg[2] = gen_dg(C,-211);            hists[2] = false;
+names[3] = "negative";           dg[3] = gen_dg(C,   0);            hists[3] = false;
+names[4] = "positive";           dg[4] = gen_dg(C,   0);            hists[4] = false;
 
 // Loop through events.
 int i_event      = -1;
@@ -116,108 +93,77 @@ while (reader.hasEvent() && i_event < n_events) {
         status = (int) (Math.abs(status)/1000);
 
         // Apply general cuts.
-        if (status != 2) continue; // Only use particles that passes through DC and FMT.
+        if (status != 2) continue; // Only use particles that pass through DC and FMT.
         if (Math.abs(chi2pid) >= 3) continue; // Ignore spurious particles.
         if (vz < -40 || vz > (C.FMT_Z[0]+C.FMT_DZ[0])/10) continue; // Geometry cut.
         if (chi2/ndf >= 15) continue; // Ignore tracks with high chi2.
 
-        // Apply user-selected cut.
-        if (study_op == 0) if (rec_part.getInt(study_param, pindex) >= study_value) continue;
-        if (study_op == 1) if (rec_part.getInt(study_param, pindex) != study_value) continue;
-        if (study_op == 2) if (rec_part.getInt(study_param, pindex) <= study_value) continue;
+        n_DC_tracks++; // Count DC tracks.
+
+        // === PROCESS TRACKS ======================================================================
+        Particle part;
+        if (!FMT) {
+            part = new Particle(pid, rec_part.getFloat("px", pindex),
+                                     rec_part.getFloat("py", pindex),
+                                     rec_part.getFloat("pz", pindex),
+                                     rec_part.getFloat("vx", pindex),
+                                     rec_part.getFloat("vy", pindex),
+                                     rec_part.getFloat("vz", pindex));
+        }
+        else {
+            // Apply FMT cuts.
+            if (fmt_tracks == null) continue;
+            if (fmt_tracks.rows() < 1) continue; // abandon all hope if there are no FMT tracks.
+            if (fmt_tracks.getInt("NDF", index) != 3) continue; // track crossed three FMT layers.
+            n_FMT_tracks++; // Count FMT tracks.
+
+            part = new Particle(pid, fmt_tracks.getFloat("p0_x",   index),
+                                     fmt_tracks.getFloat("p0_y",   index),
+                                     fmt_tracks.getFloat("p0_z",   index),
+                                     fmt_tracks.getFloat("Vtx0_x", index),
+                                     fmt_tracks.getFloat("Vtx0_y", index),
+                                     fmt_tracks.getFloat("Vtx0_z", index));
+        }
+
+        // Check which histograms to fill.
+        if (pid ==  11)  hists[0] = true;
+        if (pid == 211)  hists[1] = true;
+        if (pid == -211) hists[2] = true;
+        if (charge < 0)  hists[3] = true;
+        if (charge > 0)  hists[4] = true;
 
         // === PROCESS DC TRACKS ===================================================================
-        Particle dc_part = new Particle(pid,
-                rec_part.getFloat("px", pindex),
-                rec_part.getFloat("py", pindex),
-                rec_part.getFloat("pz", pindex),
-                rec_part.getFloat("vx", pindex),
-                rec_part.getFloat("vy", pindex),
-                rec_part.getFloat("vz", pindex));
         // Ignore particles too far from the beamline.
-        if (dc_part.vx()*dc_part.vx() + dc_part.vy()*dc_part.vy() > 4) continue;
-        double beta = (double) rec_part.getFloat("beta", pindex);
+        if (part.vx()*part.vx() + part.vy()*part.vy() > 4) continue;
 
-        n_DC_tracks++;
-        if (sector==1) { // NOTE: No beam alignment for run yet, so we only use one sector for now.
+        for (int cnvs_i = 0; cnvs_i < dg.length; ++cnvs_i) {
+            if (!hists[cnvs_i]) continue;
+
+            dg[cnvs_i].getH2F("vz_phi").fill(part.vz(), Math.toDegrees(part.phi()));
+            if (sector != 1) continue; // No beam alignment yet, so we only use one sector.
             // Vertex z datagroup.
-            dg_vz.getH1F("hi_vz_dc").fill(dc_part.vz());
-            dg_vz.getH2F("hi_vz_theta_dc").fill(dc_part.vz(), Math.toDegrees(dc_part.theta()));
+            dg[cnvs_i].getH1F("vz").fill(part.vz());
+            dg[cnvs_i].getH2F("vz_theta").fill(part.vz(), Math.toDegrees(part.theta()));
 
             // Vertex momentum datagroup.
-            dc_beta = beta;
-            dg_vp.getH1F("hi_vp_dc").fill(dc_part.p());
-            dg_vp.getH1F("hi_vbeta_dc").fill(dc_beta);
-            dg_vp.getH2F("hi_vp_vbeta_dc").fill(dc_part.p(), dc_beta);
+            double beta = (double) rec_part.getFloat("beta", pindex); // no beta data for FMT.
+            dg[cnvs_i].getH1F("p").fill(part.p());
+            dg[cnvs_i].getH1F("beta").fill(beta);
+            dg[cnvs_i].getH2F("p_beta").fill(part.p(), beta);
 
             // Energy datagroup.
-            dg_E.getH2F("hi_Ep_dc").fill(dc_part.p(), dc_part.e());
+            dg[cnvs_i].getH2F("p_E").fill(part.p(), part.e());
             // TODO. PENDING:
             // dg_E.getH2F("hi_Ep_pcal_dc").fill()
-            // if (!electron) { // TOF difference.
-            //
-            // }
+            // TOF difference.
 
-            // Get electron variables.
-            if (electron) {
-                dg_e.getH1F("hi_Q2_dc").fill(calc_Q2(beam_energy, dc_part));
-                dg_e.getH1F("hi_nu_dc").fill(calc_nu(beam_energy, dc_part));
-                dg_e.getH1F("hi_Xb_dc").fill(calc_Xb(C, beam_energy, dc_part));
+            // Get SIDIS variables.
+            if (pid != 11) {
+                dg[cnvs_i].getH1F("Q2").fill(calc_Q2(beam_energy, part));
+                dg[cnvs_i].getH1F("nu").fill(calc_nu(beam_energy, part));
+                dg[cnvs_i].getH1F("Xb").fill(calc_Xb(C, beam_energy, part));
             }
         }
-        // Vertex z datagroup (It doesn't make sense to select one sector for phi angle analysis.)
-        dg_vz.getH2F("hi_vz_phi_dc").fill(dc_part.vz(), Math.toDegrees(dc_part.phi()));
-
-        // Vertex z per sector datagroup.
-        dg_vzsector.getH1F("hi_vz_dc_sec"+sector).fill(dc_part.vz());
-
-        // === PROCESS FMT TRACKS ==================================================================
-        if (fmt_tracks == null) continue;
-        Particle fmt_part = new Particle(pid, fmt_tracks.getFloat("p0_x",   index),
-                                              fmt_tracks.getFloat("p0_y",   index),
-                                              fmt_tracks.getFloat("p0_z",   index),
-                                              fmt_tracks.getFloat("Vtx0_x", index),
-                                              fmt_tracks.getFloat("Vtx0_y", index),
-                                              fmt_tracks.getFloat("Vtx0_z", index));
-        double fchi2 = fmt_tracks.getFloat("chi2", index);
-        int nmeas    = fmt_tracks.getInt("NDF", index);
-
-        // Apply FMT cuts.
-        if (nmeas != 3) continue; // only use track which pass through the three FMT layers.
-        if (fmt_tracks.rows() < 1) continue; // abandon all hope if there are no FMT tracks.
-
-        n_FMT_tracks++;
-        if (sector == 1) { // NOTE: No beam alignment yet, so we only use one sector for now.
-            // Vertex z datagroup.
-            dg_vz.getH1F("hi_vz_fmt")      .fill(fmt_part.vz());
-            dg_vz.getH2F("hi_vz_theta_fmt").fill(fmt_part.vz(), Math.toDegrees(fmt_part.theta()));
-
-            // Vertex momentum datagroup.
-            double fmt_beta = beta; // TODO. Figure out how to calculate beta from FMT data.
-            dg_vp.getH1F("hi_vp_fmt").fill(fmt_part.p());
-            dg_vp.getH1F("hi_vbeta_fmt").fill(fmt_beta);
-            dg_vp.getH2F("hi_vp_vbeta_fmt").fill(fmt_part.p(), fmt_beta);
-
-            // Energy datagroup.
-            dg_E.getH2F("hi_Ep_fmt").fill(fmt_part.p(), fmt_part.e());
-            // TODO. PENDING:
-            // dg_E.getH2F("hi_Ep_pcal_dc").fill()
-            // if (!electron) { // TOF difference.
-            //
-            // }
-
-            // Get electron variables.
-            if (electron) {
-                dg_e.getH1F("hi_Q2_fmt").fill(calc_Q2(beam_energy, fmt_part));
-                dg_e.getH1F("hi_nu_fmt").fill(calc_nu(beam_energy, fmt_part));
-                dg_e.getH1F("hi_Xb_fmt").fill(calc_Xb(C, beam_energy, fmt_part));
-            }
-        }
-        // Vertex z datagroup (It doesn't make sense to select one sector for phi angle analysis.)
-        dg_vz.getH2F("hi_vz_phi_fmt")  .fill(fmt_part.vz(), Math.toDegrees(fmt_part.phi()));
-
-        // Vertex z sector datagroup.
-        dg_vzsector.getH1F("hi_vz_fmt_sec"+sector).fill(fmt_part.vz());
 	}
 }
 reader.close();
@@ -227,30 +173,20 @@ System.out.printf("%% of lost tracks: %5.2f%% (%d/%d)\n",
         100*((n_DC_tracks - n_FMT_tracks) / (double) n_DC_tracks),
         n_DC_tracks - n_FMT_tracks, n_DC_tracks);
 
-// Fit vertex z.
-fit_upstream(dg_vz.getH1F("hi_vz_dc"),  dg_vz.getF1D("fit_vz_dc"),  -36, -30);
-fit_upstream(dg_vz.getH1F("hi_vz_fmt"), dg_vz.getF1D("fit_vz_fmt"), -36, -30);
-
 // Setup plots and draw.
-EmbeddedCanvasTabbed
-if (electron) canvas = new EmbeddedCanvasTabbed("z", "sector z", "p", "E", "e");
-else          canvas = new EmbeddedCanvasTabbed("z", "sector z", "p", "E");
+EmbeddedCanvasTabbed canvases = new EmbeddedCanvasTabbed();
+for (int cnvs_i = 0; cnvs_i < dg.length; ++cnvs_i) {
+    // Apply fits.
+    fit_upstream(dg[cnvs_i].getH1F("vz"), dg[cnvs_i].getF1D("fit_vz"), -36, -30);
 
-setup_canvas(canvas, "z",        dg_vz);
-setup_canvas(canvas, "sector z", dg_vzsector);
-setup_canvas(canvas, "p",        dg_vp);
-setup_canvas(canvas, "E",        dg_E);
-if (electron) setup_canvas(canvas, "e", dg_e)
-
-// NOTE. I should figure out how to better display beta and momentum vs beta.
-canvas.getCanvas("p").cd(0).getPad(1).getAxisY().setLog(true);
-canvas.getCanvas("p").cd(0).getPad(4).getAxisY().setLog(true);
-// canvas.getCanvas("p").cd(0).getPad(2).getAxisY().setLog(true);
-// canvas.getCanvas("p").cd(0).getPad(5).getAxisY().setLog(true);
+    canvases.addCanvas(names[cnvs_i]);
+    setup_canvas(canvases, names[cnvs_i], dg[cnvs_i]);
+    canvases.getCanvas(names[cnvs_i]).cd(0).getPad(C.POS_P).getAxisY().setLog(true);
+}
 
 JFrame frame = new JFrame("Acceptance Study Results");
 frame.setSize(1500, 1000);
-frame.add(canvas);
+frame.add(canvases);
 frame.setLocationRelativeTo(null);
 frame.setVisible(true);
 
@@ -259,15 +195,15 @@ public final class IO_handler {
     // No global static classes are allowed in java so this is the closest second...
     private IO_handler() {}
 
-    private static char[] argnames = ['n', 'c'];
+    private static char[] argnames = ['n', 'd'];
     static Map<String, Character> argmap;
 
     /* Associate char-indexed args with String-indexed args. */
     private static int initialize_argmap() {
         argmap = new HashMap<>();
         for (argname in argnames) {
-            if      (argname == 'n') argmap.put("--nevents", 'n');
-            else if (argname == 'c') argmap.put("--cut",     'c');
+            if      (argname == 'n') argmap.put("--nevents",  'n');
+            else if (argname == 'd') argmap.put("--detector", 'd');
             else {
                 System.err.printf("Silly programmer, you forgot to associate all single ");
                 System.err.printf("char-indexed args to String-indexed args. Fix this in ");
@@ -280,7 +216,7 @@ public final class IO_handler {
 
     /* Print usage to stdout and exit. */
     public static int usage() {
-        System.out.printf("Usage: acceptance [-n --nevents] [-c --cut] <inputfile>\n");
+        System.out.printf("Usage: acceptance [-n --nevents] [-d --detector] <inputfile>\n");
         System.out.printf("You dun goofed mate.\n"); // TODO.
         return 1;
     }
@@ -331,7 +267,10 @@ public final class IO_handler {
         if (params.get('n') != null) {
             try {Integer.parseInt(params.get('n'));}
             catch (NumberFormatException e) {return usage();}
-            // NOTE: c could be checked with Regex, but I'm too lazy to implement that.
+        }
+        if (params.get('d' != null)) {
+            String detector = params.get('d').toLowerCase();
+            if (!detector.equals("dc") && !detector.equals("fmt")) return usage();
         }
 
         return 0;
@@ -346,6 +285,24 @@ public final class IO_handler {
 }
 /* Repository of constants. */
 public class Constants {
+    // Canvas positions --- using names instead of arrays to minimize confusion.
+    int POS_VZ        = 0;
+    int POS_VZ_THETA  = 1;
+    int POS_VZ_PHI    = 2;
+    int POS_P         = 6;
+    int POS_BETA      = 7;
+    int POS_P_BETA    = 8;
+
+    int POS_P_E      = 12;
+    int POS_DTOF     = 13;
+    int POS_P_E_PCAL = 18;
+    int POS_P_DTOF   = 19;
+
+    int POS_Q2 = 15;
+    int POS_NU = 16;
+    int POS_XB = 17;
+
+    // Masses.
     double PIMASS  = 0.139570; // Pion mass.
     double PRTMASS = 0.938272; // Proton mass.
     double NTRMASS = 0.939565; // Neutron mass.
@@ -403,73 +360,59 @@ public class Constants {
         // FMT_Z[0]=260.505; FMT_Z[1]=269.891; FMT_Z[2]=282.791;
     }
 }
-DataGroup gen_dg_vz(Constants C) {
-    DataGroup dg = new DataGroup(3,2);
-
+public DataGroup gen_dg(Constants C, int pid) {
+    // TODO. Standardize histograms name string.
+    DataGroup dg = new DataGroup(6,4);
+    gen_dg_vz   (dg, C);      // Vertex z.
+    gen_dg_vp   (dg, C, pid); // Vertex p and beta.
+    gen_dg_E    (dg, C);      // All E and TOF stuff.
+    gen_dg_sidis(dg, C);      // SIDIS variables.
+    return dg;
+}
+private int gen_dg_vz(DataGroup dg, Constants C) {
     // 1D vz.
-    H1F hi_vz_dc  = new H1F("hi_vz_dc",  "DC vz (cm)" , "Counts", 500, -50, 50);
-    hi_vz_dc.setFillColor(43);
-    dg.addDataSet(hi_vz_dc,  0);
-    H1F hi_vz_fmt = new H1F("hi_vz_fmt", "FMT vz (cm)", "Counts", 500, -50, 50);
-    hi_vz_fmt.setFillColor(44);
-    dg.addDataSet(hi_vz_fmt, 3);
+    H1F hi_vz  = new H1F("vz", "vz (cm)" , "Counts", 500, -50, 50);
+    hi_vz.setFillColor(43);
+    dg.addDataSet(hi_vz, C.POS_VZ);
 
-    // Upstream fit for DC and FMT tracks.
-    F1D f_vz_dc = new F1D("fit_vz_dc",
+    // Upstream fit for tracks.
+    F1D f_vz = new F1D("fit_vz",
             "[amp1]*gaus(x,[mean],[sigma])+[amp2]*gaus(x,[mean]-2.4,[sigma])+[p0]+[p1]*x+[p2]*x*x",
             -50, 50);
-    f_vz_dc.setLineWidth(2);
-    f_vz_dc.setLineColor(2);
-    f_vz_dc.setOptStat("1111");
-    dg.addDataSet(f_vz_dc, 0);
-
-    F1D f_vz_fmt = new F1D("fit_vz_fmt",
-            "[amp1]*gaus(x,[mean],[sigma])+[amp2]*gaus(x,[mean]-2.4,[sigma])+[p0]+[p1]*x+[p2]*x*x",
-            -50, 50);
-    f_vz_fmt.setLineWidth(2);
-    f_vz_fmt.setLineColor(2);
-    f_vz_fmt.setOptStat("1111");
-    dg.addDataSet(f_vz_fmt, 3);
+    f_vz.setLineWidth(2);
+    f_vz.setLineColor(2);
+    f_vz.setOptStat("1111");
+    dg.addDataSet(f_vz, C.POS_VZ);
 
     // 2D vz vs theta.
-    H2F hi_vz_theta_dc  = new H2F("hi_vz_theta_dc", 200, -50, 50, 100, 0, 40);
-    hi_vz_theta_dc .setTitleX("DC vz (cm)");
-    hi_vz_theta_dc .setTitleY("#theta (deg)");
-    dg.addDataSet(hi_vz_theta_dc,  1);
-    H2F hi_vz_theta_fmt = new H2F("hi_vz_theta_fmt", 200, -50, 50, 100, 0, 40);
-    hi_vz_theta_fmt.setTitleX("FMT vz (cm)");
-    hi_vz_theta_fmt.setTitleY("#theta (deg)");
-    dg.addDataSet(hi_vz_theta_fmt, 4);
+    H2F hi_vz_theta = new H2F("vz_theta", 200, -50, 50, 100, 0, 40);
+    hi_vz_theta.setTitleX("vz (cm)");
+    hi_vz_theta.setTitleY("#theta (deg)");
+    dg.addDataSet(hi_vz_theta, C.POS_VZ_THETA);
 
     // Draw lines showing FMT acceptance.
-    F1D ftheta1 = new F1D("ftheta","57.29*atan([r]/([z0]-x))",  -50, 20.5);
+    F1D ftheta1 = new F1D("ftheta1","57.29*atan([r]/([z0]-x))", -50, 20.5);
     ftheta1.setParameter(0, C.FMT_RMIN/10);
     ftheta1.setParameter(1, (C.FMT_Z[0]+C.FMT_DZ[0])/10);
     ftheta1.setLineColor(2);
     ftheta1.setLineWidth(2);
-    dg.addDataSet(ftheta1, 1);
-    dg.addDataSet(ftheta1, 4);
+    dg.addDataSet(ftheta1, C.POS_VZ_THETA);
     F1D ftheta2 = new F1D("ftheta2","57.29*atan([r]/([z0]-x))", -50, 3);
     ftheta2.setParameter(0, C.FMT_RMAX/10);
     ftheta2.setParameter(1, (C.FMT_Z[0]+C.FMT_DZ[0])/10);
     ftheta2.setLineColor(2);
     ftheta2.setLineWidth(2);
-    dg.addDataSet(ftheta2, 1);
-    dg.addDataSet(ftheta2, 4);
+    dg.addDataSet(ftheta2, C.POS_VZ_THETA);
 
     // 2D vz vs phi angle.
-    H2F hi_vz_phi_dc  = new H2F("hi_vz_phi_dc",  200, -50, 50, 100, -180, 180);
-    hi_vz_phi_dc.setTitleX ("DC vz (cm)");
-    hi_vz_phi_dc.setTitleY ("#phi (deg)");
-    dg.addDataSet(hi_vz_phi_dc,  2);
-    H2F hi_vz_phi_fmt = new H2F("hi_vz_phi_fmt", 200, -50, 50, 100, -180, 180);
-    hi_vz_phi_fmt.setTitleX("FMT vz (cm)");
-    hi_vz_phi_fmt.setTitleY("#phi (deg)");
-    dg.addDataSet(hi_vz_phi_fmt, 5);
+    H2F hi_vz_phi = new H2F("vz_phi", 200, -50, 50, 100, -180, 180);
+    hi_vz_phi.setTitleX ("vz (cm)");
+    hi_vz_phi.setTitleY ("#phi (deg)");
+    dg.addDataSet(hi_vz_phi, C.POS_VZ_PHI);
 
-    return dg;
+    return 0;
 }
-DataGroup gen_dg_vzsector() {
+private int gen_dg_vzsector() { // NOTE. Unused, obsolete.
     DataGroup dg = new DataGroup(3,2);
     String xax = "z (cm) - sector ";
     String yax = "Counts";
@@ -482,135 +425,80 @@ DataGroup gen_dg_vzsector() {
         dg.addDataSet(hi_vz_fmt, sec-1);
         // NOTE: Maybe add a fit for DC and for FMT for each sector?
     }
-    return dg;
+    return 0;
 }
-DataGroup gen_dg_vp(Constants C, int pid) {
-    DataGroup dg = new DataGroup(3,2);
-
+private int gen_dg_vp(DataGroup dg, Constants C, int pid) {
     // Momentum distribution.
-    String xax = "p (GeV)";
-    String yax = "Counts";
-    H1F hi_vp_dc  = new H1F("hi_vp_dc",  "DC  " + xax, yax, 100, 0, 12);
-    hi_vp_dc .setFillColor(43);
-    dg.addDataSet(hi_vp_dc,  0);
-    H1F hi_vp_fmt = new H1F("hi_vp_fmt", "FMT " + xax, yax, 100, 0, 12);
-    hi_vp_fmt.setFillColor(44);
-    dg.addDataSet(hi_vp_fmt, 3);
+    H1F hi_p = new H1F("p", "p (GeV)", "Counts", 100, 0, 12);
+    hi_p.setFillColor(44);
+    dg.addDataSet(hi_p, C.POS_P);
 
     // Beta distribution:
-    xax = "#beta";
-    yax = "Counts";
-    H1F hi_vbeta_dc  = new H1F("hi_vbeta_dc",  "DC  " + xax, yax, 500, 0.9, 1);
-    hi_vbeta_dc .setFillColor(43);
-    dg.addDataSet(hi_vbeta_dc,  1);
-    H1F hi_vbeta_fmt = new H1F("hi_vbeta_fmt", "FMT " + xax, yax, 500, 0.9, 1);
-    hi_vbeta_fmt.setFillColor(44);
-    dg.addDataSet(hi_vbeta_fmt, 4);
+    H1F hi_beta = new H1F("beta", "#beta", "Counts", 500, 0.9, 1);
+    hi_beta.setFillColor(44);
+    dg.addDataSet(hi_beta, C.POS_BETA);
 
     // Momentum vs Beta:
-    xax = "p (GeV)";
-    yax = "#beta";
-    H2F hi_vp_vbeta_dc  = new H2F("hi_vp_vbeta_dc",  200, 0, 1, 200, 0.9, 1);
-    hi_vp_vbeta_dc.setTitleX ("DC  " + xax);
-    hi_vp_vbeta_dc.setTitleY (yax);
-    dg.addDataSet(hi_vp_vbeta_dc,  2);
-    H2F hi_vp_vbeta_fmt = new H2F("hi_vp_vbeta_fmt", 200, 0, 1, 200, 0.9, 1);
-    hi_vp_vbeta_fmt.setTitleX("FMT " + xax);
-    hi_vp_vbeta_fmt.setTitleY(yax);
-    dg.addDataSet(hi_vp_vbeta_fmt, 5);
+    H2F hi_p_beta = new H2F("p_beta", 200, 0, 1, 200, 0.9, 1);
+    hi_p_beta.setTitleX("p (GeV)");
+    hi_p_beta.setTitleY("#beta");
+    dg.addDataSet(hi_p_beta,C.POS_P_BETA);
 
-    // Draw line with theoretical curve. // TODO. FIX.
+    // Draw theoretical curve. // TODO. FIX.
     Double mass = C.PIDMASS.get(pid);
     if (mass != null) {
         F1D fp = new F1D("fp", "[0]*x/sqrt(1-x)", 0, 1);
         fp.setParameter(0, mass);
         fp.setLineColor(2);
         fp.setLineWidth(2);
-        dg.addDataSet(fp, 2);
-        dg.addDataSet(fp, 5);
+        dg.addDataSet(fp,C.POS_P_BETA);
     }
 
-    return dg;
+    return 0;
 }
-DataGroup gen_dg_E(Constants C, int pid) {
-    DataGroup dg = new DataGroup(4,2);
-
+private int gen_dg_E(DataGroup dg, Constants C) {
     // Energy vs Momentum distribution.
-    xax = "p (GeV)";
-    yax = "E (GeV)";
-    H2F hi_Ep_dc  = new H2F("hi_Ep_dc",  200, 0, 12, 200, 0, 12);
-    hi_Ep_dc.setTitleX ("DC  " + xax);
-    hi_Ep_dc.setTitleY (yax);
-    dg.addDataSet(hi_Ep_dc,  0);
-    H2F hi_Ep_fmt = new H2F("hi_Ep_fmt", 200, 0, 12, 200, 0, 12);
-    hi_Ep_fmt.setTitleX("FMT " + xax);
-    hi_Ep_fmt.setTitleY(yax);
-    dg.addDataSet(hi_Ep_fmt, 4);
+    H2F hi_p_E = new H2F("p_E", 200, 0, 12, 200, 0, 12);
+    hi_p_E.setTitleX("p (GeV)");
+    hi_p_E.setTitleY("E (GeV)");
+    dg.addDataSet(hi_p_E, C.POS_P_E);
 
     // Energy vs Momentum for PCAL.
-    xax = "PCAL - p (GeV)";
-    yax = "PCAL - E (GeV)";
-    H2F hi_Ep_pcal_dc  = new H2F("hi_Ep_pcal_dc",  200, 0, 12, 200, 0, 12);
-    hi_Ep_pcal_dc.setTitleX ("DC  " + xax);
-    hi_Ep_pcal_dc.setTitleY (yax);
-    dg.addDataSet(hi_Ep_pcal_dc,  1);
-    H2F hi_Ep_pcal_fmt = new H2F("hi_Ep_pcal_fmt", 200, 0, 12, 200, 0, 12);
-    hi_Ep_pcal_fmt.setTitleX("FMT " + xax);
-    hi_Ep_pcal_fmt.setTitleY(yax);
-    dg.addDataSet(hi_Ep_pcal_fmt, 5);
+    H2F hi_p_E_pcal = new H2F("p_E_pcal", 200, 0, 12, 200, 0, 12);
+    hi_p_E_pcal.setTitleX("PCAL - p (GeV)");
+    hi_p_E_pcal.setTitleY("PCAL - E (GeV)");
+    dg.addDataSet(hi_p_E_pcal,C.POS_P_E_PCAL);
 
-    // TOF distribution - only for !electron.
-    String xax = "TOF difference (ns)";
-    String yax = "Counts";
-    H1F hi_tof_dc  = new H1F("hi_tof_dc",  "DC  " + xax, yax, 100, 0, 1000);
-    hi_tof_dc.setFillColor(43);
-    dg.addDataSet(hi_tof_dc,  2);
-    H1F hi_tof_fmt = new H1F("hi_tof_fmt", "FMT " + xax, yax, 100, 0, 1000);
-    hi_tof_fmt.setFillColor(44);
-    dg.addDataSet(hi_tof_fmt, 6);
+    // TOF distribution.
+    H1F hi_dtof = new H1F("dtof", "TOF difference (ns)", "Counts", 100, 0, 1000);
+    hi_dtof.setFillColor(43);
+    dg.addDataSet(hi_dtof,C.POS_DTOF);
 
-    // TOF vs momentum - only for !electron.
-    xax = "p (GeV)";
-    yax = "TOF difference (ns)";
-    H2F hi_ptof_dc  = new H2F("hi_ptof_dc",  200, 0, 12, 200, 0, 12);
-    hi_ptof_dc.setTitleX ("DC  " + xax);
-    hi_ptof_dc.setTitleY (yax);
-    dg.addDataSet(hi_ptof_dc,  3);
-    H2F hi_ptof_fmt = new H2F("hi_ptof_fmt", 200, 0, 12, 200, 0, 12);
-    hi_ptof_fmt.setTitleX("FMT " + xax);
-    hi_ptof_fmt.setTitleY(yax);
-    dg.addDataSet(hi_ptof_fmt, 7);
+    // TOF vs momentum.
+    H2F hi_p_dtof = new H2F("p_dtof", 200, 0, 12, 200, 0, 12);
+    hi_p_dtof.setTitleX("p (GeV)");
+    hi_p_dtof.setTitleY("TOF difference (ns)");
+    dg.addDataSet(hi_p_dtof,C.POS_P_DTOF);
 
-    return dg;
+    return 0;
 }
-DataGroup gen_dg_e() {
-    DataGroup dg = new DataGroup(3,2);
-
+private int gen_dg_sidis(DataGroup dg, Constants C) {
     // Q2.
-    H1F hi_Q2_dc  = new H1F("hi_Q2_dc",  "Q^2 (GeV^2)", "Counts", 22, 0, 12);
-    hi_Q2_dc.setFillColor(43);
-    dg.addDataSet(hi_Q2_dc,  0);
-    H1F hi_Q2_fmt = new H1F("hi_Q2_fmt", "Q^2 (GeV^2)", "Counts", 22, 0, 12);
-    hi_Q2_fmt.setFillColor(44);
-    dg.addDataSet(hi_Q2_fmt, 3);
+    H1F hi_Q2 = new H1F("Q2", "Q^2 (GeV^2)", "Counts", 22, 0, 12);
+    hi_Q2.setFillColor(43);
+    dg.addDataSet(hi_Q2,C.POS_Q2);
 
     // nu
-    H1F hi_nu_dc  = new H1F("hi_nu_dc",  "#nu (GeV)", "Counts", 22, 0, 12);
-    hi_nu_dc.setFillColor(43);
-    dg.addDataSet(hi_nu_dc,  1);
-    H1F hi_nu_fmt = new H1F("hi_nu_fmt", "#nu (GeV^2)", "Counts", 22, 0, 12);
-    hi_nu_fmt.setFillColor(44);
-    dg.addDataSet(hi_nu_fmt, 4);
+    H1F hi_nu = new H1F("nu", "#nu (GeV)", "Counts", 22, 0, 12);
+    hi_nu.setFillColor(43);
+    dg.addDataSet(hi_nu,C.POS_NU);
 
     // X_bjorken
-    H1F hi_Xb_dc  = new H1F("hi_Xb_dc",  "Xb (GeV^2)", "Counts", 20, 0, 2);
-    hi_Xb_dc.setFillColor(43);
-    dg.addDataSet(hi_Xb_dc,  2);
-    H1F hi_Xb_fmt = new H1F("hi_Xb_fmt", "Xb (GeV^2)", "Counts", 20, 0, 2);
-    hi_Xb_fmt.setFillColor(44);
-    dg.addDataSet(hi_Xb_fmt, 5);
+    H1F hi_Xb = new H1F("Xb", "Xb (GeV^2)", "Counts", 20, 0, 2);
+    hi_Xb.setFillColor(43);
+    dg.addDataSet(hi_Xb,C.POS_XB);
 
-    return dg;
+    return 0;
 }
 public static double calc_Q2(double beam_e, Particle p) {
     return 4 * beam_e * p.p() * Math.sin(p.theta()/2)**2;
