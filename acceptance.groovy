@@ -42,12 +42,12 @@ switch (IO_handler.get_runno(infile)) { // TODO. Move to Constants I guess.
 // Initial setup.
 setup_groot();
 Constants C = new Constants();
-String[] names = new String[5];  DataGroup[] dg = new DataGroup[5]; boolean[] hists = new boolean[5];
-names[0] = "e";                  dg[0] = gen_dg(C,  11);            hists[0] = false;
-names[1] = "pi+";                dg[1] = gen_dg(C, 211);            hists[1] = false;
-names[2] = "pi-";                dg[2] = gen_dg(C,-211);            hists[2] = false;
-names[3] = "negative";           dg[3] = gen_dg(C,   0);            hists[3] = false;
-names[4] = "positive";           dg[4] = gen_dg(C,   0);            hists[4] = false;
+String[] names = new String[5];  DataGroup[] dg = new DataGroup[5];
+names[0] = "e";                  dg[0] = gen_dg(C,  11);
+names[1] = "pi+";                dg[1] = gen_dg(C, 211);
+names[2] = "pi-";                dg[2] = gen_dg(C,-211);
+names[3] = "negative";           dg[3] = gen_dg(C,   0);
+names[4] = "positive";           dg[4] = gen_dg(C,   0);
 
 // Loop through events.
 int i_event      = -1;
@@ -126,11 +126,12 @@ while (reader.hasEvent() && i_event < n_events) {
         }
 
         // Check which histograms to fill.
-        if (pid ==  11)  hists[0] = true;
-        if (pid == 211)  hists[1] = true;
-        if (pid == -211) hists[2] = true;
-        if (charge < 0)  hists[3] = true;
-        if (charge > 0)  hists[4] = true;
+        boolean[] hists = new boolean[5];
+        hists[0] = pid ==   11 ? true : false;
+        hists[1] = pid ==  211 ? true : false;
+        hists[2] = pid == -211 ? true : false;
+        hists[3] = charge < 0  ? true : false;
+        hists[4] = charge > 0  ? true : false;
 
         // === PROCESS DC TRACKS ===================================================================
         // Ignore particles too far from the beamline.
@@ -174,7 +175,7 @@ System.out.printf("%% of lost tracks: %5.2f%% (%d/%d)\n",
         n_DC_tracks - n_FMT_tracks, n_DC_tracks);
 
 // Setup plots and draw.
-EmbeddedCanvasTabbed canvases = new EmbeddedCanvasTabbed();
+EmbeddedCanvasTabbed canvases = new EmbeddedCanvasTabbed(false);
 for (int cnvs_i = 0; cnvs_i < dg.length; ++cnvs_i) {
     // Apply fits.
     fit_upstream(dg[cnvs_i].getH1F("vz"), dg[cnvs_i].getF1D("fit_vz"), -36, -30);
@@ -545,7 +546,7 @@ public static int setup_canvas(EmbeddedCanvasTabbed canvas, String name, DataGro
     canvas.getCanvas(name).draw(tab);
     canvas.getCanvas(name).setGridX(false);
     canvas.getCanvas(name).setGridY(false);
-    canvas.getCanvas(name).setAxisFontSize(18);
-    canvas.getCanvas(name).setAxisTitleSize(24);
+    canvas.getCanvas(name).setAxisFontSize(16);
+    canvas.getCanvas(name).setAxisTitleSize(16);
     return 0;
 }
