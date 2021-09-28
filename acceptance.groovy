@@ -69,13 +69,29 @@ while (reader.hasEvent() && i_event < n_events) {
     DataBank rec_track  = null;
     DataBank rec_traj   = null;
     DataBank fmt_tracks = null;
-    if (event.hasBank("REC::Particle")) rec_part   = event.getBank("REC::Particle");
-    if (event.hasBank("REC::Track"))    rec_track  = event.getBank("REC::Track");
-    if (event.hasBank("REC::Traj"))     rec_traj   = event.getBank("REC::Traj");
-    if (event.hasBank("FMT::Tracks"))   fmt_tracks = event.getBank("FMT::Tracks");
+    DataBank rec_ecal   = null;
+    DataBank rec_tof    = null;
+    if (event.hasBank("REC::Particle"))     rec_part   = event.getBank("REC::Particle");
+    if (event.hasBank("REC::Track"))        rec_track  = event.getBank("REC::Track");
+    if (event.hasBank("REC::Traj"))         rec_traj   = event.getBank("REC::Traj");
+    if (event.hasBank("REC::Calorimeter"))  rec_ecal   = event.getBank("REC::Calorimeter");
+    if (event.hasBank("REC::Scintillator")) rec_tof    = event.getBank("REC::Scintillator");
+    if (event.hasBank("FMT::Tracks"))       fmt_tracks = event.getBank("FMT::Tracks");
 
     // Ignore events that don't have the minimum required banks.
     if (rec_part==null || rec_track==null || rec_traj==null) continue;
+
+    // We assume that the first particle in the particle bank is the elctron.
+    // TODO. Confirm this with Raffaella with urgency.
+    int e_pindex = rec_track.getShort("pindex", 0);
+
+    double e_tof = Double.POSITIVE_INFINITY;
+    if (rec_tof != null) {
+        for (int hi = 0; hi < rec_tof.rows(); ++hi) {
+            if (rec_tof.getShort("pindex", hi) == e_pindex && rec_tof.getFloat("time", hi) < e_tof)
+                e_tof = rec_tof.getFloat("time", hi);
+        }
+    }
 
     // Loop through trajectory points.
     for (int loop = 0; loop < rec_track.rows(); loop++) {
@@ -101,6 +117,7 @@ while (reader.hasEvent() && i_event < n_events) {
         n_DC_tracks++; // Count DC tracks.
 
         // === PROCESS TRACKS ======================================================================
+        // Get reconstructed particle.
         Particle part;
         if (!FMT) {
             part = new Particle(pid, rec_part.getFloat("px", pindex),
@@ -123,6 +140,21 @@ while (reader.hasEvent() && i_event < n_events) {
                                      fmt_tracks.getFloat("Vtx0_x", index),
                                      fmt_tracks.getFloat("Vtx0_y", index),
                                      fmt_tracks.getFloat("Vtx0_z", index));
+        }
+        // Get data from other detectors.
+        double pcal_E = 0; // ECAL total deposited energy.
+        if (rec_ecal != null) {
+            for (int hi = 0; hi < rec_ecal.rows(); ++hi) {
+                if (rec_ecal.getShort("pindex", hi) == pindex)
+                    pcal_E += rec_ecal.getFloat("energy", hi);
+            }
+        }
+        double tof = Double.POSITIVE_INFINITY;
+        if (rec_tof != null) {
+            for (int hi = 0; hi < rec_tof.rows(); ++hi) {
+                if (rec_tof.getShort("pindex", hi) == pindex && rec_tof.getFloat("time", hi) < tof)
+                    tof = rec_tof.getFloat("time", hi);
+            }
         }
 
         // Check which histograms to fill.
@@ -154,9 +186,14 @@ while (reader.hasEvent() && i_event < n_events) {
 
             // Energy datagroup.
             dg[cnvs_i].getH2F("p_E").fill(part.p(), part.e());
-            // TODO. PENDING:
-            // dg_E.getH2F("hi_Ep_pcal_dc").fill()
-            // TOF difference.
+            dg[cnvs_i].getH2F("p_E_pcal").fill(part.p(), pcal_E);
+
+            // TOF difference. TODO. Check TOF resolution.
+            double dtof = tof - e_tof;
+            if (!Double.isNaN(dtof)) {
+                dg[cnvs_i].getH1F("dtof").fill(dtof);
+                dg[cnvs_i].getH2F("p_dtof").fill(part.p(), dtof);
+            }
 
             // Get SIDIS variables.
             if (pid != 11) {
@@ -202,7 +239,7 @@ public final class IO_handler {
     /* Associate char-indexed args with String-indexed args. */
     private static int initialize_argmap() {
         argmap = new HashMap<>();
-        for (argname in argnames) {
+        for (char argname in argnames) {
             if      (argname == 'n') argmap.put("--nevents",  'n');
             else if (argname == 'd') argmap.put("--detector", 'd');
             else {
@@ -471,7 +508,7 @@ private int gen_dg_E(DataGroup dg, Constants C) {
     dg.addDataSet(hi_p_E_pcal,C.POS_P_E_PCAL);
 
     // TOF distribution.
-    H1F hi_dtof = new H1F("dtof", "TOF difference (ns)", "Counts", 100, 0, 1000);
+    H1F hi_dtof = new H1F("dtof", "TOF difference (ns)", "Counts", 100, 0, 50);
     hi_dtof.setFillColor(43);
     dg.addDataSet(hi_dtof,C.POS_DTOF);
 
