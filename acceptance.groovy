@@ -40,14 +40,16 @@ switch (IO_handler.get_runno(infile)) { // TODO. Move to Constants I guess.
 }
 
 // Initial setup.
+// NOTE. names and DataGroups should be kept in a struct (or object...).
 setup_groot();
 Constants C = new Constants();
-String[] names = new String[5];  DataGroup[] dg = new DataGroup[5];
-names[0] = "e";                  dg[0] = gen_dg(C,  11);
-names[1] = "pi+";                dg[1] = gen_dg(C, 211);
-names[2] = "pi-";                dg[2] = gen_dg(C,-211);
-names[3] = "negative";           dg[3] = gen_dg(C,   0);
-names[4] = "positive";           dg[4] = gen_dg(C,   0);
+String[] names = new String[C.N_CNVS]; DataGroup[] dg = new DataGroup[C.N_CNVS];
+names[0] = "e";                        dg[0] = gen_dg(C,  11);
+names[1] = "pi+";                      dg[1] = gen_dg(C, 211);
+names[2] = "pi-";                      dg[2] = gen_dg(C,-211);
+names[3] = "negative";                 dg[3] = gen_dg(C,   0);
+names[4] = "positive";                 dg[4] = gen_dg(C,   0);
+names[5] = "all particles";            dg[5] = gen_dg(C,   0);
 
 // Loop through events.
 int i_event      = -1;
@@ -157,13 +159,14 @@ while (reader.hasEvent() && i_event < n_events) {
             }
         }
 
-        // Check which histograms to fill.
-        boolean[] hists = new boolean[5];
+        // Check which histograms to fill. NOTE. These cuts shouldn't be hardcoded.
+        boolean[] hists = new boolean[6];
         hists[0] = pid ==   11 ? true : false;
         hists[1] = pid ==  211 ? true : false;
         hists[2] = pid == -211 ? true : false;
         hists[3] = charge < 0  ? true : false;
         hists[4] = charge > 0  ? true : false;
+        hists[5] = true;
 
         // === PROCESS DC TRACKS ===================================================================
         // Ignore particles too far from the beamline.
@@ -323,6 +326,9 @@ public final class IO_handler {
 }
 /* Repository of constants. */
 public class Constants {
+    // Generic constants.
+    int N_CNVS        = 6;
+
     // Canvas positions --- using names instead of arrays to minimize confusion.
     int POS_VZ        = 0;
     int POS_VZ_THETA  = 1;
@@ -399,7 +405,6 @@ public class Constants {
     }
 }
 public DataGroup gen_dg(Constants C, int pid) {
-    // TODO. Standardize histograms name string.
     DataGroup dg = new DataGroup(6,4);
     gen_dg_vz   (dg, C);      // Vertex z.
     gen_dg_vp   (dg, C, pid); // Vertex p and beta.
