@@ -199,7 +199,7 @@ while (reader.hasEvent() && i_event < n_events) {
             }
 
             // Get SIDIS variables.
-            if (pid != 11) {
+            if (pid == 11) {
                 dg[cnvs_i].getH1F("Q2").fill(calc_Q2(beam_energy, part));
                 dg[cnvs_i].getH1F("nu").fill(calc_nu(beam_energy, part));
                 dg[cnvs_i].getH1F("Xb").fill(calc_Xb(C, beam_energy, part));
