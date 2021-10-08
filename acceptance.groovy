@@ -144,11 +144,18 @@ while (reader.hasEvent() && i_event < n_events) {
                                      fmt_tracks.getFloat("Vtx0_z", index));
         }
         // Get data from other detectors.
-        double pcal_E = 0; // ECAL total deposited energy.
+        double pcal_E = 0;    // PCAL total deposited energy.
+        double ecin_E = 0; // EC inner total deposited energy.
+        double ecou_E = 0; // EC outer total deposited energy.
         if (rec_ecal != null) {
             for (int hi = 0; hi < rec_ecal.rows(); ++hi) {
-                if (rec_ecal.getShort("pindex", hi) == pindex)
-                    pcal_E += rec_ecal.getFloat("energy", hi);
+                if (rec_ecal.getShort("pindex", hi) == pindex) {
+                    int lyr = (int) rec_ecal.getByte("layer", hi);
+                    if      (lyr == C.PCAL_LYR) pcal_E += rec_ecal.getFloat("energy", hi);
+                    else if (lyr == C.ECIN_LYR) ecin_E += rec_ecal.getFloat("energy", hi);
+                    else if (lyr == C.ECOU_LYR) ecou_E += rec_ecal.getFloat("energy", hi);
+                    else System.out.printf("This shouldn't happen...?\n");
+                }
             }
         }
         double tof = Double.POSITIVE_INFINITY;
@@ -190,6 +197,9 @@ while (reader.hasEvent() && i_event < n_events) {
             // Energy datagroup.
             dg[cnvs_i].getH2F("p_E").fill(part.p(), part.e());
             dg[cnvs_i].getH2F("p_E_pcal").fill(part.p(), pcal_E);
+            dg[cnvs_i].getH2F("p_E_ecin").fill(part.p(), ecin_E);
+            dg[cnvs_i].getH2F("p_E_ecou").fill(part.p(), ecou_E);
+
 
             // TOF difference. TODO. Check TOF resolution.
             double dtof = tof - e_tof;
@@ -337,10 +347,12 @@ public class Constants {
     int POS_BETA      = 7;
     int POS_P_BETA    = 8;
 
-    int POS_P_E      = 12;
-    int POS_DTOF     = 13;
-    int POS_P_E_PCAL = 18;
-    int POS_P_DTOF   = 19;
+    int POS_P_E       = 12;
+    int POS_DTOF      = 13;
+    int POS_P_DTOF    = 14;
+    int POS_P_E_PCAL  = 18;
+    int POS_P_E_ECIN  = 19;
+    int POS_P_E_ECOU  = 20;
 
     int POS_Q2 = 15;
     int POS_NU = 16;
@@ -366,6 +378,11 @@ public class Constants {
     double[] FMT_DX;    // x shift in mm.
     double[] FMT_DY;    // y shift in mm.
     double[] FMT_DZ;    // z shift in mm.
+
+    // Other detector constants.
+    int PCAL_LYR = 1; // PCAL's layer id.
+    int ECIN_LYR = 4; // EC inner layer id.
+    int ECOU_LYR = 7; // EC outer layer id.
 
     Constants() {
         // Initialize PIDMASS hashmap.
@@ -508,9 +525,21 @@ private int gen_dg_E(DataGroup dg, Constants C) {
 
     // Energy vs Momentum for PCAL.
     H2F hi_p_E_pcal = new H2F("p_E_pcal", 200, 0, 12, 200, 0, 12);
-    hi_p_E_pcal.setTitleX("PCAL - p (GeV)");
+    hi_p_E_pcal.setTitleX("p (GeV)");
     hi_p_E_pcal.setTitleY("PCAL - E (GeV)");
     dg.addDataSet(hi_p_E_pcal,C.POS_P_E_PCAL);
+
+    // Energy vs Momentum for EC Inner.
+    H2F hi_p_E_ecin = new H2F("p_E_ecin", 200, 0, 12, 200, 0, 12);
+    hi_p_E_ecin.setTitleX("p (GeV)");
+    hi_p_E_ecin.setTitleY("ECIN - E (GeV)");
+    dg.addDataSet(hi_p_E_ecin,C.POS_P_E_ECIN);
+
+    // Energy vs Momentum for EC Outer.
+    H2F hi_p_E_ecou = new H2F("p_E_ecou", 200, 0, 12, 200, 0, 12);
+    hi_p_E_ecou.setTitleX("p (GeV)");
+    hi_p_E_ecou.setTitleY("ECOU - E (GeV)");
+    dg.addDataSet(hi_p_E_ecou,C.POS_P_E_ECOU);
 
     // TOF distribution.
     H1F hi_dtof = new H1F("dtof", "TOF difference (ns)", "Counts", 100, 0, 50);
