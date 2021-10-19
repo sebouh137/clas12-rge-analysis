@@ -1,14 +1,15 @@
-import javax.swing.JFrame;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.jlab.clas.physics.Particle;
 import org.jlab.detector.calib.utils.DatabaseConstantProvider;
 import org.jlab.groot.base.GStyle;
 import org.jlab.groot.data.H1F;
 import org.jlab.groot.data.H2F;
+import org.jlab.groot.data.IDataSet;
+import org.jlab.groot.data.TDirectory;
 import org.jlab.groot.math.F1D;
 import org.jlab.groot.fitter.DataFitter;
-import org.jlab.groot.group.DataGroup;
-import org.jlab.groot.graphics.EmbeddedCanvasTabbed;
 import org.jlab.io.base.DataBank;
 import org.jlab.io.base.DataEvent;
 import org.jlab.io.hipo.*;
@@ -35,7 +36,7 @@ switch (IO_handler.get_runno(infile)) { // TODO. Move to Constants I guess.
         beam_energy =  2.1864;
         break;
     default:
-        System.err.printf("Run number not in database. Add from clas12mon.");
+        System.err.printf("Run number not in database. Add from clas12mon.\n");
         System.exit(1);
 }
 
@@ -43,13 +44,19 @@ switch (IO_handler.get_runno(infile)) { // TODO. Move to Constants I guess.
 // NOTE. names and DataGroups should be kept in a struct (or object...).
 setup_groot();
 Constants C = new Constants();
-String[] names = new String[C.N_CNVS]; DataGroup[] dg = new DataGroup[C.N_CNVS];
-names[0] = "e";                        dg[0] = gen_dg(C,  11);
-names[1] = "pi+";                      dg[1] = gen_dg(C, 211);
-names[2] = "pi-";                      dg[2] = gen_dg(C,-211);
-names[3] = "negative";                 dg[3] = gen_dg(C,   0);
-names[4] = "positive";                 dg[4] = gen_dg(C,   0);
-names[5] = "all particles";            dg[5] = gen_dg(C,   0);
+Map<String, Map<String, Map<String, IDataSet>>> hists =
+        new HashMap<String, HashMap<String, HashMap<String, IDataSet>>>();
+
+for (int ki = 0; ki < C.K1ARR.length; ++ki) {
+    hists.put(C.K1ARR[ki], new HashMap<String, HashMap<String, IDataSet>>());
+    gen_map(C, hists.get(C.K1ARR[ki]), ki);
+}
+
+// TODO. TEMPORARY.
+double[] p1 = [ 0.25149,  0.25186,  0.24912,  0.24747,  0.24649,  0.25409];
+double[] p2 = [ 1.00000,  1.00000,  1.00000,  1.00000,  1.00000,  1.00000];
+double[] p3 = [-0.03427, -0.03771, -0.02627, -0.03163, -0.02723, -0.04000];
+double[] p4 = [ 0.00070,  0.00070,  0.00070,  0.00070,  0.00070,  0.00070];
 
 // Loop through events.
 int i_event      = -1;
@@ -113,7 +120,8 @@ while (reader.hasEvent() && i_event < n_events) {
         // Apply general cuts.
         if (status != 2) continue; // Only use particles that pass through DC and FMT.
         if (Math.abs(chi2pid) >= 3) continue; // Ignore spurious particles.
-        if (vz < -40 || vz > (C.FMT_Z[0]+C.FMT_DZ[0])/10) continue; // Geometry cut.
+        if (pid == 0) continue; // Ignore bad particles.
+        // if (vz < -40 || vz > (C.FMT_Z[0]+C.FMT_DZ[0])/10) continue; // Geometry cut.
         if (chi2/ndf >= 15) continue; // Ignore tracks with high chi2.
 
         n_DC_tracks++; // Count DC tracks.
@@ -144,13 +152,15 @@ while (reader.hasEvent() && i_event < n_events) {
                                      fmt_tracks.getFloat("Vtx0_z", index));
         }
         // Get data from other detectors.
-        double pcal_E = 0;    // PCAL total deposited energy.
+        double pcal_E = 0; // PCAL total deposited energy.
         double ecin_E = 0; // EC inner total deposited energy.
         double ecou_E = 0; // EC outer total deposited energy.
         if (rec_ecal != null) {
             for (int hi = 0; hi < rec_ecal.rows(); ++hi) {
                 if (rec_ecal.getShort("pindex", hi) == pindex) {
                     int lyr = (int) rec_ecal.getByte("layer", hi);
+                    // TODO. Add correction via sampling fraction.
+
                     if      (lyr == C.PCAL_LYR) pcal_E += rec_ecal.getFloat("energy", hi);
                     else if (lyr == C.ECIN_LYR) ecin_E += rec_ecal.getFloat("energy", hi);
                     else if (lyr == C.ECOU_LYR) ecou_E += rec_ecal.getFloat("energy", hi);
@@ -167,52 +177,73 @@ while (reader.hasEvent() && i_event < n_events) {
         }
 
         // Check which histograms to fill. NOTE. These cuts shouldn't be hardcoded.
-        boolean[] hists = new boolean[6];
-        hists[0] = pid ==   11 ? true : false;
-        hists[1] = pid ==  211 ? true : false;
-        hists[2] = pid == -211 ? true : false;
-        hists[3] = charge < 0  ? true : false;
-        hists[4] = charge > 0  ? true : false;
-        hists[5] = true;
+        Map<String, Boolean> fillMap = new HashMap<String, Boolean>();
+        fillMap.put(C.K1_E,       pid ==   11 ? true : false); // TODO. Filter to have only first e.
+        fillMap.put(C.K1_PIPLUS,  pid ==  211 ? true : false);
+        fillMap.put(C.K1_PIMINUS, pid == -211 ? true : false);
+        fillMap.put(C.K1_NEG,     charge < 0  ? true : false);
+        fillMap.put(C.K1_POS,     charge > 0  ? true : false);
+        fillMap.put(C.K1_ALL,     true);
 
         // === PROCESS DC TRACKS ===================================================================
         // Ignore particles too far from the beamline.
         if (part.vx()*part.vx() + part.vy()*part.vy() > 4) continue;
 
-        for (int cnvs_i = 0; cnvs_i < dg.length; ++cnvs_i) {
-            if (!hists[cnvs_i]) continue;
+        for (String ki : C.K1ARR) {
+            if (!fillMap.get(ki)) continue;
 
-            dg[cnvs_i].getH2F("vz_phi").fill(part.vz(), Math.toDegrees(part.phi()));
+            if (rec_ecal != null) {
+                // EC vs PCAL.
+                hists.get(ki).get(C.K2_ECAL).get(C.K3_EC_PCAL).fill(pcal_E, ecin_E + ecou_E);
+
+                // Sampling fraction (temporary).
+                for (int hi = 0; hi < rec_ecal.rows(); ++hi) {
+                    if (rec_ecal.getShort("pindex", hi) == pindex) {
+                        double E = rec_ecal.getFloat("energy", hi);
+                        double sf = p1[sector-1] * (p2[sector-1]+p3[sector-1]/E+p4[sector-1]/E**2);
+
+                        int lyr = (int) rec_ecal.getByte("layer", hi);
+                        String loc;
+                        if      (lyr == C.PCAL_LYR) loc = C.K3_SF_PCAL[sector-1];
+                        else if (lyr == C.ECIN_LYR) loc = C.K3_SF_ECIN[sector-1];
+                        else if (lyr == C.ECOU_LYR) loc = C.K3_SF_ECOU[sector-1];
+                        hists.get(ki).get(C.K2_ECAL).get(loc).fill(sf);
+                    }
+                }
+            }
+
+            // Vertex z vs phi angle.
+            hists.get(ki).get(C.K2_VZ).get(C.K3_VZ_PHI).fill(part.vz(), Math.toDegrees(part.phi()));
+
             if (sector != 1) continue; // No beam alignment yet, so we only use one sector.
-            // Vertex z datagroup.
-            dg[cnvs_i].getH1F("vz").fill(part.vz());
-            dg[cnvs_i].getH2F("vz_theta").fill(part.vz(), Math.toDegrees(part.theta()));
+            // Vertex z.
+            hists.get(ki).get(C.K2_VZ).get(C.K3_VZ).fill(part.vz());
+            hists.get(ki).get(C.K2_VZ).get(C.K3_VZ_THETA).fill(
+                    part.vz(), Math.toDegrees(part.theta()));
 
-            // Vertex momentum datagroup.
+            // Vertex momentum.
             double beta = (double) rec_part.getFloat("beta", pindex); // no beta data for FMT.
-            dg[cnvs_i].getH1F("p").fill(part.p());
-            dg[cnvs_i].getH1F("beta").fill(beta);
-            dg[cnvs_i].getH2F("p_beta").fill(part.p(), beta);
+            hists.get(ki).get(C.K2_VP).get(C.K3_VP).fill(part.p());
+            hists.get(ki).get(C.K2_VP).get(C.K3_BETA).fill(beta);
+            hists.get(ki).get(C.K2_VP).get(C.K3_P_BETA).fill(part.p(), beta);
 
             // Energy datagroup.
-            dg[cnvs_i].getH2F("p_E").fill(part.p(), part.e());
-            dg[cnvs_i].getH2F("p_E_pcal").fill(part.p(), pcal_E);
-            dg[cnvs_i].getH2F("p_E_ecin").fill(part.p(), ecin_E);
-            dg[cnvs_i].getH2F("p_E_ecou").fill(part.p(), ecou_E);
-
+            hists.get(ki).get(C.K2_ECAL).get(C.K3_P_E_PCAL).fill(part.p(), pcal_E);
+            hists.get(ki).get(C.K2_ECAL).get(C.K3_P_E_ECIN).fill(part.p(), ecin_E);
+            hists.get(ki).get(C.K2_ECAL).get(C.K3_P_E_ECOU).fill(part.p(), ecou_E);
 
             // TOF difference. TODO. Check TOF resolution.
             double dtof = tof - e_tof;
             if (!Double.isNaN(dtof)) {
-                dg[cnvs_i].getH1F("dtof").fill(dtof);
-                dg[cnvs_i].getH2F("p_dtof").fill(part.p(), dtof);
+                hists.get(ki).get(C.K2_TOF).get(C.K3_DTOF).fill(dtof);
+                hists.get(ki).get(C.K2_TOF).get(C.K3_P_DTOF).fill(part.p(), dtof);
             }
 
             // Get SIDIS variables.
             if (pid == 11) {
-                dg[cnvs_i].getH1F("Q2").fill(calc_Q2(beam_energy, part));
-                dg[cnvs_i].getH1F("nu").fill(calc_nu(beam_energy, part));
-                dg[cnvs_i].getH1F("Xb").fill(calc_Xb(C, beam_energy, part));
+                hists.get(ki).get(C.K2_SIDIS).get(C.K3_Q2).fill(calc_Q2(beam_energy, part));
+                hists.get(ki).get(C.K2_SIDIS).get(C.K3_Q2).fill(calc_nu(beam_energy, part));
+                hists.get(ki).get(C.K2_SIDIS).get(C.K3_Q2).fill(calc_Xb(C, beam_energy, part));
             }
         }
 	}
@@ -220,26 +251,52 @@ while (reader.hasEvent() && i_event < n_events) {
 reader.close();
 System.out.printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
 System.out.printf("Analyzed %10d events. Done!\n", i_event);
-System.out.printf("%% of lost tracks: %5.2f%% (%d/%d)\n",
-        100*((n_DC_tracks - n_FMT_tracks) / (double) n_DC_tracks),
-        n_DC_tracks - n_FMT_tracks, n_DC_tracks);
-
-// Setup plots and draw.
-EmbeddedCanvasTabbed canvases = new EmbeddedCanvasTabbed(false);
-for (int cnvs_i = 0; cnvs_i < dg.length; ++cnvs_i) {
-    // Apply fits.
-    fit_upstream(dg[cnvs_i].getH1F("vz"), dg[cnvs_i].getF1D("fit_vz"), -36, -30);
-
-    canvases.addCanvas(names[cnvs_i]);
-    setup_canvas(canvases, names[cnvs_i], dg[cnvs_i]);
-    canvases.getCanvas(names[cnvs_i]).cd(0).getPad(C.POS_P).getAxisY().setLog(true);
+if (FMT) {
+    int diff = n_DC_tracks - n_FMT_tracks;
+    System.out.printf("%% of lost tracks: %5.2f%% (%d/%d)\n",
+                      100*(diff / (double) n_DC_tracks), diff, n_DC_tracks);
 }
 
-JFrame frame = new JFrame("Acceptance Study Results");
-frame.setSize(1500, 1000);
-frame.add(canvases);
-frame.setLocationRelativeTo(null);
-frame.setVisible(true);
+// Save hists
+TDirectory dir = new TDirectory();
+for (String ki : C.K1ARR) {
+    dir.mkdir("/" + ki);
+
+    mkcd(dir, "/" + ki + "/Vertex z");
+    dir.addDataSet(hists.get(ki).get(C.K2_VZ).get(C.K3_VZ));
+    dir.addDataSet(hists.get(ki).get(C.K2_VZ).get(C.K3_VZ_PHI));
+    dir.addDataSet(hists.get(ki).get(C.K2_VZ).get(C.K3_VZ_THETA));
+
+    mkcd(dir, "/" + ki + "/Vertex p");
+    dir.addDataSet(hists.get(ki).get(C.K2_VP).get(C.K3_VP));
+    dir.addDataSet(hists.get(ki).get(C.K2_VP).get(C.K3_BETA));
+    dir.addDataSet(hists.get(ki).get(C.K2_VP).get(C.K3_P_BETA));
+
+    mkcd(dir, "/" + ki + "/ECAL");
+    dir.addDataSet(hists.get(ki).get(C.K2_ECAL).get(C.K3_P_E_PCAL));
+    dir.addDataSet(hists.get(ki).get(C.K2_ECAL).get(C.K3_P_E_ECIN));
+    dir.addDataSet(hists.get(ki).get(C.K2_ECAL).get(C.K3_P_E_ECOU));
+    dir.addDataSet(hists.get(ki).get(C.K2_ECAL).get(C.K3_EC_PCAL));
+    for (int si = 0; si < C.NSECTORS; ++si) {
+        dir.addDataSet(hists.get(ki).get(C.K2_ECAL).get(C.K3_SF_PCAL[si]));
+        dir.addDataSet(hists.get(ki).get(C.K2_ECAL).get(C.K3_SF_ECIN[si]));
+        dir.addDataSet(hists.get(ki).get(C.K2_ECAL).get(C.K3_SF_ECOU[si]));
+    }
+
+    mkcd(dir, "/" + ki + "/TOF");
+    dir.addDataSet(hists.get(ki).get(C.K2_TOF).get(C.K3_DTOF));
+    dir.addDataSet(hists.get(ki).get(C.K2_TOF).get(C.K3_P_DTOF));
+
+    if (ki.equals(C.K1_E)) {
+        mkcd(dir, "/" + ki + "/SIDIS");
+        dir.addDataSet(hists.get(ki).get(C.K2_SIDIS).get(C.K3_Q2));
+        dir.addDataSet(hists.get(ki).get(C.K2_SIDIS).get(C.K3_NU));
+        dir.addDataSet(hists.get(ki).get(C.K2_SIDIS).get(C.K3_XB));
+    }
+
+    dir.cd("..");
+}
+dir.writeFile("out.hipo");
 
 /* Handler of all input-output of the program. */
 public final class IO_handler {
@@ -336,27 +393,49 @@ public final class IO_handler {
 }
 /* Repository of constants. */
 public class Constants {
-    // Generic constants.
-    int N_CNVS        = 6;
+    // Data structure constants.
+    String K1_E        = "first electron";
+    String K1_PIPLUS   = "pi+";
+    String K1_PIMINUS  = "pi-";
+    String K1_NEG      = "negative";
+    String K1_POS      = "positive";
+    String K1_ALL      = "all particles";
+    String[] K1ARR = [K1_E, K1_PIPLUS, K1_PIMINUS, K1_NEG, K1_POS, K1_ALL];
 
-    // Canvas positions --- using names instead of arrays to minimize confusion.
-    int POS_VZ        = 0;
-    int POS_VZ_THETA  = 1;
-    int POS_VZ_PHI    = 2;
-    int POS_P         = 6;
-    int POS_BETA      = 7;
-    int POS_P_BETA    = 8;
+    String K2_VZ       = "vertex Z";
+    String K2_VP       = "vertex P";
+    String K2_ECAL     = "ECAL";
+    String K2_TOF      = "TOF"
+    String K2_SIDIS    = "SIDIS variables";
 
-    int POS_P_E       = 12;
-    int POS_DTOF      = 13;
-    int POS_P_DTOF    = 14;
-    int POS_P_E_PCAL  = 18;
-    int POS_P_E_ECIN  = 19;
-    int POS_P_E_ECOU  = 20;
+    String K3_VZ       = "vertex Z";
+    String K3_VZ_THETA = "vertex Z vs Theta angle";
+    String K3_VZ_PHI   = "vertex Z vs Phi angle";
 
-    int POS_Q2 = 15;
-    int POS_NU = 16;
-    int POS_XB = 17;
+    String K3_VP       = "vertex P";
+    String K3_BETA     = "beta";
+    String K3_P_BETA   = "vertex P vs beta";
+
+    String K3_P_E_PCAL = "vertex P vs energy (PCAL)";
+    String K3_P_E_ECIN = "vertex P vs energy (ECIN)";
+    String K3_P_E_ECOU = "vertex P vs energy (ECOU)";
+    String K3_EC_PCAL  = "ECAL energy vs PCAL energy";
+    String[] K3_SF_PCAL = ["PCAL Sampling Fraction - sector 1", "PCAL Sampling Fraction - sector 2",
+                           "PCAL Sampling Fraction - sector 3", "PCAL Sampling Fraction - sector 4",
+                           "PCAL Sampling Fraction - sector 5", "PCAL Sampling Fraction - sector 6"];
+    String[] K3_SF_ECIN = ["ECIN Sampling Fraction - sector 1", "ECIN Sampling Fraction - sector 2",
+                           "ECIN Sampling Fraction - sector 3", "ECIN Sampling Fraction - sector 4",
+                           "ECIN Sampling Fraction - sector 5", "ECIN Sampling Fraction - sector 6"];
+    String[] K3_SF_ECOU = ["ECOU Sampling Fraction - sector 1", "ECOU Sampling Fraction - sector 2",
+                           "ECOU Sampling Fraction - sector 3", "ECOU Sampling Fraction - sector 4",
+                           "ECOU Sampling Fraction - sector 5", "ECOU Sampling Fraction - sector 6"];
+
+    String K3_DTOF     = "TOF difference";
+    String K3_P_DTOF   = "vertex P vs TOF difference";
+
+    String K3_Q2       = "Q2";
+    String K3_NU       = "Nu";
+    String K3_XB       = "Xb";
 
     // Masses.
     double PIMASS  = 0.139570; // Pion mass.
@@ -364,6 +443,9 @@ public class Constants {
     double NTRMASS = 0.939565; // Neutron mass.
     double EMASS   = 0.000051; // Electron mass.
     HashMap<Integer, Double> PIDMASS = new HashMap<Integer, Double>();
+
+    // CLAS12 Constants.
+    int NSECTORS   = 6; // Number of CLAS12 sectors.
 
     // FMT Constants.
     int    FMT_NLAYERS; // Number of FMT layers (3 for RG-F).
@@ -421,156 +503,146 @@ public class Constants {
         // FMT_Z[0]=260.505; FMT_Z[1]=269.891; FMT_Z[2]=282.791;
     }
 }
-public DataGroup gen_dg(Constants C, int pid) {
-    DataGroup dg = new DataGroup(6,4);
-    gen_dg_vz   (dg, C);      // Vertex z.
-    gen_dg_vp   (dg, C, pid); // Vertex p and beta.
-    gen_dg_E    (dg, C);      // All E and TOF stuff.
-    gen_dg_sidis(dg, C);      // SIDIS variables.
-    return dg;
-}
-private int gen_dg_vz(DataGroup dg, Constants C) {
-    // 1D vz.
-    H1F hi_vz  = new H1F("vz", "vz (cm)" , "Counts", 500, -50, 50);
-    hi_vz.setFillColor(43);
-    dg.addDataSet(hi_vz, C.POS_VZ);
+public boolean gen_map(Constants C, HashMap<String, HashMap<String, IDataSet>> hists, int ki) {
+    hists.put(C.K2_VZ,    new HashMap<String, IDataSet>());
+    hists.put(C.K2_VP,    new HashMap<String, IDataSet>());
+    hists.put(C.K2_ECAL,  new HashMap<String, IDataSet>());
+    hists.put(C.K2_TOF,   new HashMap<String, IDataSet>());
+    hists.put(C.K2_SIDIS, new HashMap<String, IDataSet>());
+    gen_map_vz(C, hists.get(C.K2_VZ));
+    gen_map_vp(C, hists.get(C.K2_VP));
+    gen_map_ecal(C, hists.get(C.K2_ECAL));
+    gen_map_tof(C, hists.get(C.K2_TOF));
+    gen_map_sidis(C, hists.get(C.K2_SIDIS));
 
-    // Upstream fit for tracks.
-    F1D f_vz = new F1D("fit_vz",
-            "[amp1]*gaus(x,[mean],[sigma])+[amp2]*gaus(x,[mean]-2.4,[sigma])+[p0]+[p1]*x+[p2]*x*x",
-            -50, 50);
-    f_vz.setLineWidth(2);
-    f_vz.setLineColor(2);
-    f_vz.setOptStat("1111");
-    dg.addDataSet(f_vz, C.POS_VZ);
+    return false;
+}
+private boolean gen_map_vz(Constants C, HashMap<String, IDataSet> hists) {
+    // 1D vz.
+    hists.put(C.K3_VZ, new H1F(C.K3_VZ, "vz (cm)", "Counts", 500, -50, 50));
+    hists.get(C.K3_VZ).setFillColor(43);
+
+    // TODO. Fitting is to be done via fit() method at:
+    // https://github.com/gavalian/groot/blob/master/src/main/java/org/jlab/groot/data/H1F.java#L456-L458
+    // F1D f_vz = new F1D(K3_VZ_FIT,
+    //         "[amp1]*gaus(x,[mean],[sigma])+[amp2]*gaus(x,[mean]-2.4,[sigma])+[p0]+[p1]*x+[p2]*x*x",
+    //         -50, 50);
+    // f_vz.setLineWidth(2);
+    // f_vz.setLineColor(2);
+    // f_vz.setOptStat("1111");
 
     // 2D vz vs theta.
-    H2F hi_vz_theta = new H2F("vz_theta", 200, -50, 50, 100, 0, 40);
-    hi_vz_theta.setTitleX("vz (cm)");
-    hi_vz_theta.setTitleY("#theta (deg)");
-    dg.addDataSet(hi_vz_theta, C.POS_VZ_THETA);
+    hists.put(C.K3_VZ_THETA, new H2F(C.K3_VZ_THETA, 200, -50, 50, 100, 0, 40));
+    hists.get(C.K3_VZ_THETA).setTitleX("vz (cm)");
+    hists.get(C.K3_VZ_THETA).setTitleY("#theta (deg)");
 
-    // Draw lines showing FMT acceptance.
-    F1D ftheta1 = new F1D("ftheta1","57.29*atan([r]/([z0]-x))", -50, 20.5);
-    ftheta1.setParameter(0, C.FMT_RMIN/10);
-    ftheta1.setParameter(1, (C.FMT_Z[0]+C.FMT_DZ[0])/10);
-    ftheta1.setLineColor(2);
-    ftheta1.setLineWidth(2);
-    dg.addDataSet(ftheta1, C.POS_VZ_THETA);
-    F1D ftheta2 = new F1D("ftheta2","57.29*atan([r]/([z0]-x))", -50, 3);
-    ftheta2.setParameter(0, C.FMT_RMAX/10);
-    ftheta2.setParameter(1, (C.FMT_Z[0]+C.FMT_DZ[0])/10);
-    ftheta2.setLineColor(2);
-    ftheta2.setLineWidth(2);
-    dg.addDataSet(ftheta2, C.POS_VZ_THETA);
+    // // Draw lines showing FMT acceptance.
+    // F1D ftheta1 = new F1D("ftheta1","57.29*atan([r]/([z0]-x))", -50, 20.5);
+    // ftheta1.setParameter(0, C.FMT_RMIN/10);
+    // ftheta1.setParameter(1, (C.FMT_Z[0]+C.FMT_DZ[0])/10);
+    // ftheta1.setLineColor(2);
+    // ftheta1.setLineWidth(2);
+    // dg.addDataSet(ftheta1, C.POS_VZ_THETA);
+    // F1D ftheta2 = new F1D("ftheta2","57.29*atan([r]/([z0]-x))", -50, 3);
+    // ftheta2.setParameter(0, C.FMT_RMAX/10);
+    // ftheta2.setParameter(1, (C.FMT_Z[0]+C.FMT_DZ[0])/10);
+    // ftheta2.setLineColor(2);
+    // ftheta2.setLineWidth(2);
+    // dg.addDataSet(ftheta2, C.POS_VZ_THETA);
 
     // 2D vz vs phi angle.
-    H2F hi_vz_phi = new H2F("vz_phi", 200, -50, 50, 100, -180, 180);
-    hi_vz_phi.setTitleX ("vz (cm)");
-    hi_vz_phi.setTitleY ("#phi (deg)");
-    dg.addDataSet(hi_vz_phi, C.POS_VZ_PHI);
+    hists.put(C.K3_VZ_PHI, new H2F(C.K3_VZ_PHI, 200, -50, 50, 100, -180, 180));
+    hists.get(C.K3_VZ_PHI).setTitleX ("vz (cm)");
+    hists.get(C.K3_VZ_PHI).setTitleY ("#phi (deg)");
 
-    return 0;
+    return false;
 }
-private int gen_dg_vzsector() { // NOTE. Unused, obsolete.
-    DataGroup dg = new DataGroup(3,2);
-    String xax = "z (cm) - sector ";
-    String yax = "Counts";
-    for (int sec=1; sec<=6; sec++) {
-        H1F hi_vz_dc  = new H1F("hi_vz_dc_sec"  + sec, xax + sec, yax, 500, -50, 50);
-        hi_vz_dc .setFillColor(43);
-        dg.addDataSet(hi_vz_dc,  sec-1);
-        H1F hi_vz_fmt = new H1F("hi_vz_fmt_sec" + sec, xax + sec, yax, 500, -50, 50);
-        hi_vz_fmt.setFillColor(44);
-        dg.addDataSet(hi_vz_fmt, sec-1);
-        // NOTE: Maybe add a fit for DC and for FMT for each sector?
-    }
-    return 0;
-}
-private int gen_dg_vp(DataGroup dg, Constants C, int pid) {
+private boolean gen_map_vp(Constants C, HashMap<String, IDataSet> hists) {
     // Momentum distribution.
-    H1F hi_p = new H1F("p", "p (GeV)", "Counts", 100, 0, 12);
-    hi_p.setFillColor(44);
-    dg.addDataSet(hi_p, C.POS_P);
+    hists.put(C.K3_VP, new H1F(C.K3_VP, "p (GeV)", "Counts", 100, 0, 12));
+    hists.get(C.K3_VP).setFillColor(44);
 
-    // Beta distribution:
-    H1F hi_beta = new H1F("beta", "#beta", "Counts", 500, 0.9, 1);
-    hi_beta.setFillColor(44);
-    dg.addDataSet(hi_beta, C.POS_BETA);
+    // Beta distribution.
+    hists.put(C.K3_BETA, new H1F(C.K3_BETA, "#beta", "Counts", 500, 0.9, 1));
+    hists.get(C.K3_BETA).setFillColor(44);
 
-    // Momentum vs Beta:
-    H2F hi_p_beta = new H2F("p_beta", 200, 0, 1, 200, 0.9, 1);
-    hi_p_beta.setTitleX("p (GeV)");
-    hi_p_beta.setTitleY("#beta");
-    dg.addDataSet(hi_p_beta,C.POS_P_BETA);
+    // Momentum vs Beta.
+    hists.put(C.K3_P_BETA, new H2F(C.K3_P_BETA, 200, 0, 1, 200, 0.9, 1));
+    hists.get(C.K3_P_BETA).setTitleX("p (GeV)");
+    hists.get(C.K3_P_BETA).setTitleY("#beta");
 
-    // Draw theoretical curve. // TODO. FIX.
-    Double mass = C.PIDMASS.get(pid);
-    if (mass != null) {
-        F1D fp = new F1D("fp", "[0]*x/sqrt(1-x)", 0, 1);
-        fp.setParameter(0, mass);
-        fp.setLineColor(2);
-        fp.setLineWidth(2);
-        dg.addDataSet(fp,C.POS_P_BETA);
-    }
+    // // Draw theoretical curve. // TODO. FIX.
+    // Double mass = C.PIDMASS.get(pid);
+    // if (mass != null) {
+    //     F1D fp = new F1D("fp", "[0]*x/sqrt(1-x)", 0, 1);
+    //     fp.setParameter(0, mass);
+    //     fp.setLineColor(2);
+    //     fp.setLineWidth(2);
+    //     dg.addDataSet(fp,C.POS_P_BETA);
+    // }
 
-    return 0;
+    return false;
 }
-private int gen_dg_E(DataGroup dg, Constants C) {
-    // Energy vs Momentum distribution.
-    H2F hi_p_E = new H2F("p_E", 200, 0, 12, 200, 0, 12);
-    hi_p_E.setTitleX("p (GeV)");
-    hi_p_E.setTitleY("E (GeV)");
-    dg.addDataSet(hi_p_E, C.POS_P_E);
-
+private boolean gen_map_ecal(Constants C, HashMap<String, IDataSet> hists) {
     // Energy vs Momentum for PCAL.
-    H2F hi_p_E_pcal = new H2F("p_E_pcal", 200, 0, 12, 200, 0, 12);
-    hi_p_E_pcal.setTitleX("p (GeV)");
-    hi_p_E_pcal.setTitleY("PCAL - E (GeV)");
-    dg.addDataSet(hi_p_E_pcal,C.POS_P_E_PCAL);
+    hists.put(C.K3_P_E_PCAL, new H2F(C.K3_P_E_PCAL, 200, 0, 12, 200, 0, 12));
+    hists.get(C.K3_P_E_PCAL).setTitleX("p (GeV)");
+    hists.get(C.K3_P_E_PCAL).setTitleY("PCAL - E (GeV)");
 
     // Energy vs Momentum for EC Inner.
-    H2F hi_p_E_ecin = new H2F("p_E_ecin", 200, 0, 12, 200, 0, 12);
-    hi_p_E_ecin.setTitleX("p (GeV)");
-    hi_p_E_ecin.setTitleY("ECIN - E (GeV)");
-    dg.addDataSet(hi_p_E_ecin,C.POS_P_E_ECIN);
+    hists.put(C.K3_P_E_ECIN, new H2F(C.K3_P_E_ECIN, 200, 0, 12, 200, 0, 12));
+    hists.get(C.K3_P_E_ECIN).setTitleX("p (GeV)");
+    hists.get(C.K3_P_E_ECIN).setTitleY("ECIN - E (GeV)");
 
     // Energy vs Momentum for EC Outer.
-    H2F hi_p_E_ecou = new H2F("p_E_ecou", 200, 0, 12, 200, 0, 12);
-    hi_p_E_ecou.setTitleX("p (GeV)");
-    hi_p_E_ecou.setTitleY("ECOU - E (GeV)");
-    dg.addDataSet(hi_p_E_ecou,C.POS_P_E_ECOU);
+    hists.put(C.K3_P_E_ECOU, new H2F(C.K3_P_E_ECOU, 200, 0, 12, 200, 0, 12));
+    hists.get(C.K3_P_E_ECOU).setTitleX("p (GeV)");
+    hists.get(C.K3_P_E_ECOU).setTitleY("ECOU - E (GeV)");
 
-    // TOF distribution.
-    H1F hi_dtof = new H1F("dtof", "TOF difference (ns)", "Counts", 100, 0, 50);
-    hi_dtof.setFillColor(43);
-    dg.addDataSet(hi_dtof,C.POS_DTOF);
+    // Sampling Fraction.
+    for (int si = 0; si < C.NSECTORS; ++si) {
+        hists.put(C.K3_SF_PCAL[si], new H1F(C.K3_SF_PCAL[si], "SF", "Counts", 200, 0.1, 0.5));
+        hists.get(C.K3_SF_PCAL[si]).setFillColor(43);
 
-    // TOF vs momentum.
-    H2F hi_p_dtof = new H2F("p_dtof", 200, 0, 12, 200, 0, 12);
-    hi_p_dtof.setTitleX("p (GeV)");
-    hi_p_dtof.setTitleY("TOF difference (ns)");
-    dg.addDataSet(hi_p_dtof,C.POS_P_DTOF);
+        hists.put(C.K3_SF_ECIN[si], new H1F(C.K3_SF_ECIN[si], "SF", "Counts", 200, 0.1, 0.5));
+        hists.get(C.K3_SF_ECIN[si]).setFillColor(43);
 
-    return 0;
+        hists.put(C.K3_SF_ECOU[si], new H1F(C.K3_SF_ECOU[si], "SF", "Counts", 200, 0.1, 0.5));
+        hists.get(C.K3_SF_ECOU[si]).setFillColor(43);
+    }
+
+    // EC vs PCAL.
+    hists.put(C.K3_EC_PCAL, new H2F(C.K3_EC_PCAL, 200, 0, 2, 200, 0, 2));
+    hists.get(C.K3_EC_PCAL).setTitleX("PCAL E (GeV)");
+    hists.get(C.K3_EC_PCAL).setTitleY("EC E (GeV)");
+
+    return false;
 }
-private int gen_dg_sidis(DataGroup dg, Constants C) {
+private boolean gen_map_tof(Constants C, HashMap<String, IDataSet> hists) {
+    hists.put(C.K3_DTOF, new H1F(C.K3_DTOF, "TOF difference (ns)", "Counts", 100, 0, 50));
+    hists.get(C.K3_DTOF).setFillColor(43);
+
+    hists.put(C.K3_P_DTOF, new H2F(C.K3_P_DTOF, 200, 0, 12, 200, 0, 12));
+    hists.get(C.K3_P_DTOF).setTitleX("p (GeV)");
+    hists.get(C.K3_P_DTOF).setTitleX("TOF difference (ns)");
+
+    return false;
+}
+private boolean gen_map_sidis(Constants C, HashMap<String, IDataSet> hists) {
+
     // Q2.
-    H1F hi_Q2 = new H1F("Q2", "Q^2 (GeV^2)", "Counts", 22, 0, 12);
-    hi_Q2.setFillColor(43);
-    dg.addDataSet(hi_Q2,C.POS_Q2);
+    hists.put(C.K3_Q2, new H1F(C.K3_Q2, "Q^2 (GeV^2)", "Counts", 22, 0, 12));
+    hists.get(C.K3_Q2).setFillColor(43);
 
     // nu
-    H1F hi_nu = new H1F("nu", "#nu (GeV)", "Counts", 22, 0, 12);
-    hi_nu.setFillColor(43);
-    dg.addDataSet(hi_nu,C.POS_NU);
+    hists.put(C.K3_NU, new H1F(C.K3_NU, "#nu (GeV)", "Counts", 22, 0, 12));
+    hists.get(C.K3_NU).setFillColor(43);
 
     // X_bjorken
-    H1F hi_Xb = new H1F("Xb", "Xb (GeV^2)", "Counts", 20, 0, 2);
-    hi_Xb.setFillColor(43);
-    dg.addDataSet(hi_Xb,C.POS_XB);
+    hists.put(C.K3_XB, new H1F(C.K3_XB, "Xb (GeV^2)", "Counts", 20, 0, 2));
+    hists.get(C.K3_NU).setFillColor(43);
 
-    return 0;
+    return false;
 }
 public static double calc_Q2(double beam_e, Particle p) {
     return 4 * beam_e * p.p() * Math.sin(p.theta()/2)**2;
@@ -580,6 +652,10 @@ public static double calc_nu(double beam_e, Particle p) {
 }
 public static double calc_Xb(Constants C, double beam_e, Particle p) {
     return calc_Q2(beam_e, p)/2 / calc_nu(beam_e, p)/C.PRTMASS;
+}
+public static void mkcd(TDirectory dir, String name) {
+    dir.mkdir(name);
+    dir.cd(name);
 }
 public static int setup_groot() {
     GStyle.getAxisAttributesX().setTitleFontSize(24);
@@ -611,13 +687,5 @@ public static int fit_upstream(H1F hist, F1D fit, double min, double max) {
     DataFitter.fit(fit, hist, "Q"); // No options use error for sigma.
     hist.setFunction(null);
 
-    return 0;
-}
-public static int setup_canvas(EmbeddedCanvasTabbed canvas, String name, DataGroup tab) {
-    canvas.getCanvas(name).draw(tab);
-    canvas.getCanvas(name).setGridX(false);
-    canvas.getCanvas(name).setGridY(false);
-    canvas.getCanvas(name).setAxisFontSize(16);
-    canvas.getCanvas(name).setAxisTitleSize(16);
     return 0;
 }
