@@ -168,6 +168,8 @@ while (reader.hasEvent() && i_event < n_events) {
                 }
             }
         }
+        double total_E = pcal_E + ecin_E + ecou_E;
+
         double tof = Double.POSITIVE_INFINITY;
         if (rec_tof != null) {
             for (int hi = 0; hi < rec_tof.rows(); ++hi) {
@@ -227,7 +229,10 @@ while (reader.hasEvent() && i_event < n_events) {
             hists.get(ki).get(C.K2_VP).get(C.K3_BETA).fill(beta);
             hists.get(ki).get(C.K2_VP).get(C.K3_P_BETA).fill(part.p(), beta);
 
-            // Energy datagroup.
+            // Energy.
+            hists.get(ki).get(C.K2_ECAL).get(C.K3_EP_P).fill((total_E)/part.p, part.p())
+            hists.get(ki).get(C.K2_ECAL).get(C.K3_EP_E).fill((total_E)/part.p, total_E)
+
             hists.get(ki).get(C.K2_ECAL).get(C.K3_P_E_PCAL).fill(part.p(), pcal_E);
             hists.get(ki).get(C.K2_ECAL).get(C.K3_P_E_ECIN).fill(part.p(), ecin_E);
             hists.get(ki).get(C.K2_ECAL).get(C.K3_P_E_ECOU).fill(part.p(), ecou_E);
@@ -277,6 +282,11 @@ for (String ki : C.K1ARR) {
     dir.addDataSet(hists.get(ki).get(C.K2_ECAL).get(C.K3_P_E_ECIN));
     dir.addDataSet(hists.get(ki).get(C.K2_ECAL).get(C.K3_P_E_ECOU));
     dir.addDataSet(hists.get(ki).get(C.K2_ECAL).get(C.K3_EC_PCAL));
+
+    dir.addDataSet(hists.get(ki).get(C.K2_ECAL).get(C.K3_EP_P));
+    dir.addDataSet(hists.get(ki).get(C.K2_ECAL).get(C.K3_EP_E));
+
+    mkcd(dir, "/" + ki + "/ECAL/Sampling Fraction");
     for (int si = 0; si < C.NSECTORS; ++si) {
         dir.addDataSet(hists.get(ki).get(C.K2_ECAL).get(C.K3_SF_PCAL[si]));
         dir.addDataSet(hists.get(ki).get(C.K2_ECAL).get(C.K3_SF_ECIN[si]));
@@ -416,6 +426,8 @@ public class Constants {
     String K3_BETA     = "beta";
     String K3_P_BETA   = "vertex P vs beta";
 
+    String K3_EP_P     = "P div E vs P";
+    String K3_EP_E     = "P div E vs E";
     String K3_P_E_PCAL = "vertex P vs energy (PCAL)";
     String K3_P_E_ECIN = "vertex P vs energy (ECIN)";
     String K3_P_E_ECOU = "vertex P vs energy (ECOU)";
@@ -584,6 +596,16 @@ private boolean gen_map_vp(Constants C, HashMap<String, IDataSet> hists) {
     return false;
 }
 private boolean gen_map_ecal(Constants C, HashMap<String, IDataSet> hists) {
+    // Energy/momentum vs momentum.
+    hists.put(C.K3_EP_P, new H2F(C.K3_EP_P, 200, 0, 1, 200, 0, 10));
+    hists.get(C.K3_EP_P).setTitleX("p (GeV)");
+    hists.get(C.K3_EP_P).setTitleY("E/p");
+
+    // Energy/momentum vs energy.
+    hists.put(C.K3_EP_E, new H2F(C.K3_EP_E, 200, 0, 1, 200, 0, 3));
+    hists.get(C.K3_EP_E).setTitleX("E (GeV)");
+    hists.get(C.K3_EP_E).setTitleY("E/p");
+
     // Energy vs Momentum for PCAL.
     hists.put(C.K3_P_E_PCAL, new H2F(C.K3_P_E_PCAL, 200, 0, 12, 200, 0, 12));
     hists.get(C.K3_P_E_PCAL).setTitleX("p (GeV)");
