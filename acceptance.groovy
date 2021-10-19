@@ -92,7 +92,6 @@ while (reader.hasEvent() && i_event < n_events) {
 
     // TODO. Make sure that this is actually the trigger electron.
     int e_pindex = rec_track.getShort("pindex", 0);
-
     double e_tof = Double.POSITIVE_INFINITY;
     if (rec_tof != null) {
         for (int hi = 0; hi < rec_tof.rows(); ++hi) {
@@ -117,7 +116,7 @@ while (reader.hasEvent() && i_event < n_events) {
 
         // Apply general cuts.
         if ((int) (Math.abs(status)/1000) != 2) continue; // Filter particles that pass through FMT.
-        if (Math.abs(chi2pid) >= 3) continue; // Ignore spurious particles.
+        // if (Math.abs(chi2pid) >= 3) continue; // Ignore spurious particles.
         if (pid == 0) continue; // Ignore bad particles.
         // if (vz < -40 || vz > (C.FMT_Z[0]+C.FMT_DZ[0])/10) continue; // Geometry cut.
         if (chi2/ndf >= 15) continue; // Ignore tracks with high chi2.
