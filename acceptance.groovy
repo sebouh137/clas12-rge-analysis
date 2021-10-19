@@ -90,8 +90,7 @@ while (reader.hasEvent() && i_event < n_events) {
     // Ignore events that don't have the minimum required banks.
     if (rec_part==null || rec_track==null || rec_traj==null) continue;
 
-    // We assume that the first particle in the particle bank is the elctron.
-    // TODO. Confirm this with Raffaella with urgency.
+    // TODO. Make sure that this is actually the trigger electron.
     int e_pindex = rec_track.getShort("pindex", 0);
 
     double e_tof = Double.POSITIVE_INFINITY;
@@ -115,10 +114,9 @@ while (reader.hasEvent() && i_event < n_events) {
         int status     = rec_part.getShort ("status",  pindex);
         double vz      = rec_part.getFloat ("vz",      pindex);
         double chi2pid = rec_part.getFloat ("chi2pid", pindex);
-        status = (int) (Math.abs(status)/1000);
 
         // Apply general cuts.
-        if (status != 2) continue; // Only use particles that pass through DC and FMT.
+        if ((int) (Math.abs(status)/1000) != 2) continue; // Filter particles that pass through FMT.
         if (Math.abs(chi2pid) >= 3) continue; // Ignore spurious particles.
         if (pid == 0) continue; // Ignore bad particles.
         // if (vz < -40 || vz > (C.FMT_Z[0]+C.FMT_DZ[0])/10) continue; // Geometry cut.
@@ -180,7 +178,7 @@ while (reader.hasEvent() && i_event < n_events) {
 
         // Check which histograms to fill. NOTE. These cuts shouldn't be hardcoded.
         Map<String, Boolean> fillMap = new HashMap<String, Boolean>();
-        fillMap.put(C.K1_E,       pid ==   11 ? true : false); // TODO. Filter to have only first e.
+        fillMap.put(C.K1_E,       (pid == 11 && status < 0) ? true : false);
         fillMap.put(C.K1_PIPLUS,  pid ==  211 ? true : false);
         fillMap.put(C.K1_PIMINUS, pid == -211 ? true : false);
         fillMap.put(C.K1_NEG,     charge < 0  ? true : false);
@@ -404,7 +402,7 @@ public final class IO_handler {
 /* Repository of constants. */
 public class Constants {
     // Data structure constants.
-    String K1_E        = "first electron";
+    String K1_E        = "trigger electron";
     String K1_PIPLUS   = "pi+";
     String K1_PIMINUS  = "pi-";
     String K1_NEG      = "negative";
@@ -432,15 +430,12 @@ public class Constants {
     String K3_P_E_ECIN = "vertex P vs energy (ECIN)";
     String K3_P_E_ECOU = "vertex P vs energy (ECOU)";
     String K3_EC_PCAL  = "ECAL energy vs PCAL energy";
-    String[] K3_SF_PCAL = ["PCAL Sampling Fraction - sector 1", "PCAL Sampling Fraction - sector 2",
-                           "PCAL Sampling Fraction - sector 3", "PCAL Sampling Fraction - sector 4",
-                           "PCAL Sampling Fraction - sector 5", "PCAL Sampling Fraction - sector 6"];
-    String[] K3_SF_ECIN = ["ECIN Sampling Fraction - sector 1", "ECIN Sampling Fraction - sector 2",
-                           "ECIN Sampling Fraction - sector 3", "ECIN Sampling Fraction - sector 4",
-                           "ECIN Sampling Fraction - sector 5", "ECIN Sampling Fraction - sector 6"];
-    String[] K3_SF_ECOU = ["ECOU Sampling Fraction - sector 1", "ECOU Sampling Fraction - sector 2",
-                           "ECOU Sampling Fraction - sector 3", "ECOU Sampling Fraction - sector 4",
-                           "ECOU Sampling Fraction - sector 5", "ECOU Sampling Fraction - sector 6"];
+    String[] K3_SF_PCAL = ["PCAL SF - sector 1", "PCAL SF - sector 2", "PCAL SF - sector 3",
+                           "PCAL SF - sector 4", "PCAL SF - sector 5", "PCAL SF - sector 6"];
+    String[] K3_SF_ECIN = ["ECIN SF - sector 1", "ECIN SF - sector 2", "ECIN SF - sector 3",
+                           "ECIN SF - sector 4", "ECIN SF - sector 5", "ECIN SF - sector 6"];
+    String[] K3_SF_ECOU = ["ECOU SF - sector 1", "ECOU SF - sector 2", "ECOU SF - sector 3",
+                           "ECOU SF - sector 4", "ECOU SF - sector 5", "ECOU SF - sector 6"];
 
     String K3_DTOF     = "TOF difference";
     String K3_P_DTOF   = "vertex P vs TOF difference";
