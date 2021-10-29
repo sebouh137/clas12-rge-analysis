@@ -8,6 +8,7 @@ import org.jlab.groot.data.H1F;
 import org.jlab.groot.data.H2F;
 import org.jlab.groot.data.IDataSet;
 import org.jlab.groot.data.TDirectory;
+import org.jlab.groot.fitter.DataFitter;
 import org.jlab.groot.math.F1D;
 import org.jlab.groot.fitter.DataFitter;
 import org.jlab.io.base.DataBank;
@@ -260,15 +261,23 @@ if (FMT) {
                       100*(diff / (double) n_DC_tracks), diff, n_DC_tracks);
 }
 
-// Fit.
-// TODO. Fitting is to be done via fit() method at:
-// https://github.com/gavalian/groot/blob/master/src/main/java/org/jlab/groot/data/H1F.java#L456-L458
-// F1D f_vz = new F1D(C.K3_VZ_FIT,
-//         "[amp1]*gaus(x,[mean],[sigma])+[amp2]*gaus(x,[mean]-2.4,[sigma])+[p0]+[p1]*x+[p2]*x*x",
-//         -50, 50);
-// f_vz.setLineWidth(2);
-// f_vz.setLineColor(2);
-// f_vz.setOptStat("1111");
+// Fitting.
+for (String ki : C.K1ARR) {
+    // VZ fits.
+    H1F hist = hists.get(ki).get(C.K2_VZ).get(C.K3_VZ);
+    F1D f_vz = new F1D(C.K3_VZ_FIT,
+            "[amp1]*gaus(x,[mean],[sigma])+[amp2]*gaus(x,[mean]-2.4,[sigma])+[p0]+[p1]*x+[p2]*x*x",
+            -36, -30);
+
+    double amp  = hist.getBinContent(hist.getMaximumBin());
+    double mean = hist.getDataX(hist.getMaximumBin());
+    f_vz.setParameter(0, amp);
+    f_vz.setParameter(1, mean);
+    f_vz.setParameter(2, 0.5);
+
+    f_vz.setOptStat("1111");
+    DataFitter.fit(f_vz, hists.get(ki).get(C.K2_VZ).get(C.K3_VZ), "Q");
+}
 
 // Save hists
 TDirectory dir = new TDirectory();
@@ -431,7 +440,7 @@ public class Constants {
     String K2_SIDIS    = "SIDIS variables";
 
     String K3_VZ       = "vertex Z";
-    // String K3_VZ_FIT   = "vertex Z upstream fit";
+    String K3_VZ_FIT   = "vertex Z upstream fit";
     String K3_VZ_THETA = "vertex Z vs Theta angle";
     String K3_VZ_PHI   = "vertex Z vs Phi angle";
 
