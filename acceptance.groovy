@@ -178,6 +178,7 @@ while (reader.hasEvent() && i_event < n_events) {
         // Check which histograms to fill. NOTE. These cuts shouldn't be hardcoded.
         Map<String, Boolean> fillMap = new HashMap<String, Boolean>();
         fillMap.put(C.K1_E,       (pid == 11 && status < 0) ? true : false);
+        // Add all electrons, including primary and secondary.
         fillMap.put(C.K1_PIPLUS,  pid ==  211 ? true : false);
         fillMap.put(C.K1_PIMINUS, pid == -211 ? true : false);
         fillMap.put(C.K1_NEG,     charge < 0  ? true : false);
@@ -227,8 +228,8 @@ while (reader.hasEvent() && i_event < n_events) {
             hists.get(ki).get(C.K2_VP).get(C.K3_P_BETA).fill(part.p(), beta);
 
             // Energy.
-            hists.get(ki).get(C.K2_ECAL).get(C.K3_EP_P).fill((total_E)/part.p, part.p())
-            hists.get(ki).get(C.K2_ECAL).get(C.K3_EP_E).fill((total_E)/part.p, total_E)
+            hists.get(ki).get(C.K2_ECAL).get(C.K3_EP_P).fill(part.p(), total_E/part.p)
+            hists.get(ki).get(C.K2_ECAL).get(C.K3_EP_E).fill(total_E,  total_E/part.p)
 
             hists.get(ki).get(C.K2_ECAL).get(C.K3_P_E_PCAL).fill(part.p(), pcal_E);
             hists.get(ki).get(C.K2_ECAL).get(C.K3_P_E_ECIN).fill(part.p(), ecin_E);
@@ -259,9 +260,23 @@ if (FMT) {
                       100*(diff / (double) n_DC_tracks), diff, n_DC_tracks);
 }
 
+// Fit.
+// TODO. Fitting is to be done via fit() method at:
+// https://github.com/gavalian/groot/blob/master/src/main/java/org/jlab/groot/data/H1F.java#L456-L458
+// F1D f_vz = new F1D(C.K3_VZ_FIT,
+//         "[amp1]*gaus(x,[mean],[sigma])+[amp2]*gaus(x,[mean]-2.4,[sigma])+[p0]+[p1]*x+[p2]*x*x",
+//         -50, 50);
+// f_vz.setLineWidth(2);
+// f_vz.setLineColor(2);
+// f_vz.setOptStat("1111");
+
 // Save hists
 TDirectory dir = new TDirectory();
 for (String ki : C.K1ARR) {
+    // Fit.
+    // fit_upstream(hists.get(ki).get(C.K2_VZ).get(C.K3_VZ), f_vz, -36, -30);
+
+    // Save hists.
     dir.mkdir("/" + ki);
 
     mkcd(dir, "/" + ki + "/Vertex z");
@@ -416,6 +431,7 @@ public class Constants {
     String K2_SIDIS    = "SIDIS variables";
 
     String K3_VZ       = "vertex Z";
+    // String K3_VZ_FIT   = "vertex Z upstream fit";
     String K3_VZ_THETA = "vertex Z vs Theta angle";
     String K3_VZ_PHI   = "vertex Z vs Phi angle";
 
@@ -573,7 +589,7 @@ private boolean gen_map_vp(Constants C, HashMap<String, IDataSet> hists) {
     hists.get(C.K3_BETA).setFillColor(44);
 
     // Momentum vs Beta.
-    hists.put(C.K3_P_BETA, new H2F(C.K3_P_BETA, 200, 0, 1, 200, 0.9, 1));
+    hists.put(C.K3_P_BETA, new H2F(C.K3_P_BETA, 200, 0, 12, 200, 0.9, 1));
     hists.get(C.K3_P_BETA).setTitleX("p (GeV)");
     hists.get(C.K3_P_BETA).setTitleY("#beta");
 
@@ -591,12 +607,12 @@ private boolean gen_map_vp(Constants C, HashMap<String, IDataSet> hists) {
 }
 private boolean gen_map_ecal(Constants C, HashMap<String, IDataSet> hists) {
     // Energy/momentum vs momentum.
-    hists.put(C.K3_EP_P, new H2F(C.K3_EP_P, 200, 0, 1, 200, 0, 10));
+    hists.put(C.K3_EP_P, new H2F(C.K3_EP_P, 200, 0, 10, 200, 0.10, 0.40));
     hists.get(C.K3_EP_P).setTitleX("p (GeV)");
     hists.get(C.K3_EP_P).setTitleY("E/p");
 
     // Energy/momentum vs energy.
-    hists.put(C.K3_EP_E, new H2F(C.K3_EP_E, 200, 0, 1, 200, 0, 3));
+    hists.put(C.K3_EP_E, new H2F(C.K3_EP_E, 200, 0, 3, 200, 0.10, 0.40));
     hists.get(C.K3_EP_E).setTitleX("E (GeV)");
     hists.get(C.K3_EP_E).setTitleY("E/p");
 
