@@ -226,7 +226,7 @@ while (reader.hasEvent() && i_event < n_events) {
             double beta = (double) rec_part.getFloat("beta", pindex); // no beta data for FMT.
             hists.get(ki).get(C.K2_VP).get(C.K3_VP).fill(part.p());
             hists.get(ki).get(C.K2_VP).get(C.K3_BETA).fill(beta);
-            hists.get(ki).get(C.K2_VP).get(C.K3_P_BETA).fill(part.p(), beta);
+            hists.get(ki).get(C.K2_VP).get(C.K3_P_BETA).fill(beta, part.p());
 
             // Energy.
             hists.get(ki).get(C.K2_ECAL).get(C.K3_EP_P).fill(part.p(), total_E/part.p)
@@ -274,9 +274,17 @@ for (String ki : C.K1ARR) {
     f_vz.setParameter(0, amp);
     f_vz.setParameter(1, mean);
     f_vz.setParameter(2, 0.5);
-
     f_vz.setOptStat("1111");
-    DataFitter.fit(f_vz, hists.get(ki).get(C.K2_VZ).get(C.K3_VZ), "Q");
+    DataFitter.fit(f_vz, hist, "Q");
+
+    // momentum vs beta theoretical curves.
+    // TODO. I'm doing something wrong here. I'll have to revisit.
+    double mass = 0;
+    if (ki == C.K1_PIPLUS || ki == C.K1_PIMINUS) mass = C.PIMASS;
+    F1D f_beta_p = new F1D(C.K3_P_BETA_FIT, "[m]*x/(sqrt(1-x))", 0.9, 1.0);
+    f_beta_p.setParameter(0, mass);
+    f_beta_p.setOptStat("1111");
+    DataFitter.fit(f_beta_p, hists.get(ki).get(C.K2_VP).get(C.K3_P_BETA), "Q");
 }
 
 // Save hists
@@ -447,6 +455,7 @@ public class Constants {
     String K3_VP       = "vertex P";
     String K3_BETA     = "beta";
     String K3_P_BETA   = "vertex P vs beta";
+    String K3_P_BETA_FIT = "vertex P vs beta theoretical curve";
 
     String K3_EP_P     = "P div E vs P";
     String K3_EP_E     = "P div E vs E";
@@ -598,9 +607,9 @@ private boolean gen_map_vp(Constants C, HashMap<String, IDataSet> hists) {
     hists.get(C.K3_BETA).setFillColor(44);
 
     // Momentum vs Beta.
-    hists.put(C.K3_P_BETA, new H2F(C.K3_P_BETA, 200, 0, 12, 200, 0.9, 1));
-    hists.get(C.K3_P_BETA).setTitleX("p (GeV)");
-    hists.get(C.K3_P_BETA).setTitleY("#beta");
+    hists.put(C.K3_P_BETA, new H2F(C.K3_P_BETA, 200, 0.9, 1, 200, 0, 12));
+    hists.get(C.K3_P_BETA).setTitleX("#beta");
+    hists.get(C.K3_P_BETA).setTitleY("p (GeV)");
 
     // // Draw theoretical curve. // TODO. FIX.
     // Double mass = C.PIDMASS.get(pid);
