@@ -10,7 +10,6 @@ import org.jlab.groot.data.IDataSet;
 import org.jlab.groot.data.TDirectory;
 import org.jlab.groot.fitter.DataFitter;
 import org.jlab.groot.math.F1D;
-import org.jlab.groot.fitter.DataFitter;
 import org.jlab.io.base.DataBank;
 import org.jlab.io.base.DataEvent;
 import org.jlab.io.hipo.*;
@@ -262,6 +261,7 @@ if (FMT) {
 }
 
 // Fitting.
+Map<String, F1D> f_beta_p = new HashMap<String, F1D>();
 for (String ki : C.K1ARR) {
     // VZ fits.
     H1F hist = hists.get(ki).get(C.K2_VZ).get(C.K3_VZ);
@@ -274,17 +274,20 @@ for (String ki : C.K1ARR) {
     f_vz.setParameter(0, amp);
     f_vz.setParameter(1, mean);
     f_vz.setParameter(2, 0.5);
-    f_vz.setOptStat("1111");
     DataFitter.fit(f_vz, hist, "Q");
 
+    // Sampling fraction fits.
+    // for (int sector = 0; sector < C.NSECTORS; ++sector) {
+    //     F1D f_sf = new F1D(C.K3_SF_PCAL_FIT[sector], "[p1]*([p2] + [p3]/x + [p4]/*(x*x))",
+    //             RANGE?);
+    // }
+
     // momentum vs beta theoretical curves.
-    // TODO. I'm doing something wrong here. I'll have to revisit.
     double mass = 0;
     if (ki == C.K1_PIPLUS || ki == C.K1_PIMINUS) mass = C.PIMASS;
-    F1D f_beta_p = new F1D(C.K3_P_BETA_FIT, "[m]*x/(sqrt(1-x))", 0.9, 1.0);
-    f_beta_p.setParameter(0, mass);
-    f_beta_p.setOptStat("1111");
-    DataFitter.fit(f_beta_p, hists.get(ki).get(C.K2_VP).get(C.K3_P_BETA), "Q");
+    if (ki == C.K1_E) mass = C.EMASS;
+    f_beta_p.put(ki, new F1D(C.K3_P_BETA_FIT, "[m]*x/(sqrt(1-x))", 0.9, 1.0));
+    f_beta_p.get(ki).setParameter(0, mass);
 }
 
 // Save hists
@@ -305,6 +308,7 @@ for (String ki : C.K1ARR) {
     dir.addDataSet(hists.get(ki).get(C.K2_VP).get(C.K3_VP));
     dir.addDataSet(hists.get(ki).get(C.K2_VP).get(C.K3_BETA));
     dir.addDataSet(hists.get(ki).get(C.K2_VP).get(C.K3_P_BETA));
+    dir.addDataSet(f_beta_p.get(ki));
 
     mkcd(dir, "/" + ki + "/ECAL");
     dir.addDataSet(hists.get(ki).get(C.K2_ECAL).get(C.K3_P_E_PCAL));
@@ -469,6 +473,15 @@ public class Constants {
                            "ECIN SF - sector 4", "ECIN SF - sector 5", "ECIN SF - sector 6"];
     String[] K3_SF_ECOU = ["ECOU SF - sector 1", "ECOU SF - sector 2", "ECOU SF - sector 3",
                            "ECOU SF - sector 4", "ECOU SF - sector 5", "ECOU SF - sector 6"];
+    String[] K3_SF_PCAL_FIT = ["PCAL SF Fit - sector 1", "PCAL SF Fit - sector 2",
+                               "PCAL SF Fit - sector 3", "PCAL SF Fit - sector 4",
+                               "PCAL SF Fit - sector 5", "PCAL SF Fit - sector 6"];
+    String[] K3_SF_ECIN_FIT = ["ECIN SF Fit - sector 1", "ECIN SF Fit - sector 2",
+                               "ECIN SF Fit - sector 3", "ECIN SF Fit - sector 4",
+                               "ECIN SF Fit - sector 5", "ECIN SF Fit - sector 6"];
+    String[] K3_SF_ECOU_FIT = ["ECOU SF Fit - sector 1", "ECOU SF Fit - sector 2",
+                               "ECOU SF Fit - sector 3", "ECOU SF Fit - sector 4",
+                               "ECOU SF Fit - sector 5", "ECOU SF Fit - sector 6"];
 
     String K3_DTOF     = "TOF difference";
     String K3_P_DTOF   = "vertex P vs TOF difference";
