@@ -15,6 +15,24 @@ int get_run_no(char* input_file) {
     return run_no_int;
 }
 
+double get_beam_energy(int run_no) {
+    double beam_energy = -1;
+    if (run_no == 0) { // Check that run number was extracted correctly.
+        fprintf(stderr, "ERROR. Run number could not be extracted from input file %s.", input_file);
+        return 1;
+    }
+    switch (run_no) {
+        case 11983: beam_energy = 10.3894; break;
+        case 12016: beam_energy = 10.3894; break;
+        case 12439: beam_energy =  2.1864; break;
+        default:
+            fprintf(stderr, "ERROR. Run number %d not in database. Add from clas12mon.\n", run_no);
+            return -1;
+    }
+
+    return beam_energy;
+}
+
 int main(int argc, char** argv) {
     // Handle optional arguments.
     bool use_fmt = false;
@@ -47,9 +65,16 @@ int main(int argc, char** argv) {
         fprintf(stderr, "ERROR. %s does not exist!\n", input_file);
         return 1;
     }
+
+    // Get beam energy from run number.
     int run_no = get_run_no(input_file);
     if (run_no == 0) { // Check that run number was extracted correctly.
         fprintf(stderr, "ERROR. Run number could not be extracted from input file %s.", input_file);
+        return 1;
+    }
+    double beam_energy = get_beam_energy(run_no);
+    if (beam_energy == -1) {
+        fprintf(stderr, "ERROR. Run number %d not in database. Add from clas12mon.\n", run_no);
         return 1;
     }
 
