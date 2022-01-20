@@ -6,32 +6,7 @@
 // #include <map>
 // #include <string>
 
-int get_run_no(char* input_file) {
-    char* run_no_str = (char*) malloc(7);
-    strncpy(run_no_str, input_file + ((strchr(input_file, '.')) - input_file) - 6, 6);
-    int run_no_int = atoi(run_no_str);
-    free(run_no_str);
-
-    return run_no_int;
-}
-
-double get_beam_energy(int run_no) {
-    double beam_energy = -1;
-    if (run_no == 0) { // Check that run number was extracted correctly.
-        fprintf(stderr, "ERROR. Run number could not be extracted from input file %s.", input_file);
-        return 1;
-    }
-    switch (run_no) {
-        case 11983: beam_energy = 10.3894; break;
-        case 12016: beam_energy = 10.3894; break;
-        case 12439: beam_energy =  2.1864; break;
-        default:
-            fprintf(stderr, "ERROR. Run number %d not in database. Add from clas12mon.\n", run_no);
-            return -1;
-    }
-
-    return beam_energy;
-}
+#include "file_handling.h"
 
 int main(int argc, char** argv) {
     // Handle optional arguments.
