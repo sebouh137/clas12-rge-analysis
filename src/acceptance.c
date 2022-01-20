@@ -14,7 +14,7 @@ int main(int argc, char **argv) {
 
     if (handle_args_err(
             handle_args(argc, argv, &use_fmt, &nevents, &input_file, &run_no, &beam_energy),
-            argv, input_file, run_no)
+            argv, &input_file, run_no)
         ) return 1;
 
     printf("use_fmt:    %d\n", use_fmt);
