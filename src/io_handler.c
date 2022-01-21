@@ -17,8 +17,8 @@ int handle_args(int argc, char **argv, bool *use_fmt, int *nevents, char **input
     *input_file = (char*) malloc(strlen(argv[argc - 1]) + 1);
     strcpy(*input_file, argv[argc - 1]);
 
-    if (!strstr(*input_file, ".hipo"))   return 3; // Check that file is valid.
-    if (!access(*input_file, F_OK) == 0) return 4; // Check that file exists.
+    if (!strstr(*input_file, ".hipo"))     return 3; // Check that file is valid.
+    if (!(access(*input_file, F_OK) == 0)) return 4; // Check that file exists.
 
     // Get run number and beam energy from filename.
     if (!get_run_no(*input_file, run_no))      return 5;
