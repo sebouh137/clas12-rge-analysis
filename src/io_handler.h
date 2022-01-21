@@ -10,5 +10,6 @@
 
 int handle_args(int argc, char **argv, bool *use_fmt, int *nevents, char **input_file, int *run_no,
                 double *beam_energy);
+int handle_filename(char *input_file, int *run_no, double *beam_energy);
 
 #endif

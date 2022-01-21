@@ -1,11 +1,11 @@
 #include "err_handler.h"
 
-int handle_args_err(int errcode, char **argv, char **input_file, int run_no) {
+int handle_args_err(int errcode, char **input_file, int run_no) {
     switch (errcode) {
         case 0:
             return 0;
         case 1:
-            fprintf(stderr, "Usage: %s [-fn] [file]\n", argv[0]);
+            fprintf(stderr, "Usage: main [-fn] [file]\n");
             return 1;
         case 2:
             fprintf(stderr, "Error. nevents should be a number greater than 0.\n");
