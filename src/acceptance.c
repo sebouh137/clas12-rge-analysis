@@ -1,15 +1,17 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+
 #include <TMath.h>
 #include <TH1.h>
 #include <TF1.h>
+#include <TFile.h>
 
 #include "err_handler.h"
 #include "file_handler.h"
 #include "io_handler.h"
 
-// TODO. TEMP CODE === === === ===
+// TODO. TEMP CODE === === === === === === === === === === === === === === === === === === === ===
 auto pi = TMath::Pi();
 
 // function code in C
@@ -36,6 +38,7 @@ void slits() {
     scanf("%f", &ns);
     printf("interference pattern for %f slits, width/distance: %f\n", ns, r);
 
+    TFile f("histos.root", "new");
     // define function and set options
     TF1 *Fnslit  = new TF1("Fnslit",nslit,-5.001,5.,2);
     Fnslit->SetNpx(500);
@@ -45,9 +48,9 @@ void slits() {
     Fnslit->SetParameter(1,ns);
 
     // draw the interference pattern for a grid with n slits
-    Fnslit->Draw();
+    Fnslit->Write();
 }
-// === === === === === === === ===
+// === === === === === === === === === === === === === === === === === === === === === === === ===
 
 // Call program from terminal, C-style.
 int main(int argc, char **argv) {
