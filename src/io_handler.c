@@ -24,7 +24,7 @@ int handle_filename(char *input_file, int *run_no, double *beam_energy) {
     if (!(access(input_file, F_OK) == 0)) return 4; // Check that file exists.
 
     // Get run number and beam energy from filename.
-    if (!get_run_no(input_file, run_no))      return 5;
+    if (!get_run_no(input_file, run_no))       return 5;
     if (get_beam_energy(*run_no, beam_energy)) return 6;
 
     return 0;

@@ -1,0 +1,7 @@
+// Load libraries.
+.L src/err_handler.c;
+.L src/file_handler.c;
+.L src/io_handler.c;
+
+// Execute.
+.x src/acceptance.c("/home/twig/data/out_clas_011983.hipo", true, 12);

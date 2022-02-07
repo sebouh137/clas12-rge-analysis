@@ -2,55 +2,42 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <TMath.h>
-#include <TH1.h>
-#include <TF1.h>
 #include <TFile.h>
+
+#include <BankHist.h>
 
 #include "err_handler.h"
 #include "file_handler.h"
 #include "io_handler.h"
 
-// TODO. TEMP CODE === === === === === === === === === === === === === === === === === === === ===
-auto pi = TMath::Pi();
+int run(char *input_file, bool use_fmt, int nevets, int run_no, double beam_energy) {
+    // Create output file.
+    TFile f("out/histos.root", "RECREATE");
 
-// function code in C
-double single(double *x, double *par) {
-    return pow(sin(pi*par[0]*x[0])/(pi*par[0]*x[0]),2);
+    // Open input file.
+    BankHist bankDraw(input_file);
+
+    // Draw some shit.
+    bankDraw.Hist1D("REC::Particle::Pz", 100, 0, 10, "");
+    bankDraw.Draw();
+
+    // Write into file.
+    f.Write();
+
+    // Do not free up memory since ROOT seems to hate it.
+    // free(input_file);
+    return 0;
 }
 
-double nslit0(double *x,double *par){
-    return pow(sin(pi*par[1]*x[0])/sin(pi*x[0]),2);
+// Execute program from CLAS12ROOT (`.x src/acceptance.c(filename, use_fmt, nevents)`).
+int acceptance(char *input_file, bool use_fmt, int nevents) {
+    int    run_no      = -1;
+    double beam_energy = -1;
+    if (handle_args_err(handle_filename(input_file, &run_no, &beam_energy), &input_file, run_no))
+        return 1;
+
+    return run(input_file, use_fmt, nevents, run_no, beam_energy);
 }
-
-double nslit(double *x, double *par){
-    return single(x,par) * nslit0(x,par);
-}
-
-// This is the main program
-void slits() {
-    float r, ns;
-
-    // request user input
-    printf("slit width / g ?");
-    scanf("%f", &r);
-    printf("# of slits?");
-    scanf("%f", &ns);
-    printf("interference pattern for %f slits, width/distance: %f\n", ns, r);
-
-    TFile f("histos.root", "new");
-    // define function and set options
-    TF1 *Fnslit  = new TF1("Fnslit",nslit,-5.001,5.,2);
-    Fnslit->SetNpx(500);
-
-    // set parameters, as read in above
-    Fnslit->SetParameter(0,r);
-    Fnslit->SetParameter(1,ns);
-
-    // draw the interference pattern for a grid with n slits
-    Fnslit->Write();
-}
-// === === === === === === === === === === === === === === === === === === === === === === === ===
 
 // Call program from terminal, C-style.
 int main(int argc, char **argv) {
@@ -65,14 +52,5 @@ int main(int argc, char **argv) {
             &input_file, run_no)
         ) return 1;
 
-    printf("use_fmt:    %d\n", use_fmt);
-    printf("nevents:    %d\n", nevents);
-    printf("input_file: %s\n", input_file);
-    printf("run_no:     %d\n", run_no);
-
-    // NOTE. Program goes here.
-    slits();
-
-    free(input_file);
-    return 0;
+    return run(input_file, use_fmt, nevents, run_no, beam_energy);
 }
