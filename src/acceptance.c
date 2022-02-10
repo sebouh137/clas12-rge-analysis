@@ -15,44 +15,72 @@ int run(char *input_file, bool use_fmt, int nevents, int run_no, double beam_ene
     // Create output file.
     TFile f("out/histos.root", "RECREATE");
 
-    // Open relevant data banks.
-    // std::map<char*, std::map<char*, BankHist>> banks;
-    std::map<char const *, BankHist *> banks = {
-            {"REC::Particle", new BankHist(input_file)},
-            // {"", new BankHist(input_file)},
-            // {"", new BankHist(input_file)},
-            // {"", new BankHist(input_file)},
-            // {"", new BankHist(input_file)},
-            // {"", new BankHist(input_file)},
-    };
+    // Access files.
+    TChain fake("hipo");
+    fake.Add(input_file);
+    auto files = fake.GetListOfFiles();
 
-    banks["REC::Particle"]->SetEntries(nevents);
+    // Add histos.
+    TH1F *pz        = new TH1F("pz", "Pz", 100, 0, 12);
+    TH1F *beta      = new TH1F("beta", "Beta", 100, 0, 1);
+    TH2F *pz_v_beta = new TH2F("pz_v_beta", "Pz vs Beta", 100, 0, 1, 100, 0, 12);
 
-    // BankHist rec_part(input_file);
-    // BankHist rec_trk (input_file);
-    // BankHist rec_traj(input_file);
-    // BankHist fmt_trks(input_file);
-    // BankHist rec_ecal(input_file);
-    // BankHist rec_tof (input_file);
-    // if (nevents != 0) {
-    //     rec_part.SetEntries(nevents);
-    //     rec_trk .SetEntries(nevents);
-    //     rec_traj.SetEntries(nevents);
-    //     fmt_trks.SetEntries(nevents);
-    //     rec_ecal.SetEntries(nevents);
-    //     rec_tof .SetEntries(nevents);
-    // }
+    // Iterate through files.
+    for (int i = 0; i < files->GetEntries(); ++i) {
+        clas12reader c12(files->At(i)->GetTitle(), {0}); // Create event reader.
+        c12.setEntries(nevents);
 
-    banks["REC::Particle"]->Hist1D("REC::Particle::Pz", 100, 0, 12, "");
-    banks["REC::Particle"]->Draw();
+        // TODO. Add PID cuts.
 
-    // Write into file.
+        // Iterate through events in file.
+        while (c12.next() == true) {
+             // Iterate through particles in event.
+             for (region_particle *rp : c12.getDetParticles()) {
+                 particle *p = rp->par();
+                 pz->Fill(p->getPz());
+                 beta->Fill(rp->getBeta());
+                 pz_v_beta->Fill(rp->getBeta(), p->getPz());
+            }
+        }
+    }
+
     f.Write();
 
-    // Do not free up memory since ROOT seems to hate it.
-    // free(input_file);
     return 0;
 }
+
+// int run1(char *input_file, bool use_fmt, int nevents, int run_no, double beam_energy) {
+//     // Create output file.
+//     TFile f("out/histos.root", "RECREATE");
+//
+//     // Open relevant data banks.
+//     // std::map<char*, std::map<char*, BankHist>> banks;
+//     std::map<char const *, BankHist *> banks = {
+//             {"REC::Particle",     new BankHist(input_file)},
+//             {"REC::Track",        new BankHist(input_file)},
+//             {"REC::Traj",         new BankHist(input_file)},
+//             {"REC::Calorimeter",  new BankHist(input_file)},
+//             {"REC::Scintillator", new BankHist(input_file)},
+//             {"FMT::Tracks",       new BankHist(input_file)},
+//     };
+//
+//     // Setup banks.
+//     if (nevents != 0) {
+//         for (std::pair<char const *, BankHist *> it : banks) it.second->SetEntries(nevents);
+//     }
+//
+//     banks["REC::Particle"]->Hist1D("REC::Particle::Pz", 100, 0, 12, "");
+//     banks["REC::Particle"]->Hist1D("REC::Particle::Beta", 100, 0, 1, "");
+//     banks["REC::Particle"]->Hist2D("REC::Particle::Beta:REC::Particle::Pz", 100, 0, 1, 100, 0, 12, "");
+//     banks["REC::Particle"]->Draw();
+//
+//     // Write into file.
+//     f.Write();
+//
+//     // Do not free up memory since ROOT seems to hate it.
+//     // free(input_file);
+//     return 0;
+// }
 
 // Execute program from clas12root (`.x src/acceptance.c(filename, use_fmt, nevents)`).
 int acceptance(char *input_file, bool use_fmt, int nevents) {
