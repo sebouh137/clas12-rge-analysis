@@ -12,10 +12,7 @@
 #include "io_handler.h"
 
 int run(char *input_file, bool use_fmt, int nevents, int run_no, double beam_energy) {
-    // Create output file.
-    TFile f("out/histos.root", "RECREATE");
-
-    // Access files.
+    // Access input files.
     TChain fake("hipo");
     fake.Add(input_file);
     auto files = fake.GetListOfFiles();
@@ -25,18 +22,20 @@ int run(char *input_file, bool use_fmt, int nevents, int run_no, double beam_ene
     TH1F *beta      = new TH1F("beta", "Beta", 100, 0, 1);
     TH2F *pz_v_beta = new TH2F("pz_v_beta", "Pz vs Beta", 100, 0, 1, 100, 0, 12);
 
-    // Iterate through files.
+    // Iterate through input files.
     for (int i = 0; i < files->GetEntries(); ++i) {
         clas12reader c12(files->At(i)->GetTitle(), {0}); // Create event reader.
         c12.setEntries(nevents);
 
-        // TODO. Add PID cuts.
 
         // Iterate through events in file.
         while (c12.next() == true) {
              // Iterate through particles in event.
              for (region_particle *rp : c12.getDetParticles()) {
                  particle *p = rp->par();
+
+                 // TODO. For loop per PID.
+                 // TODO. Add PID cuts.
                  pz->Fill(p->getPz());
                  beta->Fill(rp->getBeta());
                  pz_v_beta->Fill(rp->getBeta(), p->getPz());
@@ -44,12 +43,21 @@ int run(char *input_file, bool use_fmt, int nevents, int run_no, double beam_ene
         }
     }
 
-    f.Write();
+    // Create output file.
+    TFile f("out/histos.root", "RECREATE");
+
+    // Write to output file.
+    f.mkdir("Vertex P");
+    f.cd("Vertex P");
+    pz->Write();
+    beta->Write();
+    pz_v_beta->Write();
+    f.cd("/");
 
     return 0;
 }
 
-// int run1(char *input_file, bool use_fmt, int nevents, int run_no, double beam_energy) {
+// int run_old(char *input_file, bool use_fmt, int nevents, int run_no, double beam_energy) {
 //     // Create output file.
 //     TFile f("out/histos.root", "RECREATE");
 //
