@@ -18,9 +18,29 @@ int run(char *input_file, bool use_fmt, int nevents, int run_no, double beam_ene
     auto files = fake.GetListOfFiles();
 
     // Add histos.
-    TH1F *h_pz        = new TH1F("pz", "Pz", 100, 0, 12);
-    TH1F *h_beta      = new TH1F("beta", "Beta", 100, 0, 1);
-    TH2F *h_pz_v_beta = new TH2F("pz_v_beta", "Pz vs Beta", 100, 0, 1, 100, 0, 12);
+    std::map<char const *, std::map<char const *, TH1 *>> histos;
+    histos.insert({"all", {}}); // All particles.
+    histos.insert({"pos", {}}); // Positive particles.
+    histos.insert({"neg", {}}); // Negative particles.
+    histos.insert({"pip", {}}); // pi plus.
+    histos.insert({"pim", {}}); // pi minus.
+    histos.insert({"tre", {}}); // trigger electron.
+
+    int d = 0;
+    for (std::pair<char const *, std::map<char const *, TH1 *>> it : histos) {
+        it.second = {
+            {"pz",        new TH1F(Form("%d", d+1), "Pz", 100, 0, 12)},
+            {"beta",      new TH1F(Form("%d", d+2), "Beta", 100, 0, 1)},
+            {"pz v beta", new TH2F(Form("%d", d+3), "Pz vs Beta", 100, 0, 1, 100, 0, 12)},
+        };
+        d += 1000;
+    }
+
+    // std::map<char const *, TH1 *> histos = {
+    //         {"pz",        new TH1F("pz", "Pz", 100, 0, 12)},
+    //         {"beta",      new TH1F("beta", "Beta", 100, 0, 1)},
+    //         {"pz v beta", new TH2F("pz_v_beta", "Pz vs Beta", 100, 0, 1, 100, 0, 12)},
+    // };
 
     // Iterate through input files.
     for (int i = 0; i < files->GetEntries(); ++i) {
@@ -57,9 +77,9 @@ int run(char *input_file, bool use_fmt, int nevents, int run_no, double beam_ene
 
                 // TODO. For loop per PID.
                 // TODO. Add PID cuts.
-                h_pz->Fill(p->getPz());
-                h_beta->Fill(rp->getBeta());
-                h_pz_v_beta->Fill(rp->getBeta(), p->getPz());
+                histos["all"]["pz"]->Fill(p->getPz());
+                histos["all"]["beta"]->Fill(p->getBeta());
+                histos["all"]["pz v beta"]->Fill(p->getBeta(), p->getPz());
             }
         }
     }
@@ -70,9 +90,9 @@ int run(char *input_file, bool use_fmt, int nevents, int run_no, double beam_ene
     // Write to output file.
     f.mkdir("Vertex P");
     f.cd("Vertex P");
-    h_pz->Write();
-    h_beta->Write();
-    h_pz_v_beta->Write();
+    histos["all"]["pz"]->Write();
+    histos["all"]["beta"]->Write();
+    histos["all"]["pz v beta"]->Write();
     f.cd("/");
 
     return 0;
