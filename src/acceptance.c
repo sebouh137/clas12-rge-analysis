@@ -18,27 +18,48 @@ int run(char *input_file, bool use_fmt, int nevents, int run_no, double beam_ene
     auto files = fake.GetListOfFiles();
 
     // Add histos.
-    TH1F *pz        = new TH1F("pz", "Pz", 100, 0, 12);
-    TH1F *beta      = new TH1F("beta", "Beta", 100, 0, 1);
-    TH2F *pz_v_beta = new TH2F("pz_v_beta", "Pz vs Beta", 100, 0, 1, 100, 0, 12);
+    TH1F *h_pz        = new TH1F("pz", "Pz", 100, 0, 12);
+    TH1F *h_beta      = new TH1F("beta", "Beta", 100, 0, 1);
+    TH2F *h_pz_v_beta = new TH2F("pz_v_beta", "Pz vs Beta", 100, 0, 1, 100, 0, 12);
 
     // Iterate through input files.
     for (int i = 0; i < files->GetEntries(); ++i) {
         clas12reader c12(files->At(i)->GetTitle(), {0}); // Create event reader.
         c12.setEntries(nevents);
 
-
         // Iterate through events in file.
         while (c12.next() == true) {
-             // Iterate through particles in event.
-             for (region_particle *rp : c12.getDetParticles()) {
-                 particle *p = rp->par();
+            // Iterate through particles in event.
+            for (region_particle *rp : c12.getDetParticles()) {
+                // Make sure that particle comes from FD.
+                bool exit = false;
+                switch (rp->getRegion()) {
+                case FD: // Forward Detector.
+                    break;
+                case FT: // Forward Tagger.
+                case CD: // Central Detector.
+                    exit = true;
+                };
+                if (exit) continue;
 
-                 // TODO. For loop per PID.
-                 // TODO. Add PID cuts.
-                 pz->Fill(p->getPz());
-                 beta->Fill(rp->getBeta());
-                 pz_v_beta->Fill(rp->getBeta(), p->getPz());
+                // Get particle and associated data.
+                particle *p = rp->par();
+
+                // Apply general cuts.
+                if ((abs(p->getStatus())/1000) != 2) continue; // Filter particles that pass through FMT.
+                // if (abs(chi2pid) >= 3) continue; // Ignore spurious particles.
+                if (p->getPid() == 0) continue; // Ignore bad particles.
+                // if (vz < -40 || vz > 40) continue; // Geometry cut.
+                if (rp->trk(FMT)->getNDF() != 3); // Only use particles detected by 3 FMT layers.
+
+                // TODO. MAKE SURE THAT THE APPLIED CUTS ARE ENOUGH TO KNOW THAT THE PARTICLE BANK
+                //       HAS USED FMT DATA AND NOT ONLY DC!!!
+
+                // TODO. For loop per PID.
+                // TODO. Add PID cuts.
+                h_pz->Fill(p->getPz());
+                h_beta->Fill(rp->getBeta());
+                h_pz_v_beta->Fill(rp->getBeta(), p->getPz());
             }
         }
     }
@@ -49,9 +70,9 @@ int run(char *input_file, bool use_fmt, int nevents, int run_no, double beam_ene
     // Write to output file.
     f.mkdir("Vertex P");
     f.cd("Vertex P");
-    pz->Write();
-    beta->Write();
-    pz_v_beta->Write();
+    h_pz->Write();
+    h_beta->Write();
+    h_pz_v_beta->Write();
     f.cd("/");
 
     return 0;
