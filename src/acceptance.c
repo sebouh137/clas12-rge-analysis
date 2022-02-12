@@ -26,21 +26,18 @@ int run(char *input_file, bool use_fmt, int nevents, int run_no, double beam_ene
     histos.insert({"pim", {}}); // pi minus.
     histos.insert({"tre", {}}); // trigger electron.
 
-    int d = 0;
-    for (std::pair<char const *, std::map<char const *, TH1 *>> it : histos) {
-        it.second = {
-            {"pz",        new TH1F(Form("%d", d+1), "Pz", 100, 0, 12)},
-            {"beta",      new TH1F(Form("%d", d+2), "Beta", 100, 0, 1)},
-            {"pz v beta", new TH2F(Form("%d", d+3), "Pz vs Beta", 100, 0, 1, 100, 0, 12)},
-        };
-        d += 1000;
+    {
+        std::map<char const *, std::map<char const *, TH1 *>>::iterator it;
+        int d = 0;
+        for (it = histos.begin(); it != histos.end(); ++it) {
+            it->second = {
+                {"pz",        new TH1F(Form("%d", d+1), "Pz", 100, 0, 12)},
+                {"beta",      new TH1F(Form("%d", d+2), "Beta", 100, 0, 1)},
+                {"pz v beta", new TH2F(Form("%d", d+3), "Pz vs Beta", 100, 0, 1, 100, 0, 12)},
+            };
+            d += 1000;
+        }
     }
-
-    // std::map<char const *, TH1 *> histos = {
-    //         {"pz",        new TH1F("pz", "Pz", 100, 0, 12)},
-    //         {"beta",      new TH1F("beta", "Beta", 100, 0, 1)},
-    //         {"pz v beta", new TH2F("pz_v_beta", "Pz vs Beta", 100, 0, 1, 100, 0, 12)},
-    // };
 
     // Iterate through input files.
     for (int i = 0; i < files->GetEntries(); ++i) {
