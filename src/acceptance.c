@@ -18,38 +18,36 @@ int run(char *input_file, bool use_fmt, int nevents, int run_no, double beam_ene
     auto files = fake.GetListOfFiles();
 
     // Particle Constants. (TODO. Move this to its own file).
-    char const *p_all = "all"; // All particles.
-    char const *p_pos = "pos"; // Positive particles.
-    char const *p_neg = "neg"; // Negative particles.
-    char const *p_pip = "pip"; // pi plus.
-    char const *p_pim = "pim"; // pi minus.
-    char const *p_tre = "tre"; // trigger electron.
+    char const *p_all = "All particles"; // All particles.
+    char const *p_pos = "Positive particles"; // Positive particles.
+    char const *p_neg = "Negative particles"; // Negative particles.
+    char const *p_pip = "Pi+"; // pi plus.
+    char const *p_pim = "Pi-"; // pi minus.
+    char const *p_elc = "e-"; // electron.
+    char const *p_tre = "Trigger e-"; // trigger electron.
 
     // Histogram Constants. (TODO. Move this to its own file).
-    char const *h_pz      = "pz";
-    char const *h_beta    = "beta";
-    char const *h_beta_pz = "beta v pz";
+    char const *h_pz      = "Pz";
+    char const *h_beta    = "Beta";
+    char const *h_beta_pz = "Beta vs Pz";
 
     // Add histos.
     std::map<char const *, std::map<char const *, TH1 *>> histos;
-    histos.insert({p_all, {}}); // All particles.
-    histos.insert({p_pos, {}}); // Positive particles.
-    histos.insert({p_neg, {}}); // Negative particles.
-    histos.insert({p_pip, {}}); // pi plus.
-    histos.insert({p_pim, {}}); // pi minus.
-    histos.insert({p_tre, {}}); // trigger electron.
+    histos.insert({p_all, {}});
+    histos.insert({p_pos, {}});
+    histos.insert({p_neg, {}});
+    histos.insert({p_pip, {}});
+    histos.insert({p_pim, {}});
+    histos.insert({p_elc, {}});
+    histos.insert({p_tre, {}});
 
-    {
-        std::map<char const *, std::map<char const *, TH1 *>>::iterator it;
-        int d = 0;
-        for (it = histos.begin(); it != histos.end(); ++it) {
-            it->second = {
-                {h_pz,      new TH1F(Form("%d", d+1), "Pz", 100, 0, 12)},
-                {h_beta,    new TH1F(Form("%d", d+2), "Beta", 100, 0, 1)},
-                {h_beta_pz, new TH2F(Form("%d", d+3), "Pz vs Beta", 100, 0, 1, 100, 0, 12)},
-            };
-            d += 1000;
-        }
+    std::map<char const *, std::map<char const *, TH1 *>>::iterator hmap_it;
+    for (hmap_it = histos.begin(); hmap_it != histos.end(); ++hmap_it) {
+        hmap_it->second = {
+            {h_pz,      new TH1F(Form("%s - %s", hmap_it->first, h_pz), h_pz, 100, 0, 12)},
+            {h_beta,    new TH1F(Form("%s - %s", hmap_it->first, h_beta), h_beta, 100, 0, 1)},
+            {h_beta_pz, new TH2F(Form("%s - %s", hmap_it->first, h_beta_pz), h_beta_pz, 100, 0, 1, 100, 0, 12)},
+        };
     }
 
     // Iterate through input files.
@@ -85,11 +83,21 @@ int run(char *input_file, bool use_fmt, int nevents, int run_no, double beam_ene
                 // TODO. MAKE SURE THAT THE APPLIED CUTS ARE ENOUGH TO KNOW THAT THE PARTICLE BANK
                 //       HAS USED FMT DATA AND NOT ONLY DC!!!
 
-                // TODO. For loop per PID.
-                // TODO. Add PID cuts.
-                histos[p_all][h_pz]->Fill(p->getPz());
-                histos[p_all][h_beta]->Fill(p->getBeta());
-                histos[p_all][h_beta_pz]->Fill(p->getBeta(), p->getPz());
+                std::map<char const *, bool> truth_map;
+                truth_map.insert({p_all, true});
+                truth_map.insert({p_pos, p->getCharge() > 0  ? true : false});
+                truth_map.insert({p_pos, p->getCharge() < 0  ? true : false});
+                truth_map.insert({p_pip, p->getPid() ==  211 ? true : false});
+                truth_map.insert({p_pim, p->getPid() == -211 ? true : false});
+                truth_map.insert({p_elc, p->getPid() ==   11 ? true : false});
+                truth_map.insert({p_tre, (p->getPid() == 11 && p->getStatus() < 0) ? true : false});
+
+                for (hmap_it = histos.begin(); hmap_it != histos.end(); ++hmap_it) {
+                    if (!truth_map[hmap_it->first]) continue; // Only write to appropiate histograms.
+                    histos[hmap_it->first][h_pz]->Fill(p->getPz());
+                    histos[hmap_it->first][h_beta]->Fill(p->getBeta());
+                    histos[hmap_it->first][h_beta_pz]->Fill(p->getBeta(), p->getPz());
+                }
             }
         }
     }
@@ -98,12 +106,17 @@ int run(char *input_file, bool use_fmt, int nevents, int run_no, double beam_ene
     TFile f("out/histos.root", "RECREATE");
 
     // Write to output file.
-    f.mkdir("Vertex P");
-    f.cd("Vertex P");
-    histos[p_all][h_pz]->Write();
-    histos[p_all][h_beta]->Write();
-    histos[p_all][h_beta_pz]->Write();
-    f.cd("/");
+    for (hmap_it = histos.begin(); hmap_it != histos.end(); ++hmap_it) {
+        TString dir = Form("%s/%s", hmap_it->first, "Vertex P");
+        f.mkdir(dir);
+        f.cd(dir);
+
+        histos[hmap_it->first][h_pz]->Write();
+        histos[hmap_it->first][h_beta]->Write();
+        histos[hmap_it->first][h_beta_pz]->Write();
+
+        f.cd("/");
+    }
 
     return 0;
 }
