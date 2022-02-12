@@ -53,35 +53,45 @@ int run(char *input_file, bool use_fmt, int nevents, int run_no, double beam_ene
     // Iterate through input files.
     for (int i = 0; i < files->GetEntries(); ++i) {
         clas12reader c12(files->At(i)->GetTitle(), {0}); // Create event reader.
-        c12.setEntries(nevents);
+        c12.setEntries(nevents / files->GetEntries());
 
         // Iterate through events in file.
         while (c12.next() == true) {
             // Iterate through particles in event.
             for (region_particle *rp : c12.getDetParticles()) {
                 // Make sure that particle comes from FD.
-                bool exit = false;
                 switch (rp->getRegion()) {
-                case FD: // Forward Detector.
-                    break;
-                case FT: // Forward Tagger.
-                case CD: // Central Detector.
-                    exit = true;
+                case FD: break;    // Forward Detector.
+                case FT: continue; // Forward Tagger.
+                case CD: continue; // Central Detector.
+                default:
+                    printf("[ERROR] A particles comes from an invalid detector.\n"); // Just in casae.
+                    return(1);
                 };
-                if (exit) continue;
 
                 // Get particle and associated data.
                 particle *p = rp->par();
 
-                // Apply general cuts.
-                if ((abs(p->getStatus())/1000) != 2) continue; // Filter particles that pass through FMT.
-                // if (abs(chi2pid) >= 3) continue; // Ignore spurious particles.
-                if (p->getPid() == 0) continue; // Ignore bad particles.
-                // if (vz < -40 || vz > 40) continue; // Geometry cut.
-                if (rp->trk(FMT)->getNDF() != 3); // Only use particles detected by 3 FMT layers.
+                // Apply PID cuts.
+                if (
+                        abs(p->getChi2Pid()) >= 3 // Ignore spurious particles.
+                     || p->getPid() == 0          // Ignore badly identified particles.
+                ) continue;
 
-                // TODO. MAKE SURE THAT THE APPLIED CUTS ARE ENOUGH TO KNOW THAT THE PARTICLE BANK
-                //       HAS USED FMT DATA AND NOT ONLY DC!!!
+                // Apply geometry cuts. (TODO. Improve cut in z).
+                if (
+                        p->getVx()*p->getVx() + p->getVy()*p->getVy() > 4 // Too far from beamline.
+                     || (p->getVz() < -40 || p->getVz() > 40)             // Too far from target.
+                ) continue;
+
+                // Apply FMT cuts. (TODO. Make sure that this is enough).
+                if (use_fmt && (
+                        (abs(p->getStatus())/1000) != 2 // Filter particles that pass through FMT.
+                     // || rp->trk(FMT)->getNDF() == 3     // TODO. Figure out what this NDF is.
+                )) continue;
+
+                // TODO. Make sure that the particle bank has FMT data.
+                // TODO. Figure out how to get DC data.
 
                 std::map<const char *, bool> truth_map;
                 truth_map.insert({p_all, true});
