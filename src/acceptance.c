@@ -121,39 +121,6 @@ int run(char *input_file, bool use_fmt, int nevents, int run_no, double beam_ene
     return 0;
 }
 
-// int run_old(char *input_file, bool use_fmt, int nevents, int run_no, double beam_energy) {
-//     // Create output file.
-//     TFile f("out/histos.root", "RECREATE");
-//
-//     // Open relevant data banks.
-//     // std::map<char*, std::map<char*, BankHist>> banks;
-//     std::map<char const *, BankHist *> banks = {
-//             {"REC::Particle",     new BankHist(input_file)},
-//             {"REC::Track",        new BankHist(input_file)},
-//             {"REC::Traj",         new BankHist(input_file)},
-//             {"REC::Calorimeter",  new BankHist(input_file)},
-//             {"REC::Scintillator", new BankHist(input_file)},
-//             {"FMT::Tracks",       new BankHist(input_file)},
-//     };
-//
-//     // Setup banks.
-//     if (nevents != 0) {
-//         for (std::pair<char const *, BankHist *> it : banks) it.second->SetEntries(nevents);
-//     }
-//
-//     banks["REC::Particle"]->Hist1D("REC::Particle::Pz", 100, 0, 12, "");
-//     banks["REC::Particle"]->Hist1D("REC::Particle::Beta", 100, 0, 1, "");
-//     banks["REC::Particle"]->Hist2D("REC::Particle::Beta:REC::Particle::Pz", 100, 0, 1, 100, 0, 12, "");
-//     banks["REC::Particle"]->Draw();
-//
-//     // Write into file.
-//     f.Write();
-//
-//     // Do not free up memory since ROOT seems to hate it.
-//     // free(input_file);
-//     return 0;
-// }
-
 // Execute program from clas12root (`.x src/acceptance.c(filename, use_fmt, nevents)`).
 int acceptance(char *input_file, bool use_fmt, int nevents) {
     int    run_no      = -1;
