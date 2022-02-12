@@ -18,21 +18,21 @@ int run(char *input_file, bool use_fmt, int nevents, int run_no, double beam_ene
     auto files = fake.GetListOfFiles();
 
     // Particle Constants. (TODO. Move this to its own file).
-    char const *p_all = "All particles"; // All particles.
-    char const *p_pos = "Positive particles"; // Positive particles.
-    char const *p_neg = "Negative particles"; // Negative particles.
-    char const *p_pip = "Pi+"; // pi plus.
-    char const *p_pim = "Pi-"; // pi minus.
-    char const *p_elc = "e-"; // electron.
-    char const *p_tre = "Trigger e-"; // trigger electron.
+    const char *p_all = "All particles"; // All particles.
+    const char *p_pos = "Positive particles"; // Positive particles.
+    const char *p_neg = "Negative particles"; // Negative particles.
+    const char *p_pip = "Pi+"; // pi plus.
+    const char *p_pim = "Pi-"; // pi minus.
+    const char *p_elc = "e-"; // electron.
+    const char *p_tre = "Trigger e-"; // trigger electron.
 
     // Histogram Constants. (TODO. Move this to its own file).
-    char const *h_pz      = "Pz";
-    char const *h_beta    = "Beta";
-    char const *h_beta_pz = "Beta vs Pz";
+    const char *h_pz      = "Pz";
+    const char *h_beta    = "Beta";
+    const char *h_beta_pz = "Beta vs Pz";
 
     // Add histos.
-    std::map<char const *, std::map<char const *, TH1 *>> histos;
+    std::map<const char *, std::map<const char *, TH1 *>> histos;
     histos.insert({p_all, {}});
     histos.insert({p_pos, {}});
     histos.insert({p_neg, {}});
@@ -41,7 +41,7 @@ int run(char *input_file, bool use_fmt, int nevents, int run_no, double beam_ene
     histos.insert({p_elc, {}});
     histos.insert({p_tre, {}});
 
-    std::map<char const *, std::map<char const *, TH1 *>>::iterator hmap_it;
+    std::map<const char *, std::map<const char *, TH1 *>>::iterator hmap_it;
     for (hmap_it = histos.begin(); hmap_it != histos.end(); ++hmap_it) {
         hmap_it->second = {
             {h_pz,      new TH1F(Form("%s - %s", hmap_it->first, h_pz), h_pz, 100, 0, 12)},
@@ -83,7 +83,7 @@ int run(char *input_file, bool use_fmt, int nevents, int run_no, double beam_ene
                 // TODO. MAKE SURE THAT THE APPLIED CUTS ARE ENOUGH TO KNOW THAT THE PARTICLE BANK
                 //       HAS USED FMT DATA AND NOT ONLY DC!!!
 
-                std::map<char const *, bool> truth_map;
+                std::map<const char *, bool> truth_map;
                 truth_map.insert({p_all, true});
                 truth_map.insert({p_pos, p->getCharge() > 0  ? true : false});
                 truth_map.insert({p_pos, p->getCharge() < 0  ? true : false});
