@@ -17,23 +17,36 @@ int run(char *input_file, bool use_fmt, int nevents, int run_no, double beam_ene
     fake.Add(input_file);
     auto files = fake.GetListOfFiles();
 
+    // Particle Constants. (TODO. Move this to its own file).
+    char const *p_all = "all"; // All particles.
+    char const *p_pos = "pos"; // Positive particles.
+    char const *p_neg = "neg"; // Negative particles.
+    char const *p_pip = "pip"; // pi plus.
+    char const *p_pim = "pim"; // pi minus.
+    char const *p_tre = "tre"; // trigger electron.
+
+    // Histogram Constants. (TODO. Move this to its own file).
+    char const *h_pz      = "pz";
+    char const *h_beta    = "beta";
+    char const *h_beta_pz = "beta v pz";
+
     // Add histos.
     std::map<char const *, std::map<char const *, TH1 *>> histos;
-    histos.insert({"all", {}}); // All particles.
-    histos.insert({"pos", {}}); // Positive particles.
-    histos.insert({"neg", {}}); // Negative particles.
-    histos.insert({"pip", {}}); // pi plus.
-    histos.insert({"pim", {}}); // pi minus.
-    histos.insert({"tre", {}}); // trigger electron.
+    histos.insert({p_all, {}}); // All particles.
+    histos.insert({p_pos, {}}); // Positive particles.
+    histos.insert({p_neg, {}}); // Negative particles.
+    histos.insert({p_pip, {}}); // pi plus.
+    histos.insert({p_pim, {}}); // pi minus.
+    histos.insert({p_tre, {}}); // trigger electron.
 
     {
         std::map<char const *, std::map<char const *, TH1 *>>::iterator it;
         int d = 0;
         for (it = histos.begin(); it != histos.end(); ++it) {
             it->second = {
-                {"pz",        new TH1F(Form("%d", d+1), "Pz", 100, 0, 12)},
-                {"beta",      new TH1F(Form("%d", d+2), "Beta", 100, 0, 1)},
-                {"pz v beta", new TH2F(Form("%d", d+3), "Pz vs Beta", 100, 0, 1, 100, 0, 12)},
+                {h_pz,      new TH1F(Form("%d", d+1), "Pz", 100, 0, 12)},
+                {h_beta,    new TH1F(Form("%d", d+2), "Beta", 100, 0, 1)},
+                {h_beta_pz, new TH2F(Form("%d", d+3), "Pz vs Beta", 100, 0, 1, 100, 0, 12)},
             };
             d += 1000;
         }
@@ -74,9 +87,9 @@ int run(char *input_file, bool use_fmt, int nevents, int run_no, double beam_ene
 
                 // TODO. For loop per PID.
                 // TODO. Add PID cuts.
-                histos["all"]["pz"]->Fill(p->getPz());
-                histos["all"]["beta"]->Fill(p->getBeta());
-                histos["all"]["pz v beta"]->Fill(p->getBeta(), p->getPz());
+                histos[p_all][h_pz]->Fill(p->getPz());
+                histos[p_all][h_beta]->Fill(p->getBeta());
+                histos[p_all][h_beta_pz]->Fill(p->getBeta(), p->getPz());
             }
         }
     }
@@ -87,9 +100,9 @@ int run(char *input_file, bool use_fmt, int nevents, int run_no, double beam_ene
     // Write to output file.
     f.mkdir("Vertex P");
     f.cd("Vertex P");
-    histos["all"]["pz"]->Write();
-    histos["all"]["beta"]->Write();
-    histos["all"]["pz v beta"]->Write();
+    histos[p_all][h_pz]->Write();
+    histos[p_all][h_beta]->Write();
+    histos[p_all][h_beta_pz]->Write();
     f.cd("/");
 
     return 0;
