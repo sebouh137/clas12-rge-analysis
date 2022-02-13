@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <map>
+#include <math.h>
 
 #include <TFile.h>
 
@@ -10,6 +11,8 @@
 #include "err_handler.h"
 #include "file_handler.h"
 #include "io_handler.h"
+
+double to_deg(double radians) {return radians * (180.0 / M_PI);}
 
 int run(char *input_file, bool use_fmt, int nevents, int run_no, double beam_energy) {
     // Access input files.
@@ -27,9 +30,13 @@ int run(char *input_file, bool use_fmt, int nevents, int run_no, double beam_ene
     const char *p_tre = "Trigger e-"; // trigger electron.
 
     // Histogram Constants. (TODO. Move this to its own file).
-    const char *h_pz      = "Pz";
-    const char *h_beta    = "Beta";
-    const char *h_beta_pz = "Beta vs Pz";
+    const char *h_vz       = "Vz";
+    const char *h_vz_phi   = "Vz vs phi";
+    const char *h_vz_theta = "Vz vs theta";
+
+    const char *h_pz       = "Pz";
+    const char *h_beta     = "Beta";
+    const char *h_beta_pz  = "Beta vs Pz";
 
     // Add histos.
     std::map<const char *, std::map<const char *, TH1 *>> histos;
@@ -44,9 +51,12 @@ int run(char *input_file, bool use_fmt, int nevents, int run_no, double beam_ene
     std::map<const char *, std::map<const char *, TH1 *>>::iterator hmap_it;
     for (hmap_it = histos.begin(); hmap_it != histos.end(); ++hmap_it) {
         hmap_it->second = {
-            {h_pz,      new TH1F(Form("%s - %s", hmap_it->first, h_pz), h_pz, 100, 0, 12)},
-            {h_beta,    new TH1F(Form("%s - %s", hmap_it->first, h_beta), h_beta, 100, 0, 1)},
-            {h_beta_pz, new TH2F(Form("%s - %s", hmap_it->first, h_beta_pz), h_beta_pz, 100, 0, 1, 100, 0, 12)},
+            {h_vz,       new TH1F(Form("%s - %s", hmap_it->first, h_vz),       h_vz,       100, -50, 50)},
+            {h_vz_phi,   new TH2F(Form("%s - %s", hmap_it->first, h_vz_phi),   h_vz_phi,   100, -50, 50, 100, -180, 180)},
+            {h_vz_theta, new TH2F(Form("%s - %s", hmap_it->first, h_vz_theta), h_vz_theta, 100, -50, 50, 100, 0, 50)},
+            {h_pz,       new TH1F(Form("%s - %s", hmap_it->first, h_pz),       h_pz,       100, 0, 12)},
+            {h_beta,     new TH1F(Form("%s - %s", hmap_it->first, h_beta),     h_beta,     100, 0, 1)},
+            {h_beta_pz,  new TH2F(Form("%s - %s", hmap_it->first, h_beta_pz),  h_beta_pz,  100, 0, 1, 100, 0, 12)},
         };
     }
 
@@ -104,8 +114,16 @@ int run(char *input_file, bool use_fmt, int nevents, int run_no, double beam_ene
 
                 for (hmap_it = histos.begin(); hmap_it != histos.end(); ++hmap_it) {
                     if (!truth_map[hmap_it->first]) continue; // Only write to appropiate histograms.
-                    histos[hmap_it->first][h_pz]->Fill(p->getPz());
-                    histos[hmap_it->first][h_beta]->Fill(p->getBeta());
+
+                    histos[hmap_it->first][h_vz_phi]  ->Fill(p->getVz(), to_deg(rp->getPhi()));
+                    // NOTE. No beam alignment on runs yet, so we only use one sector.
+                    if (rp->trk(FMT)->getSector() != 1) continue;
+
+                    histos[hmap_it->first][h_vz]      ->Fill(p->getVz());
+                    histos[hmap_it->first][h_vz_theta]->Fill(p->getVz(), to_deg(rp->getTheta()));
+
+                    histos[hmap_it->first][h_pz]     ->Fill(p->getPz());
+                    histos[hmap_it->first][h_beta]   ->Fill(p->getBeta());
                     histos[hmap_it->first][h_beta_pz]->Fill(p->getBeta(), p->getPz());
                 }
             }
@@ -117,15 +135,19 @@ int run(char *input_file, bool use_fmt, int nevents, int run_no, double beam_ene
 
     // Write to output file.
     for (hmap_it = histos.begin(); hmap_it != histos.end(); ++hmap_it) {
-        TString dir = Form("%s/%s", hmap_it->first, "Vertex P");
+        TString dir = Form("%s/%s", hmap_it->first, "Vertex Z");
         f.mkdir(dir);
         f.cd(dir);
+        histos[hmap_it->first][h_vz]      ->Write();
+        histos[hmap_it->first][h_vz_phi]  ->Write();
+        histos[hmap_it->first][h_vz_theta]->Write();
 
-        histos[hmap_it->first][h_pz]->Write();
-        histos[hmap_it->first][h_beta]->Write();
-        histos[hmap_it->first][h_beta_pz]->Write();
-
-        f.cd("/");
+        dir = Form("%s/%s", hmap_it->first, "Vertex P");
+        f.mkdir(dir);
+        f.cd(dir);
+        histos[hmap_it->first][h_pz]      ->Write();
+        histos[hmap_it->first][h_beta]    ->Write();
+        histos[hmap_it->first][h_beta_pz] ->Write();
     }
 
     return 0;
