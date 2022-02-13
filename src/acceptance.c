@@ -21,13 +21,13 @@ int run(char *input_file, bool use_fmt, int nevents, int run_no, double beam_ene
     auto files = fake.GetListOfFiles();
 
     // Particle Constants. (TODO. Move this to its own file).
-    const char *p_all = "All particles"; // All particles.
+    const char *p_all = "All particles";      // All particles.
     const char *p_pos = "Positive particles"; // Positive particles.
     const char *p_neg = "Negative particles"; // Negative particles.
-    const char *p_pip = "Pi+"; // pi plus.
-    const char *p_pim = "Pi-"; // pi minus.
-    const char *p_elc = "e-"; // electron.
-    const char *p_tre = "Trigger e-"; // trigger electron.
+    const char *p_pip = "Pi+";                // pi plus.
+    const char *p_pim = "Pi-";                // pi minus.
+    const char *p_elc = "e-";                 // electron.
+    const char *p_tre = "Trigger e-";         // trigger electron.
 
     // Histogram Constants. (TODO. Move this to its own file).
     const char *h_vz       = "Vz";
@@ -37,6 +37,9 @@ int run(char *input_file, bool use_fmt, int nevents, int run_no, double beam_ene
     const char *h_vp       = "Vp";
     const char *h_beta     = "Beta";
     const char *h_beta_vp  = "Beta vs Vp";
+
+    const char *h_dtof     = "TOF Difference";
+    const char *h_vp_dtof  = "Vp vs TOF Difference";
 
     // Add histos.
     std::map<const char *, std::map<const char *, TH1 *>> histos;
@@ -54,10 +57,13 @@ int run(char *input_file, bool use_fmt, int nevents, int run_no, double beam_ene
             {h_vz,       new TH1F(Form("%s - %s", hmap_it->first, h_vz),       h_vz,       100, -50, 50)},
             {h_vz_phi,   new TH2F(Form("%s - %s", hmap_it->first, h_vz_phi),   h_vz_phi,   100, -50, 50, 100, -180, 180)},
             {h_vz_theta, new TH2F(Form("%s - %s", hmap_it->first, h_vz_theta), h_vz_theta, 100, -50, 50, 100, 0, 50)},
+
             {h_vp,       new TH1F(Form("%s - %s", hmap_it->first, h_vp),       h_vp,       100, 0, 12)},
             {h_beta,     new TH1F(Form("%s - %s", hmap_it->first, h_beta),     h_beta,     100, 0, 1)},
             {h_beta_vp,  new TH2F(Form("%s - %s", hmap_it->first, h_beta_vp),  h_beta_vp,  100, 0, 1, 100, 0, 12)},
 
+            {h_dtof,     new TH1F(Form("%s - %s", hmap_it->first, h_dtof),     h_dtof,     100, 0, 50)},
+            {h_vp_dtof,  new TH2F(Form("%s - %s", hmap_it->first, h_vp_dtof),  h_vp_dtof,  100, 0, 12, 100, 0, 50)},
         };
     }
 
@@ -68,6 +74,13 @@ int run(char *input_file, bool use_fmt, int nevents, int run_no, double beam_ene
 
         // Iterate through events in file.
         while (c12.next() == true) {
+            // Find trigger electron's TOF.
+            double tre_tof = -1;
+            for (region_particle *rp : c12.getDetParticles()) {
+                if (rp->par()->getPid() == 11 && rp->par()->getStatus() < 0)
+                    tre_tof = rp->sci(FTOF)->getTime();
+            }
+
             // Iterate through particles in event.
             for (region_particle *rp : c12.getDetParticles()) {
                 // Make sure that particle comes from FD.
@@ -126,6 +139,13 @@ int run(char *input_file, bool use_fmt, int nevents, int run_no, double beam_ene
                     histos[hmap_it->first][h_vp]     ->Fill(p->getP());
                     histos[hmap_it->first][h_beta]   ->Fill(p->getBeta());
                     histos[hmap_it->first][h_beta_vp]->Fill(p->getBeta(), p->getP());
+
+                    // TODO. Check FTOF resolution.
+                    if (tre_tof >= 0) { // Only fill if trigger electron's TOF was found.
+                        double dtof = rp->sci(FTOF)->getTime() - tre_tof;
+                        histos[hmap_it->first][h_dtof]   ->Fill(dtof);
+                        histos[hmap_it->first][h_vp_dtof]->Fill(p->getP(), dtof);
+                    }
                 }
             }
         }
@@ -149,6 +169,12 @@ int run(char *input_file, bool use_fmt, int nevents, int run_no, double beam_ene
         histos[hmap_it->first][h_vp]      ->Write();
         histos[hmap_it->first][h_beta]    ->Write();
         histos[hmap_it->first][h_beta_vp] ->Write();
+
+        dir = Form("%s/%s", hmap_it->first, "DTOF");
+        f.mkdir(dir);
+        f.cd(dir);
+        histos[hmap_it->first][h_dtof]    ->Write();
+        histos[hmap_it->first][h_vp_dtof] ->Write();
     }
 
     return 0;
