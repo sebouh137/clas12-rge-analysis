@@ -46,7 +46,27 @@
 #define PECINE   "Vp vs E (ECIN)"
 #define PECOUE   "Vp vs E (ECOU)"
 #define ECALPCAL "E (ECAL) vs E (PCAL)"
-// #define SF "Sampling Fraction"
+#define PCALSF   "PCAL Sampling Fraction s"
+#define PCALSF1  "PCAL Sampling Fraction s1"
+#define PCALSF2  "PCAL Sampling Fraction s2"
+#define PCALSF3  "PCAL Sampling Fraction s3"
+#define PCALSF4  "PCAL Sampling Fraction s4"
+#define PCALSF5  "PCAL Sampling Fraction s5"
+#define PCALSF6  "PCAL Sampling Fraction s6"
+#define ECINSF   "ECIN Sampling Fraction s"
+#define ECINSF1  "ECIN Sampling Fraction s1"
+#define ECINSF2  "ECIN Sampling Fraction s2"
+#define ECINSF3  "ECIN Sampling Fraction s3"
+#define ECINSF4  "ECIN Sampling Fraction s4"
+#define ECINSF5  "ECIN Sampling Fraction s5"
+#define ECINSF6  "ECIN Sampling Fraction s6"
+#define ECOUSF   "ECOU Sampling Fraction s"
+#define ECOUSF1  "ECOU Sampling Fraction s1"
+#define ECOUSF2  "ECOU Sampling Fraction s2"
+#define ECOUSF3  "ECOU Sampling Fraction s3"
+#define ECOUSF4  "ECOU Sampling Fraction s4"
+#define ECOUSF5  "ECOU Sampling Fraction s5"
+#define ECOUSF6  "ECOU Sampling Fraction s6"
 
 #define Q2       "Q2"
 #define NU       "nu"
@@ -64,6 +84,12 @@ double calc_Xb(double beam_E, double momentum, double theta) {
 }
 
 int run(char *input_file, bool use_fmt, int nevents, int run_no, double beam_E) {
+    // Sampling Fraction. TODO. Temporary code.
+    double p1[6] = { 0.25149,  0.25186,  0.24912,  0.24747,  0.24649,  0.25409};
+    double p2[6] = { 1.00000,  1.00000,  1.00000,  1.00000,  1.00000,  1.00000};
+    double p3[6] = {-0.03427, -0.03771, -0.02627, -0.03163, -0.02723, -0.04000};
+    double p4[6] = { 0.00070,  0.00070,  0.00070,  0.00070,  0.00070,  0.00070};
+
     // Access input files.
     TChain fake("hipo");
     fake.Add(input_file);
@@ -101,6 +127,25 @@ int run(char *input_file, bool use_fmt, int nevents, int run_no, double beam_E) 
             {PECOUE,   new TH2F(Form("%s - %s", k1, PECOUE),   PECOUE,   100, 0, 12, 100, 0, 12)},
             {ECALPCAL, new TH2F(Form("%s - %s", k1, ECALPCAL), ECALPCAL, 100, 0, 2, 100, 0, 2)},
 
+            {PCALSF1,  new TH1F(Form("%s - %s", k1, PCALSF1), PCALSF1, 100, 0, 0.5)},
+            {PCALSF2,  new TH1F(Form("%s - %s", k1, PCALSF2), PCALSF2, 100, 0, 0.5)},
+            {PCALSF3,  new TH1F(Form("%s - %s", k1, PCALSF3), PCALSF3, 100, 0, 0.5)},
+            {PCALSF4,  new TH1F(Form("%s - %s", k1, PCALSF4), PCALSF4, 100, 0, 0.5)},
+            {PCALSF5,  new TH1F(Form("%s - %s", k1, PCALSF5), PCALSF5, 100, 0, 0.5)},
+            {PCALSF6,  new TH1F(Form("%s - %s", k1, PCALSF6), PCALSF6, 100, 0, 0.5)},
+            {ECINSF1,  new TH1F(Form("%s - %s", k1, ECINSF1), ECINSF1, 100, 0, 0.5)},
+            {ECINSF2,  new TH1F(Form("%s - %s", k1, ECINSF2), ECINSF2, 100, 0, 0.5)},
+            {ECINSF3,  new TH1F(Form("%s - %s", k1, ECINSF3), ECINSF3, 100, 0, 0.5)},
+            {ECINSF4,  new TH1F(Form("%s - %s", k1, ECINSF4), ECINSF4, 100, 0, 0.5)},
+            {ECINSF5,  new TH1F(Form("%s - %s", k1, ECINSF5), ECINSF5, 100, 0, 0.5)},
+            {ECINSF6,  new TH1F(Form("%s - %s", k1, ECINSF6), ECINSF6, 100, 0, 0.5)},
+            {ECOUSF1,  new TH1F(Form("%s - %s", k1, ECOUSF1), ECOUSF1, 100, 0, 0.5)},
+            {ECOUSF2,  new TH1F(Form("%s - %s", k1, ECOUSF2), ECOUSF2, 100, 0, 0.5)},
+            {ECOUSF3,  new TH1F(Form("%s - %s", k1, ECOUSF3), ECOUSF3, 100, 0, 0.5)},
+            {ECOUSF4,  new TH1F(Form("%s - %s", k1, ECOUSF4), ECOUSF4, 100, 0, 0.5)},
+            {ECOUSF5,  new TH1F(Form("%s - %s", k1, ECOUSF5), ECOUSF5, 100, 0, 0.5)},
+            {ECOUSF6,  new TH1F(Form("%s - %s", k1, ECOUSF6), ECOUSF6, 100, 0, 0.5)},
+
             {Q2,       new TH1F(Form("%s - %s", k1, Q2),       Q2,       22, 0, 12)},
             {NU,       new TH1F(Form("%s - %s", k1, NU),       NU,       22, 0, 12)},
             {XB,       new TH1F(Form("%s - %s", k1, XB),       XB,       20, 0, 2)},
@@ -129,7 +174,7 @@ int run(char *input_file, bool use_fmt, int nevents, int run_no, double beam_E) 
                 case FT: continue; // Forward Tagger.
                 case CD: continue; // Central Detector.
                 default:
-                    printf("[ERROR] A particles comes from an invalid detector.\n"); // Just in casae.
+                    printf("[ERROR] A particles comes from an invalid detector.\n"); // Just in case.
                     return(1);
                 };
 
@@ -171,13 +216,12 @@ int run(char *input_file, bool use_fmt, int nevents, int run_no, double beam_E) 
                 for (hmap_it = histos.begin(); hmap_it != histos.end(); ++hmap_it) {
                     if (!truth_map[hmap_it->first]) continue; // Only write to appropiate histograms.
 
-                    histos[hmap_it->first][VZPHI]->Fill(p->getVz(), to_deg(rp->getPhi()));
-                    // NOTE. No beam alignment on runs yet, so we only use one sector.
-                    if (rp->trk(FMT)->getSector() != 1) continue;
-
                     // Vertex z.
-                    histos[hmap_it->first][VZ]     ->Fill(p->getVz());
-                    histos[hmap_it->first][VZTHETA]->Fill(p->getVz(), to_deg(rp->getTheta()));
+                    histos[hmap_it->first][VZPHI]->Fill(p->getVz(), to_deg(rp->getPhi()));
+                    if (rp->trk(FMT)->getSector() == 1) { // No beam alignment on runs yet.
+                        histos[hmap_it->first][VZ]     ->Fill(p->getVz());
+                        histos[hmap_it->first][VZTHETA]->Fill(p->getVz(), to_deg(rp->getTheta()));
+                    }
 
                     // Vertex P.
                     histos[hmap_it->first][VP]    ->Fill(p->getP());
@@ -202,6 +246,53 @@ int run(char *input_file, bool use_fmt, int nevents, int run_no, double beam_E) 
                     histos[hmap_it->first][PECINE]  ->Fill(p->getP(), ecin_E);
                     histos[hmap_it->first][PECOUE]  ->Fill(p->getP(), ecou_E);
                     histos[hmap_it->first][ECALPCAL]->Fill(ecin_E+ecou_E, pcal_E);
+
+                    // Sampling Fraction.
+                    int s; double sf;
+                    s  = rp->cal(PCAL)->getSector();
+                    sf = p1[s-1] * (p2[s-1] + p3[s-1]/pcal_E + pow(p4[s-1]/pcal_E, 2));
+                    switch (s) { // NOTE. Bad solution because I'm lazy. I should change this.
+                    case 0: break;
+                    case 1: histos[hmap_it->first][PCALSF1]->Fill(sf); break;
+                    case 2: histos[hmap_it->first][PCALSF2]->Fill(sf); break;
+                    case 3: histos[hmap_it->first][PCALSF3]->Fill(sf); break;
+                    case 4: histos[hmap_it->first][PCALSF4]->Fill(sf); break;
+                    case 5: histos[hmap_it->first][PCALSF5]->Fill(sf); break;
+                    case 6: histos[hmap_it->first][PCALSF6]->Fill(sf); break;
+                    default:
+                        printf("[ERROR] A particles is in invalid sector %d.\n", s); // Just in case.
+                        return(1);
+                    };
+
+                    s  = rp->cal(ECIN)->getSector();
+                    sf = p1[s-1] * (p2[s-1] + p3[s-1]/pcal_E + pow(p4[s-1]/pcal_E, 2));
+                    switch (s) { // NOTE. Bad solution because I'm lazy. I should change this.
+                    case 0: break;
+                    case 1: histos[hmap_it->first][ECINSF1]->Fill(sf); break;
+                    case 2: histos[hmap_it->first][ECINSF2]->Fill(sf); break;
+                    case 3: histos[hmap_it->first][ECINSF3]->Fill(sf); break;
+                    case 4: histos[hmap_it->first][ECINSF4]->Fill(sf); break;
+                    case 5: histos[hmap_it->first][ECINSF5]->Fill(sf); break;
+                    case 6: histos[hmap_it->first][ECINSF6]->Fill(sf); break;
+                    default:
+                        printf("[ERROR] A particles is in invalid sector %d.\n", s); // Just in case.
+                        return(1);
+                    };
+
+                    s  = rp->cal(ECOUT)->getSector();
+                    sf = p1[s-1] * (p2[s-1] + p3[s-1]/pcal_E + pow(p4[s-1]/pcal_E, 2));
+                    switch (s) { // NOTE. Bad solution because I'm lazy. I should change this.
+                    case 0: break;
+                    case 1: histos[hmap_it->first][ECOUSF1]->Fill(sf); break;
+                    case 2: histos[hmap_it->first][ECOUSF2]->Fill(sf); break;
+                    case 3: histos[hmap_it->first][ECOUSF3]->Fill(sf); break;
+                    case 4: histos[hmap_it->first][ECOUSF4]->Fill(sf); break;
+                    case 5: histos[hmap_it->first][ECOUSF5]->Fill(sf); break;
+                    case 6: histos[hmap_it->first][ECOUSF6]->Fill(sf); break;
+                    default:
+                        printf("[ERROR] A particles is in invalid sector %d.\n", s); // Just in case.
+                        return(1);
+                    };
 
                     // SIDIS variables.
                     if (p->getPid() == 11) {
@@ -248,6 +339,28 @@ int run(char *input_file, bool use_fmt, int nevents, int run_no, double beam_E) 
         histos[hmap_it->first][PECINE]  ->Write();
         histos[hmap_it->first][PECOUE]  ->Write();
         histos[hmap_it->first][ECALPCAL]->Write();
+
+        dir = Form("%s/%s/%s", hmap_it->first, "CALs", "Sampling Fraction");
+        f.mkdir(dir);
+        f.cd(dir);
+        histos[hmap_it->first][PCALSF1]->Write();
+        histos[hmap_it->first][PCALSF2]->Write();
+        histos[hmap_it->first][PCALSF3]->Write();
+        histos[hmap_it->first][PCALSF4]->Write();
+        histos[hmap_it->first][PCALSF5]->Write();
+        histos[hmap_it->first][PCALSF6]->Write();
+        histos[hmap_it->first][ECINSF1]->Write();
+        histos[hmap_it->first][ECINSF2]->Write();
+        histos[hmap_it->first][ECINSF3]->Write();
+        histos[hmap_it->first][ECINSF4]->Write();
+        histos[hmap_it->first][ECINSF5]->Write();
+        histos[hmap_it->first][ECINSF6]->Write();
+        histos[hmap_it->first][ECOUSF1]->Write();
+        histos[hmap_it->first][ECOUSF2]->Write();
+        histos[hmap_it->first][ECOUSF3]->Write();
+        histos[hmap_it->first][ECOUSF4]->Write();
+        histos[hmap_it->first][ECOUSF5]->Write();
+        histos[hmap_it->first][ECOUSF6]->Write();
 
         dir = Form("%s/%s", hmap_it->first, "SIDIS");
         f.mkdir(dir);
