@@ -48,18 +48,22 @@
 #define ECALPCAL "E (ECAL) vs E (PCAL)"
 // #define SF "Sampling Fraction"
 
+#define Q2       "Q2"
+#define NU       "nu"
+#define XB       "X_bjorken"
+
 double to_deg(double radians) {return radians * (180.0 / M_PI);}
-double calc_Q2(double beam_energy, double momentum, double theta) {
-    return pow(4 * beam_energy * momentum * sin(theta/2), 2);
+double calc_Q2(double beam_E, double momentum, double theta) {
+    return pow(4 * beam_E * momentum * sin(theta/2), 2);
 }
-double calc_nu(double beam_energy, double momentum) {
-    return beam_energy - momentum;
+double calc_nu(double beam_E, double momentum) {
+    return beam_E - momentum;
 }
-double calc_Xb(double beam_energy, double momentum, double theta) {
-    return (calc_Q2(beam_energy, momentum, theta)/2) / (calc_nu(beam_energy, momentum)/PRTMASS);
+double calc_Xb(double beam_E, double momentum, double theta) {
+    return (calc_Q2(beam_E, momentum, theta)/2) / (calc_nu(beam_E, momentum)/PRTMASS);
 }
 
-int run(char *input_file, bool use_fmt, int nevents, int run_no, double beam_energy) {
+int run(char *input_file, bool use_fmt, int nevents, int run_no, double beam_E) {
     // Access input files.
     TChain fake("hipo");
     fake.Add(input_file);
@@ -90,12 +94,16 @@ int run(char *input_file, bool use_fmt, int nevents, int run_no, double beam_ene
             {DTOF,     new TH1F(Form("%s - %s", k1, DTOF),     DTOF,    100, 0, 50)},
             {VPTOF,    new TH2F(Form("%s - %s", k1, VPTOF),    VPTOF,   100, 0, 12, 100, 0, 50)},
 
-            {PDIVEE,   new TH2F(Form("%s - %s", k1, PDIVEE),   PDIVEE,     100, 0, 3, 100, 0, 0.4)},
-            {PDIVEP,   new TH2F(Form("%s - %s", k1, PDIVEP),   PDIVEP,     100, 0, 12, 100, 0, 0.4)},
-            {PPCALE,   new TH2F(Form("%s - %s", k1, PPCALE),   PPCALE,     100, 0, 12, 100, 0, 12)},
-            {PECINE,   new TH2F(Form("%s - %s", k1, PECINE),   PECINE,     100, 0, 12, 100, 0, 12)},
-            {PECOUE,   new TH2F(Form("%s - %s", k1, PECOUE),   PECOUE,     100, 0, 12, 100, 0, 12)},
+            {PDIVEE,   new TH2F(Form("%s - %s", k1, PDIVEE),   PDIVEE,   100, 0, 3, 100, 0, 0.4)},
+            {PDIVEP,   new TH2F(Form("%s - %s", k1, PDIVEP),   PDIVEP,   100, 0, 12, 100, 0, 0.4)},
+            {PPCALE,   new TH2F(Form("%s - %s", k1, PPCALE),   PPCALE,   100, 0, 12, 100, 0, 12)},
+            {PECINE,   new TH2F(Form("%s - %s", k1, PECINE),   PECINE,   100, 0, 12, 100, 0, 12)},
+            {PECOUE,   new TH2F(Form("%s - %s", k1, PECOUE),   PECOUE,   100, 0, 12, 100, 0, 12)},
             {ECALPCAL, new TH2F(Form("%s - %s", k1, ECALPCAL), ECALPCAL, 100, 0, 2, 100, 0, 2)},
+
+            {Q2,       new TH1F(Form("%s - %s", k1, Q2),       Q2,       22, 0, 12)},
+            {NU,       new TH1F(Form("%s - %s", k1, NU),       NU,       22, 0, 12)},
+            {XB,       new TH1F(Form("%s - %s", k1, XB),       XB,       20, 0, 2)},
         };
     }
 
@@ -194,6 +202,13 @@ int run(char *input_file, bool use_fmt, int nevents, int run_no, double beam_ene
                     histos[hmap_it->first][PECINE]  ->Fill(p->getP(), ecin_E);
                     histos[hmap_it->first][PECOUE]  ->Fill(p->getP(), ecou_E);
                     histos[hmap_it->first][ECALPCAL]->Fill(ecin_E+ecou_E, pcal_E);
+
+                    // SIDIS variables.
+                    if (p->getPid() == 11) {
+                        histos[hmap_it->first][Q2]->Fill(calc_Q2(beam_E, p->getP(), rp->getTheta()));
+                        histos[hmap_it->first][NU]->Fill(calc_nu(beam_E, p->getP()));
+                        histos[hmap_it->first][XB]->Fill(calc_Xb(beam_E, p->getP(), rp->getTheta()));
+                    }
                 }
             }
         }
@@ -233,6 +248,13 @@ int run(char *input_file, bool use_fmt, int nevents, int run_no, double beam_ene
         histos[hmap_it->first][PECINE]  ->Write();
         histos[hmap_it->first][PECOUE]  ->Write();
         histos[hmap_it->first][ECALPCAL]->Write();
+
+        dir = Form("%s/%s", hmap_it->first, "SIDIS");
+        f.mkdir(dir);
+        f.cd(dir);
+        histos[hmap_it->first][Q2]->Write();
+        histos[hmap_it->first][NU]->Write();
+        histos[hmap_it->first][XB]->Write();
     }
 
     return 0;
@@ -241,11 +263,11 @@ int run(char *input_file, bool use_fmt, int nevents, int run_no, double beam_ene
 // Execute program from clas12root (`.x src/acceptance.c(filename, use_fmt, nevents)`).
 int acceptance(char *input_file, bool use_fmt, int nevents) {
     int    run_no      = -1;
-    double beam_energy = -1;
-    if (handle_args_err(handle_filename(input_file, &run_no, &beam_energy), &input_file, run_no))
+    double beam_E = -1;
+    if (handle_args_err(handle_filename(input_file, &run_no, &beam_E), &input_file, run_no))
         return 1;
 
-    return run(input_file, use_fmt, nevents, run_no, beam_energy);
+    return run(input_file, use_fmt, nevents, run_no, beam_E);
 }
 
 // Call program from terminal, C-style.
@@ -254,12 +276,12 @@ int main(int argc, char **argv) {
     int    nevents     = -1;
     char   *input_file = NULL;
     int    run_no      = -1;
-    double beam_energy = -1;
+    double beam_E = -1;
 
     if (handle_args_err(
-            handle_args(argc, argv, &use_fmt, &nevents, &input_file, &run_no, &beam_energy),
+            handle_args(argc, argv, &use_fmt, &nevents, &input_file, &run_no, &beam_E),
             &input_file, run_no)
         ) return 1;
 
-    return run(input_file, use_fmt, nevents, run_no, beam_energy);
+    return run(input_file, use_fmt, nevents, run_no, beam_E);
 }
