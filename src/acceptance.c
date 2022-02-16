@@ -12,7 +12,21 @@
 #include "file_handler.h"
 #include "io_handler.h"
 
+#define PIMASS  0.139570 // Pion mass.
+#define PRTMASS 0.938272 // Proton mass.
+#define NTRMASS 0.939565 // Neutron mass.
+#define EMASS   0.000051 // Electron mass.
+
 double to_deg(double radians) {return radians * (180.0 / M_PI);}
+double calc_Q2(double beam_energy, double momentum, double theta) {
+    return pow(4 * beam_energy * momentum * sin(theta/2), 2);
+}
+double calc_nu(double beam_energy, double momentum) {
+    return beam_energy - momentum;
+}
+double calc_Xb(double beam_energy, double momentum, double theta) {
+    return (calc_Q2(beam_energy, momentum, theta)/2) / (calc_nu(beam_energy, momentum)/PRTMASS);
+}
 
 int run(char *input_file, bool use_fmt, int nevents, int run_no, double beam_energy) {
     // Access input files.
@@ -30,16 +44,24 @@ int run(char *input_file, bool use_fmt, int nevents, int run_no, double beam_ene
     const char *p_tre = "Trigger e-";         // trigger electron.
 
     // Histogram Constants. (TODO. Move this to its own file).
-    const char *h_vz       = "Vz";
-    const char *h_vz_phi   = "Vz vs phi";
-    const char *h_vz_theta = "Vz vs theta";
+    const char *h_vz             = "Vz";
+    const char *h_vz_phi         = "Vz vs phi";
+    const char *h_vz_theta       = "Vz vs theta";
 
-    const char *h_vp       = "Vp";
-    const char *h_beta     = "Beta";
-    const char *h_beta_vp  = "Beta vs Vp";
+    const char *h_vp             = "Vp";
+    const char *h_beta           = "Beta";
+    const char *h_beta_vp        = "Beta vs Vp";
 
-    const char *h_dtof     = "TOF Difference";
-    const char *h_vp_dtof  = "Vp vs TOF Difference";
+    const char *h_dtof           = "TOF Difference";
+    const char *h_vp_dtof        = "Vp vs TOF Difference";
+
+    const char *h_pdivE_vs_p     = "Vp/E vs Vp";
+    const char *h_pdivE_vs_E     = "Vp/E vs E";
+    const char *h_p_vs_PCALE     = "Vp vs E (PCAL)";
+    const char *h_p_vs_ECINE     = "Vp vs E (ECIN)";
+    const char *h_p_vs_ECOUE     = "Vp vs E (ECOU)";
+    const char *h_ECALE_vs_PCALE = "E (ECAL) vs E (PCAL)";
+    // const char *h_sf         = "Sampling Fraction";
 
     // Add histos.
     std::map<const char *, std::map<const char *, TH1 *>> histos;
@@ -54,16 +76,24 @@ int run(char *input_file, bool use_fmt, int nevents, int run_no, double beam_ene
     std::map<const char *, std::map<const char *, TH1 *>>::iterator hmap_it;
     for (hmap_it = histos.begin(); hmap_it != histos.end(); ++hmap_it) {
         hmap_it->second = {
-            {h_vz,       new TH1F(Form("%s - %s", hmap_it->first, h_vz),       h_vz,       100, -50, 50)},
-            {h_vz_phi,   new TH2F(Form("%s - %s", hmap_it->first, h_vz_phi),   h_vz_phi,   100, -50, 50, 100, -180, 180)},
-            {h_vz_theta, new TH2F(Form("%s - %s", hmap_it->first, h_vz_theta), h_vz_theta, 100, -50, 50, 100, 0, 50)},
+            const char *k1 = hmap_it->first;
+            {h_vz,       new TH1F(Form("%s - %s", k1, h_vz),       h_vz,       100, -50, 50)},
+            {h_vz_phi,   new TH2F(Form("%s - %s", k1, h_vz_phi),   h_vz_phi,   100, -50, 50, 100, -180, 180)},
+            {h_vz_theta, new TH2F(Form("%s - %s", k1, h_vz_theta), h_vz_theta, 100, -50, 50, 100, 0, 50)},
 
-            {h_vp,       new TH1F(Form("%s - %s", hmap_it->first, h_vp),       h_vp,       100, 0, 12)},
-            {h_beta,     new TH1F(Form("%s - %s", hmap_it->first, h_beta),     h_beta,     100, 0, 1)},
-            {h_beta_vp,  new TH2F(Form("%s - %s", hmap_it->first, h_beta_vp),  h_beta_vp,  100, 0, 1, 100, 0, 12)},
+            {h_vp,       new TH1F(Form("%s - %s", k1, h_vp),       h_vp,       100, 0, 12)},
+            {h_beta,     new TH1F(Form("%s - %s", k1, h_beta),     h_beta,     100, 0, 1)},
+            {h_beta_vp,  new TH2F(Form("%s - %s", k1, h_beta_vp),  h_beta_vp,  100, 0, 1, 100, 0, 12)},
 
-            {h_dtof,     new TH1F(Form("%s - %s", hmap_it->first, h_dtof),     h_dtof,     100, 0, 50)},
-            {h_vp_dtof,  new TH2F(Form("%s - %s", hmap_it->first, h_vp_dtof),  h_vp_dtof,  100, 0, 12, 100, 0, 50)},
+            {h_dtof,     new TH1F(Form("%s - %s", k1, h_dtof),     h_dtof,     100, 0, 50)},
+            {h_vp_dtof,  new TH2F(Form("%s - %s", k1, h_vp_dtof),  h_vp_dtof,  100, 0, 12, 100, 0, 50)},
+
+            {h_pdivE_vs_p,     new TH2F(Form("%s - %s", k1, h_pdivE_vs_p),     h_pdivE_vs_p,     100, 0, 12, 100, 0, 0.4)},
+            {h_pdivE_vs_E,     new TH2F(Form("%s - %s", k1, h_pdivE_vs_E),     h_pdivE_vs_E,     100, 0, 3, 100, 0, 0.4)},
+            {h_p_vs_PCALE,     new TH2F(Form("%s - %s", k1, h_p_vs_PCALE),     h_p_vs_PCALE,     100, 0, 12, 100, 0, 12)},
+            {h_p_vs_ECINE,     new TH2F(Form("%s - %s", k1, h_p_vs_ECINE),     h_p_vs_ECINE,     100, 0, 12, 100, 0, 12)},
+            {h_p_vs_ECOUE,     new TH2F(Form("%s - %s", k1, h_p_vs_ECOUE),     h_p_vs_ECOUE,     100, 0, 12, 100, 0, 12)},
+            {h_ECALE_vs_PCALE, new TH2F(Form("%s - %s", k1, h_ECALE_vs_PCALE), h_ECALE_vs_PCALE, 100, 0, 2, 100, 0, 2)},
         };
     }
 
@@ -115,8 +145,10 @@ int run(char *input_file, bool use_fmt, int nevents, int run_no, double beam_ene
                 )) continue;
 
                 // TODO. Make sure that the particle bank has FMT data.
+                //       UPDATE. It doesn't. Fix this.
                 // TODO. Figure out how to get DC data.
 
+                // Figure out which histograms are to be filled.
                 std::map<const char *, bool> truth_map;
                 truth_map.insert({p_all, true});
                 truth_map.insert({p_pos, p->getCharge() > 0  ? true : false});
@@ -133,19 +165,33 @@ int run(char *input_file, bool use_fmt, int nevents, int run_no, double beam_ene
                     // NOTE. No beam alignment on runs yet, so we only use one sector.
                     if (rp->trk(FMT)->getSector() != 1) continue;
 
+                    // Vertex z.
                     histos[hmap_it->first][h_vz]      ->Fill(p->getVz());
                     histos[hmap_it->first][h_vz_theta]->Fill(p->getVz(), to_deg(rp->getTheta()));
 
+                    // Vertex P.
                     histos[hmap_it->first][h_vp]     ->Fill(p->getP());
                     histos[hmap_it->first][h_beta]   ->Fill(p->getBeta());
                     histos[hmap_it->first][h_beta_vp]->Fill(p->getBeta(), p->getP());
 
-                    // TODO. Check FTOF resolution.
+                    // TOF. (TODO. Check FTOF resolution).
                     if (tre_tof >= 0) { // Only fill if trigger electron's TOF was found.
                         double dtof = rp->sci(FTOF)->getTime() - tre_tof;
                         histos[hmap_it->first][h_dtof]   ->Fill(dtof);
                         histos[hmap_it->first][h_vp_dtof]->Fill(p->getP(), dtof);
                     }
+
+                    // Calorimeters.
+                    double pcal_E  = rp->cal(PCAL) ->getEnergy();
+                    double ecin_E  = rp->cal(ECIN) ->getEnergy();
+                    double ecou_E  = rp->cal(ECOUT)->getEnergy();
+                    double total_E = pcal_E + ecin_E + ecou_E;
+                    histos[hmap_it->first][h_pdivE_vs_p]    ->Fill(p->getP()/total_E, p->getP());
+                    histos[hmap_it->first][h_pdivE_vs_E]    ->Fill(p->getP()/total_E, total_E);
+                    histos[hmap_it->first][h_p_vs_PCALE]    ->Fill(p->getP(), pcal_E);
+                    histos[hmap_it->first][h_p_vs_ECINE]    ->Fill(p->getP(), ecin_E);
+                    histos[hmap_it->first][h_p_vs_ECOUE]    ->Fill(p->getP(), ecou_E);
+                    histos[hmap_it->first][h_ECALE_vs_PCALE]->Fill(ecin_E+ecou_E, pcal_E);
                 }
             }
         }
@@ -175,6 +221,16 @@ int run(char *input_file, bool use_fmt, int nevents, int run_no, double beam_ene
         f.cd(dir);
         histos[hmap_it->first][h_dtof]    ->Write();
         histos[hmap_it->first][h_vp_dtof] ->Write();
+
+        dir = Form("%s/%s", hmap_it->first, "CALs");
+        f.mkdir(dir);
+        f.cd(dir);
+        histos[hmap_it->first][h_pdivE_vs_p]    ->Write();
+        histos[hmap_it->first][h_pdivE_vs_E]    ->Write();
+        histos[hmap_it->first][h_p_vs_PCALE]    ->Write();
+        histos[hmap_it->first][h_p_vs_ECINE]    ->Write();
+        histos[hmap_it->first][h_p_vs_ECOUE]    ->Write();
+        histos[hmap_it->first][h_ECALE_vs_PCALE]->Write();
     }
 
     return 0;
