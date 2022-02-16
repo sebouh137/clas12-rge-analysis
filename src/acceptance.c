@@ -54,7 +54,7 @@
 
 double to_deg(double radians) {return radians * (180.0 / M_PI);}
 double calc_Q2(double beam_E, double momentum, double theta) {
-    return pow(4 * beam_E * momentum * sin(theta/2), 2);
+    return 4 * beam_E * momentum * pow(sin(theta/2), 2);
 }
 double calc_nu(double beam_E, double momentum) {
     return beam_E - momentum;
@@ -262,7 +262,7 @@ int run(char *input_file, bool use_fmt, int nevents, int run_no, double beam_E) 
 
 // Execute program from clas12root (`.x src/acceptance.c(filename, use_fmt, nevents)`).
 int acceptance(char *input_file, bool use_fmt, int nevents) {
-    int    run_no      = -1;
+    int    run_no = -1;
     double beam_E = -1;
     if (handle_args_err(handle_filename(input_file, &run_no, &beam_E), &input_file, run_no))
         return 1;
@@ -276,7 +276,7 @@ int main(int argc, char **argv) {
     int    nevents     = -1;
     char   *input_file = NULL;
     int    run_no      = -1;
-    double beam_E = -1;
+    double beam_E      = -1;
 
     if (handle_args_err(
             handle_args(argc, argv, &use_fmt, &nevents, &input_file, &run_no, &beam_E),
