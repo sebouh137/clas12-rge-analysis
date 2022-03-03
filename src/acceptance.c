@@ -340,35 +340,37 @@ int run(char *input_file, bool use_fmt, int nevents, int run_no, double beam_E) 
 
     // Write to output file.
     for (hmap_it = histos.begin(); hmap_it != histos.end(); ++hmap_it) {
+        TCanvas *gcvs = new TCanvas();
+
         TString dir = Form("%s/%s", hmap_it->first, "Vertex Z");
         f.mkdir(dir);
         f.cd(dir);
         histos[hmap_it->first][VZ]     ->Write();
-        histos[hmap_it->first][VZPHI]  ->Write();
-        histos[hmap_it->first][VZTHETA]->Write();
+        histos[hmap_it->first][VZPHI]  ->Draw("colz"); gcvs->Write(VZPHI);
+        histos[hmap_it->first][VZTHETA]->Draw("colz"); gcvs->Write(VZTHETA);
 
         dir = Form("%s/%s", hmap_it->first, "Vertex P");
         f.mkdir(dir);
         f.cd(dir);
         histos[hmap_it->first][VP]    ->Write();
         histos[hmap_it->first][BETA]  ->Write();
-        histos[hmap_it->first][BETAVP]->Write();
+        histos[hmap_it->first][BETAVP]->Draw("colz"); gcvs->Write(BETAVP);
 
         dir = Form("%s/%s", hmap_it->first, "DTOF");
         f.mkdir(dir);
         f.cd(dir);
         histos[hmap_it->first][DTOF] ->Write();
-        histos[hmap_it->first][VPTOF]->Write();
+        histos[hmap_it->first][VPTOF]->Draw("colz"); gcvs->Write(VPTOF);
 
         dir = Form("%s/%s", hmap_it->first, "CALs");
         f.mkdir(dir);
         f.cd(dir);
-        histos[hmap_it->first][PDIVEP]  ->Write();
-        histos[hmap_it->first][PDIVEE]  ->Write();
-        histos[hmap_it->first][PPCALE]  ->Write();
-        histos[hmap_it->first][PECINE]  ->Write();
-        histos[hmap_it->first][PECOUE]  ->Write();
-        histos[hmap_it->first][ECALPCAL]->Write();
+        histos[hmap_it->first][PDIVEP]  ->Draw("colz"); gcvs->Write(PDIVEP);
+        histos[hmap_it->first][PDIVEE]  ->Draw("colz"); gcvs->Write(PDIVEE);
+        histos[hmap_it->first][PPCALE]  ->Draw("colz"); gcvs->Write(PPCALE);
+        histos[hmap_it->first][PECINE]  ->Draw("colz"); gcvs->Write(PECINE);
+        histos[hmap_it->first][PECOUE]  ->Draw("colz"); gcvs->Write(PECOUE);
+        histos[hmap_it->first][ECALPCAL]->Draw("colz"); gcvs->Write(ECALPCAL);
 
         dir = Form("%s/%s/%s", hmap_it->first, "CALs", "Sampling Fraction");
         f.mkdir(dir);
