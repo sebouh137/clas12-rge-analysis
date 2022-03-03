@@ -109,53 +109,53 @@ int run(char *input_file, bool use_fmt, int nevents, int run_no, double beam_E) 
     for (hmap_it = histos.begin(); hmap_it != histos.end(); ++hmap_it) {
         const char *k1 = hmap_it->first;
         hmap_it->second = {
-            {VZ,       new TH1F(Form("%s - %s", k1, VZ),       VZ,      100, -50, 50)},
-            {VZPHI,    new TH2F(Form("%s - %s", k1, VZPHI),    VZPHI,   100, -50, 50, 100, -180, 180)},
-            {VZTHETA,  new TH2F(Form("%s - %s", k1, VZTHETA),  VZTHETA, 100, -50, 50, 100, 0, 50)},
+            {VZ,       new TH1F(Form("%s: %s", k1, VZ),       VZ,      500, -50, 50)},
+            {VZPHI,    new TH2F(Form("%s: %s", k1, VZPHI),    VZPHI,   100, -50, 50, 100, -180, 180)},
+            {VZTHETA,  new TH2F(Form("%s: %s", k1, VZTHETA),  VZTHETA, 100, -50, 50, 100, 0, 50)},
 
-            {VP,       new TH1F(Form("%s - %s", k1, VP),       VP,      100, 0, 12)},
-            {BETA,     new TH1F(Form("%s - %s", k1, BETA),     BETA,    100, 0, 1)},
-            {BETAVP,   new TH2F(Form("%s - %s", k1, BETAVP),   BETAVP,  100, 0, 1, 100, 0, 12)},
+            {VP,       new TH1F(Form("%s: %s", k1, VP),       VP,      100, 0, 12)},
+            {BETA,     new TH1F(Form("%s: %s", k1, BETA),     BETA,    100, 0, 1)},
+            {BETAVP,   new TH2F(Form("%s: %s", k1, BETAVP),   BETAVP,  100, 0, 1, 100, 0, 12)},
 
-            {DTOF,     new TH1F(Form("%s - %s", k1, DTOF),     DTOF,    100, 0, 50)},
-            {VPTOF,    new TH2F(Form("%s - %s", k1, VPTOF),    VPTOF,   100, 0, 12, 100, 0, 50)},
+            {DTOF,     new TH1F(Form("%s: %s", k1, DTOF),     DTOF,    100, 0, 50)},
+            {VPTOF,    new TH2F(Form("%s: %s", k1, VPTOF),    VPTOF,   100, 0, 12, 100, 0, 50)},
 
-            {PDIVEE,   new TH2F(Form("%s - %s", k1, PDIVEE),   PDIVEE,   100, 0, 3, 100, 0, 0.4)},
-            {PDIVEP,   new TH2F(Form("%s - %s", k1, PDIVEP),   PDIVEP,   100, 0, 12, 100, 0, 0.4)},
-            {PPCALE,   new TH2F(Form("%s - %s", k1, PPCALE),   PPCALE,   100, 0, 12, 100, 0, 12)},
-            {PECINE,   new TH2F(Form("%s - %s", k1, PECINE),   PECINE,   100, 0, 12, 100, 0, 12)},
-            {PECOUE,   new TH2F(Form("%s - %s", k1, PECOUE),   PECOUE,   100, 0, 12, 100, 0, 12)},
-            {ECALPCAL, new TH2F(Form("%s - %s", k1, ECALPCAL), ECALPCAL, 100, 0, 2, 100, 0, 2)},
+            {PDIVEE,   new TH2F(Form("%s: %s", k1, PDIVEE),   PDIVEE,   100, 0, 3, 100, 0, 0.4)},
+            {PDIVEP,   new TH2F(Form("%s: %s", k1, PDIVEP),   PDIVEP,   100, 0, 12, 100, 0, 0.4)},
+            {PPCALE,   new TH2F(Form("%s: %s", k1, PPCALE),   PPCALE,   100, 0, 12, 100, 0, 12)},
+            {PECINE,   new TH2F(Form("%s: %s", k1, PECINE),   PECINE,   100, 0, 12, 100, 0, 12)},
+            {PECOUE,   new TH2F(Form("%s: %s", k1, PECOUE),   PECOUE,   100, 0, 12, 100, 0, 12)},
+            {ECALPCAL, new TH2F(Form("%s: %s", k1, ECALPCAL), ECALPCAL, 100, 0, 2, 100, 0, 2)},
 
-            {PCALSF1,  new TH1F(Form("%s - %s", k1, PCALSF1), PCALSF1, 100, 0, 0.5)},
-            {PCALSF2,  new TH1F(Form("%s - %s", k1, PCALSF2), PCALSF2, 100, 0, 0.5)},
-            {PCALSF3,  new TH1F(Form("%s - %s", k1, PCALSF3), PCALSF3, 100, 0, 0.5)},
-            {PCALSF4,  new TH1F(Form("%s - %s", k1, PCALSF4), PCALSF4, 100, 0, 0.5)},
-            {PCALSF5,  new TH1F(Form("%s - %s", k1, PCALSF5), PCALSF5, 100, 0, 0.5)},
-            {PCALSF6,  new TH1F(Form("%s - %s", k1, PCALSF6), PCALSF6, 100, 0, 0.5)},
-            {ECINSF1,  new TH1F(Form("%s - %s", k1, ECINSF1), ECINSF1, 100, 0, 0.5)},
-            {ECINSF2,  new TH1F(Form("%s - %s", k1, ECINSF2), ECINSF2, 100, 0, 0.5)},
-            {ECINSF3,  new TH1F(Form("%s - %s", k1, ECINSF3), ECINSF3, 100, 0, 0.5)},
-            {ECINSF4,  new TH1F(Form("%s - %s", k1, ECINSF4), ECINSF4, 100, 0, 0.5)},
-            {ECINSF5,  new TH1F(Form("%s - %s", k1, ECINSF5), ECINSF5, 100, 0, 0.5)},
-            {ECINSF6,  new TH1F(Form("%s - %s", k1, ECINSF6), ECINSF6, 100, 0, 0.5)},
-            {ECOUSF1,  new TH1F(Form("%s - %s", k1, ECOUSF1), ECOUSF1, 100, 0, 0.5)},
-            {ECOUSF2,  new TH1F(Form("%s - %s", k1, ECOUSF2), ECOUSF2, 100, 0, 0.5)},
-            {ECOUSF3,  new TH1F(Form("%s - %s", k1, ECOUSF3), ECOUSF3, 100, 0, 0.5)},
-            {ECOUSF4,  new TH1F(Form("%s - %s", k1, ECOUSF4), ECOUSF4, 100, 0, 0.5)},
-            {ECOUSF5,  new TH1F(Form("%s - %s", k1, ECOUSF5), ECOUSF5, 100, 0, 0.5)},
-            {ECOUSF6,  new TH1F(Form("%s - %s", k1, ECOUSF6), ECOUSF6, 100, 0, 0.5)},
+            {PCALSF1,  new TH1F(Form("%s: %s", k1, PCALSF1), PCALSF1, 100, 0, 0.5)},
+            {PCALSF2,  new TH1F(Form("%s: %s", k1, PCALSF2), PCALSF2, 100, 0, 0.5)},
+            {PCALSF3,  new TH1F(Form("%s: %s", k1, PCALSF3), PCALSF3, 100, 0, 0.5)},
+            {PCALSF4,  new TH1F(Form("%s: %s", k1, PCALSF4), PCALSF4, 100, 0, 0.5)},
+            {PCALSF5,  new TH1F(Form("%s: %s", k1, PCALSF5), PCALSF5, 100, 0, 0.5)},
+            {PCALSF6,  new TH1F(Form("%s: %s", k1, PCALSF6), PCALSF6, 100, 0, 0.5)},
+            {ECINSF1,  new TH1F(Form("%s: %s", k1, ECINSF1), ECINSF1, 100, 0, 0.5)},
+            {ECINSF2,  new TH1F(Form("%s: %s", k1, ECINSF2), ECINSF2, 100, 0, 0.5)},
+            {ECINSF3,  new TH1F(Form("%s: %s", k1, ECINSF3), ECINSF3, 100, 0, 0.5)},
+            {ECINSF4,  new TH1F(Form("%s: %s", k1, ECINSF4), ECINSF4, 100, 0, 0.5)},
+            {ECINSF5,  new TH1F(Form("%s: %s", k1, ECINSF5), ECINSF5, 100, 0, 0.5)},
+            {ECINSF6,  new TH1F(Form("%s: %s", k1, ECINSF6), ECINSF6, 100, 0, 0.5)},
+            {ECOUSF1,  new TH1F(Form("%s: %s", k1, ECOUSF1), ECOUSF1, 100, 0, 0.5)},
+            {ECOUSF2,  new TH1F(Form("%s: %s", k1, ECOUSF2), ECOUSF2, 100, 0, 0.5)},
+            {ECOUSF3,  new TH1F(Form("%s: %s", k1, ECOUSF3), ECOUSF3, 100, 0, 0.5)},
+            {ECOUSF4,  new TH1F(Form("%s: %s", k1, ECOUSF4), ECOUSF4, 100, 0, 0.5)},
+            {ECOUSF5,  new TH1F(Form("%s: %s", k1, ECOUSF5), ECOUSF5, 100, 0, 0.5)},
+            {ECOUSF6,  new TH1F(Form("%s: %s", k1, ECOUSF6), ECOUSF6, 100, 0, 0.5)},
 
-            {Q2,       new TH1F(Form("%s - %s", k1, Q2),       Q2,       22, 0, 12)},
-            {NU,       new TH1F(Form("%s - %s", k1, NU),       NU,       22, 0, 12)},
-            {XB,       new TH1F(Form("%s - %s", k1, XB),       XB,       20, 0, 2)},
+            {Q2,       new TH1F(Form("%s: %s", k1, Q2),       Q2,       22, 0, 12)},
+            {NU,       new TH1F(Form("%s: %s", k1, NU),       NU,       22, 0, 12)},
+            {XB,       new TH1F(Form("%s: %s", k1, XB),       XB,       20, 0, 2)},
         };
     }
 
     // Iterate through input files.
     for (int i = 0; i < files->GetEntries(); ++i) {
         clas12reader c12(files->At(i)->GetTitle(), {0}); // Create event reader.
-        c12.setEntries(nevents / files->GetEntries());
+        if (nevents != 0) c12.setEntries(nevents / files->GetEntries());
 
         // Iterate through events in file.
         while (c12.next() == true) {
@@ -369,6 +369,7 @@ int run(char *input_file, bool use_fmt, int nevents, int run_no, double beam_E) 
         histos[hmap_it->first][NU]->Write();
         histos[hmap_it->first][XB]->Write();
     }
+    f.Close();
 
     return 0;
 }
