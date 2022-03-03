@@ -326,6 +326,16 @@ int run(char *input_file, bool use_fmt, int nevents, int run_no, double beam_E) 
         vz_fit->SetParameter(6 /* p2 */, 0);
         vz->GetXaxis()->SetRange(0,500);
         histos[hmap_it->first][VZ]->Fit(vz_fit_name, "", "", -36., -30.);
+
+        // Vp vs beta theoretical curve.
+        double mass = 0;
+        if      (hmap_it->first == PPIP || hmap_it->first == PPIM) mass = PIMASS;
+        else if (hmap_it->first == PELC || hmap_it->first == PTRE) mass = EMASS;
+        else continue;
+        TString vp_beta_curve_name = Form("%s %s", hmap_it->first, "vp vs beta curve");
+        TF1 *vp_beta_curve = new TF1(vp_beta_curve_name, "[m]*x/(sqrt(1-x))", 0.9, 1.0);
+        vp_beta_curve->FixParameter(0, mass);
+        histos[hmap_it->first][BETAVP]->Fit(vp_beta_curve_name, "", "", 0.9, 1.0);
     }
 
     // Write to output file.
