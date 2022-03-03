@@ -308,6 +308,26 @@ int run(char *input_file, bool use_fmt, int nevents, int run_no, double beam_E) 
     // Create output file.
     TFile f("out/histos.root", "RECREATE");
 
+    // Fit histograms.
+    for (hmap_it = histos.begin(); hmap_it != histos.end(); ++hmap_it) {
+        // Vz upstream fit.
+        TH1 *vz = histos[hmap_it->first][VZ];
+        TString vz_fit_name = Form("%s %s", hmap_it->first, "vz fit");
+        TF1 *vz_fit = new TF1(vz_fit_name,
+                "[0]*TMath::Gaus(x,[1],[2])+[3]*TMath::Gaus(x,[1]-2.4,[2])+[4]+[5]*x+[6]*x*x",
+                -36,-30);
+        vz->GetXaxis()->SetRange(70,100); // Set range to fitted range.
+        vz_fit->SetParameter(0 /* amp1  */, vz->GetBinContent(vz->GetMaximumBin()));
+        vz_fit->SetParameter(1 /* mean  */, vz->GetXaxis()->GetBinCenter(vz->GetMaximumBin()));
+        vz_fit->SetParameter(2 /* sigma */, 0.5);
+        vz_fit->SetParameter(3 /* amp2 */, 0);
+        vz_fit->SetParameter(4 /* p0 */, 0);
+        vz_fit->SetParameter(5 /* p1 */, 0);
+        vz_fit->SetParameter(6 /* p2 */, 0);
+        vz->GetXaxis()->SetRange(0,500);
+        histos[hmap_it->first][VZ]->Fit(vz_fit_name, "", "", -36., -30.);
+    }
+
     // Write to output file.
     for (hmap_it = histos.begin(); hmap_it != histos.end(); ++hmap_it) {
         TString dir = Form("%s/%s", hmap_it->first, "Vertex Z");
