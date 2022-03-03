@@ -114,17 +114,17 @@ int run(char *input_file, bool use_fmt, int nevents, int run_no, double beam_E) 
             {VZTHETA,  new TH2F(Form("%s: %s", k1, VZTHETA),  VZTHETA, 100, -50, 50, 100, 0, 50)},
 
             {VP,       new TH1F(Form("%s: %s", k1, VP),       VP,      100, 0, 12)},
-            {BETA,     new TH1F(Form("%s: %s", k1, BETA),     BETA,    100, 0, 1)},
-            {BETAVP,   new TH2F(Form("%s: %s", k1, BETAVP),   BETAVP,  100, 0, 1, 100, 0, 12)},
+            {BETA,     new TH1F(Form("%s: %s", k1, BETA),     BETA,    100, 0.9, 1)},
+            {BETAVP,   new TH2F(Form("%s: %s", k1, BETAVP),   BETAVP,  100, 0.9, 1, 100, 0, 12)},
 
-            {DTOF,     new TH1F(Form("%s: %s", k1, DTOF),     DTOF,    100, 0, 50)},
-            {VPTOF,    new TH2F(Form("%s: %s", k1, VPTOF),    VPTOF,   100, 0, 12, 100, 0, 50)},
+            {DTOF,     new TH1F(Form("%s: %s", k1, DTOF),     DTOF,    100, 0, 5)},
+            {VPTOF,    new TH2F(Form("%s: %s", k1, VPTOF),    VPTOF,   100, 0, 12, 100, 0, 5)},
 
             {PDIVEE,   new TH2F(Form("%s: %s", k1, PDIVEE),   PDIVEE,   100, 0, 3, 100, 0, 0.4)},
             {PDIVEP,   new TH2F(Form("%s: %s", k1, PDIVEP),   PDIVEP,   100, 0, 12, 100, 0, 0.4)},
-            {PPCALE,   new TH2F(Form("%s: %s", k1, PPCALE),   PPCALE,   100, 0, 12, 100, 0, 12)},
-            {PECINE,   new TH2F(Form("%s: %s", k1, PECINE),   PECINE,   100, 0, 12, 100, 0, 12)},
-            {PECOUE,   new TH2F(Form("%s: %s", k1, PECOUE),   PECOUE,   100, 0, 12, 100, 0, 12)},
+            {PPCALE,   new TH2F(Form("%s: %s", k1, PPCALE),   PPCALE,   100, 0, 12, 100, 0, 2)},
+            {PECINE,   new TH2F(Form("%s: %s", k1, PECINE),   PECINE,   100, 0, 12, 100, 0, 2)},
+            {PECOUE,   new TH2F(Form("%s: %s", k1, PECOUE),   PECOUE,   100, 0, 12, 100, 0, 2)},
             {ECALPCAL, new TH2F(Form("%s: %s", k1, ECALPCAL), ECALPCAL, 100, 0, 2, 100, 0, 2)},
 
             {PCALSF1,  new TH1F(Form("%s: %s", k1, PCALSF1), PCALSF1, 100, 0, 0.5)},
