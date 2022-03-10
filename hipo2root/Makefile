@@ -26,6 +26,7 @@ hipo2root: hipo2root.o
 clean:
 	@echo 'Removing all build files'
 	@rm -rf hipo2root.o hipo2root
+
 #=====================================================================
 # COMPILE RULES
 #=====================================================================
