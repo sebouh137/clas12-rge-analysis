@@ -1,3 +1,7 @@
-main
+# Common extensions to be ignored.
 *.root
+*.o
+
+# Project-specific files.
+hipo2root/hipo2root
 task_list.md

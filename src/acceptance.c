@@ -182,20 +182,18 @@ int run(char *input_file, bool use_fmt, int nevents, int run_no, double beam_E) 
                 particle *p = rp->par();
 
                 // Apply PID cuts.
-                if (
-                        abs(p->getChi2Pid()) >= 3 // Ignore spurious particles.
+                if (    abs(p->getChi2Pid()) >= 3 // Ignore spurious particles.
                      || p->getPid() == 0          // Ignore badly identified particles.
                 ) continue;
 
                 // Apply geometry cuts. (TODO. Improve cut in z).
-                if (
-                        p->getVx()*p->getVx() + p->getVy()*p->getVy() > 4 // Too far from beamline.
+                if (    p->getVx()*p->getVx() + p->getVy()*p->getVy() > 4 // Too far from beamline.
                      || (p->getVz() < -40 || p->getVz() > 40)             // Too far from target.
                 ) continue;
 
                 // Apply FMT cuts. (TODO. Make sure that this is enough).
                 if (use_fmt && (
-                        (abs(p->getStatus())/1000) != 2 // Filter particles that pass through FMT.
+                        (abs(p->getStatus())/1000) != 2 // Filter particles that pass through FD.
                      // || rp->trk(FMT)->getNDF() == 3     // TODO. Figure out what this NDF is.
                 )) continue;
 
