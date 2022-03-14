@@ -58,6 +58,12 @@ int main(int argc, char** argv) {
     std::vector<Float_t> tof_time;     tree->Branch("time",   /*REC::Scintillator",*/ &tof_time);
 
     // FMT::Track.
+    std::vector<Float_t> fmt_vx;       tree->Branch("", /*FMT::Tracks",*/ &fmt_vx);
+    std::vector<Float_t> fmt_vy;       tree->Branch("", /*FMT::Tracks",*/ &fmt_vy);
+    std::vector<Float_t> fmt_vz;       tree->Branch("", /*FMT::Tracks",*/ &fmt_vz);
+    std::vector<Float_t> fmt_px;       tree->Branch("", /*FMT::Tracks",*/ &fmt_px);
+    std::vector<Float_t> fmt_py;       tree->Branch("", /*FMT::Tracks",*/ &fmt_py);
+    std::vector<Float_t> fmt_pz;       tree->Branch("", /*FMT::Tracks",*/ &fmt_pz);
 
     // Prepare infile reader.
     hipo::reader reader;
@@ -73,12 +79,14 @@ int main(int argc, char** argv) {
     writer.getDictionary().addSchema(factory.getSchema("REC::Track"));
     writer.getDictionary().addSchema(factory.getSchema("REC::Calorimeter"));
     writer.getDictionary().addSchema(factory.getSchema("REC::Scintillator"));
+    writer.getDictionary().addSchema(factory.getSchema("FMT::Tracks"));
     writer.open(outfile_hipo);
 
     hipo::bank  rec_part(factory.getSchema("REC::Particle"));
     hipo::bank  rec_trk (factory.getSchema("REC::Track"));
     hipo::bank  rec_cal (factory.getSchema("REC::Calorimeter"));
     hipo::bank  rec_tof (factory.getSchema("REC::Scintillator"));
+    hipo::bank  fmt_trk (factory.getSchema("FMT::Tracks"));
     hipo::event event;
 
     while (reader.next()) {
@@ -152,7 +160,25 @@ int main(int argc, char** argv) {
             tof_time[row]   = rec_tof.getFloat("time", row);
         }
 
-        if (part_nrows > 0 || trk_nrows > 0 || cal_nrows > 0 || tof_nrows > 0) tree->Fill();
+        // FMT::Tracks
+        event.getStructure(fmt_trk);
+        int fmt_nrows = fmt_trk.getRows();
+        fmt_vx.resize(fmt_nrows);
+        fmt_vy.resize(fmt_nrows);
+        fmt_vz.resize(fmt_nrows);
+        fmt_px.resize(fmt_nrows);
+        fmt_py.resize(fmt_nrows);
+        fmt_pz.resize(fmt_nrows);
+        for (int row = 0; row < fmt_nrows; ++row) {
+            fmt_vx[row] = fmt_trk.getFloat("Vtx0_x", row);
+            fmt_vy[row] = fmt_trk.getFloat("Vtx0_y", row);
+            fmt_vz[row] = fmt_trk.getFloat("Vtx0_z", row);
+            fmt_px[row] = fmt_trk.getFloat("p0_x", row);
+            fmt_py[row] = fmt_trk.getFloat("p0_y", row);
+            fmt_pz[row] = fmt_trk.getFloat("p0_z", row);
+        }
+
+        if (part_nrows > 0 || trk_nrows > 0 || cal_nrows > 0 || tof_nrows > 0 || fmt_nrows > 0) tree->Fill();
         writer.addEvent(event);
     }
 
