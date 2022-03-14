@@ -14,9 +14,6 @@ LZ4INCLUDES := -I$(HIPO)/lz4/lib
 
 F77        = gfortran
 CXX       := g++
-CXXFLAGS  += -Wall -fPIC $(ROOTCFLAGS)
-LD        := g++
-LDFLAGS   := $(ROOTLDFLAGS)
 
 all: hipo2root
 
@@ -25,13 +22,10 @@ hipo2root: hipo2root.o
 
 clean:
 	@echo 'Removing all build files'
-	@rm -rf hipo2root.o hipo2root
+	@rm hipo2root.o hipo2root
 
 #=====================================================================
 # COMPILE RULES
 #=====================================================================
 %.o: %.cc
 	$(CXX) -c $<  -O3 $(ROOTCFLAGS) $(HIPOCFLAGS) $(LZ4INCLUDES)
-
-%.o:%.F
-	$(F77) -c $<

@@ -58,12 +58,12 @@ int main(int argc, char** argv) {
     std::vector<Float_t> tof_time;     tree->Branch("time",   /*REC::Scintillator",*/ &tof_time);
 
     // FMT::Track.
-    std::vector<Float_t> fmt_vx;       tree->Branch("", /*FMT::Tracks",*/ &fmt_vx);
-    std::vector<Float_t> fmt_vy;       tree->Branch("", /*FMT::Tracks",*/ &fmt_vy);
-    std::vector<Float_t> fmt_vz;       tree->Branch("", /*FMT::Tracks",*/ &fmt_vz);
-    std::vector<Float_t> fmt_px;       tree->Branch("", /*FMT::Tracks",*/ &fmt_px);
-    std::vector<Float_t> fmt_py;       tree->Branch("", /*FMT::Tracks",*/ &fmt_py);
-    std::vector<Float_t> fmt_pz;       tree->Branch("", /*FMT::Tracks",*/ &fmt_pz);
+    std::vector<Float_t> fmt_vx;       tree->Branch("vx", /*FMT::Tracks",*/ &fmt_vx);
+    std::vector<Float_t> fmt_vy;       tree->Branch("vy", /*FMT::Tracks",*/ &fmt_vy);
+    std::vector<Float_t> fmt_vz;       tree->Branch("vz", /*FMT::Tracks",*/ &fmt_vz);
+    std::vector<Float_t> fmt_px;       tree->Branch("px", /*FMT::Tracks",*/ &fmt_px);
+    std::vector<Float_t> fmt_py;       tree->Branch("py", /*FMT::Tracks",*/ &fmt_py);
+    std::vector<Float_t> fmt_pz;       tree->Branch("pz", /*FMT::Tracks",*/ &fmt_pz);
 
     // Prepare infile reader.
     hipo::reader reader;
