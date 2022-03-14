@@ -54,6 +54,8 @@ int main(int argc, char** argv) {
     std::vector<Float_t> cal_energy;   tree->Branch("energy", /*"REC::Calorimeter",*/ &cal_energy);
 
     // REC::Scintillator.
+    std::vector<Short_t> tof_pindex;   tree->Branch("pindex", /*REC::Scintillator",*/ &tof_pindex);
+    std::vector<Float_t> tof_time;     tree->Branch("time",   /*REC::Scintillator",*/ &tof_time);
 
     // FMT::Track.
 
@@ -70,11 +72,13 @@ int main(int argc, char** argv) {
     writer.getDictionary().addSchema(factory.getSchema("REC::Particle"));
     writer.getDictionary().addSchema(factory.getSchema("REC::Track"));
     writer.getDictionary().addSchema(factory.getSchema("REC::Calorimeter"));
+    writer.getDictionary().addSchema(factory.getSchema("REC::Scintillator"));
     writer.open(outfile_hipo);
 
     hipo::bank  rec_part(factory.getSchema("REC::Particle"));
     hipo::bank  rec_trk (factory.getSchema("REC::Track"));
     hipo::bank  rec_cal (factory.getSchema("REC::Calorimeter"));
+    hipo::bank  rec_tof (factory.getSchema("REC::Scintillator"));
     hipo::event event;
 
     while (reader.next()) {
@@ -138,7 +142,17 @@ int main(int argc, char** argv) {
             cal_energy[row] = rec_cal.getFloat("energy", row);
         }
 
-        if (part_nrows > 0 || trk_nrows > 0 || cal_nrows > 0) tree->Fill();
+        // REC::Scintillator
+        event.getStructure(rec_tof);
+        int tof_nrows = rec_tof.getRows();
+        tof_pindex.resize(tof_nrows);
+        tof_time.resize(tof_nrows);
+        for (int row = 0; row < tof_nrows; ++row) {
+            tof_pindex[row] = (int16_t) rec_tof.getShort("pindex", row);
+            tof_time[row]   = rec_tof.getFloat("time", row);
+        }
+
+        if (part_nrows > 0 || trk_nrows > 0 || cal_nrows > 0 || tof_nrows > 0) tree->Fill();
         writer.addEvent(event);
     }
 
