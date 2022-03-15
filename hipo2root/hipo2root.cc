@@ -29,45 +29,49 @@ int main(int argc, char** argv) {
 
     TFile *f = TFile::Open(outfile_root, "RECREATE");
     f->SetCompressionAlgorithm(ROOT::kLZ4);
-    TTree *tree = new TTree("clas12", "CLAS12 ROOT Tree");
 
     // REC::Particle.
-    std::vector<Int_t>    part_pid;     tree->Branch("pid",     /*"REC::Particle",*/ &part_pid);
-    std::vector<Float_t>  part_px;      tree->Branch("px",      /*"REC::Particle",*/ &part_px);
-    std::vector<Float_t>  part_py;      tree->Branch("py",      /*"REC::Particle",*/ &part_py);
-    std::vector<Float_t>  part_pz;      tree->Branch("pz",      /*"REC::Particle",*/ &part_pz);
-    std::vector<Float_t>  part_vx;      tree->Branch("vx",      /*"REC::Particle",*/ &part_vx);
-    std::vector<Float_t>  part_vy;      tree->Branch("vy",      /*"REC::Particle",*/ &part_vy);
-    std::vector<Float_t>  part_vz;      tree->Branch("vz",      /*"REC::Particle",*/ &part_vz);
-    std::vector<Float_t>  part_vt;      tree->Branch("vt",      /*"REC::Particle",*/ &part_vt);
-    std::vector<Char_t>   part_charge;  tree->Branch("charge",  /*"REC::Particle",*/ &part_charge);
-    std::vector<Float_t>  part_beta;    tree->Branch("beta",    /*"REC::Particle",*/ &part_beta);
-    std::vector<Float_t>  part_chi2pid; tree->Branch("chi2pid", /*"REC::Particle",*/ &part_chi2pid);
-    std::vector<Short_t>  part_status;  tree->Branch("status",  /*"REC::Particle",*/ &part_status);
+    TTree *part_tree = new TTree("REC::Particle", "REC::Particle");
+    std::vector<Int_t>    part_pid;     part_tree->Branch("pid",     &part_pid);
+    std::vector<Float_t>  part_px;      part_tree->Branch("px",      &part_px);
+    std::vector<Float_t>  part_py;      part_tree->Branch("py",      &part_py);
+    std::vector<Float_t>  part_pz;      part_tree->Branch("pz",      &part_pz);
+    std::vector<Float_t>  part_vx;      part_tree->Branch("vx",      &part_vx);
+    std::vector<Float_t>  part_vy;      part_tree->Branch("vy",      &part_vy);
+    std::vector<Float_t>  part_vz;      part_tree->Branch("vz",      &part_vz);
+    std::vector<Float_t>  part_vt;      part_tree->Branch("vt",      &part_vt);
+    std::vector<Char_t>   part_charge;  part_tree->Branch("charge",  &part_charge);
+    std::vector<Float_t>  part_beta;    part_tree->Branch("beta",    &part_beta);
+    std::vector<Float_t>  part_chi2pid; part_tree->Branch("chi2pid", &part_chi2pid);
+    std::vector<Short_t>  part_status;  part_tree->Branch("status",  &part_status);
 
     // REC::Track.
-    std::vector<Short_t>  trk_index;   tree->Branch("index",  /*"REC::Track",*/ &trk_index);
-    std::vector<Short_t>  trk_pindex;  tree->Branch("pindex", /*"REC::Track",*/ &trk_pindex);
-    std::vector<Short_t>  trk_sector;  tree->Branch("sector", /*"REC::Track",*/ &trk_sector);
-    std::vector<Short_t>  trk_ndf;     tree->Branch("NDF",    /*"REC::Track",*/ &trk_ndf);
-    std::vector<Float_t>  trk_chi2;    tree->Branch("chi2",   /*"REC::Track",*/ &trk_chi2);
+    TTree *trk_tree = new TTree("REC::Track", "REC::Track");
+    std::vector<Short_t>  trk_index;   trk_tree->Branch("index",  &trk_index);
+    std::vector<Short_t>  trk_pindex;  trk_tree->Branch("pindex", &trk_pindex);
+    std::vector<Short_t>  trk_sector;  trk_tree->Branch("sector", &trk_sector);
+    std::vector<Short_t>  trk_ndf;     trk_tree->Branch("NDF",    &trk_ndf);
+    std::vector<Float_t>  trk_chi2;    trk_tree->Branch("chi2",   &trk_chi2);
 
     // REC::Calorimeter.
-    std::vector<Short_t> cal_pindex;   tree->Branch("pindex", /*"REC::Calorimeter",*/ &cal_pindex);
-    std::vector<Char_t>  cal_layer;    tree->Branch("layer",  /*"REC::Calorimeter",*/ &cal_layer);
-    std::vector<Float_t> cal_energy;   tree->Branch("energy", /*"REC::Calorimeter",*/ &cal_energy);
+    TTree *cal_tree = new TTree("REC::Calorimeter", "REC::Calorimeter");
+    std::vector<Short_t> cal_pindex;   cal_tree->Branch("pindex", &cal_pindex);
+    std::vector<Char_t>  cal_layer;    cal_tree->Branch("layer",  &cal_layer);
+    std::vector<Float_t> cal_energy;   cal_tree->Branch("energy", &cal_energy);
 
     // REC::Scintillator.
-    std::vector<Short_t> tof_pindex;   tree->Branch("pindex", /*REC::Scintillator",*/ &tof_pindex);
-    std::vector<Float_t> tof_time;     tree->Branch("time",   /*REC::Scintillator",*/ &tof_time);
+    TTree *sci_tree = new TTree("REC::Scintillator", "REC::Scintillator");
+    std::vector<Short_t> tof_pindex;   sci_tree->Branch("pindex", &tof_pindex);
+    std::vector<Float_t> tof_time;     sci_tree->Branch("time",   &tof_time);
 
     // FMT::Track.
-    std::vector<Float_t> fmt_vx;       tree->Branch("vx", /*FMT::Tracks",*/ &fmt_vx);
-    std::vector<Float_t> fmt_vy;       tree->Branch("vy", /*FMT::Tracks",*/ &fmt_vy);
-    std::vector<Float_t> fmt_vz;       tree->Branch("vz", /*FMT::Tracks",*/ &fmt_vz);
-    std::vector<Float_t> fmt_px;       tree->Branch("px", /*FMT::Tracks",*/ &fmt_px);
-    std::vector<Float_t> fmt_py;       tree->Branch("py", /*FMT::Tracks",*/ &fmt_py);
-    std::vector<Float_t> fmt_pz;       tree->Branch("pz", /*FMT::Tracks",*/ &fmt_pz);
+    TTree *fmt_tree = new TTree("FMT::Track", "FMT::Track");
+    std::vector<Float_t> fmt_vx;       fmt_tree->Branch("vx", &fmt_vx);
+    std::vector<Float_t> fmt_vy;       fmt_tree->Branch("vy", &fmt_vy);
+    std::vector<Float_t> fmt_vz;       fmt_tree->Branch("vz", &fmt_vz);
+    std::vector<Float_t> fmt_px;       fmt_tree->Branch("px", &fmt_px);
+    std::vector<Float_t> fmt_py;       fmt_tree->Branch("py", &fmt_py);
+    std::vector<Float_t> fmt_pz;       fmt_tree->Branch("pz", &fmt_pz);
 
     // Prepare infile reader.
     hipo::reader reader;
@@ -127,6 +131,7 @@ int main(int argc, char** argv) {
             part_charge[row]  = (int8_t)  rec_part.getByte ("charge", row);
             part_status[row]  = (int16_t) rec_part.getShort("status", row);
         }
+        if (part_nrows > 0) part_tree->Fill();
 
         // REC::Track
         event.getStructure(rec_trk);
@@ -143,6 +148,7 @@ int main(int argc, char** argv) {
             trk_ndf[row]    = (int16_t) rec_trk.getShort("NDF", row);
             trk_chi2[row]   = rec_trk.getFloat("chi2", row);
         }
+        if (trk_nrows > 0) trk_tree->Fill();
 
         // REC::Calorimeter
         event.getStructure(rec_cal);
@@ -155,6 +161,7 @@ int main(int argc, char** argv) {
             cal_layer[row]  = (int8_t)  rec_cal.getByte("layer", row);
             cal_energy[row] = rec_cal.getFloat("energy", row);
         }
+        if (cal_nrows > 0) cal_tree->Fill();
 
         // REC::Scintillator
         event.getStructure(rec_tof);
@@ -165,6 +172,7 @@ int main(int argc, char** argv) {
             tof_pindex[row] = (int16_t) rec_tof.getShort("pindex", row);
             tof_time[row]   = rec_tof.getFloat("time", row);
         }
+        if (tof_nrows > 0) sci_tree->Fill();
 
         // FMT::Tracks
         event.getStructure(fmt_trk);
@@ -183,8 +191,8 @@ int main(int argc, char** argv) {
             fmt_py[row] = fmt_trk.getFloat("p0_y", row);
             fmt_pz[row] = fmt_trk.getFloat("p0_z", row);
         }
+        if (fmt_nrows > 0) fmt_tree->Fill();
 
-        if (part_nrows > 0 || trk_nrows > 0 || cal_nrows > 0 || tof_nrows > 0 || fmt_nrows > 0) tree->Fill();
         writer.addEvent(event);
     }
 
