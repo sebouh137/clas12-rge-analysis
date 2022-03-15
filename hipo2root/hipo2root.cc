@@ -9,10 +9,14 @@
 #include "Compression.h"
 
 int main(int argc, char** argv) {
+    int nevents = 0;
     char infile[512];
     char outfile_root[512];
     char outfile_hipo[512];
 
+    if (argc > 2) {
+        nevents = atoi(argv[2]);
+    }
     if (argc > 1) {
         sprintf(infile, "%s", argv[1]);
         sprintf(outfile_root, "%s.root", argv[1]);
@@ -89,7 +93,9 @@ int main(int argc, char** argv) {
     hipo::bank  fmt_trk (factory.getSchema("FMT::Tracks"));
     hipo::event event;
 
+    int cnt = 0;
     while (reader.next()) {
+        if (nevents != 0 && cnt++ >= nevents) break;
         reader.read(event);
 
         // REC::Particle
