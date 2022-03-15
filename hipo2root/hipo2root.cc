@@ -2,7 +2,6 @@
 #include <iostream>
 
 #include "reader.h"
-#include "writer.h"
 #include "utils.h"
 #include "TFile.h"
 #include "TTree.h"
@@ -80,15 +79,6 @@ int main(int argc, char** argv) {
     // Prepare factory.
     hipo::dictionary factory;
     reader.readDictionary(factory);
-
-    // Prepare outfile writer.
-    hipo::writer writer;
-    writer.getDictionary().addSchema(factory.getSchema("REC::Particle"));
-    writer.getDictionary().addSchema(factory.getSchema("REC::Track"));
-    writer.getDictionary().addSchema(factory.getSchema("REC::Calorimeter"));
-    writer.getDictionary().addSchema(factory.getSchema("REC::Scintillator"));
-    writer.getDictionary().addSchema(factory.getSchema("FMT::Tracks"));
-    writer.open(outfile_hipo);
 
     hipo::bank  rec_part(factory.getSchema("REC::Particle"));
     hipo::bank  rec_trk (factory.getSchema("REC::Track"));
@@ -192,12 +182,9 @@ int main(int argc, char** argv) {
             fmt_pz[row] = fmt_trk.getFloat("p0_z", row);
         }
         if (fmt_nrows > 0) fmt_tree->Fill();
-
-        writer.addEvent(event);
     }
 
     f->Close();
-    writer.close();
 
     return 0;
 }
