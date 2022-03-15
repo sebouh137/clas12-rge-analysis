@@ -12,17 +12,7 @@
 #include "err_handler.h"
 #include "file_handler.h"
 #include "io_handler.h"
-
-double to_deg(double radians) {return radians * (180.0 / M_PI);}
-double calc_Q2(double beam_E, double momentum, double theta) {
-    return 4 * beam_E * momentum * pow(sin(theta/2), 2);
-}
-double calc_nu(double beam_E, double momentum) {
-    return beam_E - momentum;
-}
-double calc_Xb(double beam_E, double momentum, double theta) {
-    return (calc_Q2(beam_E, momentum, theta)/2) / (calc_nu(beam_E, momentum)/PRTMASS);
-}
+#include "utilities.h"
 
 int run(char *input_file, bool use_fmt, int nevents, int run_no, double beam_E) {
     // Sampling Fraction. TODO. Temporary code.
@@ -89,7 +79,7 @@ int run(char *input_file, bool use_fmt, int nevents, int run_no, double beam_E) 
 
             {Q2,       new TH1F(Form("%s: %s", k1, Q2),       Q2,       22, 0, 12)},
             {NU,       new TH1F(Form("%s: %s", k1, NU),       NU,       22, 0, 12)},
-            {XB,       new TH1F(Form("%s: %s", k1, XB),       XB,       20, 0, 2)},
+            {XB,       new TH1F(Form("%s: %s", k1, XB),       XB,       20, 0,  2)},
         };
     }
 
@@ -245,9 +235,6 @@ int run(char *input_file, bool use_fmt, int nevents, int run_no, double beam_E) 
         }
     }
 
-    // Create output file.
-    TFile f("out/histos.root", "RECREATE");
-
     // Fit histograms.
     for (hmap_it = histos.begin(); hmap_it != histos.end(); ++hmap_it) {
         // Vz upstream fit.
@@ -277,6 +264,9 @@ int run(char *input_file, bool use_fmt, int nevents, int run_no, double beam_E) 
         vp_beta_curve->FixParameter(0, mass);
         histos[hmap_it->first][BETAVP]->Fit(vp_beta_curve_name, "", "", 0.9, 1.0);
     }
+
+    // Create output file.
+    TFile f("out/histos.root", "RECREATE");
 
     // Write to output file.
     for (hmap_it = histos.begin(); hmap_it != histos.end(); ++hmap_it) {
