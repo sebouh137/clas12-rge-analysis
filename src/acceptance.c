@@ -8,6 +8,7 @@
 
 #include <BankHist.h>
 
+#include "bank_containers.h"
 #include "constants.h"
 #include "err_handler.h"
 #include "file_handler.h"

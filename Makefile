@@ -17,7 +17,7 @@ HIPOLIBS    := -L$(HIPO)/lib -lhipo4
 LZ4LIBS     := -L$(HIPO)/lz4/lib -llz4
 LZ4INCLUDES := -I$(HIPO)/lz4/lib
 
-OBJS        := $(BLD)/err_handler.o $(BLD)/file_handler.o $(BLD)/io_handler.o $(BLD)/utilities.o
+OBJS        := $(BLD)/bank_containers.o $(BLD)/err_handler.o $(BLD)/file_handler.o $(BLD)/io_handler.o $(BLD)/utilities.o
 
 all: $(BIN)/hipo2root $(BIN)/acceptance
 
@@ -26,6 +26,9 @@ $(BIN)/hipo2root: $(SRC)/hipo2root.c
 
 $(BIN)/acceptance: $(OBJS) $(SRC)/acceptance.c
 	$(CXX) $(CFLAGS) $(OBJS) $(SRC)/acceptance.c -o $(BIN)/acceptance $(ROOTCFLAGS) $(ROOTLDFLAGS) $(ROOTLIBS)
+
+$(BLD)/bank_containers.o: $(SRC)/bank_containers.c $(SRC)/bank_containers.h
+	$(CXX) $(CFLAGS) -c $(SRC)/bank_containers.c -o $(BLD)/bank_containers.o $(ROOTCFLAGS) $(ROOTLDFLAGS) $(ROOTLIBS)
 
 $(BLD)/err_handler.o: $(SRC)/err_handler.c $(SRC)/err_handler.h
 	$(CXX) $(CFLAGS) -c $(SRC)/err_handler.c -o $(BLD)/err_handler.o
