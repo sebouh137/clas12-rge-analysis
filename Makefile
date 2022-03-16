@@ -3,7 +3,8 @@ BLD         := ./build
 SRC         := ./src
 
 CXX         := g++
-CFLAGS      := -Wall -Werror -g -O3
+CFLAGS      := -Wall -g
+# CFLAGS      := -Wall -Werror -O3
 
 ROOTCFLAGS  := $(shell root-config --cflags)
 ROOTLDFLAGS := $(shell root-config --ldflags)
