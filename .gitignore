@@ -1,7 +1,11 @@
-# Common extensions to be ignored.
-*.root
-*.o
+# Executables.
+bin/*
 
-# Project-specific files.
-hipo2root/hipo2root
+# Build files.
+build/*.o
+
+# Output files.
+out/*.root
+
+# Personal files (temporary).
 task_list.md
