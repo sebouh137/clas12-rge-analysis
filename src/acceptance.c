@@ -111,7 +111,13 @@ int run(char *in_filename, bool use_fmt, int nevents, int run_no, double beam_E)
         }
     }
 
-
+    for (int evn = 0; evn < t_rec_part->GetEntries(); ++evn) {
+        rec_part.get_entries(t_rec_part, evn);
+        rec_trk .get_entries(t_rec_trk,  evn);
+        rec_sci .get_entries(t_rec_sci,  evn);
+        rec_cal .get_entries(t_rec_cal,  evn);
+        fmt_trk .get_entries(t_fmt_trk,  evn);
+    }
 
     // // Iterate through input files.
     // for (int i = 0; i < files->GetEntries(); ++i) {

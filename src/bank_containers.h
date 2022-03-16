@@ -19,6 +19,7 @@ public:
     std::vector<Float_t>  *chi2pid; TBranch *b_chi2pid;
     std::vector<Short_t>  *status;  TBranch *b_status;
     REC_Particle(TTree *t);
+    int get_entries(TTree *t, int idx);
 };
 
 class REC_Track {
@@ -29,6 +30,7 @@ public:
     std::vector<Short_t>  *ndf;     TBranch *b_ndf;
     std::vector<Float_t>  *chi2;    TBranch *b_chi2;
     REC_Track(TTree *t);
+    int get_entries(TTree *t, int idx);
 };
 
 class REC_Calorimeter {
@@ -37,14 +39,15 @@ public:
     std::vector<Char_t>  *layer;  TBranch *b_layer;
     std::vector<Float_t> *energy; TBranch *b_energy;
     REC_Calorimeter(TTree *t);
+    int get_entries(TTree *t, int idx);
 };
 
 class REC_Scintillator {
 public:
     std::vector<Short_t> *pindex; TBranch *b_pindex;
     std::vector<Float_t> *time;   TBranch *b_time;
-
     REC_Scintillator(TTree *t);
+    int get_entries(TTree *t, int idx);
 };
 
 class FMT_Tracks {
@@ -55,8 +58,8 @@ public:
     std::vector<Float_t> *px; TBranch *b_px;
     std::vector<Float_t> *py; TBranch *b_py;
     std::vector<Float_t> *pz; TBranch *b_pz;
-
     FMT_Tracks(TTree *t);
+    int get_entries(TTree *t, int idx);
 };
 
 #endif
