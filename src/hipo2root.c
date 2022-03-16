@@ -64,7 +64,7 @@ int main(int argc, char** argv) {
     std::vector<Float_t> tof_time;     sci_tree->Branch("time",   &tof_time);
 
     // FMT::Track.
-    TTree *fmt_tree = new TTree("FMT::Track", "FMT::Track");
+    TTree *fmt_tree = new TTree("FMT::Tracks", "FMT::Tracks");
     std::vector<Float_t> fmt_vx;       fmt_tree->Branch("vx", &fmt_vx);
     std::vector<Float_t> fmt_vy;       fmt_tree->Branch("vy", &fmt_vy);
     std::vector<Float_t> fmt_vz;       fmt_tree->Branch("vz", &fmt_vz);
