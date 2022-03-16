@@ -1,11 +1,2 @@
-# Executables.
-bin/*
-
-# Build files.
-build/*.o
-
-# Output files.
-out/*.root
-
 # Personal files (temporary).
 task_list.md
