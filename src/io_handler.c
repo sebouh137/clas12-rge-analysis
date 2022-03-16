@@ -20,7 +20,7 @@ int handle_args(int argc, char **argv, bool *use_fmt, int *nevents, char **input
 }
 
 int handle_filename(char *input_file, int *run_no, double *beam_energy) {
-    if (!strstr(input_file, ".hipo"))     return 3; // Check that file is valid.
+    if (!strstr(input_file, ".root"))     return 3; // Check that file is valid.
     if (!(access(input_file, F_OK) == 0)) return 4; // Check that file exists.
 
     // Get run number and beam energy from filename.
