@@ -1,6 +1,7 @@
 #include "file_handler.h"
 
 int get_run_no(char *input_file, int *run_no_int) {
+    // TODO. This is a very brute way to find the run number and **should** be changed.
     char run_no_str[7];
     char *dot_pos = strchr(input_file, '.');
     if (!dot_pos) return 0;
