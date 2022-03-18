@@ -18,18 +18,30 @@ REC_Particle::REC_Particle() {
     status  = {};
 }
 REC_Particle::REC_Particle(TTree *t) {
-    pid     = nullptr; b_pid     = nullptr; t->SetBranchAddress("pid",     &pid,     &b_pid);
-    px      = nullptr; b_px      = nullptr; t->SetBranchAddress("px",      &px,      &b_px);
-    py      = nullptr; b_py      = nullptr; t->SetBranchAddress("py",      &py,      &b_py);
-    pz      = nullptr; b_pz      = nullptr; t->SetBranchAddress("pz",      &pz,      &b_pz);
-    vx      = nullptr; b_vx      = nullptr; t->SetBranchAddress("vx",      &vx,      &b_vx);
-    vy      = nullptr; b_vy      = nullptr; t->SetBranchAddress("vy",      &vy,      &b_vy);
-    vz      = nullptr; b_vz      = nullptr; t->SetBranchAddress("vz",      &vz,      &b_vz);
-    vt      = nullptr; b_vt      = nullptr; t->SetBranchAddress("vt",      &vt,      &b_vt);
-    charge  = nullptr; b_charge  = nullptr; t->SetBranchAddress("charge",  &charge,  &b_charge);
-    beta    = nullptr; b_beta    = nullptr; t->SetBranchAddress("beta",    &beta,    &b_beta);
-    chi2pid = nullptr; b_chi2pid = nullptr; t->SetBranchAddress("chi2pid", &chi2pid, &b_chi2pid);
-    status  = nullptr; b_status  = nullptr; t->SetBranchAddress("status",  &status,  &b_status);
+    pid     = nullptr; b_pid     = nullptr;
+    px      = nullptr; b_px      = nullptr;
+    py      = nullptr; b_py      = nullptr;
+    pz      = nullptr; b_pz      = nullptr;
+    vx      = nullptr; b_vx      = nullptr;
+    vy      = nullptr; b_vy      = nullptr;
+    vz      = nullptr; b_vz      = nullptr;
+    vt      = nullptr; b_vt      = nullptr;
+    charge  = nullptr; b_charge  = nullptr;
+    beta    = nullptr; b_beta    = nullptr;
+    chi2pid = nullptr; b_chi2pid = nullptr;
+    status  = nullptr; b_status  = nullptr;
+    t->SetBranchAddress("REC::Particle::pid",     &pid,     &b_pid);
+    t->SetBranchAddress("REC::Particle::px",      &px,      &b_px);
+    t->SetBranchAddress("REC::Particle::py",      &py,      &b_py);
+    t->SetBranchAddress("REC::Particle::pz",      &pz,      &b_pz);
+    t->SetBranchAddress("REC::Particle::vx",      &vx,      &b_vx);
+    t->SetBranchAddress("REC::Particle::vy",      &vy,      &b_vy);
+    t->SetBranchAddress("REC::Particle::vz",      &vz,      &b_vz);
+    t->SetBranchAddress("REC::Particle::vt",      &vt,      &b_vt);
+    t->SetBranchAddress("REC::Particle::charge",  &charge,  &b_charge);
+    t->SetBranchAddress("REC::Particle::beta",    &beta,    &b_beta);
+    t->SetBranchAddress("REC::Particle::chi2pid", &chi2pid, &b_chi2pid);
+    t->SetBranchAddress("REC::Particle::status",  &status,  &b_status);
 }
 int REC_Particle::get_nrows() {return nrows;}
 int REC_Particle::link_branches(TTree *t) {
@@ -106,11 +118,16 @@ REC_Track::REC_Track() {
     chi2   = {};
 }
 REC_Track::REC_Track(TTree *t) {
-    index  = nullptr; b_index  = nullptr; t->SetBranchAddress("index",  &index,  &b_index);
-    pindex = nullptr; b_pindex = nullptr; t->SetBranchAddress("pindex", &pindex, &b_pindex);
-    sector = nullptr; b_sector = nullptr; t->SetBranchAddress("sector", &sector, &b_sector);
-    ndf    = nullptr; b_ndf    = nullptr; t->SetBranchAddress("NDF",    &ndf,    &b_ndf);
-    chi2   = nullptr; b_chi2   = nullptr; t->SetBranchAddress("chi2",   &chi2,   &b_chi2);
+    index  = nullptr; b_index  = nullptr;
+    pindex = nullptr; b_pindex = nullptr;
+    sector = nullptr; b_sector = nullptr;
+    ndf    = nullptr; b_ndf    = nullptr;
+    chi2   = nullptr; b_chi2   = nullptr;
+    t->SetBranchAddress("REC::Track::index",  &index,  &b_index);
+    t->SetBranchAddress("REC::Track::pindex", &pindex, &b_pindex);
+    t->SetBranchAddress("REC::Track::sector", &sector, &b_sector);
+    t->SetBranchAddress("REC::Track::ndf",    &ndf,    &b_ndf);
+    t->SetBranchAddress("REC::Track::chi2",   &chi2,   &b_chi2);
 }
 int REC_Track::get_nrows() {return nrows;}
 int REC_Track::link_branches(TTree *t) {
@@ -157,9 +174,12 @@ REC_Calorimeter::REC_Calorimeter() {
     energy = {};
 }
 REC_Calorimeter::REC_Calorimeter(TTree *t) {
-    pindex = nullptr; b_pindex = nullptr; t->SetBranchAddress("pindex", &pindex, &b_pindex);
-    layer  = nullptr; b_layer  = nullptr; t->SetBranchAddress("layer",  &layer,  &b_layer);
-    energy = nullptr; b_energy = nullptr; t->SetBranchAddress("energy", &energy, &b_energy);
+    pindex = nullptr; b_pindex = nullptr;
+    layer  = nullptr; b_layer  = nullptr;
+    energy = nullptr; b_energy = nullptr;
+    t->SetBranchAddress("REC::Calorimeter::pindex", &pindex, &b_pindex);
+    t->SetBranchAddress("REC::Calorimeter::layer",  &layer,  &b_layer);
+    t->SetBranchAddress("REC::Calorimeter::energy", &energy, &b_energy);
 }
 int REC_Calorimeter::get_nrows() {return nrows;}
 int REC_Calorimeter::link_branches(TTree *t) {
@@ -197,8 +217,10 @@ REC_Scintillator::REC_Scintillator() {
     time   = {};
 }
 REC_Scintillator::REC_Scintillator(TTree *t) {
-    pindex = nullptr; pindex = nullptr; t->SetBranchAddress("pindex", &pindex, &b_pindex);
-    time   = nullptr; time   = nullptr; t->SetBranchAddress("time",   &time,   &b_time);
+    pindex = nullptr; pindex = nullptr;
+    time   = nullptr; time   = nullptr;
+    t->SetBranchAddress("REC::Scintillator::pindex", &pindex, &b_pindex);
+    t->SetBranchAddress("REC::Scintillator::time",   &time,   &b_time);
 }
 int REC_Scintillator::get_nrows() {return nrows;}
 int REC_Scintillator::link_branches(TTree *t) {
@@ -235,12 +257,18 @@ FMT_Tracks::FMT_Tracks() {
     pz = {};
 }
 FMT_Tracks::FMT_Tracks(TTree *t) {
-    vx = nullptr; b_vx = nullptr; t->SetBranchAddress("vx", &vx, &b_vx);
-    vy = nullptr; b_vy = nullptr; t->SetBranchAddress("vy", &vy, &b_vy);
-    vz = nullptr; b_vz = nullptr; t->SetBranchAddress("vz", &vz, &b_vz);
-    px = nullptr; b_px = nullptr; t->SetBranchAddress("px", &px, &b_px);
-    py = nullptr; b_py = nullptr; t->SetBranchAddress("py", &py, &b_py);
-    pz = nullptr; b_pz = nullptr; t->SetBranchAddress("pz", &pz, &b_pz);
+    vx = nullptr; b_vx = nullptr;
+    vy = nullptr; b_vy = nullptr;
+    vz = nullptr; b_vz = nullptr;
+    px = nullptr; b_px = nullptr;
+    py = nullptr; b_py = nullptr;
+    pz = nullptr; b_pz = nullptr;
+    t->SetBranchAddress("FMT::Tracks::vx", &vx, &b_vx);
+    t->SetBranchAddress("FMT::Tracks::vy", &vy, &b_vy);
+    t->SetBranchAddress("FMT::Tracks::vz", &vz, &b_vz);
+    t->SetBranchAddress("FMT::Tracks::px", &px, &b_px);
+    t->SetBranchAddress("FMT::Tracks::py", &py, &b_py);
+    t->SetBranchAddress("FMT::Tracks::pz", &pz, &b_pz);
 }
 int FMT_Tracks::get_nrows() {return nrows;}
 int FMT_Tracks::link_branches(TTree *t) {

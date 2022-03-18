@@ -25,8 +25,8 @@ int run(char *in_filename, bool use_fmt, int nevents, int run_no, double beam_E)
     // double p4[6] = { 0.00070,  0.00070,  0.00070,  0.00070,  0.00070,  0.00070};
 
     // Access input file. TODO. Make this input file*s*.
-    TFile *infile = TFile::Open(in_filename, "READ");
-    if (!infile || infile->IsZombie()) {
+    TFile *f_in = TFile::Open(in_filename, "READ");
+    if (!f_in || f_in->IsZombie()) {
         fprintf(stderr, "Error opening file %s", in_filename);
         exit(1);
     }
@@ -89,35 +89,31 @@ int run(char *in_filename, bool use_fmt, int nevents, int run_no, double beam_E)
     }
 
     // Iterate through events.
-    TTree *t_rec_part = infile->Get<TTree>("REC::Particle");
-    TTree *t_rec_trk  = infile->Get<TTree>("REC::Track");
-    TTree *t_rec_sci  = infile->Get<TTree>("REC::Scintillator");
-    TTree *t_rec_cal  = infile->Get<TTree>("REC::Calorimeter");
-    TTree *t_fmt_trk  = infile->Get<TTree>("FMT::Tracks");
+    TTree *t = f_in->Get<TTree>("Tree");
 
-    REC_Particle     rec_part(t_rec_part);
-    REC_Track        rec_trk (t_rec_trk);
-    REC_Scintillator rec_sci (t_rec_sci);
-    REC_Calorimeter  rec_cal (t_rec_cal);
-    FMT_Tracks       fmt_trk (t_fmt_trk);
+    REC_Particle     rp(t);
+    REC_Track        rt (t);
+    REC_Scintillator rs (t);
+    REC_Calorimeter  rc (t);
+    FMT_Tracks       ft (t);
 
-    TH1F *h1 = new TH1F("h1", "h1", 50, 0., 150.);
-
-    for (int i = 0; i < t_rec_part->GetEntries(); ++i) {
-        rec_part.b_vz->GetEntry(t_rec_part->LoadTree(i));
-
-        for (UInt_t j = 0; j < rec_part.vz->size(); ++j) {
-            h1->Fill(rec_part.vz->at(j));
-        }
+    // Go through events in the files. Each TTree entry is one event.
+    for (int evn = 0; evn < t->GetEntries(); ++evn) {
+        rp.get_entries(t, evn);
+        rt.get_entries(t, evn);
+        rs.get_entries(t, evn);
+        rc.get_entries(t, evn);
+        ft.get_entries(t, evn);
     }
 
-    for (int evn = 0; evn < t_rec_part->GetEntries(); ++evn) {
-        rec_part.get_entries(t_rec_part, evn);
-        rec_trk .get_entries(t_rec_trk,  evn);
-        rec_sci .get_entries(t_rec_sci,  evn);
-        rec_cal .get_entries(t_rec_cal,  evn);
-        fmt_trk .get_entries(t_fmt_trk,  evn);
-    }
+    // TH1F *h1 = new TH1F("h1", "h1", 50, 0., 150.);
+    // for (int i = 0; i < t->GetEntries(); ++i) {
+    //     rp.b_vz->GetEntry(t->LoadTree(i));
+    //
+    //     for (UInt_t j = 0; j < rp.vz->size(); ++j) {
+    //         h1->Fill(rp.vz->at(j));
+    //     }
+    // }
 
     // // Iterate through input files.
     // for (int i = 0; i < files->GetEntries(); ++i) {
@@ -302,8 +298,8 @@ int run(char *in_filename, bool use_fmt, int nevents, int run_no, double beam_E)
     // }
 
     // Create output file.
-    TFile f_out("../out/histos.root", "RECREATE");
-    h1->Write("h1");
+    // TFile f_out("../out/histos.root", "RECREATE");
+    // h1->Write("h1");
 
     // // Write to output file.
     // for (hmap_it = histos.begin(); hmap_it != histos.end(); ++hmap_it) {
@@ -368,7 +364,8 @@ int run(char *in_filename, bool use_fmt, int nevents, int run_no, double beam_E)
     //     histos[hmap_it->first][NU]->Write();
     //     histos[hmap_it->first][XB]->Write();
     // }
-    f_out.Close();
+    // f_out.Close();
+    f_in->Close();
 
     return 0;
 }
