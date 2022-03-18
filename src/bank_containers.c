@@ -3,6 +3,7 @@
 // TODO. This file could use a lot of improvement using interfaces and smart array handling.
 // TODO. All strings here should be handled by `constants.h`.
 REC_Particle::REC_Particle() {
+    nrows   = 0;
     pid     = {};
     px      = {};
     py      = {};
@@ -30,6 +31,7 @@ REC_Particle::REC_Particle(TTree *t) {
     chi2pid = nullptr; b_chi2pid = nullptr; t->SetBranchAddress("chi2pid", &chi2pid, &b_chi2pid);
     status  = nullptr; b_status  = nullptr; t->SetBranchAddress("status",  &status,  &b_status);
 }
+int REC_Particle::get_nrows() {return nrows;}
 int REC_Particle::link_branches(TTree *t) {
     t->Branch("REC::Particle::pid",     &pid);
     t->Branch("REC::Particle::px",      &px);
@@ -45,7 +47,7 @@ int REC_Particle::link_branches(TTree *t) {
     t->Branch("REC::Particle::status",  &status);
     return 0;
 }
-int REC_Particle::resize(int nrows) {
+int REC_Particle::resize() {
     pid    ->resize(nrows);
     px     ->resize(nrows);
     py     ->resize(nrows);
@@ -60,7 +62,9 @@ int REC_Particle::resize(int nrows) {
     status ->resize(nrows);
     return 0;
 }
-int REC_Particle::fill(hipo::bank b, int nrows) {
+int REC_Particle::fill(hipo::bank b) {
+    nrows = b.getRows();
+    resize();
     for (int row = 0; row < nrows; ++row) {
         pid    ->at(row) = b.getInt  ("pid",     row);
         px     ->at(row) = b.getFloat("px",      row);
@@ -94,6 +98,7 @@ int REC_Particle::get_entries(TTree *t, int idx) {
 }
 
 REC_Track::REC_Track() {
+    nrows  = 0;
     index  = {};
     pindex = {};
     sector = {};
@@ -107,6 +112,7 @@ REC_Track::REC_Track(TTree *t) {
     ndf    = nullptr; b_ndf    = nullptr; t->SetBranchAddress("NDF",    &ndf,    &b_ndf);
     chi2   = nullptr; b_chi2   = nullptr; t->SetBranchAddress("chi2",   &chi2,   &b_chi2);
 }
+int REC_Track::get_nrows() {return nrows;}
 int REC_Track::link_branches(TTree *t) {
     t->Branch("REC::Track::index",  &index);
     t->Branch("REC::Track::pindex", &pindex);
@@ -115,7 +121,7 @@ int REC_Track::link_branches(TTree *t) {
     t->Branch("REC::Track::chi2",   &chi2);
     return 0;
 }
-int REC_Track::resize(int nrows) {
+int REC_Track::resize() {
     index ->resize(nrows);
     pindex->resize(nrows);
     sector->resize(nrows);
@@ -123,7 +129,9 @@ int REC_Track::resize(int nrows) {
     chi2  ->resize(nrows);
     return 0;
 }
-int REC_Track::fill(hipo::bank b, int nrows) {
+int REC_Track::fill(hipo::bank b) {
+    nrows = b.getRows();
+    resize();
     for (int row = 0; row < nrows; ++row) {
         index ->at(row) = (int16_t) b.getShort("index",  row);
         pindex->at(row) = (int16_t) b.getShort("pindex", row);
@@ -143,6 +151,7 @@ int REC_Track::get_entries(TTree *t, int idx) {
 }
 
 REC_Calorimeter::REC_Calorimeter() {
+    nrows = 0;
     pindex = {};
     layer  = {};
     energy = {};
@@ -152,19 +161,22 @@ REC_Calorimeter::REC_Calorimeter(TTree *t) {
     layer  = nullptr; b_layer  = nullptr; t->SetBranchAddress("layer",  &layer,  &b_layer);
     energy = nullptr; b_energy = nullptr; t->SetBranchAddress("energy", &energy, &b_energy);
 }
+int REC_Calorimeter::get_nrows() {return nrows;}
 int REC_Calorimeter::link_branches(TTree *t) {
     t->Branch("REC::Calorimeter::pindex", &pindex);
     t->Branch("REC::Calorimeter::layer",  &layer);
     t->Branch("REC::Calorimeter::energy", &energy);
     return 0;
 }
-int REC_Calorimeter::resize(int nrows) {
+int REC_Calorimeter::resize() {
     pindex->resize(nrows);
     layer ->resize(nrows);
     energy->resize(nrows);
     return 0;
 }
-int REC_Calorimeter::fill(hipo::bank b, int nrows) {
+int REC_Calorimeter::fill(hipo::bank b) {
+    nrows = b.getRows();
+    resize();
     for (int row = 0; row < nrows; ++row) {
         pindex->at(row) = (int16_t) b.getShort("pindex", row);
         layer ->at(row) = (int8_t)  b.getByte ("layer",  row);
@@ -180,6 +192,7 @@ int REC_Calorimeter::get_entries(TTree *t, int idx) {
 }
 
 REC_Scintillator::REC_Scintillator() {
+    nrows  = 0;
     pindex = {};
     time   = {};
 }
@@ -187,17 +200,20 @@ REC_Scintillator::REC_Scintillator(TTree *t) {
     pindex = nullptr; pindex = nullptr; t->SetBranchAddress("pindex", &pindex, &b_pindex);
     time   = nullptr; time   = nullptr; t->SetBranchAddress("time",   &time,   &b_time);
 }
+int REC_Scintillator::get_nrows() {return nrows;}
 int REC_Scintillator::link_branches(TTree *t) {
     t->Branch("REC::Scintillator::pindex", &pindex);
     t->Branch("REC::Scintillator::time",   &time);
     return 0;
 }
-int REC_Scintillator::resize(int nrows) {
+int REC_Scintillator::resize() {
     pindex->resize(nrows);
     time  ->resize(nrows);
     return 0;
 }
-int REC_Scintillator::fill(hipo::bank b, int nrows) {
+int REC_Scintillator::fill(hipo::bank b) {
+    nrows = b.getRows();
+    resize();
     for (int row = 0; row < nrows; ++row) {
         pindex->at(row) = (int16_t) b.getShort("pindex", row);
         time  ->at(row) = b.getFloat("time", row);
@@ -226,16 +242,17 @@ FMT_Tracks::FMT_Tracks(TTree *t) {
     py = nullptr; b_py = nullptr; t->SetBranchAddress("py", &py, &b_py);
     pz = nullptr; b_pz = nullptr; t->SetBranchAddress("pz", &pz, &b_pz);
 }
+int FMT_Tracks::get_nrows() {return nrows;}
 int FMT_Tracks::link_branches(TTree *t) {
-    t->Branch("FMT::Tracks::vx", &vx);
-    t->Branch("FMT::Tracks::vy", &vy);
-    t->Branch("FMT::Tracks::vz", &vz);
-    t->Branch("FMT::Tracks::px", &px);
-    t->Branch("FMT::Tracks::py", &py);
-    t->Branch("FMT::Tracks::pz", &pz);
+    t->Branch("FMT::Tracks::vx",    &vx);
+    t->Branch("FMT::Tracks::vy",    &vy);
+    t->Branch("FMT::Tracks::vz",    &vz);
+    t->Branch("FMT::Tracks::px",    &px);
+    t->Branch("FMT::Tracks::py",    &py);
+    t->Branch("FMT::Tracks::pz",    &pz);
     return 0;
 }
-int FMT_Tracks::resize(int nrows) {
+int FMT_Tracks::resize() {
     vx->resize(nrows);
     vy->resize(nrows);
     vz->resize(nrows);
@@ -244,7 +261,9 @@ int FMT_Tracks::resize(int nrows) {
     pz->resize(nrows);
     return 0;
 }
-int FMT_Tracks::fill(hipo::bank b, int nrows) {
+int FMT_Tracks::fill(hipo::bank b) {
+    nrows = b.getRows();
+    resize();
     for (int row = 0; row < nrows; ++row) {
         vx->at(row) = b.getFloat("Vtx0_x", row);
         vy->at(row) = b.getFloat("Vtx0_y", row);
