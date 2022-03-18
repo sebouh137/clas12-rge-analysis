@@ -21,14 +21,14 @@ OBJS        := $(BLD)/bank_containers.o $(BLD)/err_handler.o $(BLD)/file_handler
 
 all: $(BIN)/hipo2root $(BIN)/acceptance
 
-$(BIN)/hipo2root: $(SRC)/hipo2root.c
-	$(CXX) $(CFLAGS) $(ROOTCFLAGS) $(HIPOCFLAGS) $(LZ4INCLUDES) $(SRC)/hipo2root.c -o $(BIN)/hipo2root $(ROOTCFLAGS) $(ROOTLDFLAGS) $(HIPOLIBS) $(LZ4LIBS) $(ROOTLIBS)
+$(BIN)/hipo2root: $(BLD)/bank_containers.o $(SRC)/hipo2root.c
+	$(CXX) $(CFLAGS) $(BLD)/bank_containers.o $(ROOTCFLAGS) $(HIPOCFLAGS) $(LZ4INCLUDES) $(SRC)/hipo2root.c -o $(BIN)/hipo2root $(ROOTCFLAGS) $(ROOTLDFLAGS) $(HIPOLIBS) $(LZ4LIBS) $(ROOTLIBS)
 
 $(BIN)/acceptance: $(OBJS) $(SRC)/acceptance.c
-	$(CXX) $(CFLAGS) $(OBJS) $(SRC)/acceptance.c -o $(BIN)/acceptance $(ROOTCFLAGS) $(ROOTLDFLAGS) $(ROOTLIBS)
+	$(CXX) $(CFLAGS) $(OBJS) $(SRC)/acceptance.c -o $(BIN)/acceptance $(ROOTCFLAGS) $(HIPOCFLAGS) $(ROOTLDFLAGS) $(HIPOLIBS) $(ROOTLIBS)
 
 $(BLD)/bank_containers.o: $(SRC)/bank_containers.c $(SRC)/bank_containers.h
-	$(CXX) $(CFLAGS) -c $(SRC)/bank_containers.c -o $(BLD)/bank_containers.o $(ROOTCFLAGS) $(ROOTLDFLAGS) $(ROOTLIBS)
+	$(CXX) $(CFLAGS) -c $(SRC)/bank_containers.c -o $(BLD)/bank_containers.o $(ROOTCFLAGS) $(HIPOCFLAGS) $(ROOTLDFLAGS) $(HIPOLIBS) $(ROOTLIBS)
 
 $(BLD)/err_handler.o: $(SRC)/err_handler.c $(SRC)/err_handler.h
 	$(CXX) $(CFLAGS) -c $(SRC)/err_handler.c -o $(BLD)/err_handler.o
@@ -43,6 +43,6 @@ $(BLD)/utilities.o: $(SRC)/utilities.c
 	$(CXX) $(CFLAGS) -c $(SRC)/utilities.c -o $(BLD)/utilities.o
 
 clean:
-	@echo "Removing all build files."
+	@echo "Removing all build files and binaries."
 	@rm $(BIN)/*
 	@rm $(BLD)/*.o
