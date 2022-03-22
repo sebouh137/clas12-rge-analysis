@@ -19,7 +19,12 @@ int main(int argc, char** argv) {
                                   &in_filename));
 
     char *out_filename = (char*) malloc(22 * sizeof(char));
-    sprintf(out_filename, "../root_io/%d.root", run_no);
+    if      (run_no /     10 == 0) sprintf(out_filename, "../root_io/00000%d.root", run_no);
+    else if (run_no /    100 == 0) sprintf(out_filename, "../root_io/0000%d.root", run_no);
+    else if (run_no /   1000 == 0) sprintf(out_filename, "../root_io/000%d.root", run_no);
+    else if (run_no /  10000 == 0) sprintf(out_filename, "../root_io/00%d.root", run_no);
+    else if (run_no / 100000 == 0) sprintf(out_filename, "../root_io/0%d.root", run_no);
+    else                           sprintf(out_filename, "../root_io/%d.root", run_no);
 
     TFile *f = TFile::Open(out_filename, "RECREATE");
     f->SetCompressionAlgorithm(ROOT::kLZ4);

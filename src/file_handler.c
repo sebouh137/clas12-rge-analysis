@@ -3,7 +3,7 @@
 int get_run_no(char *input_file, int *run_no_int) {
     // TODO. This is a very brute way to find the run number and **should** be changed.
     char run_no_str[7];
-    char *dot_pos = strchr(input_file, '.');
+    char *dot_pos = strrchr(input_file, '.');
     if (!dot_pos) return 0;
     strncpy(run_no_str, dot_pos - 6, 6);
     run_no_str[6] = '\0';
