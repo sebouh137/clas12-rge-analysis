@@ -94,167 +94,175 @@ int run(char *in_filename, bool use_fmt, int nevents, int run_no, double beam_E)
     REC_Calorimeter  rc(t);
     FMT_Tracks       ft(t);
 
-    // Go through events in the files. Each TTree entry is one event.
+    // Iterate through input file. Each TTree entry is one event.
     TH1F *h1 = new TH1F("h1", "h1", 500, -200., 200.);
-    for (int evn = 0; evn < t->GetEntries(); ++evn) {
+    int evn;
+    for (evn = 0; (evn < t->GetEntries()) && (nevents == -1 || evn < nevents); ++evn) {
+        if (evn % 10000 == 0) {
+            if (evn != 0) printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
+            printf("Read %8d events...", evn);
+            fflush(stdout);
+        }
+
         rp.get_entries(t, evn);
         rt.get_entries(t, evn);
         rs.get_entries(t, evn);
         rc.get_entries(t, evn);
         ft.get_entries(t, evn);
 
+        // Filter events without the necessary banks.
+        if (rp.vz->size() == 0 || rt.pindex->size() == 0) continue;
+
+        // Find trigger electron's TOF.
+        int tre_pindex = rt.pindex->at(0);
+        double tre_tof = INFINITY;
+        for (UInt_t i = 0; i < rs.pindex->size(); ++i) {
+            if (rs.pindex->at(i) == tre_pindex && rs.time->at(i) < tre_tof) tre_tof = rs.time->at(i);
+        }
+
+        // NOTE. TEMPORARY CODE.
         for (UInt_t i = 0; i < rp.vz->size(); ++i) {
             h1->Fill(rp.vz->at(i));
         }
     }
+    printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
+    printf("Read %8d events... Done!\n", evn);
 
-    // // Iterate through input files.
-    // for (int i = 0; i < files->GetEntries(); ++i) {
-    //     clas12reader c12(files->At(i)->GetTitle(), {0}); // Create event reader.
-    //     if (nevents != 0) c12.setEntries(nevents / files->GetEntries());
+    // // NOTE. OLD CODE.
+    // // Iterate through events in file.
+    // while (c12.next() == true) {
+    //     // Iterate through particles in event.
+    //     for (region_particle *rp : c12.getDetParticles()) {
+    //         // Make sure that particle comes from FD.
+    //         switch (rp->getRegion()) {
+    //         case FD: break;    // Forward Detector.
+    //         case FT: continue; // Forward Tagger.
+    //         case CD: continue; // Central Detector.
+    //         default:
+    //             printf("[ERROR] A particles comes from an invalid detector.\n"); // Just in case.
+    //             return(1);
+    //         };
     //
-    //     // Iterate through events in file.
-    //     while (c12.next() == true) {
-    //         // Find trigger electron's TOF.
-    //         double tre_tof = -1;
-    //         for (region_particle *rp : c12.getDetParticles()) {
-    //             if (rp->par()->getPid() == 11 && rp->par()->getStatus() < 0)
-    //                 tre_tof = rp->sci(FTOF)->getTime();
-    //         }
+    //         // Get particle and associated data.
+    //         particle *p = rp->par();
     //
-    //         // Iterate through particles in event.
-    //         for (region_particle *rp : c12.getDetParticles()) {
-    //             // Make sure that particle comes from FD.
-    //             switch (rp->getRegion()) {
-    //             case FD: break;    // Forward Detector.
-    //             case FT: continue; // Forward Tagger.
-    //             case CD: continue; // Central Detector.
+    //         // Apply PID cuts.
+    //         if (    abs(p->getChi2Pid()) >= 3 // Ignore spurious particles.
+    //              || p->getPid() == 0          // Ignore badly identified particles.
+    //         ) continue;
+    //
+    //         // Apply geometry cuts. (TODO. Improve cut in z).
+    //         if (    p->getVx()*p->getVx() + p->getVy()*p->getVy() > 4 // Too far from beamline.
+    //              || (p->getVz() < -40 || p->getVz() > 40)             // Too far from target.
+    //         ) continue;
+    //
+    //         // Apply FMT cuts. (TODO. Make sure that this is enough).
+    //         if (use_fmt && (
+    //                 (abs(p->getStatus())/1000) != 2 // Filter particles that pass through FD.
+    //              // || rp->trk(FMT)->getNDF() == 3     // TODO. Figure out what this NDF is.
+    //         )) continue;
+    //
+    //         // TODO. Make sure that the particle bank has FMT data.
+    //         //       UPDATE. It doesn't. Fix this.
+    //         // TODO. Figure out how to get DC data.
+    //
+    //         // Figure out which histograms are to be filled.
+    //         // TODO. Choose these particules from cuts, not PID.
+    //         std::map<const char *, bool> truth_map;
+    //         truth_map.insert({PALL, true});
+    //         truth_map.insert({PPOS, p->getCharge() > 0  ? true : false});
+    //         truth_map.insert({PPOS, p->getCharge() < 0  ? true : false});
+    //         truth_map.insert({PPIP, p->getPid() ==  211 ? true : false});
+    //         truth_map.insert({PPIM, p->getPid() == -211 ? true : false});
+    //         truth_map.insert({PELC, p->getPid() ==   11 ? true : false});
+    //         truth_map.insert({PTRE, (p->getPid() == 11 && p->getStatus() < 0) ? true : false});
+    //
+    //         for (hmap_it = histos.begin(); hmap_it != histos.end(); ++hmap_it) {
+    //             if (!truth_map[hmap_it->first]) continue; // Only write to appropiate histograms.
+    //
+    //             // Vertex z.
+    //             histos[hmap_it->first][VZPHI]->Fill(p->getVz(), to_deg(rp->getPhi()));
+    //             if (rp->trk(FMT)->getSector() == 1) { // No beam alignment on runs yet.
+    //                 histos[hmap_it->first][VZ]     ->Fill(p->getVz());
+    //                 histos[hmap_it->first][VZTHETA]->Fill(p->getVz(), to_deg(rp->getTheta()));
+    //             }
+    //
+    //             // Vertex P.
+    //             histos[hmap_it->first][VP]    ->Fill(p->getP());
+    //             histos[hmap_it->first][BETA]  ->Fill(p->getBeta());
+    //             histos[hmap_it->first][BETAVP]->Fill(p->getBeta(), p->getP());
+    //
+    //             // TOF. (TODO. Check FTOF resolution).
+    //             if (tre_tof >= 0) { // Only fill if trigger electron's TOF was found.
+    //                 double dtof = rp->sci(FTOF)  ->getTime() - tre_tof;
+    //                 histos[hmap_it->first][DTOF] ->Fill(dtof);
+    //                 histos[hmap_it->first][VPTOF]->Fill(p->getP(), dtof);
+    //             }
+    //
+    //             // Calorimeters.
+    //             double pcal_E  = rp->cal(PCAL) ->getEnergy();
+    //             double ecin_E  = rp->cal(ECIN) ->getEnergy();
+    //             double ecou_E  = rp->cal(ECOUT)->getEnergy();
+    //             double total_E = pcal_E + ecin_E + ecou_E;
+    //             histos[hmap_it->first][PDIVEP]  ->Fill(p->getP()/total_E, p->getP());
+    //             histos[hmap_it->first][PDIVEE]  ->Fill(p->getP()/total_E, total_E);
+    //             histos[hmap_it->first][PPCALE]  ->Fill(p->getP(), pcal_E);
+    //             histos[hmap_it->first][PECINE]  ->Fill(p->getP(), ecin_E);
+    //             histos[hmap_it->first][PECOUE]  ->Fill(p->getP(), ecou_E);
+    //             histos[hmap_it->first][ECALPCAL]->Fill(ecin_E+ecou_E, pcal_E);
+    //
+    //             // Sampling Fraction.
+    //             int s; double sf;
+    //             s  = rp->cal(PCAL)->getSector();
+    //             sf = p1[s-1] * (p2[s-1] + p3[s-1]/pcal_E + pow(p4[s-1]/pcal_E, 2));
+    //             switch (s) { // NOTE. Bad solution because I'm lazy. I should change this.
+    //             case 0: break;
+    //             case 1: histos[hmap_it->first][PCALSF1]->Fill(sf); break;
+    //             case 2: histos[hmap_it->first][PCALSF2]->Fill(sf); break;
+    //             case 3: histos[hmap_it->first][PCALSF3]->Fill(sf); break;
+    //             case 4: histos[hmap_it->first][PCALSF4]->Fill(sf); break;
+    //             case 5: histos[hmap_it->first][PCALSF5]->Fill(sf); break;
+    //             case 6: histos[hmap_it->first][PCALSF6]->Fill(sf); break;
     //             default:
-    //                 printf("[ERROR] A particles comes from an invalid detector.\n"); // Just in case.
+    //                 printf("[ERROR] A particles is in invalid sector %d.\n", s); // Just in case.
     //                 return(1);
     //             };
     //
-    //             // Get particle and associated data.
-    //             particle *p = rp->par();
+    //             s  = rp->cal(ECIN)->getSector();
+    //             sf = p1[s-1] * (p2[s-1] + p3[s-1]/pcal_E + pow(p4[s-1]/pcal_E, 2));
+    //             switch (s) { // NOTE. Bad solution because I'm lazy. I should change this.
+    //             case 0: break;
+    //             case 1: histos[hmap_it->first][ECINSF1]->Fill(sf); break;
+    //             case 2: histos[hmap_it->first][ECINSF2]->Fill(sf); break;
+    //             case 3: histos[hmap_it->first][ECINSF3]->Fill(sf); break;
+    //             case 4: histos[hmap_it->first][ECINSF4]->Fill(sf); break;
+    //             case 5: histos[hmap_it->first][ECINSF5]->Fill(sf); break;
+    //             case 6: histos[hmap_it->first][ECINSF6]->Fill(sf); break;
+    //             default:
+    //                 printf("[ERROR] A particles is in invalid sector %d.\n", s); // Just in case.
+    //                 return(1);
+    //             };
     //
-    //             // Apply PID cuts.
-    //             if (    abs(p->getChi2Pid()) >= 3 // Ignore spurious particles.
-    //                  || p->getPid() == 0          // Ignore badly identified particles.
-    //             ) continue;
+    //             s  = rp->cal(ECOUT)->getSector();
+    //             sf = p1[s-1] * (p2[s-1] + p3[s-1]/pcal_E + pow(p4[s-1]/pcal_E, 2));
+    //             switch (s) { // NOTE. Bad solution because I'm lazy. I should change this.
+    //             case 0: break;
+    //             case 1: histos[hmap_it->first][ECOUSF1]->Fill(sf); break;
+    //             case 2: histos[hmap_it->first][ECOUSF2]->Fill(sf); break;
+    //             case 3: histos[hmap_it->first][ECOUSF3]->Fill(sf); break;
+    //             case 4: histos[hmap_it->first][ECOUSF4]->Fill(sf); break;
+    //             case 5: histos[hmap_it->first][ECOUSF5]->Fill(sf); break;
+    //             case 6: histos[hmap_it->first][ECOUSF6]->Fill(sf); break;
+    //             default:
+    //                 printf("[ERROR] A particles is in invalid sector %d.\n", s); // Just in case.
+    //                 return(1);
+    //             };
     //
-    //             // Apply geometry cuts. (TODO. Improve cut in z).
-    //             if (    p->getVx()*p->getVx() + p->getVy()*p->getVy() > 4 // Too far from beamline.
-    //                  || (p->getVz() < -40 || p->getVz() > 40)             // Too far from target.
-    //             ) continue;
-    //
-    //             // Apply FMT cuts. (TODO. Make sure that this is enough).
-    //             if (use_fmt && (
-    //                     (abs(p->getStatus())/1000) != 2 // Filter particles that pass through FD.
-    //                  // || rp->trk(FMT)->getNDF() == 3     // TODO. Figure out what this NDF is.
-    //             )) continue;
-    //
-    //             // TODO. Make sure that the particle bank has FMT data.
-    //             //       UPDATE. It doesn't. Fix this.
-    //             // TODO. Figure out how to get DC data.
-    //
-    //             // Figure out which histograms are to be filled.
-    //             // TODO. Choose these particules from cuts, not PID.
-    //             std::map<const char *, bool> truth_map;
-    //             truth_map.insert({PALL, true});
-    //             truth_map.insert({PPOS, p->getCharge() > 0  ? true : false});
-    //             truth_map.insert({PPOS, p->getCharge() < 0  ? true : false});
-    //             truth_map.insert({PPIP, p->getPid() ==  211 ? true : false});
-    //             truth_map.insert({PPIM, p->getPid() == -211 ? true : false});
-    //             truth_map.insert({PELC, p->getPid() ==   11 ? true : false});
-    //             truth_map.insert({PTRE, (p->getPid() == 11 && p->getStatus() < 0) ? true : false});
-    //
-    //             for (hmap_it = histos.begin(); hmap_it != histos.end(); ++hmap_it) {
-    //                 if (!truth_map[hmap_it->first]) continue; // Only write to appropiate histograms.
-    //
-    //                 // Vertex z.
-    //                 histos[hmap_it->first][VZPHI]->Fill(p->getVz(), to_deg(rp->getPhi()));
-    //                 if (rp->trk(FMT)->getSector() == 1) { // No beam alignment on runs yet.
-    //                     histos[hmap_it->first][VZ]     ->Fill(p->getVz());
-    //                     histos[hmap_it->first][VZTHETA]->Fill(p->getVz(), to_deg(rp->getTheta()));
-    //                 }
-    //
-    //                 // Vertex P.
-    //                 histos[hmap_it->first][VP]    ->Fill(p->getP());
-    //                 histos[hmap_it->first][BETA]  ->Fill(p->getBeta());
-    //                 histos[hmap_it->first][BETAVP]->Fill(p->getBeta(), p->getP());
-    //
-    //                 // TOF. (TODO. Check FTOF resolution).
-    //                 if (tre_tof >= 0) { // Only fill if trigger electron's TOF was found.
-    //                     double dtof = rp->sci(FTOF)  ->getTime() - tre_tof;
-    //                     histos[hmap_it->first][DTOF] ->Fill(dtof);
-    //                     histos[hmap_it->first][VPTOF]->Fill(p->getP(), dtof);
-    //                 }
-    //
-    //                 // Calorimeters.
-    //                 double pcal_E  = rp->cal(PCAL) ->getEnergy();
-    //                 double ecin_E  = rp->cal(ECIN) ->getEnergy();
-    //                 double ecou_E  = rp->cal(ECOUT)->getEnergy();
-    //                 double total_E = pcal_E + ecin_E + ecou_E;
-    //                 histos[hmap_it->first][PDIVEP]  ->Fill(p->getP()/total_E, p->getP());
-    //                 histos[hmap_it->first][PDIVEE]  ->Fill(p->getP()/total_E, total_E);
-    //                 histos[hmap_it->first][PPCALE]  ->Fill(p->getP(), pcal_E);
-    //                 histos[hmap_it->first][PECINE]  ->Fill(p->getP(), ecin_E);
-    //                 histos[hmap_it->first][PECOUE]  ->Fill(p->getP(), ecou_E);
-    //                 histos[hmap_it->first][ECALPCAL]->Fill(ecin_E+ecou_E, pcal_E);
-    //
-    //                 // Sampling Fraction.
-    //                 int s; double sf;
-    //                 s  = rp->cal(PCAL)->getSector();
-    //                 sf = p1[s-1] * (p2[s-1] + p3[s-1]/pcal_E + pow(p4[s-1]/pcal_E, 2));
-    //                 switch (s) { // NOTE. Bad solution because I'm lazy. I should change this.
-    //                 case 0: break;
-    //                 case 1: histos[hmap_it->first][PCALSF1]->Fill(sf); break;
-    //                 case 2: histos[hmap_it->first][PCALSF2]->Fill(sf); break;
-    //                 case 3: histos[hmap_it->first][PCALSF3]->Fill(sf); break;
-    //                 case 4: histos[hmap_it->first][PCALSF4]->Fill(sf); break;
-    //                 case 5: histos[hmap_it->first][PCALSF5]->Fill(sf); break;
-    //                 case 6: histos[hmap_it->first][PCALSF6]->Fill(sf); break;
-    //                 default:
-    //                     printf("[ERROR] A particles is in invalid sector %d.\n", s); // Just in case.
-    //                     return(1);
-    //                 };
-    //
-    //                 s  = rp->cal(ECIN)->getSector();
-    //                 sf = p1[s-1] * (p2[s-1] + p3[s-1]/pcal_E + pow(p4[s-1]/pcal_E, 2));
-    //                 switch (s) { // NOTE. Bad solution because I'm lazy. I should change this.
-    //                 case 0: break;
-    //                 case 1: histos[hmap_it->first][ECINSF1]->Fill(sf); break;
-    //                 case 2: histos[hmap_it->first][ECINSF2]->Fill(sf); break;
-    //                 case 3: histos[hmap_it->first][ECINSF3]->Fill(sf); break;
-    //                 case 4: histos[hmap_it->first][ECINSF4]->Fill(sf); break;
-    //                 case 5: histos[hmap_it->first][ECINSF5]->Fill(sf); break;
-    //                 case 6: histos[hmap_it->first][ECINSF6]->Fill(sf); break;
-    //                 default:
-    //                     printf("[ERROR] A particles is in invalid sector %d.\n", s); // Just in case.
-    //                     return(1);
-    //                 };
-    //
-    //                 s  = rp->cal(ECOUT)->getSector();
-    //                 sf = p1[s-1] * (p2[s-1] + p3[s-1]/pcal_E + pow(p4[s-1]/pcal_E, 2));
-    //                 switch (s) { // NOTE. Bad solution because I'm lazy. I should change this.
-    //                 case 0: break;
-    //                 case 1: histos[hmap_it->first][ECOUSF1]->Fill(sf); break;
-    //                 case 2: histos[hmap_it->first][ECOUSF2]->Fill(sf); break;
-    //                 case 3: histos[hmap_it->first][ECOUSF3]->Fill(sf); break;
-    //                 case 4: histos[hmap_it->first][ECOUSF4]->Fill(sf); break;
-    //                 case 5: histos[hmap_it->first][ECOUSF5]->Fill(sf); break;
-    //                 case 6: histos[hmap_it->first][ECOUSF6]->Fill(sf); break;
-    //                 default:
-    //                     printf("[ERROR] A particles is in invalid sector %d.\n", s); // Just in case.
-    //                     return(1);
-    //                 };
-    //
-    //                 // SIDIS variables.
-    //                 if (p->getPid() == 11) {
-    //                     histos[hmap_it->first][Q2]->Fill(calc_Q2(beam_E, p->getP(), rp->getTheta()));
-    //                     histos[hmap_it->first][NU]->Fill(calc_nu(beam_E, p->getP()));
-    //                     histos[hmap_it->first][XB]->Fill(calc_Xb(beam_E, p->getP(), rp->getTheta()));
-    //                 }
+    //             // SIDIS variables.
+    //             if (p->getPid() == 11) {
+    //                 histos[hmap_it->first][Q2]->Fill(calc_Q2(beam_E, p->getP(), rp->getTheta()));
+    //                 histos[hmap_it->first][NU]->Fill(calc_nu(beam_E, p->getP()));
+    //                 histos[hmap_it->first][XB]->Fill(calc_Xb(beam_E, p->getP(), rp->getTheta()));
     //             }
     //         }
     //     }
