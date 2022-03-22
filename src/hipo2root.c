@@ -47,7 +47,18 @@ int main(int argc, char** argv) {
     hipo::bank ft_b(factory.getSchema("FMT::Tracks"));
     hipo::event event;
 
+    int c = 0;
     while (reader.next()) {
+        c++;
+        if (c == 10000) {
+            printf("Read %8d events...", c);
+            fflush(stdout);
+        }
+        else if (c % 10000 == 0) {
+            printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
+            printf("Read %8d events...", c);
+            fflush(stdout);
+        }
         reader.read(event);
 
         event.getStructure(rp_b); rp.fill(rp_b);
@@ -58,6 +69,7 @@ int main(int argc, char** argv) {
         if (rp.get_nrows() + rt.get_nrows() + rs.get_nrows() + rc.get_nrows() + ft.get_nrows() > 0)
             tree->Fill();
     }
+    printf(" Done!\n");
     f->Close();
     return 0;
 }
