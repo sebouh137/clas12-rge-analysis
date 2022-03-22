@@ -59,3 +59,19 @@ int hipo2root_handle_args_err(int errcode, char **in_filename) {
             return 1;
     }
 }
+
+int acceptance_err(int errcode, char **in_filename) {
+    switch (errcode) {
+        case 0:
+            return 0;
+        case 1:
+            fprintf(stderr, "Error. %s is not a valid ROOT file.\n", *in_filename);
+            break;
+        default:
+            fprintf(stderr, "Programmer Error. Error code %d not implemented in \n", errcode);
+            fprintf(stderr, "acceptance_err()! You're on your own.\n");
+            break;
+    }
+    free(*in_filename);
+    return 1;
+}

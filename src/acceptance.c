@@ -26,10 +26,7 @@ int run(char *in_filename, bool use_fmt, int nevents, int run_no, double beam_E)
 
     // Access input file. TODO. Make this input file*s*.
     TFile *f_in = TFile::Open(in_filename, "READ");
-    if (!f_in || f_in->IsZombie()) {
-        fprintf(stderr, "Error opening file %s", in_filename);
-        exit(1);
-    }
+    if (!f_in || f_in->IsZombie()) return 1;
 
     // Create and organize histos.
     std::map<const char *, std::map<const char *, TH1 *>> histos;
@@ -92,28 +89,24 @@ int run(char *in_filename, bool use_fmt, int nevents, int run_no, double beam_E)
     TTree *t = f_in->Get<TTree>("Tree");
 
     REC_Particle     rp(t);
-    REC_Track        rt (t);
-    REC_Scintillator rs (t);
-    REC_Calorimeter  rc (t);
-    FMT_Tracks       ft (t);
+    REC_Track        rt(t);
+    REC_Scintillator rs(t);
+    REC_Calorimeter  rc(t);
+    FMT_Tracks       ft(t);
 
     // Go through events in the files. Each TTree entry is one event.
+    TH1F *h1 = new TH1F("h1", "h1", 500, -200., 200.);
     for (int evn = 0; evn < t->GetEntries(); ++evn) {
         rp.get_entries(t, evn);
         rt.get_entries(t, evn);
         rs.get_entries(t, evn);
         rc.get_entries(t, evn);
         ft.get_entries(t, evn);
-    }
 
-    // TH1F *h1 = new TH1F("h1", "h1", 50, 0., 150.);
-    // for (int i = 0; i < t->GetEntries(); ++i) {
-    //     rp.b_vz->GetEntry(t->LoadTree(i));
-    //
-    //     for (UInt_t j = 0; j < rp.vz->size(); ++j) {
-    //         h1->Fill(rp.vz->at(j));
-    //     }
-    // }
+        for (UInt_t i = 0; i < rp.vz->size(); ++i) {
+            h1->Fill(rp.vz->at(i));
+        }
+    }
 
     // // Iterate through input files.
     // for (int i = 0; i < files->GetEntries(); ++i) {
@@ -298,8 +291,8 @@ int run(char *in_filename, bool use_fmt, int nevents, int run_no, double beam_E)
     // }
 
     // Create output file.
-    // TFile f_out("../out/histos.root", "RECREATE");
-    // h1->Write("h1");
+    TFile *f_out = TFile::Open("../root_io/out.root", "RECREATE");
+    h1->Write("h1");
 
     // // Write to output file.
     // for (hmap_it = histos.begin(); hmap_it != histos.end(); ++hmap_it) {
@@ -364,8 +357,10 @@ int run(char *in_filename, bool use_fmt, int nevents, int run_no, double beam_E)
     //     histos[hmap_it->first][NU]->Write();
     //     histos[hmap_it->first][XB]->Write();
     // }
-    // f_out.Close();
-    f_in->Close();
+
+    f_in ->Close();
+    f_out->Close();
+    free(in_filename);
 
     return 0;
 }
@@ -374,10 +369,10 @@ int run(char *in_filename, bool use_fmt, int nevents, int run_no, double beam_E)
 int acceptance(char *in_filename, bool use_fmt, int nevents) {
     int    run_no = -1;
     double beam_E = -1;
-    if (acceptance_handle_args_err(handle_root_filename(in_filename, &run_no, &beam_E), &in_filename, run_no))
-        return 1;
-
-    return run(in_filename, use_fmt, nevents, run_no, beam_E);
+    if (acceptance_handle_args_err(handle_root_filename(in_filename, &run_no, &beam_E),
+                                   &in_filename, run_no)
+    ) return 1;
+    return acceptance_err(run(in_filename, use_fmt, nevents, run_no, beam_E), &in_filename);
 }
 
 // Call program from terminal, C-style.
@@ -390,8 +385,7 @@ int main(int argc, char **argv) {
 
     if (acceptance_handle_args_err(
             acceptance_handle_args(argc, argv, &use_fmt, &nevents, &in_filename, &run_no, &beam_E),
-            &in_filename, run_no)
-        ) return 1;
-
-    return run(in_filename, use_fmt, nevents, run_no, beam_E);
+                                   &in_filename, run_no)
+    ) return 1;
+    return acceptance_err(run(in_filename, use_fmt, nevents, run_no, beam_E), &in_filename);
 }
