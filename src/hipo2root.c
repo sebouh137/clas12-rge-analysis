@@ -11,19 +11,18 @@
 
 int main(int argc, char** argv) {
     char infile[512];
-    char outfile_root[512];
+    char outfile[512];
 
     if (argc > 1) {
-        // TODO. Remove .hipo extension.
         sprintf(infile, "%s", argv[1]);
-        sprintf(outfile_root, "%s.root", argv[1]);
+        sprintf(outfile, "../root_io/in.root"); // TODO. Improve filename and use file_handler.
     }
     else {
         printf("Error. No file name provided. Exiting...\n");
         exit(0);
     }
 
-    TFile *f = TFile::Open(outfile_root, "RECREATE");
+    TFile *f = TFile::Open(outfile, "RECREATE");
     f->SetCompressionAlgorithm(ROOT::kLZ4);
 
     TTree *tree = new TTree("Tree", "Tree");
