@@ -84,12 +84,14 @@ private:
     int nrows;
     int set_nrows(int in_nrows);
 public:
-    std::vector<Float_t> *vx; TBranch *b_vx;
-    std::vector<Float_t> *vy; TBranch *b_vy;
-    std::vector<Float_t> *vz; TBranch *b_vz;
-    std::vector<Float_t> *px; TBranch *b_px;
-    std::vector<Float_t> *py; TBranch *b_py;
-    std::vector<Float_t> *pz; TBranch *b_pz;
+    std::vector<Short_t> *index; TBranch *b_index;
+    std::vector<Int_t>   *ndf;   TBranch *b_ndf;
+    std::vector<Float_t> *vx;    TBranch *b_vx;
+    std::vector<Float_t> *vy;    TBranch *b_vy;
+    std::vector<Float_t> *vz;    TBranch *b_vz;
+    std::vector<Float_t> *px;    TBranch *b_px;
+    std::vector<Float_t> *py;    TBranch *b_py;
+    std::vector<Float_t> *pz;    TBranch *b_pz;
     FMT_Tracks();
     FMT_Tracks(TTree *t);
     int get_nrows();

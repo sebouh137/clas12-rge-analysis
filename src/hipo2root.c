@@ -53,12 +53,8 @@ int main(int argc, char** argv) {
     int c = 0;
     while (reader.next()) {
         c++;
-        if (c == 10000) {
-            printf("Read %8d events...", c);
-            fflush(stdout);
-        }
-        else if (c % 10000 == 0) {
-            printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
+        if (c % 10000 == 0) {
+            if (c != 10000) printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
             printf("Read %8d events...", c);
             fflush(stdout);
         }
@@ -72,7 +68,8 @@ int main(int argc, char** argv) {
         if (rp.get_nrows() + rt.get_nrows() + rs.get_nrows() + rc.get_nrows() + ft.get_nrows() > 0)
             tree->Fill();
     }
-    printf(" Done!\n");
+    printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
+    printf("Read %8d events... Done!\n", c);
 
     // Clean up.
     f->Close();
