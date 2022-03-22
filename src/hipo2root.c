@@ -7,22 +7,21 @@
 #include "TTree.h"
 #include "Compression.h"
 
+#include "err_handler.h"
+#include "io_handler.h"
 #include "bank_containers.h"
 
 int main(int argc, char** argv) {
-    char infile[512];
-    char outfile[512];
+    char *in_filename = NULL;
+    int  run_no = -1;
 
-    if (argc > 1) {
-        sprintf(infile, "%s", argv[1]);
-        sprintf(outfile, "../root_io/in.root"); // TODO. Improve filename and use file_handler.
-    }
-    else {
-        printf("Error. No file name provided. Exiting...\n");
-        exit(0);
-    }
+    if (hipo2root_handle_args_err(hipo2root_handle_args(argc, argv, &in_filename, &run_no),
+                                  &in_filename));
 
-    TFile *f = TFile::Open(outfile, "RECREATE");
+    char *out_filename = (char*) malloc(22 * sizeof(char));
+    sprintf(out_filename, "../root_io/%d.root", run_no);
+
+    TFile *f = TFile::Open(out_filename, "RECREATE");
     f->SetCompressionAlgorithm(ROOT::kLZ4);
 
     TTree *tree = new TTree("Tree", "Tree");
@@ -34,7 +33,7 @@ int main(int argc, char** argv) {
 
     // Setup.
     hipo::reader reader;
-    reader.open(infile);
+    reader.open(in_filename);
 
     hipo::dictionary factory;
     reader.readDictionary(factory);
@@ -69,6 +68,10 @@ int main(int argc, char** argv) {
             tree->Fill();
     }
     printf(" Done!\n");
+
+    // Clean up.
     f->Close();
+    free(in_filename);
+    free(out_filename);
     return 0;
 }

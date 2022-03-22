@@ -374,7 +374,7 @@ int run(char *in_filename, bool use_fmt, int nevents, int run_no, double beam_E)
 int acceptance(char *in_filename, bool use_fmt, int nevents) {
     int    run_no = -1;
     double beam_E = -1;
-    if (handle_args_err(handle_filename(in_filename, &run_no, &beam_E), &in_filename, run_no))
+    if (acceptance_handle_args_err(handle_root_filename(in_filename, &run_no, &beam_E), &in_filename, run_no))
         return 1;
 
     return run(in_filename, use_fmt, nevents, run_no, beam_E);
@@ -388,8 +388,8 @@ int main(int argc, char **argv) {
     int    run_no      = -1;
     double beam_E      = -1;
 
-    if (handle_args_err(
-            handle_args(argc, argv, &use_fmt, &nevents, &in_filename, &run_no, &beam_E),
+    if (acceptance_handle_args_err(
+            acceptance_handle_args(argc, argv, &use_fmt, &nevents, &in_filename, &run_no, &beam_E),
             &in_filename, run_no)
         ) return 1;
 

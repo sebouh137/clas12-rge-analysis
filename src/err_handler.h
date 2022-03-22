@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-int handle_args_err(int errcode, char **input_file, int run_no);
+int acceptance_handle_args_err(int errcode, char **in_filename, int run_no);
+int hipo2root_handle_args_err(int errcode, char **in_filename);
 
 #endif

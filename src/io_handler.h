@@ -8,8 +8,10 @@
 
 #include "file_handler.h"
 
-int handle_args(int argc, char **argv, bool *use_fmt, int *nevents, char **input_file, int *run_no,
-                double *beam_energy);
-int handle_filename(char *input_file, int *run_no, double *beam_energy);
+int acceptance_handle_args(int argc, char **argv, bool *use_fmt, int *nevents, char **input_file,
+                           int *run_no, double *beam_energy);
+int hipo2root_handle_args(int argc, char **argv, char **input_file, int *run_no);
+int handle_root_filename(char *input_file, int *run_no, double *beam_energy);
+int handle_hipo_filename(char *input_file, int *run_no);
 
 #endif

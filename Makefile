@@ -21,8 +21,8 @@ OBJS        := $(BLD)/bank_containers.o $(BLD)/err_handler.o $(BLD)/file_handler
 
 all: $(BIN)/hipo2root $(BIN)/acceptance
 
-$(BIN)/hipo2root: $(BLD)/bank_containers.o $(SRC)/hipo2root.c
-	$(CXX) $(CFLAGS) $(BLD)/bank_containers.o $(ROOTCFLAGS) $(HIPOCFLAGS) $(LZ4INCLUDES) $(SRC)/hipo2root.c -o $(BIN)/hipo2root $(ROOTCFLAGS) $(ROOTLDFLAGS) $(HIPOLIBS) $(LZ4LIBS) $(ROOTLIBS)
+$(BIN)/hipo2root: $(OBJS) $(SRC)/hipo2root.c
+	$(CXX) $(CFLAGS) $(OBJS) $(ROOTCFLAGS) $(HIPOCFLAGS) $(LZ4INCLUDES) $(SRC)/hipo2root.c -o $(BIN)/hipo2root $(ROOTCFLAGS) $(ROOTLDFLAGS) $(HIPOLIBS) $(LZ4LIBS) $(ROOTLIBS)
 
 $(BIN)/acceptance: $(OBJS) $(SRC)/acceptance.c
 	$(CXX) $(CFLAGS) $(OBJS) $(SRC)/acceptance.c -o $(BIN)/acceptance $(ROOTCFLAGS) $(HIPOCFLAGS) $(ROOTLDFLAGS) $(HIPOLIBS) $(ROOTLIBS)
