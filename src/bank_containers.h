@@ -55,6 +55,7 @@ private:
 public:
     std::vector<Short_t> *pindex; TBranch *b_pindex;
     std::vector<Char_t>  *layer;  TBranch *b_layer;
+    std::vector<Char_t>  *sector; TBranch *b_sector;
     std::vector<Float_t> *energy; TBranch *b_energy;
     REC_Calorimeter();
     REC_Calorimeter(TTree *t);

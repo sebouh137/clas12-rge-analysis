@@ -60,4 +60,9 @@
 #define NU       "nu"
 #define XB       "X_bjorken"
 
+// DETECTOR CONSTANTS
+#define PCAL_LYR 1 // PCAL's layer id.
+#define ECIN_LYR 4 // EC inner layer id.
+#define ECOU_LYR 7 // EC outer layer id.
+
 #endif
