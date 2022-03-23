@@ -4,7 +4,9 @@
 #include <map>
 #include <math.h>
 
+#include <TCanvas.h>
 #include <TFile.h>
+#include <TF1.h>
 #include <TH1.h>
 #include <TH1F.h>
 #include <TH2F.h>
@@ -19,10 +21,10 @@
 
 int run(char *in_filename, bool use_fmt, int nevents, int run_no, double beam_E) {
     // Sampling Fraction. TODO. Temporary code.
-    // double p1[6] = { 0.25149,  0.25186,  0.24912,  0.24747,  0.24649,  0.25409};
-    // double p2[6] = { 1.00000,  1.00000,  1.00000,  1.00000,  1.00000,  1.00000};
-    // double p3[6] = {-0.03427, -0.03771, -0.02627, -0.03163, -0.02723, -0.04000};
-    // double p4[6] = { 0.00070,  0.00070,  0.00070,  0.00070,  0.00070,  0.00070};
+    double p1[6] = { 0.25149,  0.25186,  0.24912,  0.24747,  0.24649,  0.25409};
+    double p2[6] = { 1.00000,  1.00000,  1.00000,  1.00000,  1.00000,  1.00000};
+    double p3[6] = {-0.03427, -0.03771, -0.02627, -0.03163, -0.02723, -0.04000};
+    double p4[6] = { 0.00070,  0.00070,  0.00070,  0.00070,  0.00070,  0.00070};
 
     // Access input file. TODO. Make this input file*s*.
     TFile *f_in = TFile::Open(in_filename, "READ");
@@ -95,7 +97,6 @@ int run(char *in_filename, bool use_fmt, int nevents, int run_no, double beam_E)
     FMT_Tracks       ft(t);
 
     // Iterate through input file. Each TTree entry is one event.
-    TH1F *h1 = new TH1F("h1", "h1", 500, -200., 200.);
     int evn;
     for (evn = 0; (evn < t->GetEntries()) && (nevents == -1 || evn < nevents); ++evn) {
         if (evn % 10000 == 0) {
@@ -120,251 +121,266 @@ int run(char *in_filename, bool use_fmt, int nevents, int run_no, double beam_E)
             if (rs.pindex->at(i) == tre_pindex && rs.time->at(i) < tre_tof) tre_tof = rs.time->at(i);
         }
 
-        // NOTE. TEMPORARY CODE.
-        for (UInt_t i = 0; i < rp.vz->size(); ++i) {
-            h1->Fill(rp.vz->at(i));
+        for (UInt_t pos = 0; pos < rt.index->size(); ++pos) {
+            // Get basic data from track and particle banks.
+            int index      = rt.index ->at(pos);
+            int pindex     = rt.pindex->at(pos);
+            int ndf        = rt.ndf   ->at(pos);
+            double chi2    = rt.chi2  ->at(pos);
+
+            int charge     = rp.charge ->at(pindex);
+            int pid        = rp.pid    ->at(pindex);
+            int status     = rp.status ->at(pindex);
+            double chi2pid = rp.chi2pid->at(pindex);
+
+            // General cuts.
+            if ((int) abs(status)/1000 != 2) continue;
+            // if (abs(chi2pid) >= 3) continue; // Spurious particle.
+            if (pid == 0)          continue; // Non-identified particle.
+            if (chi2/ndf >= 15) continue; // Ignore tracks with high chi2.
+
+            // TODO. I should filter already processed pindexes so that I don't count a detector's
+            //       data more than once.
+
+            // Figure out which histograms are to be filled.
+            // TODO. Choose these particules from cuts, not PID.
+            std::map<const char *, bool> truth_map;
+            truth_map.insert({PALL, true});
+            truth_map.insert({PPOS, charge > 0  ? true : false});
+            truth_map.insert({PNEG, charge < 0  ? true : false});
+            truth_map.insert({PPIP, pid ==  211 ? true : false});
+            truth_map.insert({PPIM, pid == -211 ? true : false});
+            truth_map.insert({PELC, pid ==   11 ? true : false});
+            truth_map.insert({PTRE, (pid == 11 && status < 0) ? true : false});
+
+            // Get reconstructed particle from either FMT or DC.
+            double vx, vy, vz;
+            double px, py, pz;
+            if (use_fmt) {
+                // Apply FMT cuts.
+                if (ft.vz->size() < 1)      continue; // Track reconstructed by FMT.
+                if (ft.ndf->at(index) != 3) continue; // Track crossed 3 FMT layers.
+                // if (ft.ndf->at(index) > 0) printf("NDF: %d\n", ft.ndf->at(index));
+
+                vx = ft.vx->at(index); vy = ft.vy->at(index); vz = ft.vz->at(index);
+                px = ft.px->at(index); py = ft.py->at(index); pz = ft.pz->at(index);
+            }
+            else {
+                vx = rp.vx->at(pindex); vy = rp.vy->at(pindex); vz = rp.vz->at(pindex);
+                px = rp.px->at(pindex); py = rp.py->at(pindex); pz = rp.pz->at(pindex);
+            }
+
+            // Geometry cuts.
+            if (vx*vx + vy*vy > 4)   continue; // Too far from beamline.
+            if (-40 > vz || vz > 40) continue; // Too far from target.
+
+            // Get calorimeters data.
+            double pcal_E = 0; // PCAL total deposited energy.
+            double ecin_E = 0; // EC inner total deposited energy.
+            double ecou_E = 0; // EC outer total deposited energy.
+            for (UInt_t i = 0; i < rc.pindex->size(); ++i) {
+                if (rc.pindex->at(i) == pindex) {
+                    int lyr = (int) rc.layer->at(i);
+                    // TODO. Add correction via sampling fraction.
+
+                    if      (lyr == PCAL_LYR) pcal_E += rc.energy->at(i);
+                    else if (lyr == ECIN_LYR) ecin_E += rc.energy->at(i);
+                    else if (lyr == ECOU_LYR) ecou_E += rc.energy->at(i);
+                    else return 2;
+                }
+            }
+            double tot_E = pcal_E + ecin_E + ecou_E;
+
+            // Get scintillators data.
+            double tof = INFINITY;
+            for (UInt_t i = 0; i < rs.pindex->size(); ++i)
+                if (rs.pindex->at(i) == pindex && rs.time->at(i) < tof) tof = rs.time->at(i);
+
+            // Walk through histos
+            for (hmap_it = histos.begin(); hmap_it != histos.end(); ++hmap_it) {
+                if (!truth_map[hmap_it->first]) continue;
+
+                // Vertex z.
+                histos[hmap_it->first][VZ]     ->Fill(vz);
+                histos[hmap_it->first][VZPHI]  ->Fill(vz, calc_phi(px, py));
+                histos[hmap_it->first][VZTHETA]->Fill(vz, calc_theta(px, py, pz));
+
+                // Vertex p.
+                histos[hmap_it->first][VP]    ->Fill(pz);
+                histos[hmap_it->first][BETA]  ->Fill(rp.beta->at(pindex));
+                histos[hmap_it->first][BETAVP]->Fill(rp.beta->at(pindex), pz);
+
+                // TOF. (TODO. Check FTOF resolution).
+                if (tre_tof >= 0) { // Only fill if trigger electron's TOF was found.
+                    double dtof = tof - tre_tof;
+                    histos[hmap_it->first][DTOF] ->Fill(dtof);
+                    histos[hmap_it->first][VPTOF]->Fill(calc_P(px,py,pz), dtof);
+                }
+
+                // Calorimeters.
+                histos[hmap_it->first][PDIVEP]  ->Fill(calc_P(px,py,pz)/tot_E, calc_P(px,py,pz));
+                histos[hmap_it->first][PDIVEE]  ->Fill(calc_P(px,py,pz)/tot_E, tot_E);
+                histos[hmap_it->first][PPCALE]  ->Fill(calc_P(px,py,pz), pcal_E);
+                histos[hmap_it->first][PECINE]  ->Fill(calc_P(px,py,pz), ecin_E);
+                histos[hmap_it->first][PECOUE]  ->Fill(calc_P(px,py,pz), ecou_E);
+                histos[hmap_it->first][ECALPCAL]->Fill(ecin_E+ecou_E, pcal_E);
+
+                // Sampling Fraction.
+                for (UInt_t i = 0; i < rc.pindex->size(); ++i) {
+                    if (rc.pindex->at(i) == pindex) {
+                        int lyr  = (int) rc.layer->at(i);
+                        int E    = rc.energy->at(i);
+                        int sctr = rc.sector->at(i);
+                        int sf = p1[sctr-1] * (p2[sctr-1] + p3[sctr-1]/E + pow(p4[sctr-1]/E, 2));
+                        if      (lyr == PCAL_LYR) {
+                            switch (sctr) { // NOTE. Bad solution because I'm lazy. I should change this.
+                                case  0: break;
+                                case  1: histos[hmap_it->first][PCALSF1]->Fill(sf); break;
+                                case  2: histos[hmap_it->first][PCALSF2]->Fill(sf); break;
+                                case  3: histos[hmap_it->first][PCALSF3]->Fill(sf); break;
+                                case  4: histos[hmap_it->first][PCALSF4]->Fill(sf); break;
+                                case  5: histos[hmap_it->first][PCALSF5]->Fill(sf); break;
+                                case  6: histos[hmap_it->first][PCALSF6]->Fill(sf); break;
+                                default: return 3;
+                            };
+                        }
+                        else if (lyr == ECIN_LYR) {
+                            switch (sctr) {
+                                case  0: break;
+                                case  1: histos[hmap_it->first][ECINSF1]->Fill(sf); break;
+                                case  2: histos[hmap_it->first][ECINSF2]->Fill(sf); break;
+                                case  3: histos[hmap_it->first][ECINSF3]->Fill(sf); break;
+                                case  4: histos[hmap_it->first][ECINSF4]->Fill(sf); break;
+                                case  5: histos[hmap_it->first][ECINSF5]->Fill(sf); break;
+                                case  6: histos[hmap_it->first][ECINSF6]->Fill(sf); break;
+                                default: return 3;
+                            };
+                        }
+                        else if (lyr == ECOU_LYR) {
+                            switch (sctr) {
+                                case  0: break;
+                                case  1: histos[hmap_it->first][ECOUSF1]->Fill(sf); break;
+                                case  2: histos[hmap_it->first][ECOUSF2]->Fill(sf); break;
+                                case  3: histos[hmap_it->first][ECOUSF3]->Fill(sf); break;
+                                case  4: histos[hmap_it->first][ECOUSF4]->Fill(sf); break;
+                                case  5: histos[hmap_it->first][ECOUSF5]->Fill(sf); break;
+                                case  6: histos[hmap_it->first][ECOUSF6]->Fill(sf); break;
+                                default: return 3;
+                            };
+                        }
+                        else return 2;
+                    }
+                }
+
+                // SIDIS variables.
+                if (pid == 11) {
+                    double calc_theta(double px, double py, double pz);
+                    histos[hmap_it->first][Q2]->Fill(calc_Q2(beam_E, calc_P(px,py,pz), calc_theta(px,py,pz)));
+                    histos[hmap_it->first][NU]->Fill(calc_nu(beam_E, calc_P(px,py,pz)));
+                    histos[hmap_it->first][XB]->Fill(calc_Xb(beam_E, calc_P(px,py,pz), calc_theta(px,py,pz)));
+                }
+            }
         }
     }
     printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
     printf("Read %8d events... Done!\n", evn);
 
-    // // NOTE. OLD CODE.
-    // // Iterate through events in file.
-    // while (c12.next() == true) {
-    //     // Iterate through particles in event.
-    //     for (region_particle *rp : c12.getDetParticles()) {
-    //         // Make sure that particle comes from FD.
-    //         switch (rp->getRegion()) {
-    //         case FD: break;    // Forward Detector.
-    //         case FT: continue; // Forward Tagger.
-    //         case CD: continue; // Central Detector.
-    //         default:
-    //             printf("[ERROR] A particles comes from an invalid detector.\n"); // Just in case.
-    //             return(1);
-    //         };
-    //
-    //         // Get particle and associated data.
-    //         particle *p = rp->par();
-    //
-    //         // Apply PID cuts.
-    //         if (    abs(p->getChi2Pid()) >= 3 // Ignore spurious particles.
-    //              || p->getPid() == 0          // Ignore badly identified particles.
-    //         ) continue;
-    //
-    //         // Apply geometry cuts. (TODO. Improve cut in z).
-    //         if (    p->getVx()*p->getVx() + p->getVy()*p->getVy() > 4 // Too far from beamline.
-    //              || (p->getVz() < -40 || p->getVz() > 40)             // Too far from target.
-    //         ) continue;
-    //
-    //         // Apply FMT cuts. (TODO. Make sure that this is enough).
-    //         if (use_fmt && (
-    //                 (abs(p->getStatus())/1000) != 2 // Filter particles that pass through FD.
-    //              // || rp->trk(FMT)->getNDF() == 3     // TODO. Figure out what this NDF is.
-    //         )) continue;
-    //
-    //         // TODO. Make sure that the particle bank has FMT data.
-    //         //       UPDATE. It doesn't. Fix this.
-    //         // TODO. Figure out how to get DC data.
-    //
-    //         // Figure out which histograms are to be filled.
-    //         // TODO. Choose these particules from cuts, not PID.
-    //         std::map<const char *, bool> truth_map;
-    //         truth_map.insert({PALL, true});
-    //         truth_map.insert({PPOS, p->getCharge() > 0  ? true : false});
-    //         truth_map.insert({PPOS, p->getCharge() < 0  ? true : false});
-    //         truth_map.insert({PPIP, p->getPid() ==  211 ? true : false});
-    //         truth_map.insert({PPIM, p->getPid() == -211 ? true : false});
-    //         truth_map.insert({PELC, p->getPid() ==   11 ? true : false});
-    //         truth_map.insert({PTRE, (p->getPid() == 11 && p->getStatus() < 0) ? true : false});
-    //
-    //         for (hmap_it = histos.begin(); hmap_it != histos.end(); ++hmap_it) {
-    //             if (!truth_map[hmap_it->first]) continue; // Only write to appropiate histograms.
-    //
-    //             // Vertex z.
-    //             histos[hmap_it->first][VZPHI]->Fill(p->getVz(), to_deg(rp->getPhi()));
-    //             if (rp->trk(FMT)->getSector() == 1) { // No beam alignment on runs yet.
-    //                 histos[hmap_it->first][VZ]     ->Fill(p->getVz());
-    //                 histos[hmap_it->first][VZTHETA]->Fill(p->getVz(), to_deg(rp->getTheta()));
-    //             }
-    //
-    //             // Vertex P.
-    //             histos[hmap_it->first][VP]    ->Fill(p->getP());
-    //             histos[hmap_it->first][BETA]  ->Fill(p->getBeta());
-    //             histos[hmap_it->first][BETAVP]->Fill(p->getBeta(), p->getP());
-    //
-    //             // TOF. (TODO. Check FTOF resolution).
-    //             if (tre_tof >= 0) { // Only fill if trigger electron's TOF was found.
-    //                 double dtof = rp->sci(FTOF)  ->getTime() - tre_tof;
-    //                 histos[hmap_it->first][DTOF] ->Fill(dtof);
-    //                 histos[hmap_it->first][VPTOF]->Fill(p->getP(), dtof);
-    //             }
-    //
-    //             // Calorimeters.
-    //             double pcal_E  = rp->cal(PCAL) ->getEnergy();
-    //             double ecin_E  = rp->cal(ECIN) ->getEnergy();
-    //             double ecou_E  = rp->cal(ECOUT)->getEnergy();
-    //             double total_E = pcal_E + ecin_E + ecou_E;
-    //             histos[hmap_it->first][PDIVEP]  ->Fill(p->getP()/total_E, p->getP());
-    //             histos[hmap_it->first][PDIVEE]  ->Fill(p->getP()/total_E, total_E);
-    //             histos[hmap_it->first][PPCALE]  ->Fill(p->getP(), pcal_E);
-    //             histos[hmap_it->first][PECINE]  ->Fill(p->getP(), ecin_E);
-    //             histos[hmap_it->first][PECOUE]  ->Fill(p->getP(), ecou_E);
-    //             histos[hmap_it->first][ECALPCAL]->Fill(ecin_E+ecou_E, pcal_E);
-    //
-    //             // Sampling Fraction.
-    //             int s; double sf;
-    //             s  = rp->cal(PCAL)->getSector();
-    //             sf = p1[s-1] * (p2[s-1] + p3[s-1]/pcal_E + pow(p4[s-1]/pcal_E, 2));
-    //             switch (s) { // NOTE. Bad solution because I'm lazy. I should change this.
-    //             case 0: break;
-    //             case 1: histos[hmap_it->first][PCALSF1]->Fill(sf); break;
-    //             case 2: histos[hmap_it->first][PCALSF2]->Fill(sf); break;
-    //             case 3: histos[hmap_it->first][PCALSF3]->Fill(sf); break;
-    //             case 4: histos[hmap_it->first][PCALSF4]->Fill(sf); break;
-    //             case 5: histos[hmap_it->first][PCALSF5]->Fill(sf); break;
-    //             case 6: histos[hmap_it->first][PCALSF6]->Fill(sf); break;
-    //             default:
-    //                 printf("[ERROR] A particles is in invalid sector %d.\n", s); // Just in case.
-    //                 return(1);
-    //             };
-    //
-    //             s  = rp->cal(ECIN)->getSector();
-    //             sf = p1[s-1] * (p2[s-1] + p3[s-1]/pcal_E + pow(p4[s-1]/pcal_E, 2));
-    //             switch (s) { // NOTE. Bad solution because I'm lazy. I should change this.
-    //             case 0: break;
-    //             case 1: histos[hmap_it->first][ECINSF1]->Fill(sf); break;
-    //             case 2: histos[hmap_it->first][ECINSF2]->Fill(sf); break;
-    //             case 3: histos[hmap_it->first][ECINSF3]->Fill(sf); break;
-    //             case 4: histos[hmap_it->first][ECINSF4]->Fill(sf); break;
-    //             case 5: histos[hmap_it->first][ECINSF5]->Fill(sf); break;
-    //             case 6: histos[hmap_it->first][ECINSF6]->Fill(sf); break;
-    //             default:
-    //                 printf("[ERROR] A particles is in invalid sector %d.\n", s); // Just in case.
-    //                 return(1);
-    //             };
-    //
-    //             s  = rp->cal(ECOUT)->getSector();
-    //             sf = p1[s-1] * (p2[s-1] + p3[s-1]/pcal_E + pow(p4[s-1]/pcal_E, 2));
-    //             switch (s) { // NOTE. Bad solution because I'm lazy. I should change this.
-    //             case 0: break;
-    //             case 1: histos[hmap_it->first][ECOUSF1]->Fill(sf); break;
-    //             case 2: histos[hmap_it->first][ECOUSF2]->Fill(sf); break;
-    //             case 3: histos[hmap_it->first][ECOUSF3]->Fill(sf); break;
-    //             case 4: histos[hmap_it->first][ECOUSF4]->Fill(sf); break;
-    //             case 5: histos[hmap_it->first][ECOUSF5]->Fill(sf); break;
-    //             case 6: histos[hmap_it->first][ECOUSF6]->Fill(sf); break;
-    //             default:
-    //                 printf("[ERROR] A particles is in invalid sector %d.\n", s); // Just in case.
-    //                 return(1);
-    //             };
-    //
-    //             // SIDIS variables.
-    //             if (p->getPid() == 11) {
-    //                 histos[hmap_it->first][Q2]->Fill(calc_Q2(beam_E, p->getP(), rp->getTheta()));
-    //                 histos[hmap_it->first][NU]->Fill(calc_nu(beam_E, p->getP()));
-    //                 histos[hmap_it->first][XB]->Fill(calc_Xb(beam_E, p->getP(), rp->getTheta()));
-    //             }
-    //         }
-    //     }
-    // }
+    // Fit histograms.
+    for (hmap_it = histos.begin(); hmap_it != histos.end(); ++hmap_it) {
+        // Vz upstream fit.
+        TH1 *vz = histos[hmap_it->first][VZ];
+        TString vz_fit_name = Form("%s %s", hmap_it->first, "vz fit");
+        TF1 *vz_fit = new TF1(vz_fit_name,
+                "[0]*TMath::Gaus(x,[1],[2])+[3]*TMath::Gaus(x,[1]-2.4,[2])+[4]+[5]*x+[6]*x*x",
+                -36,-30);
+        vz->GetXaxis()->SetRange(70,100); // Set range to fitted range.
+        vz_fit->SetParameter(0 /* amp1  */, vz->GetBinContent(vz->GetMaximumBin()));
+        vz_fit->SetParameter(1 /* mean  */, vz->GetXaxis()->GetBinCenter(vz->GetMaximumBin()));
+        vz_fit->SetParameter(2 /* sigma */, 0.5);
+        vz_fit->SetParameter(3 /* amp2 */,  0);
+        vz_fit->SetParameter(4 /* p0 */,    0);
+        vz_fit->SetParameter(5 /* p1 */,    0);
+        vz_fit->SetParameter(6 /* p2 */,    0);
+        vz->GetXaxis()->SetRange(0,500);
+        histos[hmap_it->first][VZ]->Fit(vz_fit_name, "", "", -36., -30.);
 
-    // // Fit histograms.
-    // for (hmap_it = histos.begin(); hmap_it != histos.end(); ++hmap_it) {
-    //     // Vz upstream fit.
-    //     TH1 *vz = histos[hmap_it->first][VZ];
-    //     TString vz_fit_name = Form("%s %s", hmap_it->first, "vz fit");
-    //     TF1 *vz_fit = new TF1(vz_fit_name,
-    //             "[0]*TMath::Gaus(x,[1],[2])+[3]*TMath::Gaus(x,[1]-2.4,[2])+[4]+[5]*x+[6]*x*x",
-    //             -36,-30);
-    //     vz->GetXaxis()->SetRange(70,100); // Set range to fitted range.
-    //     vz_fit->SetParameter(0 /* amp1  */, vz->GetBinContent(vz->GetMaximumBin()));
-    //     vz_fit->SetParameter(1 /* mean  */, vz->GetXaxis()->GetBinCenter(vz->GetMaximumBin()));
-    //     vz_fit->SetParameter(2 /* sigma */, 0.5);
-    //     vz_fit->SetParameter(3 /* amp2 */,  0);
-    //     vz_fit->SetParameter(4 /* p0 */,    0);
-    //     vz_fit->SetParameter(5 /* p1 */,    0);
-    //     vz_fit->SetParameter(6 /* p2 */,    0);
-    //     vz->GetXaxis()->SetRange(0,500);
-    //     histos[hmap_it->first][VZ]->Fit(vz_fit_name, "", "", -36., -30.);
-    //
-    //     // Vp vs beta theoretical curve.
-    //     double mass = 0;
-    //     if      (hmap_it->first == PPIP || hmap_it->first == PPIM) mass = PIMASS;
-    //     else if (hmap_it->first == PELC || hmap_it->first == PTRE) mass = EMASS;
-    //     else continue;
-    //     TString vp_beta_curve_name = Form("%s %s", hmap_it->first, "vp vs beta curve");
-    //     TF1 *vp_beta_curve = new TF1(vp_beta_curve_name, "[m]*x/(sqrt(1-x))", 0.9, 1.0);
-    //     vp_beta_curve->FixParameter(0, mass);
-    //     histos[hmap_it->first][BETAVP]->Fit(vp_beta_curve_name, "", "", 0.9, 1.0);
-    // }
+        // Vp vs beta theoretical curve.
+        double mass = 0;
+        if      (!strcmp(hmap_it->first, PPIP) || !strcmp(hmap_it->first, PPIM)) mass = PIMASS;
+        else if (!strcmp(hmap_it->first, PELC) || !strcmp(hmap_it->first, PTRE)) mass = EMASS;
+        else continue;
+        TString vp_beta_curve_name = Form("%s %s", hmap_it->first, "vp vs beta curve");
+        TF1 *vp_beta_curve = new TF1(vp_beta_curve_name, "[m]*x/(sqrt(1-x))", 0.9, 1.0);
+        vp_beta_curve->FixParameter(0, mass);
+        histos[hmap_it->first][BETAVP]->Fit(vp_beta_curve_name, "", "", 0.9, 1.0);
+    }
 
     // Create output file.
     TFile *f_out = TFile::Open("../root_io/out.root", "RECREATE");
-    h1->Write("h1");
 
-    // // Write to output file.
-    // for (hmap_it = histos.begin(); hmap_it != histos.end(); ++hmap_it) {
-    //     TCanvas *gcvs = new TCanvas();
-    //
-    //     TString dir = Form("%s/%s", hmap_it->first, "Vertex Z");
-    //     f_out.mkdir(dir);
-    //     f_out.cd(dir);
-    //     histos[hmap_it->first][VZ]     ->Write();
-    //     histos[hmap_it->first][VZPHI]  ->Draw("colz"); gcvs->Write(VZPHI);
-    //     histos[hmap_it->first][VZTHETA]->Draw("colz"); gcvs->Write(VZTHETA);
-    //
-    //     dir = Form("%s/%s", hmap_it->first, "Vertex P");
-    //     f_out.mkdir(dir);
-    //     f_out.cd(dir);
-    //     histos[hmap_it->first][VP]    ->Write();
-    //     histos[hmap_it->first][BETA]  ->Write();
-    //     histos[hmap_it->first][BETAVP]->Draw("colz"); gcvs->Write(BETAVP);
-    //
-    //     dir = Form("%s/%s", hmap_it->first, "DTOF");
-    //     f_out.mkdir(dir);
-    //     f_out.cd(dir);
-    //     histos[hmap_it->first][DTOF] ->Write();
-    //     histos[hmap_it->first][VPTOF]->Draw("colz"); gcvs->Write(VPTOF);
-    //
-    //     dir = Form("%s/%s", hmap_it->first, "CALs");
-    //     f_out.mkdir(dir);
-    //     f_out.cd(dir);
-    //     histos[hmap_it->first][PDIVEP]  ->Draw("colz"); gcvs->Write(PDIVEP);
-    //     histos[hmap_it->first][PDIVEE]  ->Draw("colz"); gcvs->Write(PDIVEE);
-    //     histos[hmap_it->first][PPCALE]  ->Draw("colz"); gcvs->Write(PPCALE);
-    //     histos[hmap_it->first][PECINE]  ->Draw("colz"); gcvs->Write(PECINE);
-    //     histos[hmap_it->first][PECOUE]  ->Draw("colz"); gcvs->Write(PECOUE);
-    //     histos[hmap_it->first][ECALPCAL]->Draw("colz"); gcvs->Write(ECALPCAL);
-    //
-    //     dir = Form("%s/%s/%s", hmap_it->first, "CALs", "Sampling Fraction");
-    //     f_out.mkdir(dir);
-    //     f_out.cd(dir);
-    //     histos[hmap_it->first][PCALSF1]->Write();
-    //     histos[hmap_it->first][PCALSF2]->Write();
-    //     histos[hmap_it->first][PCALSF3]->Write();
-    //     histos[hmap_it->first][PCALSF4]->Write();
-    //     histos[hmap_it->first][PCALSF5]->Write();
-    //     histos[hmap_it->first][PCALSF6]->Write();
-    //     histos[hmap_it->first][ECINSF1]->Write();
-    //     histos[hmap_it->first][ECINSF2]->Write();
-    //     histos[hmap_it->first][ECINSF3]->Write();
-    //     histos[hmap_it->first][ECINSF4]->Write();
-    //     histos[hmap_it->first][ECINSF5]->Write();
-    //     histos[hmap_it->first][ECINSF6]->Write();
-    //     histos[hmap_it->first][ECOUSF1]->Write();
-    //     histos[hmap_it->first][ECOUSF2]->Write();
-    //     histos[hmap_it->first][ECOUSF3]->Write();
-    //     histos[hmap_it->first][ECOUSF4]->Write();
-    //     histos[hmap_it->first][ECOUSF5]->Write();
-    //     histos[hmap_it->first][ECOUSF6]->Write();
-    //
-    //     dir = Form("%s/%s", hmap_it->first, "SIDIS");
-    //     f_out.mkdir(dir);
-    //     f_out.cd(dir);
-    //     histos[hmap_it->first][Q2]->Write();
-    //     histos[hmap_it->first][NU]->Write();
-    //     histos[hmap_it->first][XB]->Write();
-    // }
+    // Write to output file.
+    for (hmap_it = histos.begin(); hmap_it != histos.end(); ++hmap_it) {
+        TCanvas *gcvs = new TCanvas();
+
+        TString dir = Form("%s/%s", hmap_it->first, "Vertex Z");
+        f_out->mkdir(dir);
+        f_out->cd(dir);
+        histos[hmap_it->first][VZ]     ->Write();
+        histos[hmap_it->first][VZPHI]  ->Draw("colz"); gcvs->Write(VZPHI);
+        histos[hmap_it->first][VZTHETA]->Draw("colz"); gcvs->Write(VZTHETA);
+
+        dir = Form("%s/%s", hmap_it->first, "Vertex P");
+        f_out->mkdir(dir);
+        f_out->cd(dir);
+        histos[hmap_it->first][VP]    ->Write();
+        histos[hmap_it->first][BETA]  ->Write();
+        histos[hmap_it->first][BETAVP]->Draw("colz"); gcvs->Write(BETAVP);
+
+        dir = Form("%s/%s", hmap_it->first, "DTOF");
+        f_out->mkdir(dir);
+        f_out->cd(dir);
+        histos[hmap_it->first][DTOF] ->Write();
+        histos[hmap_it->first][VPTOF]->Draw("colz"); gcvs->Write(VPTOF);
+
+        dir = Form("%s/%s", hmap_it->first, "CALs");
+        f_out->mkdir(dir);
+        f_out->cd(dir);
+        histos[hmap_it->first][PDIVEP]  ->Draw("colz"); gcvs->Write(PDIVEP);
+        histos[hmap_it->first][PDIVEE]  ->Draw("colz"); gcvs->Write(PDIVEE);
+        histos[hmap_it->first][PPCALE]  ->Draw("colz"); gcvs->Write(PPCALE);
+        histos[hmap_it->first][PECINE]  ->Draw("colz"); gcvs->Write(PECINE);
+        histos[hmap_it->first][PECOUE]  ->Draw("colz"); gcvs->Write(PECOUE);
+        histos[hmap_it->first][ECALPCAL]->Draw("colz"); gcvs->Write(ECALPCAL);
+
+        dir = Form("%s/%s/%s", hmap_it->first, "CALs", "Sampling Fraction");
+        f_out->mkdir(dir);
+        f_out->cd(dir);
+        histos[hmap_it->first][PCALSF1]->Write();
+        histos[hmap_it->first][PCALSF2]->Write();
+        histos[hmap_it->first][PCALSF3]->Write();
+        histos[hmap_it->first][PCALSF4]->Write();
+        histos[hmap_it->first][PCALSF5]->Write();
+        histos[hmap_it->first][PCALSF6]->Write();
+        histos[hmap_it->first][ECINSF1]->Write();
+        histos[hmap_it->first][ECINSF2]->Write();
+        histos[hmap_it->first][ECINSF3]->Write();
+        histos[hmap_it->first][ECINSF4]->Write();
+        histos[hmap_it->first][ECINSF5]->Write();
+        histos[hmap_it->first][ECINSF6]->Write();
+        histos[hmap_it->first][ECOUSF1]->Write();
+        histos[hmap_it->first][ECOUSF2]->Write();
+        histos[hmap_it->first][ECOUSF3]->Write();
+        histos[hmap_it->first][ECOUSF4]->Write();
+        histos[hmap_it->first][ECOUSF5]->Write();
+        histos[hmap_it->first][ECOUSF6]->Write();
+
+        dir = Form("%s/%s", hmap_it->first, "SIDIS");
+        f_out->mkdir(dir);
+        f_out->cd(dir);
+        histos[hmap_it->first][Q2]->Write();
+        histos[hmap_it->first][NU]->Write();
+        histos[hmap_it->first][XB]->Write();
+    }
 
     f_in ->Close();
     f_out->Close();

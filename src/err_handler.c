@@ -67,6 +67,11 @@ int acceptance_err(int errcode, char **in_filename) {
         case 1:
             fprintf(stderr, "Error. %s is not a valid ROOT file.\n", *in_filename);
             break;
+        case 2:
+            fprintf(stderr, "Error. Invalid EC layer. Check bank data or add layer to constants.\n");
+            break;
+        case 3:
+            fprintf(stderr, "Error. A particle is in an invalid sector. Check bank integrity.\n"); 
         default:
             fprintf(stderr, "Programmer Error. Error code %d not implemented in \n", errcode);
             fprintf(stderr, "acceptance_err()! You're on your own.\n");
