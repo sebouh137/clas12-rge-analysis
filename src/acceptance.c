@@ -19,7 +19,7 @@
 #include "io_handler.h"
 #include "utilities.h"
 
-int run(char *in_filename, bool use_fmt, int nevents, int run_no, double beam_E) {
+int run(char *in_filename, bool use_fmt, int nevn, int run_no, double beam_E) {
     // Sampling Fraction. TODO. Temporary code.
     double p1[6] = { 0.25149,  0.25186,  0.24912,  0.24747,  0.24649,  0.25409};
     double p2[6] = { 1.00000,  1.00000,  1.00000,  1.00000,  1.00000,  1.00000};
@@ -98,11 +98,24 @@ int run(char *in_filename, bool use_fmt, int nevents, int run_no, double beam_E)
 
     // Iterate through input file. Each TTree entry is one event.
     int evn;
-    for (evn = 0; (evn < t->GetEntries()) && (nevents == -1 || evn < nevents); ++evn) {
-        if (evn % 10000 == 0) {
-            if (evn != 0) printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
-            printf("Read %8d events...", evn);
+    int divcntr = 0;
+    int evnsplitter = 0;
+    printf("Reading %lld events from %s.\n", nevn == -1 ? t->GetEntries() : nevn, in_filename);
+    for (evn = 0; (evn < t->GetEntries()) && (nevn == -1 || evn < nevn); ++evn) {
+        if (evn >= evnsplitter) {
+            if (evn != 0) {
+                printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
+                printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
+            }
+            printf("[");
+            for (int i = 0; i <= 50; ++i) {
+                if (i <= divcntr/2) printf("=");
+                else                printf(" ");
+            }
+            printf("] %2d%%", divcntr);
             fflush(stdout);
+            divcntr++;
+            evnsplitter = nevn == -1 ? (t->GetEntries() / 100) * divcntr : (nevn/100) * divcntr;
         }
 
         rp.get_entries(t, evn);
@@ -282,8 +295,9 @@ int run(char *in_filename, bool use_fmt, int nevents, int run_no, double beam_E)
             }
         }
     }
-    printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
-    printf("Read %8d events... Done!\n", evn);
+    printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
+    printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
+    printf("[==================================================] 100%%\n");
 
     // Fit histograms.
     for (hmap_it = histos.begin(); hmap_it != histos.end(); ++hmap_it) {
@@ -302,7 +316,7 @@ int run(char *in_filename, bool use_fmt, int nevents, int run_no, double beam_E)
         vz_fit->SetParameter(5 /* p1 */,    0);
         vz_fit->SetParameter(6 /* p2 */,    0);
         vz->GetXaxis()->SetRange(0,500);
-        histos[hmap_it->first][VZ]->Fit(vz_fit_name, "", "", -36., -30.);
+        histos[hmap_it->first][VZ]->Fit(vz_fit_name, "Q", "", -36., -30.);
 
         // Vp vs beta theoretical curve.
         double mass = 0;
@@ -312,7 +326,7 @@ int run(char *in_filename, bool use_fmt, int nevents, int run_no, double beam_E)
         TString vp_beta_curve_name = Form("%s %s", hmap_it->first, "vp vs beta curve");
         TF1 *vp_beta_curve = new TF1(vp_beta_curve_name, "[m]*x/(sqrt(1-x))", 0.9, 1.0);
         vp_beta_curve->FixParameter(0, mass);
-        histos[hmap_it->first][BETAVP]->Fit(vp_beta_curve_name, "", "", 0.9, 1.0);
+        histos[hmap_it->first][BETAVP]->Fit(vp_beta_curve_name, "Q", "", 0.9, 1.0);
     }
 
     // Create output file.
@@ -389,27 +403,27 @@ int run(char *in_filename, bool use_fmt, int nevents, int run_no, double beam_E)
     return 0;
 }
 
-// Execute program from clas12root (`.x src/acceptance.c(filename, use_fmt, nevents)`).
-int acceptance(char *in_filename, bool use_fmt, int nevents) {
+// Execute program from clas12root (`.x src/acceptance.c(filename, use_fmt, nevn)`).
+int acceptance(char *in_filename, bool use_fmt, int nevn) {
     int    run_no = -1;
     double beam_E = -1;
     if (acceptance_handle_args_err(handle_root_filename(in_filename, &run_no, &beam_E),
                                    &in_filename, run_no)
     ) return 1;
-    return acceptance_err(run(in_filename, use_fmt, nevents, run_no, beam_E), &in_filename);
+    return acceptance_err(run(in_filename, use_fmt, nevn, run_no, beam_E), &in_filename);
 }
 
 // Call program from terminal, C-style.
 int main(int argc, char **argv) {
     bool   use_fmt     = false;
-    int    nevents     = -1;
+    int    nevn     = -1;
     char   *in_filename = NULL;
     int    run_no      = -1;
     double beam_E      = -1;
 
     if (acceptance_handle_args_err(
-            acceptance_handle_args(argc, argv, &use_fmt, &nevents, &in_filename, &run_no, &beam_E),
+            acceptance_handle_args(argc, argv, &use_fmt, &nevn, &in_filename, &run_no, &beam_E),
                                    &in_filename, run_no)
     ) return 1;
-    return acceptance_err(run(in_filename, use_fmt, nevents, run_no, beam_E), &in_filename);
+    return acceptance_err(run(in_filename, use_fmt, nevn, run_no, beam_E), &in_filename);
 }
