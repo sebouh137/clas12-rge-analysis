@@ -36,8 +36,8 @@ $(BLD)/err_handler.o: $(SRC)/err_handler.c $(SRC)/err_handler.h
 $(BLD)/file_handler.o: $(SRC)/file_handler.c
 	$(CXX) $(CFLAGS) -c $(SRC)/file_handler.c -o $(BLD)/file_handler.o
 
-$(BLD)/io_handler.o: $(SRC)/io_handler.c
-	$(CXX) $(CFLAGS) -c $(SRC)/io_handler.c -o $(BLD)/io_handler.o
+$(BLD)/io_handler.o: $(BLD)/file_handler.o $(SRC)/io_handler.c
+	$(CXX) $(CFLAGS) $(BLD)/file_handler.o -c $(SRC)/io_handler.c -o $(BLD)/io_handler.o
 
 $(BLD)/utilities.o: $(SRC)/utilities.c
 	$(CXX) $(CFLAGS) -c $(SRC)/utilities.c -o $(BLD)/utilities.o

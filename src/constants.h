@@ -60,6 +60,11 @@
 #define NU       "nu"
 #define XB       "X_bjorken"
 
+// RUN CONSTANTS (TODO. these should be in a map.)
+#define BE11983 10.3894 //  50 nA.
+#define BE12016 10.3894 // 250 nA.
+#define BE12439  2.1864 //  15 nA.
+
 // DETECTOR CONSTANTS
 #define PCAL_LYR 1 // PCAL's layer id.
 #define ECIN_LYR 4 // EC inner layer id.
