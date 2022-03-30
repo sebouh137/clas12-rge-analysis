@@ -43,62 +43,53 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no, double beam_E) {
     std::map<const char *, std::map<const char *, TH1 *>>::iterator hmap_it;
     for (hmap_it = histos.begin(); hmap_it != histos.end(); ++hmap_it) {
         const char *k1 = hmap_it->first;
-        hmap_it->second = {
-            {VZ,      new TH1F(Form("%s: %s", k1, VZ),
-                    Form("%s;%s", VZ, VZ),                500, -50, 50)},
-            {VZPHI,   new TH2F(Form("%s: %s", k1, VZPHI),
-                    Form("%s;%s;%s", VZPHI, VZ, PHI),     500, -50, 50, 180, -180, 180)},
-            {VZTHETA, new TH2F(Form("%s: %s", k1, VZTHETA),
-                    Form("%s;%s;%s", VZTHETA, VZ, THETA), 500, -50, 50, 200,    0,  50)},
+        hmap_it->second = {};
 
-            {VP,     new TH1F(Form("%s: %s", k1, VP),
-                    Form("%s;%s", VP, VP),              200,    0, 10)},
-            {BETA,   new TH1F(Form("%s: %s", k1, BETA),
-                    Form("%s;%s", BETA, BETA),          200, 0.94,  1)},
-            {VPBETA, new TH2F(Form("%s: %s", k1, VPBETA),
-                    Form("%s;%s;%s", VPBETA, VP, BETA), 200,    0, 10, 200, 0.94, 1)},
+        // Vertex z.
+        insert_TH1F(&hmap_it->second, k1, VZ,      VZ,        500, -50, 50);
+        insert_TH2F(&hmap_it->second, k1, VZPHI,   VZ, PHI,   500, -50, 50, 180, -180, 180);
+        insert_TH2F(&hmap_it->second, k1, VZTHETA, VZ, THETA, 500, -50, 50, 200,    0,  50);
 
-            {DTOF,  new TH1F(Form("%s: %s", k1, DTOF),
-                    Form("%s;%s", DTOF, DTOF),         200, 0, 20)},
-            {VPTOF, new TH2F(Form("%s: %s", k1, VPTOF),
-                    Form("%s;%s;%s", VPTOF, VP, DTOF), 200, 0, 10, 100, 0, 20)},
+        // Vertex p.
+        insert_TH1F(&hmap_it->second, k1, VP,     VP,         200, 0,    10);
+        insert_TH1F(&hmap_it->second, k1, BETA,   BETA,       200, 0.94,  1);
+        insert_TH2F(&hmap_it->second, k1, VPBETA, VP,   BETA, 200, 0,    10, 200, 0.94, 1);
 
-            {EEDIVP,   new TH2F(Form("%s: %s", k1, EEDIVP),
-                    Form("%s;%s;%s", EEDIVP, E, EDIVP),  200, 0,  3, 200, 0, 0.4)},
-            {PEDIVP,   new TH2F(Form("%s: %s", k1, PEDIVP),
-                    Form("%s;%s;%s", PEDIVP, VP, EDIVP), 200, 0, 10, 200, 0, 0.4)},
-            {PPCALE,   new TH2F(Form("%s: %s", k1, PPCALE),
-                    Form("%s;%s;%s", PPCALE, VP, E),     200, 0, 10, 100, 0, 2)},
-            {PECINE,   new TH2F(Form("%s: %s", k1, PECINE),
-                    Form("%s;%s;%s", PECINE, VP, E),     200, 0, 10, 100, 0, 2)},
-            {PECOUE,   new TH2F(Form("%s: %s", k1, PECOUE),
-                    Form("%s;%s;%s", PECOUE, VP, E),     200, 0, 10, 100, 0, 2)},
-            {ECALPCAL, new TH2F(Form("%s: %s", k1, ECALPCAL),
-                    Form("%s;%s;%s", ECALPCAL, E, E),    200, 0, 2, 100, 0, 2)},
+        // Scintillator.
+        insert_TH1F(&hmap_it->second, k1, DTOF,  DTOF,       200, 0, 20);
+        insert_TH2F(&hmap_it->second, k1, VPTOF, VP,   DTOF, 200, 0, 10, 100, 0, 20);
 
-            {PCALSF1, new TH1F(Form("%s: %s", k1, PCALSF1), Form("%s;%s", PCALSF1, SF), 200, 0, .5)},
-            {PCALSF2, new TH1F(Form("%s: %s", k1, PCALSF2), Form("%s;%s", PCALSF2, SF), 200, 0, .5)},
-            {PCALSF3, new TH1F(Form("%s: %s", k1, PCALSF3), Form("%s;%s", PCALSF3, SF), 200, 0, .5)},
-            {PCALSF4, new TH1F(Form("%s: %s", k1, PCALSF4), Form("%s;%s", PCALSF4, SF), 200, 0, .5)},
-            {PCALSF5, new TH1F(Form("%s: %s", k1, PCALSF5), Form("%s;%s", PCALSF5, SF), 200, 0, .5)},
-            {PCALSF6, new TH1F(Form("%s: %s", k1, PCALSF6), Form("%s;%s", PCALSF6, SF), 200, 0, .5)},
-            {ECINSF1, new TH1F(Form("%s: %s", k1, ECINSF1), Form("%s;%s", ECINSF1, SF), 200, 0, .5)},
-            {ECINSF2, new TH1F(Form("%s: %s", k1, ECINSF2), Form("%s;%s", ECINSF2, SF), 200, 0, .5)},
-            {ECINSF3, new TH1F(Form("%s: %s", k1, ECINSF3), Form("%s;%s", ECINSF3, SF), 200, 0, .5)},
-            {ECINSF4, new TH1F(Form("%s: %s", k1, ECINSF4), Form("%s;%s", ECINSF4, SF), 200, 0, .5)},
-            {ECINSF5, new TH1F(Form("%s: %s", k1, ECINSF5), Form("%s;%s", ECINSF5, SF), 200, 0, .5)},
-            {ECINSF6, new TH1F(Form("%s: %s", k1, ECINSF6), Form("%s;%s", ECINSF6, SF), 200, 0, .5)},
-            {ECOUSF1, new TH1F(Form("%s: %s", k1, ECOUSF1), Form("%s;%s", ECOUSF1, SF), 200, 0, .5)},
-            {ECOUSF2, new TH1F(Form("%s: %s", k1, ECOUSF2), Form("%s;%s", ECOUSF2, SF), 200, 0, .5)},
-            {ECOUSF3, new TH1F(Form("%s: %s", k1, ECOUSF3), Form("%s;%s", ECOUSF3, SF), 200, 0, .5)},
-            {ECOUSF4, new TH1F(Form("%s: %s", k1, ECOUSF4), Form("%s;%s", ECOUSF4, SF), 200, 0, .5)},
-            {ECOUSF5, new TH1F(Form("%s: %s", k1, ECOUSF5), Form("%s;%s", ECOUSF5, SF), 200, 0, .5)},
-            {ECOUSF6, new TH1F(Form("%s: %s", k1, ECOUSF6), Form("%s;%s", ECOUSF6, SF), 200, 0, .5)},
+        // Calorimeters.
+        insert_TH2F(&hmap_it->second, k1, PEDIVP,   VP, EDIVP, 200, 0, 10, 200, 0, 0.4);
+        insert_TH2F(&hmap_it->second, k1, EEDIVP,   E,  EDIVP, 200, 0,  3, 200, 0, 0.4);
+        insert_TH2F(&hmap_it->second, k1, PPCALE,   VP, E,     200, 0, 10, 200, 0, 2);
+        insert_TH2F(&hmap_it->second, k1, PECINE,   VP, E,     200, 0, 10, 200, 0, 2);
+        insert_TH2F(&hmap_it->second, k1, PECOUE,   VP, E,     200, 0, 10, 200, 0, 2);
+        insert_TH2F(&hmap_it->second, k1, ECALPCAL, E,  E,     200, 0,  2, 200, 0, 2);
 
-            {Q2, new TH1F(Form("%s: %s", k1, Q2), Form("%s;%s", Q2, Q2), 22, 0, 12)},
-            {NU, new TH1F(Form("%s: %s", k1, NU), Form("%s;%s", NU, NU), 22, 0, 12)},
-            {XB, new TH1F(Form("%s: %s", k1, XB), Form("%s;%s", XB, XB), 20, 0,  2)},
-        };
+        // Calorimeters: Sampling Fraction.
+        insert_TH1F(&hmap_it->second, k1, PCALSF1, SF, 200, 0, 0.5);
+        insert_TH1F(&hmap_it->second, k1, PCALSF2, SF, 200, 0, 0.5);
+        insert_TH1F(&hmap_it->second, k1, PCALSF3, SF, 200, 0, 0.5);
+        insert_TH1F(&hmap_it->second, k1, PCALSF4, SF, 200, 0, 0.5);
+        insert_TH1F(&hmap_it->second, k1, PCALSF5, SF, 200, 0, 0.5);
+        insert_TH1F(&hmap_it->second, k1, PCALSF6, SF, 200, 0, 0.5);
+        insert_TH1F(&hmap_it->second, k1, ECINSF1, SF, 200, 0, 0.5);
+        insert_TH1F(&hmap_it->second, k1, ECINSF2, SF, 200, 0, 0.5);
+        insert_TH1F(&hmap_it->second, k1, ECINSF3, SF, 200, 0, 0.5);
+        insert_TH1F(&hmap_it->second, k1, ECINSF4, SF, 200, 0, 0.5);
+        insert_TH1F(&hmap_it->second, k1, ECINSF5, SF, 200, 0, 0.5);
+        insert_TH1F(&hmap_it->second, k1, ECINSF6, SF, 200, 0, 0.5);
+        insert_TH1F(&hmap_it->second, k1, ECOUSF1, SF, 200, 0, 0.5);
+        insert_TH1F(&hmap_it->second, k1, ECOUSF2, SF, 200, 0, 0.5);
+        insert_TH1F(&hmap_it->second, k1, ECOUSF3, SF, 200, 0, 0.5);
+        insert_TH1F(&hmap_it->second, k1, ECOUSF4, SF, 200, 0, 0.5);
+        insert_TH1F(&hmap_it->second, k1, ECOUSF5, SF, 200, 0, 0.5);
+        insert_TH1F(&hmap_it->second, k1, ECOUSF6, SF, 200, 0, 0.5);
+
+        insert_TH1F(&hmap_it->second, k1, Q2, Q2, 22, 0, 12);
+        insert_TH1F(&hmap_it->second, k1, NU, NU, 22, 0, 12);
+        insert_TH1F(&hmap_it->second, k1, XB, XB, 20, 0,  2);
     }
 
     // Create TTree and link bank_containers.

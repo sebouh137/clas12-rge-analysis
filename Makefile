@@ -40,7 +40,7 @@ $(BLD)/io_handler.o: $(SRC)/io_handler.c
 	$(CXX) $(CFLAGS) -c $(SRC)/io_handler.c -o $(BLD)/io_handler.o
 
 $(BLD)/utilities.o: $(SRC)/utilities.c
-	$(CXX) $(CFLAGS) -c $(SRC)/utilities.c -o $(BLD)/utilities.o
+	$(CXX) $(CFLAGS) -c $(SRC)/utilities.c -o $(BLD)/utilities.o $(ROOTCFLAGS) $(ROOTLDFLAGS) $(ROOTLIBS)
 
 clean:
 	@echo "Removing all build files and binaries."
