@@ -18,22 +18,27 @@
 
 // Histogram map keys.
 #define VZ       "Vz"
-#define VZPHI    "Vz vs phi"
-#define VZTHETA  "Vz vs theta"
+#define PHI      "#phi"
+#define VZPHI    "Vz vs #phi"
+#define THETA    "#theta"
+#define VZTHETA  "Vz vs #theta"
 
 #define VP       "Vp"
-#define BETA     "Beta"
-#define VPBETA   "Vp vs Beta"
+#define BETA     "#beta"
+#define VPBETA   "Vp vs #beta"
 
-#define DTOF     "TOF Difference"
-#define VPTOF    "Vp vs TOF Difference"
+#define DTOF     "#Delta TOF"
+#define VPTOF    "Vp vs #Delta TOF"
 
-#define EDIVPP   "E/Vp vs Vp"
-#define EDIVPE   "E/Vp vs E"
+#define E        "E"
+#define EDIVP    "E/Vp"
+#define PEDIVP   "Vp vs E/Vp"
+#define EEDIVP   "E vs E/Vp"
 #define PPCALE   "Vp vs E (PCAL)"
 #define PECINE   "Vp vs E (ECIN)"
 #define PECOUE   "Vp vs E (ECOU)"
 #define ECALPCAL "E (ECAL) vs E (PCAL)"
+#define SF       "Sampling Fraction"
 #define PCALSF   "PCAL Sampling Fraction s"
 #define PCALSF1  "PCAL Sampling Fraction s1"
 #define PCALSF2  "PCAL Sampling Fraction s2"
@@ -56,9 +61,9 @@
 #define ECOUSF5  "ECOU Sampling Fraction s5"
 #define ECOUSF6  "ECOU Sampling Fraction s6"
 
-#define Q2       "Q2"
-#define NU       "nu"
-#define XB       "X_bjorken"
+#define Q2       "Q^{2}"
+#define NU       "#nu"
+#define XB       "X_{bjorken}"
 
 // RUN CONSTANTS (TODO. these should be in a map.)
 #define BE11983 10.3894 //  50 nA.

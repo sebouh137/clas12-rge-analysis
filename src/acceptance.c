@@ -44,52 +44,65 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no, double beam_E) {
     for (hmap_it = histos.begin(); hmap_it != histos.end(); ++hmap_it) {
         const char *k1 = hmap_it->first;
         hmap_it->second = {
-            {VZ,       new TH1F(Form("%s: %s", k1, VZ),       VZ,      500, -50, 50)},
-            {VZPHI,    new TH2F(Form("%s: %s", k1, VZPHI),    VZPHI,   500, -50, 50, 180, -180, 180)},
-            {VZTHETA,  new TH2F(Form("%s: %s", k1, VZTHETA),  VZTHETA, 500, -50, 50, 200, 0, 50)},
+            {VZ,      new TH1F(Form("%s: %s", k1, VZ),
+                    Form("%s;%s", VZ, VZ),                500, -50, 50)},
+            {VZPHI,   new TH2F(Form("%s: %s", k1, VZPHI),
+                    Form("%s;%s;%s", VZPHI, VZ, PHI),     500, -50, 50, 180, -180, 180)},
+            {VZTHETA, new TH2F(Form("%s: %s", k1, VZTHETA),
+                    Form("%s;%s;%s", VZTHETA, VZ, THETA), 500, -50, 50, 200,    0,  50)},
 
-            {VP,       new TH1F(Form("%s: %s", k1, VP),       VP,      200, 0, 10)},
-            {BETA,     new TH1F(Form("%s: %s", k1, BETA),     BETA,    200, 0.94, 1)},
-            {VPBETA,   new TH2F(Form("%s: %s", k1, VPBETA),   VPBETA,  200, 0, 10, 200, 0.94, 1)},
+            {VP,     new TH1F(Form("%s: %s", k1, VP),
+                    Form("%s;%s", VP, VP),              200,    0, 10)},
+            {BETA,   new TH1F(Form("%s: %s", k1, BETA),
+                    Form("%s;%s", BETA, BETA),          200, 0.94,  1)},
+            {VPBETA, new TH2F(Form("%s: %s", k1, VPBETA),
+                    Form("%s;%s;%s", VPBETA, VP, BETA), 200,    0, 10, 200, 0.94, 1)},
 
-            {DTOF,     new TH1F(Form("%s: %s", k1, DTOF),     DTOF,    100, 0, 20)},
-            {VPTOF,    new TH2F(Form("%s: %s", k1, VPTOF),    VPTOF,   100, 0, 10, 100, 0, 20)},
+            {DTOF,  new TH1F(Form("%s: %s", k1, DTOF),
+                    Form("%s;%s", DTOF, DTOF),         200, 0, 20)},
+            {VPTOF, new TH2F(Form("%s: %s", k1, VPTOF),
+                    Form("%s;%s;%s", VPTOF, VP, DTOF), 200, 0, 10, 100, 0, 20)},
 
-            {EDIVPE,   new TH2F(Form("%s: %s", k1, EDIVPE),   EDIVPE,   200, 0,  3, 200, 0, 0.4)},
-            {EDIVPP,   new TH2F(Form("%s: %s", k1, EDIVPP),   EDIVPP,   200, 0, 10, 200, 0, 0.4)},
-            {PPCALE,   new TH2F(Form("%s: %s", k1, PPCALE),   PPCALE,   200, 0, 10, 100, 0, 2)},
-            {PECINE,   new TH2F(Form("%s: %s", k1, PECINE),   PECINE,   200, 0, 10, 100, 0, 2)},
-            {PECOUE,   new TH2F(Form("%s: %s", k1, PECOUE),   PECOUE,   200, 0, 10, 100, 0, 2)},
-            {ECALPCAL, new TH2F(Form("%s: %s", k1, ECALPCAL), ECALPCAL, 200, 0, 2, 100, 0, 2)},
+            {EEDIVP,   new TH2F(Form("%s: %s", k1, EEDIVP),
+                    Form("%s;%s;%s", EEDIVP, E, EDIVP),  200, 0,  3, 200, 0, 0.4)},
+            {PEDIVP,   new TH2F(Form("%s: %s", k1, PEDIVP),
+                    Form("%s;%s;%s", PEDIVP, EDIVP, VP), 200, 0, 10, 200, 0, 0.4)},
+            {PPCALE,   new TH2F(Form("%s: %s", k1, PPCALE),
+                    Form("%s;%s;%s", PPCALE, VP, E),     200, 0, 10, 100, 0, 2)},
+            {PECINE,   new TH2F(Form("%s: %s", k1, PECINE),
+                    Form("%s;%s;%s", PECINE, VP, E),     200, 0, 10, 100, 0, 2)},
+            {PECOUE,   new TH2F(Form("%s: %s", k1, PECOUE),
+                    Form("%s;%s;%s", PECOUE, VP, E),     200, 0, 10, 100, 0, 2)},
+            {ECALPCAL, new TH2F(Form("%s: %s", k1, ECALPCAL),
+                    Form("%s;%s;%s", ECALPCAL, E, E),    200, 0, 2, 100, 0, 2)},
 
-            {PCALSF1,  new TH1F(Form("%s: %s", k1, PCALSF1), PCALSF1, 200, 0, 0.5)},
-            {PCALSF2,  new TH1F(Form("%s: %s", k1, PCALSF2), PCALSF2, 200, 0, 0.5)},
-            {PCALSF3,  new TH1F(Form("%s: %s", k1, PCALSF3), PCALSF3, 200, 0, 0.5)},
-            {PCALSF4,  new TH1F(Form("%s: %s", k1, PCALSF4), PCALSF4, 200, 0, 0.5)},
-            {PCALSF5,  new TH1F(Form("%s: %s", k1, PCALSF5), PCALSF5, 200, 0, 0.5)},
-            {PCALSF6,  new TH1F(Form("%s: %s", k1, PCALSF6), PCALSF6, 200, 0, 0.5)},
-            {ECINSF1,  new TH1F(Form("%s: %s", k1, ECINSF1), ECINSF1, 200, 0, 0.5)},
-            {ECINSF2,  new TH1F(Form("%s: %s", k1, ECINSF2), ECINSF2, 200, 0, 0.5)},
-            {ECINSF3,  new TH1F(Form("%s: %s", k1, ECINSF3), ECINSF3, 200, 0, 0.5)},
-            {ECINSF4,  new TH1F(Form("%s: %s", k1, ECINSF4), ECINSF4, 200, 0, 0.5)},
-            {ECINSF5,  new TH1F(Form("%s: %s", k1, ECINSF5), ECINSF5, 200, 0, 0.5)},
-            {ECINSF6,  new TH1F(Form("%s: %s", k1, ECINSF6), ECINSF6, 200, 0, 0.5)},
-            {ECOUSF1,  new TH1F(Form("%s: %s", k1, ECOUSF1), ECOUSF1, 200, 0, 0.5)},
-            {ECOUSF2,  new TH1F(Form("%s: %s", k1, ECOUSF2), ECOUSF2, 200, 0, 0.5)},
-            {ECOUSF3,  new TH1F(Form("%s: %s", k1, ECOUSF3), ECOUSF3, 200, 0, 0.5)},
-            {ECOUSF4,  new TH1F(Form("%s: %s", k1, ECOUSF4), ECOUSF4, 200, 0, 0.5)},
-            {ECOUSF5,  new TH1F(Form("%s: %s", k1, ECOUSF5), ECOUSF5, 200, 0, 0.5)},
-            {ECOUSF6,  new TH1F(Form("%s: %s", k1, ECOUSF6), ECOUSF6, 200, 0, 0.5)},
+            {PCALSF1, new TH1F(Form("%s: %s", k1, PCALSF1), Form("%s;%s", PCALSF1, SF), 200, 0, .5)},
+            {PCALSF2, new TH1F(Form("%s: %s", k1, PCALSF2), Form("%s;%s", PCALSF2, SF), 200, 0, .5)},
+            {PCALSF3, new TH1F(Form("%s: %s", k1, PCALSF3), Form("%s;%s", PCALSF3, SF), 200, 0, .5)},
+            {PCALSF4, new TH1F(Form("%s: %s", k1, PCALSF4), Form("%s;%s", PCALSF4, SF), 200, 0, .5)},
+            {PCALSF5, new TH1F(Form("%s: %s", k1, PCALSF5), Form("%s;%s", PCALSF5, SF), 200, 0, .5)},
+            {PCALSF6, new TH1F(Form("%s: %s", k1, PCALSF6), Form("%s;%s", PCALSF6, SF), 200, 0, .5)},
+            {ECINSF1, new TH1F(Form("%s: %s", k1, ECINSF1), Form("%s;%s", ECINSF1, SF), 200, 0, .5)},
+            {ECINSF2, new TH1F(Form("%s: %s", k1, ECINSF2), Form("%s;%s", ECINSF2, SF), 200, 0, .5)},
+            {ECINSF3, new TH1F(Form("%s: %s", k1, ECINSF3), Form("%s;%s", ECINSF3, SF), 200, 0, .5)},
+            {ECINSF4, new TH1F(Form("%s: %s", k1, ECINSF4), Form("%s;%s", ECINSF4, SF), 200, 0, .5)},
+            {ECINSF5, new TH1F(Form("%s: %s", k1, ECINSF5), Form("%s;%s", ECINSF5, SF), 200, 0, .5)},
+            {ECINSF6, new TH1F(Form("%s: %s", k1, ECINSF6), Form("%s;%s", ECINSF6, SF), 200, 0, .5)},
+            {ECOUSF1, new TH1F(Form("%s: %s", k1, ECOUSF1), Form("%s;%s", ECOUSF1, SF), 200, 0, .5)},
+            {ECOUSF2, new TH1F(Form("%s: %s", k1, ECOUSF2), Form("%s;%s", ECOUSF2, SF), 200, 0, .5)},
+            {ECOUSF3, new TH1F(Form("%s: %s", k1, ECOUSF3), Form("%s;%s", ECOUSF3, SF), 200, 0, .5)},
+            {ECOUSF4, new TH1F(Form("%s: %s", k1, ECOUSF4), Form("%s;%s", ECOUSF4, SF), 200, 0, .5)},
+            {ECOUSF5, new TH1F(Form("%s: %s", k1, ECOUSF5), Form("%s;%s", ECOUSF5, SF), 200, 0, .5)},
+            {ECOUSF6, new TH1F(Form("%s: %s", k1, ECOUSF6), Form("%s;%s", ECOUSF6, SF), 200, 0, .5)},
 
-            {Q2,       new TH1F(Form("%s: %s", k1, Q2),       Q2,       22, 0, 12)},
-            {NU,       new TH1F(Form("%s: %s", k1, NU),       NU,       22, 0, 12)},
-            {XB,       new TH1F(Form("%s: %s", k1, XB),       XB,       20, 0,  2)},
+            {Q2, new TH1F(Form("%s: %s", k1, Q2), Form("%s;%s", Q2, Q2), 22, 0, 12)},
+            {NU, new TH1F(Form("%s: %s", k1, NU), Form("%s;%s", NU, NU), 22, 0, 12)},
+            {XB, new TH1F(Form("%s: %s", k1, XB), Form("%s;%s", XB, XB), 20, 0,  2)},
         };
     }
 
-    // Iterate through events.
+    // Create TTree and link bank_containers.
     TTree *t = f_in->Get<TTree>("Tree");
-
     REC_Particle     rp(t);
     REC_Track        rt(t);
     REC_Scintillator rs(t);
@@ -233,8 +246,8 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no, double beam_E) {
                 // Calorimeters.
                 double tot_P = calc_P(px,py,pz);
                 if (tot_E > 0) {
-                    histos[hmap_it->first][EDIVPP]->Fill(tot_P, tot_E/tot_P);
-                    histos[hmap_it->first][EDIVPE]->Fill(tot_E, tot_E/tot_P);
+                    histos[hmap_it->first][PEDIVP]->Fill(tot_P, tot_E/tot_P);
+                    histos[hmap_it->first][EEDIVP]->Fill(tot_E, tot_E/tot_P);
                 }
                 if (pcal_E > 0) histos[hmap_it->first][PPCALE]->Fill(tot_P, pcal_E);
                 if (ecin_E > 0) histos[hmap_it->first][PECINE]->Fill(tot_P, ecin_E);
@@ -246,9 +259,9 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no, double beam_E) {
                 for (UInt_t i = 0; i < rc.pindex->size(); ++i) {
                     if (rc.pindex->at(i) == pindex) {
                         int lyr  = (int) rc.layer->at(i);
-                        int E    = rc.energy->at(i);
+                        int energy    = rc.energy->at(i);
                         int sctr = rc.sector->at(i);
-                        int sf = p1[sctr-1] * (p2[sctr-1] + p3[sctr-1]/E + pow(p4[sctr-1]/E, 2));
+                        int sf = p1[sctr-1] * (p2[sctr-1] + p3[sctr-1]/energy + pow(p4[sctr-1]/energy, 2));
                         if      (lyr == PCAL_LYR) {
                             switch (sctr) { // NOTE. Bad solution because I'm lazy. I should change this.
                                 case  0: break;
@@ -364,8 +377,8 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no, double beam_E) {
         dir = Form("%s/%s", hmap_it->first, "CALs");
         f_out->mkdir(dir);
         f_out->cd(dir);
-        histos[hmap_it->first][EDIVPP]  ->Draw("colz"); gcvs->Write(EDIVPP);
-        histos[hmap_it->first][EDIVPE]  ->Draw("colz"); gcvs->Write(EDIVPE);
+        histos[hmap_it->first][PEDIVP]  ->Draw("colz"); gcvs->Write(PEDIVP);
+        histos[hmap_it->first][EEDIVP]  ->Draw("colz"); gcvs->Write(EEDIVP);
         histos[hmap_it->first][PPCALE]  ->Draw("colz"); gcvs->Write(PPCALE);
         histos[hmap_it->first][PECINE]  ->Draw("colz"); gcvs->Write(PECINE);
         histos[hmap_it->first][PECOUE]  ->Draw("colz"); gcvs->Write(PECOUE);
