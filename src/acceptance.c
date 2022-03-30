@@ -66,7 +66,7 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no, double beam_E) {
             {EEDIVP,   new TH2F(Form("%s: %s", k1, EEDIVP),
                     Form("%s;%s;%s", EEDIVP, E, EDIVP),  200, 0,  3, 200, 0, 0.4)},
             {PEDIVP,   new TH2F(Form("%s: %s", k1, PEDIVP),
-                    Form("%s;%s;%s", PEDIVP, EDIVP, VP), 200, 0, 10, 200, 0, 0.4)},
+                    Form("%s;%s;%s", PEDIVP, VP, EDIVP), 200, 0, 10, 200, 0, 0.4)},
             {PPCALE,   new TH2F(Form("%s: %s", k1, PPCALE),
                     Form("%s;%s;%s", PPCALE, VP, E),     200, 0, 10, 100, 0, 2)},
             {PECINE,   new TH2F(Form("%s: %s", k1, PECINE),
