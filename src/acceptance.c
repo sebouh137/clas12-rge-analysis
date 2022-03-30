@@ -45,41 +45,41 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no, double beam_E) {
         const char *k1 = hmap_it->first;
         hmap_it->second = {
             {VZ,       new TH1F(Form("%s: %s", k1, VZ),       VZ,      500, -50, 50)},
-            {VZPHI,    new TH2F(Form("%s: %s", k1, VZPHI),    VZPHI,   100, -50, 50, 100, -180, 180)},
-            {VZTHETA,  new TH2F(Form("%s: %s", k1, VZTHETA),  VZTHETA, 100, -50, 50, 100, 0, 50)},
+            {VZPHI,    new TH2F(Form("%s: %s", k1, VZPHI),    VZPHI,   500, -50, 50, 180, -180, 180)},
+            {VZTHETA,  new TH2F(Form("%s: %s", k1, VZTHETA),  VZTHETA, 500, -50, 50, 200, 0, 50)},
 
-            {VP,       new TH1F(Form("%s: %s", k1, VP),       VP,      100, 0, 12)},
-            {BETA,     new TH1F(Form("%s: %s", k1, BETA),     BETA,    100, 0.9, 1)},
-            {BETAVP,   new TH2F(Form("%s: %s", k1, BETAVP),   BETAVP,  100, 0.9, 1, 100, 0, 12)},
+            {VP,       new TH1F(Form("%s: %s", k1, VP),       VP,      200, 0, 10)},
+            {BETA,     new TH1F(Form("%s: %s", k1, BETA),     BETA,    200, 0.94, 1)},
+            {VPBETA,   new TH2F(Form("%s: %s", k1, VPBETA),   VPBETA,  200, 0, 10, 200, 0.94, 1)},
 
-            {DTOF,     new TH1F(Form("%s: %s", k1, DTOF),     DTOF,    100, 0, 5)},
-            {VPTOF,    new TH2F(Form("%s: %s", k1, VPTOF),    VPTOF,   100, 0, 12, 100, 0, 5)},
+            {DTOF,     new TH1F(Form("%s: %s", k1, DTOF),     DTOF,    100, 0, 20)},
+            {VPTOF,    new TH2F(Form("%s: %s", k1, VPTOF),    VPTOF,   100, 0, 10, 100, 0, 20)},
 
-            {PDIVEE,   new TH2F(Form("%s: %s", k1, PDIVEE),   PDIVEE,   100, 0, 3, 100, 0, 0.4)},
-            {PDIVEP,   new TH2F(Form("%s: %s", k1, PDIVEP),   PDIVEP,   100, 0, 12, 100, 0, 0.4)},
-            {PPCALE,   new TH2F(Form("%s: %s", k1, PPCALE),   PPCALE,   100, 0, 12, 100, 0, 2)},
-            {PECINE,   new TH2F(Form("%s: %s", k1, PECINE),   PECINE,   100, 0, 12, 100, 0, 2)},
-            {PECOUE,   new TH2F(Form("%s: %s", k1, PECOUE),   PECOUE,   100, 0, 12, 100, 0, 2)},
-            {ECALPCAL, new TH2F(Form("%s: %s", k1, ECALPCAL), ECALPCAL, 100, 0, 2, 100, 0, 2)},
+            {EDIVPE,   new TH2F(Form("%s: %s", k1, EDIVPE),   EDIVPE,   200, 0,  3, 200, 0, 0.4)},
+            {EDIVPP,   new TH2F(Form("%s: %s", k1, EDIVPP),   EDIVPP,   200, 0, 10, 200, 0, 0.4)},
+            {PPCALE,   new TH2F(Form("%s: %s", k1, PPCALE),   PPCALE,   200, 0, 10, 100, 0, 2)},
+            {PECINE,   new TH2F(Form("%s: %s", k1, PECINE),   PECINE,   200, 0, 10, 100, 0, 2)},
+            {PECOUE,   new TH2F(Form("%s: %s", k1, PECOUE),   PECOUE,   200, 0, 10, 100, 0, 2)},
+            {ECALPCAL, new TH2F(Form("%s: %s", k1, ECALPCAL), ECALPCAL, 200, 0, 2, 100, 0, 2)},
 
-            {PCALSF1,  new TH1F(Form("%s: %s", k1, PCALSF1), PCALSF1, 100, 0, 0.5)},
-            {PCALSF2,  new TH1F(Form("%s: %s", k1, PCALSF2), PCALSF2, 100, 0, 0.5)},
-            {PCALSF3,  new TH1F(Form("%s: %s", k1, PCALSF3), PCALSF3, 100, 0, 0.5)},
-            {PCALSF4,  new TH1F(Form("%s: %s", k1, PCALSF4), PCALSF4, 100, 0, 0.5)},
-            {PCALSF5,  new TH1F(Form("%s: %s", k1, PCALSF5), PCALSF5, 100, 0, 0.5)},
-            {PCALSF6,  new TH1F(Form("%s: %s", k1, PCALSF6), PCALSF6, 100, 0, 0.5)},
-            {ECINSF1,  new TH1F(Form("%s: %s", k1, ECINSF1), ECINSF1, 100, 0, 0.5)},
-            {ECINSF2,  new TH1F(Form("%s: %s", k1, ECINSF2), ECINSF2, 100, 0, 0.5)},
-            {ECINSF3,  new TH1F(Form("%s: %s", k1, ECINSF3), ECINSF3, 100, 0, 0.5)},
-            {ECINSF4,  new TH1F(Form("%s: %s", k1, ECINSF4), ECINSF4, 100, 0, 0.5)},
-            {ECINSF5,  new TH1F(Form("%s: %s", k1, ECINSF5), ECINSF5, 100, 0, 0.5)},
-            {ECINSF6,  new TH1F(Form("%s: %s", k1, ECINSF6), ECINSF6, 100, 0, 0.5)},
-            {ECOUSF1,  new TH1F(Form("%s: %s", k1, ECOUSF1), ECOUSF1, 100, 0, 0.5)},
-            {ECOUSF2,  new TH1F(Form("%s: %s", k1, ECOUSF2), ECOUSF2, 100, 0, 0.5)},
-            {ECOUSF3,  new TH1F(Form("%s: %s", k1, ECOUSF3), ECOUSF3, 100, 0, 0.5)},
-            {ECOUSF4,  new TH1F(Form("%s: %s", k1, ECOUSF4), ECOUSF4, 100, 0, 0.5)},
-            {ECOUSF5,  new TH1F(Form("%s: %s", k1, ECOUSF5), ECOUSF5, 100, 0, 0.5)},
-            {ECOUSF6,  new TH1F(Form("%s: %s", k1, ECOUSF6), ECOUSF6, 100, 0, 0.5)},
+            {PCALSF1,  new TH1F(Form("%s: %s", k1, PCALSF1), PCALSF1, 200, 0, 0.5)},
+            {PCALSF2,  new TH1F(Form("%s: %s", k1, PCALSF2), PCALSF2, 200, 0, 0.5)},
+            {PCALSF3,  new TH1F(Form("%s: %s", k1, PCALSF3), PCALSF3, 200, 0, 0.5)},
+            {PCALSF4,  new TH1F(Form("%s: %s", k1, PCALSF4), PCALSF4, 200, 0, 0.5)},
+            {PCALSF5,  new TH1F(Form("%s: %s", k1, PCALSF5), PCALSF5, 200, 0, 0.5)},
+            {PCALSF6,  new TH1F(Form("%s: %s", k1, PCALSF6), PCALSF6, 200, 0, 0.5)},
+            {ECINSF1,  new TH1F(Form("%s: %s", k1, ECINSF1), ECINSF1, 200, 0, 0.5)},
+            {ECINSF2,  new TH1F(Form("%s: %s", k1, ECINSF2), ECINSF2, 200, 0, 0.5)},
+            {ECINSF3,  new TH1F(Form("%s: %s", k1, ECINSF3), ECINSF3, 200, 0, 0.5)},
+            {ECINSF4,  new TH1F(Form("%s: %s", k1, ECINSF4), ECINSF4, 200, 0, 0.5)},
+            {ECINSF5,  new TH1F(Form("%s: %s", k1, ECINSF5), ECINSF5, 200, 0, 0.5)},
+            {ECINSF6,  new TH1F(Form("%s: %s", k1, ECINSF6), ECINSF6, 200, 0, 0.5)},
+            {ECOUSF1,  new TH1F(Form("%s: %s", k1, ECOUSF1), ECOUSF1, 200, 0, 0.5)},
+            {ECOUSF2,  new TH1F(Form("%s: %s", k1, ECOUSF2), ECOUSF2, 200, 0, 0.5)},
+            {ECOUSF3,  new TH1F(Form("%s: %s", k1, ECOUSF3), ECOUSF3, 200, 0, 0.5)},
+            {ECOUSF4,  new TH1F(Form("%s: %s", k1, ECOUSF4), ECOUSF4, 200, 0, 0.5)},
+            {ECOUSF5,  new TH1F(Form("%s: %s", k1, ECOUSF5), ECOUSF5, 200, 0, 0.5)},
+            {ECOUSF6,  new TH1F(Form("%s: %s", k1, ECOUSF6), ECOUSF6, 200, 0, 0.5)},
 
             {Q2,       new TH1F(Form("%s: %s", k1, Q2),       Q2,       22, 0, 12)},
             {NU,       new TH1F(Form("%s: %s", k1, NU),       NU,       22, 0, 12)},
@@ -144,12 +144,12 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no, double beam_E) {
             int charge     = rp.charge ->at(pindex);
             int pid        = rp.pid    ->at(pindex);
             int status     = rp.status ->at(pindex);
-            double chi2pid = rp.chi2pid->at(pindex);
+            // double chi2pid = rp.chi2pid->at(pindex);
 
             // General cuts.
-            if ((int) abs(status)/1000 != 2) continue;
+            // if ((int) abs(status)/1000 != 2) continue;
             // if (abs(chi2pid) >= 3) continue; // Spurious particle.
-            if (pid == 0)          continue; // Non-identified particle.
+            if (pid == 0)       continue; // Non-identified particle.
             if (chi2/ndf >= 15) continue; // Ignore tracks with high chi2.
 
             // TODO. I should filter already processed pindexes so that I don't count a detector's
@@ -215,28 +215,32 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no, double beam_E) {
 
                 // Vertex z.
                 histos[hmap_it->first][VZ]     ->Fill(vz);
-                histos[hmap_it->first][VZPHI]  ->Fill(vz, calc_phi(px, py));
-                histos[hmap_it->first][VZTHETA]->Fill(vz, calc_theta(px, py, pz));
+                histos[hmap_it->first][VZPHI]  ->Fill(vz, to_deg(calc_phi(px, py)));
+                histos[hmap_it->first][VZTHETA]->Fill(vz, to_deg(calc_theta(px, py, pz)));
 
                 // Vertex p.
                 histos[hmap_it->first][VP]    ->Fill(pz);
                 histos[hmap_it->first][BETA]  ->Fill(rp.beta->at(pindex));
-                histos[hmap_it->first][BETAVP]->Fill(rp.beta->at(pindex), pz);
+                histos[hmap_it->first][VPBETA]->Fill(pz, rp.beta->at(pindex));
 
                 // TOF. (TODO. Check FTOF resolution).
-                if (tre_tof >= 0) { // Only fill if trigger electron's TOF was found.
-                    double dtof = tof - tre_tof;
+                double dtof = tof - tre_tof;
+                if (tre_tof > 0 && dtof > 0) { // Only fill if trigger electron's TOF was found.
                     histos[hmap_it->first][DTOF] ->Fill(dtof);
                     histos[hmap_it->first][VPTOF]->Fill(calc_P(px,py,pz), dtof);
                 }
 
                 // Calorimeters.
-                histos[hmap_it->first][PDIVEP]  ->Fill(calc_P(px,py,pz)/tot_E, calc_P(px,py,pz));
-                histos[hmap_it->first][PDIVEE]  ->Fill(calc_P(px,py,pz)/tot_E, tot_E);
-                histos[hmap_it->first][PPCALE]  ->Fill(calc_P(px,py,pz), pcal_E);
-                histos[hmap_it->first][PECINE]  ->Fill(calc_P(px,py,pz), ecin_E);
-                histos[hmap_it->first][PECOUE]  ->Fill(calc_P(px,py,pz), ecou_E);
-                histos[hmap_it->first][ECALPCAL]->Fill(ecin_E+ecou_E, pcal_E);
+                double tot_P = calc_P(px,py,pz);
+                if (tot_E > 0) {
+                    histos[hmap_it->first][EDIVPP]->Fill(tot_P, tot_E/tot_P);
+                    histos[hmap_it->first][EDIVPE]->Fill(tot_E, tot_E/tot_P);
+                }
+                if (pcal_E > 0) histos[hmap_it->first][PPCALE]->Fill(tot_P, pcal_E);
+                if (ecin_E > 0) histos[hmap_it->first][PECINE]->Fill(tot_P, ecin_E);
+                if (ecou_E > 0) histos[hmap_it->first][PECOUE]->Fill(tot_P, ecou_E);
+                if (pcal_E > 0 && ecin_E > 0 && ecou_E > 0)
+                    histos[hmap_it->first][ECALPCAL]->Fill(ecin_E+ecou_E, pcal_E);
 
                 // Sampling Fraction.
                 for (UInt_t i = 0; i < rc.pindex->size(); ++i) {
@@ -323,10 +327,11 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no, double beam_E) {
         if      (!strcmp(hmap_it->first, PPIP) || !strcmp(hmap_it->first, PPIM)) mass = PIMASS;
         else if (!strcmp(hmap_it->first, PELC) || !strcmp(hmap_it->first, PTRE)) mass = EMASS;
         else continue;
-        TString vp_beta_curve_name = Form("%s %s", hmap_it->first, "vp vs beta curve");
-        TF1 *vp_beta_curve = new TF1(vp_beta_curve_name, "[m]*x/(sqrt(1-x))", 0.9, 1.0);
-        vp_beta_curve->FixParameter(0, mass);
-        histos[hmap_it->first][BETAVP]->Fit(vp_beta_curve_name, "Q", "", 0.9, 1.0);
+        TString beta_vp_curve_name = Form("%s %s", hmap_it->first, "beta vs vp curve");
+        TF1 *beta_vp_curve =
+                new TF1(beta_vp_curve_name, "(x)/(sqrt([m]*[m] + x*x))", 0, 12);
+        beta_vp_curve->FixParameter(0, mass);
+        histos[hmap_it->first][VPBETA]->Fit(beta_vp_curve_name, "Q", "", 0, 12);
     }
 
     // Create output file.
@@ -348,7 +353,7 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no, double beam_E) {
         f_out->cd(dir);
         histos[hmap_it->first][VP]    ->Write();
         histos[hmap_it->first][BETA]  ->Write();
-        histos[hmap_it->first][BETAVP]->Draw("colz"); gcvs->Write(BETAVP);
+        histos[hmap_it->first][VPBETA]->Draw("colz"); gcvs->Write(VPBETA);
 
         dir = Form("%s/%s", hmap_it->first, "DTOF");
         f_out->mkdir(dir);
@@ -359,8 +364,8 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no, double beam_E) {
         dir = Form("%s/%s", hmap_it->first, "CALs");
         f_out->mkdir(dir);
         f_out->cd(dir);
-        histos[hmap_it->first][PDIVEP]  ->Draw("colz"); gcvs->Write(PDIVEP);
-        histos[hmap_it->first][PDIVEE]  ->Draw("colz"); gcvs->Write(PDIVEE);
+        histos[hmap_it->first][EDIVPP]  ->Draw("colz"); gcvs->Write(EDIVPP);
+        histos[hmap_it->first][EDIVPE]  ->Draw("colz"); gcvs->Write(EDIVPE);
         histos[hmap_it->first][PPCALE]  ->Draw("colz"); gcvs->Write(PPCALE);
         histos[hmap_it->first][PECINE]  ->Draw("colz"); gcvs->Write(PECINE);
         histos[hmap_it->first][PECOUE]  ->Draw("colz"); gcvs->Write(PECOUE);

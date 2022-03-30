@@ -23,13 +23,13 @@
 
 #define VP       "Vp"
 #define BETA     "Beta"
-#define BETAVP   "Beta vs Vp"
+#define VPBETA   "Vp vs Beta"
 
 #define DTOF     "TOF Difference"
 #define VPTOF    "Vp vs TOF Difference"
 
-#define PDIVEP   "Vp/E vs Vp"
-#define PDIVEE   "Vp/E vs E"
+#define EDIVPP   "E/Vp vs Vp"
+#define EDIVPE   "E/Vp vs E"
 #define PPCALE   "Vp vs E (PCAL)"
 #define PECINE   "Vp vs E (ECIN)"
 #define PECOUE   "Vp vs E (ECOU)"
