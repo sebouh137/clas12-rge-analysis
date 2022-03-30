@@ -258,12 +258,12 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no, double beam_E) {
                 // Sampling Fraction.
                 for (UInt_t i = 0; i < rc.pindex->size(); ++i) {
                     if (rc.pindex->at(i) == pindex) {
-                        int lyr  = (int) rc.layer->at(i);
-                        int energy    = rc.energy->at(i);
-                        int sctr = rc.sector->at(i);
-                        int sf = p1[sctr-1] * (p2[sctr-1] + p3[sctr-1]/energy + pow(p4[sctr-1]/energy, 2));
+                        int lyr       = (int) rc.layer->at(i);
+                        double energy = rc.energy->at(i);
+                        int s         = rc.sector->at(i);
+                        double sf = p1[s-1] * (p2[s-1] + p3[s-1]/energy + pow(p4[s-1]/energy, 2));
                         if      (lyr == PCAL_LYR) {
-                            switch (sctr) { // NOTE. Bad solution because I'm lazy. I should change this.
+                            switch (s) { // NOTE. Bad solution because I'm lazy. I should change this.
                                 case  0: break;
                                 case  1: histos[hmap_it->first][PCALSF1]->Fill(sf); break;
                                 case  2: histos[hmap_it->first][PCALSF2]->Fill(sf); break;
@@ -275,7 +275,7 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no, double beam_E) {
                             };
                         }
                         else if (lyr == ECIN_LYR) {
-                            switch (sctr) {
+                            switch (s) {
                                 case  0: break;
                                 case  1: histos[hmap_it->first][ECINSF1]->Fill(sf); break;
                                 case  2: histos[hmap_it->first][ECINSF2]->Fill(sf); break;
@@ -287,7 +287,7 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no, double beam_E) {
                             };
                         }
                         else if (lyr == ECOU_LYR) {
-                            switch (sctr) {
+                            switch (s) {
                                 case  0: break;
                                 case  1: histos[hmap_it->first][ECOUSF1]->Fill(sf); break;
                                 case  2: histos[hmap_it->first][ECOUSF2]->Fill(sf); break;
