@@ -17,7 +17,7 @@ HIPOLIBS    := -L$(HIPO)/lib -lhipo4
 LZ4LIBS     := -L$(HIPO)/lz4/lib -llz4
 LZ4INCLUDES := -I$(HIPO)/lz4/lib
 
-OBJS        := $(BLD)/bank_containers.o $(BLD)/err_handler.o $(BLD)/file_handler.o $(BLD)/io_handler.o $(BLD)/utilities.o
+OBJS        := $(BLD)/bank_containers.o $(BLD)/constants.o $(BLD)/err_handler.o $(BLD)/file_handler.o $(BLD)/io_handler.o $(BLD)/utilities.o
 
 all: $(BIN)/hipo2root $(BIN)/acceptance
 
@@ -29,6 +29,9 @@ $(BIN)/acceptance: $(OBJS) $(SRC)/acceptance.c
 
 $(BLD)/bank_containers.o: $(SRC)/bank_containers.c $(SRC)/bank_containers.h
 	$(CXX) $(CFLAGS) -c $(SRC)/bank_containers.c -o $(BLD)/bank_containers.o $(ROOTCFLAGS) $(HIPOCFLAGS) $(ROOTLDFLAGS) $(HIPOLIBS) $(ROOTLIBS)
+
+$(BLD)/constants.o: $(SRC)/constants.c $(SRC)/constants.h
+	$(CXX) $(CFLAGS) -c $(SRC)/constants.c -o $(BLD)/constants.o
 
 $(BLD)/err_handler.o: $(SRC)/err_handler.c $(SRC)/err_handler.h
 	$(CXX) $(CFLAGS) -c $(SRC)/err_handler.c -o $(BLD)/err_handler.o
@@ -44,5 +47,5 @@ $(BLD)/utilities.o: $(SRC)/utilities.c
 
 clean:
 	@echo "Removing all build files and binaries."
-	@rm $(BIN)/*
 	@rm $(BLD)/*.o
+	@rm $(BIN)/*

@@ -38,10 +38,12 @@
 #define PECINE   "Vp vs E (ECIN)"
 #define PECOUE   "Vp vs E (ECOU)"
 #define ECALPCAL "E (ECAL) vs E (PCAL)"
-#define SF       "Sampling Fraction"
-#define PCALSF   "PCAL Sampling Fraction s"
-#define ECINSF   "ECIN Sampling Fraction s"
-#define ECOUSF   "ECOU Sampling Fraction s"
+
+// Sampling fraction.
+extern const char *SFARR[3];
+#define SF_PMIN  1.0 // GeV
+#define SF_PMAX  9.0 // GeV
+#define SF_PSTEP 0.4 // GeV
 
 #define Q2       "Q^{2}"
 #define NU       "#nu"
