@@ -75,7 +75,7 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no, double beam_E) {
                     int p_i = -1;
                     for (double p = SF_PMIN; p < SF_PMAX; p += SF_PSTEP) {
                         p_i++;
-                        std::ostringstream oss;
+                        std::ostringstream oss; // TODO. Change this to Form() because I hate c++.
                         oss << cal << s << " (P[" << p << "," << p+SF_PSTEP << "])";
                         sf_name_arr[cal_i][s-1][p_i] = (char *) malloc(strlen(oss.str().c_str())+1);
                         strncpy(sf_name_arr[cal_i][s-1][p_i], oss.str().c_str(), strlen(oss.str().c_str()));
@@ -254,32 +254,32 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no, double beam_E) {
                     histos[hmap_it->first][ECALPCAL]->Fill(ecin_E+ecou_E, pcal_E);
 
                 // // Sampling Fraction.
-                // for (UInt_t i = 0; i < rc.pindex->size(); ++i) {
-                //     if (rc.pindex->at(i) == pindex) {
-                //         int lyr       = (int) rc.layer->at(i);
-                //         double energy = rc.energy->at(i);
-                //         int s         = rc.sector->at(i);
-                //         double sf = p1[s-1] * (p2[s-1] + p3[s-1]/energy + pow(p4[s-1]/energy, 2));
-                //         if (s == 0) continue;
-                //         else if (s > 6) return 3;
-                //         // TODO. This accesses an invalid direction of the std::map, causing a
-                //         // segment violation. Fix this.
-                //         if      (lyr == PCAL_LYR) {
-                //             printf("%s%d\n", PCALSF, s);
-                //             histos[hmap_it->first][Form("%s%d", PCALSF, s)]->Fill(sf);
+                // if (!strcmp(hmap_it->first, PELC)) {
+                //     for (UInt_t i = 0; i < rc.pindex->size(); ++i) {
+                //         if (rc.pindex->at(i) == pindex) {
+                //             int lyr       = (int) rc.layer->at(i);
+                //             double energy = rc.energy->at(i);
+                //             int s         = rc.sector->at(i);
+                //             if      (s == 0) continue;
+                //             else if (s > 6) return 3;
+                //
+                //             // TODO. Find detector.
+                //             // TODO. Get to right momentum bin.
+                //             // TODO. Form string and write to histogram.
+                //
+                //             if      (lyr == PCAL_LYR) {
+                //                 // ...
+                //             }
+                //             else if (lyr == ECIN_LYR) {
+                //                 // ...
+                //             }
+                //             else if (lyr == ECOU_LYR) {
+                //                 // ...
+                //             }
+                //             else return 2;
                 //         }
-                //         else if (lyr == ECIN_LYR) {
-                //             printf("%s%d\n", ECINSF, s);
-                //             histos[hmap_it->first][Form("%s%d", ECINSF, s)]->Fill(sf);
-                //         }
-                //         else if (lyr == ECOU_LYR) {
-                //             printf("%s%d\n", ECOUSF, s);
-                //             histos[hmap_it->first][Form("%s%d", ECOUSF, s)]->Fill(sf);
-                //         }
-                //         else return 2;
                 //     }
                 // }
-                // printf("All good!\n");
 
                 // SIDIS variables.
                 if (pid == 11) {
