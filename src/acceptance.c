@@ -20,12 +20,6 @@
 #include "utilities.h"
 
 int run(char *in_filename, bool use_fmt, int nevn, int run_no, double beam_E) {
-    // Sampling Fraction. TODO. Temporary code.
-    double p1[6] = { 0.25149,  0.25186,  0.24912,  0.24747,  0.24649,  0.25409};
-    double p2[6] = { 1.00000,  1.00000,  1.00000,  1.00000,  1.00000,  1.00000};
-    double p3[6] = {-0.03427, -0.03771, -0.02627, -0.03163, -0.02723, -0.04000};
-    double p4[6] = { 0.00070,  0.00070,  0.00070,  0.00070,  0.00070,  0.00070};
-
     // Access input file. TODO. Make this input file*s*.
     TFile *f_in = TFile::Open(in_filename, "READ");
     if (!f_in || f_in->IsZombie()) return 1;
@@ -41,6 +35,7 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no, double beam_E) {
     histos.insert({PTRE, {}});
 
     std::map<const char *, std::map<const char *, TH1 *>>::iterator hmap_it;
+    char *sf_name_arr[3][6][20];
     for (hmap_it = histos.begin(); hmap_it != histos.end(); ++hmap_it) {
         const char *k1 = hmap_it->first;
         hmap_it->second = {};
@@ -67,16 +62,31 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no, double beam_E) {
         insert_TH2F(&hmap_it->second, k1, PECOUE,   VP, E,     200, 0, 10, 200, 0, 2);
         insert_TH2F(&hmap_it->second, k1, ECALPCAL, E,  E,     200, 0,  2, 200, 0, 2);
 
-        // // Calorimeters: Sampling Fraction.
-        // for (int s = 1; s <= 6; ++s) {
-        //     insert_TH1F(&hmap_it->second, k1, Form("%s%d", PCALSF, s), SF, 200, 0, 0.5);
-        //     insert_TH1F(&hmap_it->second, k1, Form("%s%d", ECINSF, s), SF, 200, 0, 0.5);
-        //     insert_TH1F(&hmap_it->second, k1, Form("%s%d", ECOUSF, s), SF, 200, 0, 0.5);
-        // }
-
         insert_TH1F(&hmap_it->second, k1, Q2, Q2, 22, 0, 12);
         insert_TH1F(&hmap_it->second, k1, NU, NU, 22, 0, 12);
         insert_TH1F(&hmap_it->second, k1, XB, XB, 20, 0,  2);
+
+        // Sampling fraction.
+        if (!strcmp(k1, PELC)) {
+            int cal_i = -1;
+            for (const char *cal : SFARR) {
+                cal_i++;
+                for (int s = 1; s <= 6; ++s) {
+                    int p_i = -1;
+                    for (double p = SF_PMIN; p < SF_PMAX; p += SF_PSTEP) {
+                        p_i++;
+                        std::ostringstream oss;
+                        oss << cal << s << " (P[" << p << "," << p+SF_PSTEP << "])";
+                        sf_name_arr[cal_i][s-1][p_i] = (char *) malloc(strlen(oss.str().c_str())+1);
+                        strncpy(sf_name_arr[cal_i][s-1][p_i], oss.str().c_str(), strlen(oss.str().c_str()));
+                        insert_TH1F(&hmap_it->second, k1,
+                                    sf_name_arr[cal_i][s-1][p_i],
+                                    EDIVP, 200, p, p + SF_PSTEP
+                        );
+                    }
+                }
+            }
+        }
     }
 
     // Create TTree and link bank_containers.
@@ -353,21 +363,28 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no, double beam_E) {
         histos[hmap_it->first][PECOUE]  ->Draw("colz"); gcvs->Write(PECOUE);
         histos[hmap_it->first][ECALPCAL]->Draw("colz"); gcvs->Write(ECALPCAL);
 
-        // dir = Form("%s/%s/%s", hmap_it->first, "CALs", "Sampling Fraction");
-        // f_out->mkdir(dir);
-        // f_out->cd(dir);
-        // for (int s = 1; s <= 6; ++s) {
-        //     histos[hmap_it->first][Form("%s%d", PCALSF, s)]->Write();
-        //     histos[hmap_it->first][Form("%s%d", ECINSF, s)]->Write();
-        //     histos[hmap_it->first][Form("%s%d", ECOUSF, s)]->Write();
-        // }
-
-        dir = Form("%s/%s", hmap_it->first, "SIDIS");
+        dir = Form("%s/%s/%s", hmap_it->first, "CALs", "Sampling Fraction");
         f_out->mkdir(dir);
         f_out->cd(dir);
-        histos[hmap_it->first][Q2]->Write();
-        histos[hmap_it->first][NU]->Write();
-        histos[hmap_it->first][XB]->Write();
+        if (!strcmp(hmap_it->first, PELC)) {
+            for (int cal_i = 0; cal_i < 3; ++cal_i) {
+                for (int s_i = 0; s_i < 6; ++s_i) {
+                    for (int p_i = 0; p_i < 20; ++p_i) {
+                        histos[hmap_it->first][sf_name_arr[cal_i][s_i][p_i]]->Write();
+                        free(sf_name_arr[cal_i][s_i][p_i]);
+                    }
+                }
+            }
+        }
+
+        if (!strcmp(hmap_it->first, PELC) || !strcmp(hmap_it->first, PTRE)) {
+            dir = Form("%s/%s", hmap_it->first, "SIDIS");
+            f_out->mkdir(dir);
+            f_out->cd(dir);
+            histos[hmap_it->first][Q2]->Write();
+            histos[hmap_it->first][NU]->Write();
+            histos[hmap_it->first][XB]->Write();
+        }
     }
 
     f_in ->Close();
