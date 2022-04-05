@@ -67,25 +67,12 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no, double beam_E) {
         insert_TH2F(&hmap_it->second, k1, PECOUE,   VP, E,     200, 0, 10, 200, 0, 2);
         insert_TH2F(&hmap_it->second, k1, ECALPCAL, E,  E,     200, 0,  2, 200, 0, 2);
 
-        // Calorimeters: Sampling Fraction.
-        insert_TH1F(&hmap_it->second, k1, PCALSF1, SF, 200, 0, 0.5);
-        insert_TH1F(&hmap_it->second, k1, PCALSF2, SF, 200, 0, 0.5);
-        insert_TH1F(&hmap_it->second, k1, PCALSF3, SF, 200, 0, 0.5);
-        insert_TH1F(&hmap_it->second, k1, PCALSF4, SF, 200, 0, 0.5);
-        insert_TH1F(&hmap_it->second, k1, PCALSF5, SF, 200, 0, 0.5);
-        insert_TH1F(&hmap_it->second, k1, PCALSF6, SF, 200, 0, 0.5);
-        insert_TH1F(&hmap_it->second, k1, ECINSF1, SF, 200, 0, 0.5);
-        insert_TH1F(&hmap_it->second, k1, ECINSF2, SF, 200, 0, 0.5);
-        insert_TH1F(&hmap_it->second, k1, ECINSF3, SF, 200, 0, 0.5);
-        insert_TH1F(&hmap_it->second, k1, ECINSF4, SF, 200, 0, 0.5);
-        insert_TH1F(&hmap_it->second, k1, ECINSF5, SF, 200, 0, 0.5);
-        insert_TH1F(&hmap_it->second, k1, ECINSF6, SF, 200, 0, 0.5);
-        insert_TH1F(&hmap_it->second, k1, ECOUSF1, SF, 200, 0, 0.5);
-        insert_TH1F(&hmap_it->second, k1, ECOUSF2, SF, 200, 0, 0.5);
-        insert_TH1F(&hmap_it->second, k1, ECOUSF3, SF, 200, 0, 0.5);
-        insert_TH1F(&hmap_it->second, k1, ECOUSF4, SF, 200, 0, 0.5);
-        insert_TH1F(&hmap_it->second, k1, ECOUSF5, SF, 200, 0, 0.5);
-        insert_TH1F(&hmap_it->second, k1, ECOUSF6, SF, 200, 0, 0.5);
+        // // Calorimeters: Sampling Fraction.
+        // for (int s = 1; s <= 6; ++s) {
+        //     insert_TH1F(&hmap_it->second, k1, Form("%s%d", PCALSF, s), SF, 200, 0, 0.5);
+        //     insert_TH1F(&hmap_it->second, k1, Form("%s%d", ECINSF, s), SF, 200, 0, 0.5);
+        //     insert_TH1F(&hmap_it->second, k1, Form("%s%d", ECOUSF, s), SF, 200, 0, 0.5);
+        // }
 
         insert_TH1F(&hmap_it->second, k1, Q2, Q2, 22, 0, 12);
         insert_TH1F(&hmap_it->second, k1, NU, NU, 22, 0, 12);
@@ -99,6 +86,16 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no, double beam_E) {
     REC_Scintillator rs(t);
     REC_Calorimeter  rc(t);
     FMT_Tracks       ft(t);
+
+    // printf("PRINTING ALL INDEX NAMES IN HISTOS MAP:\n");
+    // for (hmap_it = histos.begin(); hmap_it != histos.end(); ++hmap_it) {
+    //     const char *k1 = hmap_it->first;
+    //     printf("  * %s:\n", k1);
+    //     std::map<const char *, TH1 *>::iterator hmap_it2;
+    //     for (hmap_it2 = histos[k1].begin(); hmap_it2 != histos[k1].end(); ++hmap_it2)
+    //         printf("      * %s\n", hmap_it2->first);
+    // }
+    // printf("\n\n\n\n");
 
     // Iterate through input file. Each TTree entry is one event.
     int evn;
@@ -246,52 +243,33 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no, double beam_E) {
                 if (pcal_E > 0 && ecin_E > 0 && ecou_E > 0)
                     histos[hmap_it->first][ECALPCAL]->Fill(ecin_E+ecou_E, pcal_E);
 
-                // Sampling Fraction.
-                for (UInt_t i = 0; i < rc.pindex->size(); ++i) {
-                    if (rc.pindex->at(i) == pindex) {
-                        int lyr       = (int) rc.layer->at(i);
-                        double energy = rc.energy->at(i);
-                        int s         = rc.sector->at(i);
-                        double sf = p1[s-1] * (p2[s-1] + p3[s-1]/energy + pow(p4[s-1]/energy, 2));
-                        if      (lyr == PCAL_LYR) {
-                            switch (s) { // NOTE. Bad solution because I'm lazy. I should change this.
-                                case  0: break;
-                                case  1: histos[hmap_it->first][PCALSF1]->Fill(sf); break;
-                                case  2: histos[hmap_it->first][PCALSF2]->Fill(sf); break;
-                                case  3: histos[hmap_it->first][PCALSF3]->Fill(sf); break;
-                                case  4: histos[hmap_it->first][PCALSF4]->Fill(sf); break;
-                                case  5: histos[hmap_it->first][PCALSF5]->Fill(sf); break;
-                                case  6: histos[hmap_it->first][PCALSF6]->Fill(sf); break;
-                                default: return 3;
-                            };
-                        }
-                        else if (lyr == ECIN_LYR) {
-                            switch (s) {
-                                case  0: break;
-                                case  1: histos[hmap_it->first][ECINSF1]->Fill(sf); break;
-                                case  2: histos[hmap_it->first][ECINSF2]->Fill(sf); break;
-                                case  3: histos[hmap_it->first][ECINSF3]->Fill(sf); break;
-                                case  4: histos[hmap_it->first][ECINSF4]->Fill(sf); break;
-                                case  5: histos[hmap_it->first][ECINSF5]->Fill(sf); break;
-                                case  6: histos[hmap_it->first][ECINSF6]->Fill(sf); break;
-                                default: return 3;
-                            };
-                        }
-                        else if (lyr == ECOU_LYR) {
-                            switch (s) {
-                                case  0: break;
-                                case  1: histos[hmap_it->first][ECOUSF1]->Fill(sf); break;
-                                case  2: histos[hmap_it->first][ECOUSF2]->Fill(sf); break;
-                                case  3: histos[hmap_it->first][ECOUSF3]->Fill(sf); break;
-                                case  4: histos[hmap_it->first][ECOUSF4]->Fill(sf); break;
-                                case  5: histos[hmap_it->first][ECOUSF5]->Fill(sf); break;
-                                case  6: histos[hmap_it->first][ECOUSF6]->Fill(sf); break;
-                                default: return 3;
-                            };
-                        }
-                        else return 2;
-                    }
-                }
+                // // Sampling Fraction.
+                // for (UInt_t i = 0; i < rc.pindex->size(); ++i) {
+                //     if (rc.pindex->at(i) == pindex) {
+                //         int lyr       = (int) rc.layer->at(i);
+                //         double energy = rc.energy->at(i);
+                //         int s         = rc.sector->at(i);
+                //         double sf = p1[s-1] * (p2[s-1] + p3[s-1]/energy + pow(p4[s-1]/energy, 2));
+                //         if (s == 0) continue;
+                //         else if (s > 6) return 3;
+                //         // TODO. This accesses an invalid direction of the std::map, causing a
+                //         // segment violation. Fix this.
+                //         if      (lyr == PCAL_LYR) {
+                //             printf("%s%d\n", PCALSF, s);
+                //             histos[hmap_it->first][Form("%s%d", PCALSF, s)]->Fill(sf);
+                //         }
+                //         else if (lyr == ECIN_LYR) {
+                //             printf("%s%d\n", ECINSF, s);
+                //             histos[hmap_it->first][Form("%s%d", ECINSF, s)]->Fill(sf);
+                //         }
+                //         else if (lyr == ECOU_LYR) {
+                //             printf("%s%d\n", ECOUSF, s);
+                //             histos[hmap_it->first][Form("%s%d", ECOUSF, s)]->Fill(sf);
+                //         }
+                //         else return 2;
+                //     }
+                // }
+                // printf("All good!\n");
 
                 // SIDIS variables.
                 if (pid == 11) {
@@ -375,27 +353,14 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no, double beam_E) {
         histos[hmap_it->first][PECOUE]  ->Draw("colz"); gcvs->Write(PECOUE);
         histos[hmap_it->first][ECALPCAL]->Draw("colz"); gcvs->Write(ECALPCAL);
 
-        dir = Form("%s/%s/%s", hmap_it->first, "CALs", "Sampling Fraction");
-        f_out->mkdir(dir);
-        f_out->cd(dir);
-        histos[hmap_it->first][PCALSF1]->Write();
-        histos[hmap_it->first][PCALSF2]->Write();
-        histos[hmap_it->first][PCALSF3]->Write();
-        histos[hmap_it->first][PCALSF4]->Write();
-        histos[hmap_it->first][PCALSF5]->Write();
-        histos[hmap_it->first][PCALSF6]->Write();
-        histos[hmap_it->first][ECINSF1]->Write();
-        histos[hmap_it->first][ECINSF2]->Write();
-        histos[hmap_it->first][ECINSF3]->Write();
-        histos[hmap_it->first][ECINSF4]->Write();
-        histos[hmap_it->first][ECINSF5]->Write();
-        histos[hmap_it->first][ECINSF6]->Write();
-        histos[hmap_it->first][ECOUSF1]->Write();
-        histos[hmap_it->first][ECOUSF2]->Write();
-        histos[hmap_it->first][ECOUSF3]->Write();
-        histos[hmap_it->first][ECOUSF4]->Write();
-        histos[hmap_it->first][ECOUSF5]->Write();
-        histos[hmap_it->first][ECOUSF6]->Write();
+        // dir = Form("%s/%s/%s", hmap_it->first, "CALs", "Sampling Fraction");
+        // f_out->mkdir(dir);
+        // f_out->cd(dir);
+        // for (int s = 1; s <= 6; ++s) {
+        //     histos[hmap_it->first][Form("%s%d", PCALSF, s)]->Write();
+        //     histos[hmap_it->first][Form("%s%d", ECINSF, s)]->Write();
+        //     histos[hmap_it->first][Form("%s%d", ECOUSF, s)]->Write();
+        // }
 
         dir = Form("%s/%s", hmap_it->first, "SIDIS");
         f_out->mkdir(dir);

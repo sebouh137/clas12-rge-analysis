@@ -38,6 +38,10 @@ double calc_Xb(double beam_E, double momentum, double theta) {
 // Insert a 1-dimensional histogram of floating point numbers into a map.
 int insert_TH1F(std::map<const char *, TH1 *> * map, const char * k, const char * n, const char * xn,
                int bins, double min, double max) {
+    // printf("\nINSERTING TH1F WITH NAME: `%s`\n", n);
+    // printf("  TH1F is named:   `%s: %s`\n", k, n);
+    // printf("  Title is:        `%s`\n", n);
+    // printf("  x axis is named: `%s`\n", xn);
     map->insert(std::pair<const char *, TH1 *>
             (n, new TH1F(Form("%s: %s", k, n), Form("%s;%s", n, xn), bins, min, max)));
     return 0;
@@ -47,6 +51,11 @@ int insert_TH1F(std::map<const char *, TH1 *> * map, const char * k, const char 
 int insert_TH2F(std::map<const char *, TH1 *> * map, const char * k,
                 const char * n, const char * nx, const char * ny,
                 int xbins, double xmin, double xmax, int ybins, double ymin, double ymax) {
+    // printf("\nINSERTING TH2F WITH NAME: `%s`\n", n);
+    // printf("  TH2F is named:   `%s: %s`\n", k, n);
+    // printf("  Title is:        `%s`\n", n);
+    // printf("  x axis is named: `%s`\n", xn);
+    // printf("  y axis is named: `%s`\n", yn);
     map->insert(std::pair<const char *, TH1 *>
             (n, new TH2F(Form("%s: %s", k, n), Form("%s;%s;%s", n, nx, ny),
                          xbins, xmin, xmax, ybins, ymin, ymax)));
