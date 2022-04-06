@@ -40,7 +40,11 @@
 #define ECALPCAL "E (ECAL) vs E (PCAL)"
 
 // Sampling fraction.
-extern const char *SFARR[3];
+extern const char *SFARR2D[3];
+extern const char *SFARR1D[3];
+#define PCAL_IDX 0 // PCAL idx in SFARR1D.
+#define ECIN_IDX 1 // ECIN idx in SFARR1D.
+#define ECOU_IDX 2 // ECOU idx in SFARR1D.
 #define SF_PMIN  1.0 // GeV
 #define SF_PMAX  9.0 // GeV
 #define SF_PSTEP 0.4 // GeV
