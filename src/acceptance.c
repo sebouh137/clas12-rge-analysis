@@ -19,7 +19,7 @@
 #include "io_handler.h"
 #include "utilities.h"
 
-int run(char *in_filename, bool use_fmt, int nevn, int run_no, double beam_E) {
+int run(char *in_filename, bool use_fmt, bool debug, int nevn, int run_no, double beam_E) {
     // Access input file. TODO. Make this input file*s*.
     TFile *f_in = TFile::Open(in_filename, "READ");
     if (!f_in || f_in->IsZombie()) return 1;
@@ -111,15 +111,17 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no, double beam_E) {
     REC_Calorimeter  rc(t);
     FMT_Tracks       ft(t);
 
-    // printf("PRINTING ALL INDEX NAMES IN HISTOS MAP:\n");
-    // for (hmap_it = histos.begin(); hmap_it != histos.end(); ++hmap_it) {
-    //     const char *k1 = hmap_it->first;
-    //     printf("  * %s:\n", k1);
-    //     std::map<const char *, TH1 *>::iterator hmap_it2;
-    //     for (hmap_it2 = histos[k1].begin(); hmap_it2 != histos[k1].end(); ++hmap_it2)
-    //         printf("      * %s\n", hmap_it2->first);
-    // }
-    // printf("\n\n\n\n");
+    if (debug) {
+        printf("PRINTING ALL INDEX NAMES IN HISTOS MAP:\n");
+        for (hmap_it = histos.begin(); hmap_it != histos.end(); ++hmap_it) {
+            const char *k1 = hmap_it->first;
+            printf("  * %s:\n", k1);
+            std::map<const char *, TH1 *>::iterator hmap_it2;
+            for (hmap_it2 = histos[k1].begin(); hmap_it2 != histos[k1].end(); ++hmap_it2)
+                printf("      * %s\n", hmap_it2->first);
+        }
+        printf("\n\n\n\n");
+    }
 
     // Iterate through input file. Each TTree entry is one event.
     int evn;
@@ -127,8 +129,7 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no, double beam_E) {
     int evnsplitter = 0;
     printf("Reading %lld events from %s.\n", nevn == -1 ? t->GetEntries() : nevn, in_filename);
     for (evn = 0; (evn < t->GetEntries()) && (nevn == -1 || evn < nevn); ++evn) {
-        if (evn >= evnsplitter) {
-            // TODO. Add debug mode through flag.
+        if (!debug && evn >= evnsplitter) {
             if (evn != 0) {
                 printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
                 printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
@@ -329,9 +330,11 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no, double beam_E) {
             }
         }
     }
-    printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
-    printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
-    printf("[==================================================] 100%%\n");
+    if (!debug) {
+        printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
+        printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
+        printf("[==================================================] 100%%\n");
+    }
 
     // Fit histograms.
     for (hmap_it = histos.begin(); hmap_it != histos.end(); ++hmap_it) {
@@ -440,15 +443,15 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no, double beam_E) {
 
 // Call program from terminal, C-style.
 int main(int argc, char **argv) {
-    bool   use_fmt     = false;
-    int    nevn     = -1;
-    char   *in_filename = NULL;
-    int    run_no      = -1;
-    double beam_E      = -1;
+    bool use_fmt      = false;
+    bool debug        = false;
+    int nevn          = -1;
+    int run_no        = -1;
+    double beam_E     = -1;
+    char *in_filename = NULL;
 
-    if (acceptance_handle_args_err(
-            acceptance_handle_args(argc, argv, &use_fmt, &nevn, &in_filename, &run_no, &beam_E),
-                                   &in_filename, run_no)
-    ) return 1;
-    return acceptance_err(run(in_filename, use_fmt, nevn, run_no, beam_E), &in_filename);
+    if (acceptance_handle_args_err(acceptance_handle_args(argc, argv, &use_fmt, &debug, &nevn,
+            &in_filename, &run_no, &beam_E), &in_filename, run_no))
+        return 1;
+    return acceptance_err(run(in_filename, use_fmt, debug, nevn, run_no, beam_E), &in_filename);
 }

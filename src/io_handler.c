@@ -1,12 +1,13 @@
 #include "io_handler.h"
 
-int acceptance_handle_args(int argc, char **argv, bool *use_fmt, int *nevents, char **input_file,
-                           int *run_no, double *beam_energy) {
+int acceptance_handle_args(int argc, char **argv, bool *use_fmt, bool *debug, int *nevents,
+                           char **input_file, int *run_no, double *beam_energy) {
     // Handle optional arguments.
     int opt;
-    while ((opt = getopt(argc, argv, "fn:")) != -1) {
+    while ((opt = getopt(argc, argv, "fdn:")) != -1) {
         switch (opt) {
             case 'f': *use_fmt = true;         break;
+            case 'd': *debug   = true;         break;
             case 'n': *nevents = atoi(optarg); break;
             default:  return 1; // Bad usage of optional arguments.
         }
