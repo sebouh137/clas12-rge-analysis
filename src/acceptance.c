@@ -438,16 +438,6 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no, double beam_E) {
     return 0;
 }
 
-// Execute program from clas12root (`.x src/acceptance.c(filename, use_fmt, nevn)`).
-int acceptance(char *in_filename, bool use_fmt, int nevn) {
-    int    run_no = -1;
-    double beam_E = -1;
-    if (acceptance_handle_args_err(handle_root_filename(in_filename, &run_no, &beam_E),
-                                   &in_filename, run_no)
-    ) return 1;
-    return acceptance_err(run(in_filename, use_fmt, nevn, run_no, beam_E), &in_filename);
-}
-
 // Call program from terminal, C-style.
 int main(int argc, char **argv) {
     bool   use_fmt     = false;
