@@ -36,6 +36,7 @@ int run(char *in_filename, bool use_fmt, bool debug, int nevn, int run_no, doubl
 
     std::map<const char *, std::map<const char *, TH1 *>>::iterator hmap_it;
     char *sf1D_name_arr[3][6][20];
+    char *sf1Dfit_name_arr[3][6][20];
     char *sf2D_name_arr[3][6];
     for (hmap_it = histos.begin(); hmap_it != histos.end(); ++hmap_it) {
         const char *k1 = hmap_it->first;
@@ -367,6 +368,27 @@ int run(char *in_filename, bool use_fmt, bool debug, int nevn, int run_no, doubl
                 new TF1(beta_vp_curve_name, "(x)/(sqrt([m]*[m] + x*x))", 0, 12);
         beta_vp_curve->FixParameter(0, mass);
         histos[k1][VPBETA]->Fit(beta_vp_curve_name, "Q", "", 0, 12);
+
+        // // Sampling fraction fits.
+        // if (!strcmp(k1, PALL)) {
+        //     cal_i = -1;
+        //     for (const char *cal : SFARR1D) {
+        //         cal_i++;
+        //         for (int s = 1; s <= 6; ++s) {
+        //             int p_i = -1;
+        //             for (double p = SF_PMIN; p < SF_PMAX; p += SF_PSTEP) {
+        //                 p_i++;
+        //                 std::ostringstream oss; // TODO. Change this to Form() because I hate c++.
+        //                 oss << cal << s << " (" << p << " < P_{tot} < " << p+SF_PSTEP << ") fit";
+        //                 sf1Dfit_name_arr[cal_i][s-1][p_i] = (char *) malloc(strlen(oss.str().c_str())+1);
+        //                 strncpy(sf1Dfit_name_arr[cal_i][s-1][p_i], oss.str().c_str(), strlen(oss.str().c_str()));
+        //
+        //                 // TODO. Create and perform gaussian fit for 0.08 < E/P < 0.28.
+        //                 TF1 *
+        //             }
+        //         }
+        //     }
+        // }
     }
 
     // Create output file.
