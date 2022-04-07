@@ -7,6 +7,7 @@
 #include <TCanvas.h>
 #include <TFile.h>
 #include <TF1.h>
+#include <TGraph.h>
 #include <TH1.h>
 #include <TH1F.h>
 #include <TH2F.h>
@@ -19,6 +20,7 @@
 #include "io_handler.h"
 #include "utilities.h"
 
+// TODO. Move sampling fraction fit to its own function.
 int run(char *in_filename, bool use_fmt, bool debug, int nevn, int run_no, double beam_E) {
     // Access input file. TODO. Make this input file*s*.
     TFile *f_in = TFile::Open(in_filename, "READ");
@@ -35,8 +37,10 @@ int run(char *in_filename, bool use_fmt, bool debug, int nevn, int run_no, doubl
     histos.insert({PTRE, {}});
 
     std::map<const char *, std::map<const char *, TH1 *>>::iterator hmap_it;
-    char *sf1D_name_arr[3][6][20];
+    char *sf1D_name_arr[3][6][(int) ((SF_PMAX - SF_PMIN)/SF_PSTEP)];
     char *sf2D_name_arr[3][6];
+    TGraph *sf_dotgraph_top[3][6];
+    TGraph *sf_dotgraph_bot[3][6];
     for (hmap_it = histos.begin(); hmap_it != histos.end(); ++hmap_it) {
         const char *k1 = hmap_it->first;
         hmap_it->second = {};
@@ -79,6 +83,12 @@ int run(char *in_filename, bool use_fmt, bool debug, int nevn, int run_no, doubl
                     strncpy(sf2D_name_arr[cal_i][s-1], oss.str().c_str(), strlen(oss.str().c_str()));
                     insert_TH2F(&hmap_it->second, k1, sf2D_name_arr[cal_i][s-1],
                                 VP, EDIVP, 200, 0, 10, 200, 0, 0.4);
+                    sf_dotgraph_top[cal_i][s-1] = new TGraph();
+                    sf_dotgraph_top[cal_i][s-1]->SetMarkerStyle(kFullCircle);
+                    sf_dotgraph_top[cal_i][s-1]->SetMarkerColor(kRed);
+                    sf_dotgraph_bot[cal_i][s-1] = new TGraph();
+                    sf_dotgraph_bot[cal_i][s-1]->SetMarkerStyle(kFullCircle);
+                    sf_dotgraph_bot[cal_i][s-1]->SetMarkerColor(kRed);
                 }
             }
 
@@ -389,15 +399,21 @@ int run(char *in_filename, bool use_fmt, bool debug, int nevn, int run_no, doubl
                 TF1 *sf_gaus = new TF1(oss.str().c_str(),
                                        "[0]*TMath::Gaus(x,[1],[2]) + [3]*x*x + [4]*x + [5]", 0.06, 0.25);
                 sf_gaus->SetParameter(0 /* amp   */, EdivP->GetBinContent(EdivP->GetMaximumBin()));
-                sf_gaus->SetParameter(1 /* mean  */, EdivP->GetXaxis()->GetBinCenter(EdivP->GetMaximumBin()));
-                sf_gaus->SetParameter(2 /* sigma */, 0.5);
+                sf_gaus->SetParameter(1 /* mean  */, 0.15);
+                sf_gaus->SetParLimits(1, 0.06, 0.25);
+                sf_gaus->SetParameter(2 /* sigma */, 0.05);
+                sf_gaus->SetParLimits(2, 0., 0.1);
                 sf_gaus->SetParameter(3 /* p0 */,    0);
                 sf_gaus->SetParameter(4 /* p1 */,    0);
                 sf_gaus->SetParameter(5 /* p2 */,    0);
-                EdivP->Fit(sf_gaus, "Q", "", 0.06, 0.25);
+                EdivP->Fit(sf_gaus, "QR", "", 0.06, 0.25);
 
-                // TODO. Extract sigma from fit.
-                // TODO. Add 3*sigma points to 2D plots.
+                // Extract mean and sigma from fit and add it to 2D plots.
+                double mean  = sf_gaus->GetParameter(1);
+                double sigma = sf_gaus->GetParameter(2);
+
+                sf_dotgraph_top[cal_i][s-1]->AddPoint(p + SF_PSTEP/2, mean + 2*sigma);
+                sf_dotgraph_bot[cal_i][s-1]->AddPoint(p + SF_PSTEP/2, mean - 2*sigma);
             }
         }
     }
@@ -406,11 +422,12 @@ int run(char *in_filename, bool use_fmt, bool debug, int nevn, int run_no, doubl
     TFile *f_out = TFile::Open("../root_io/out.root", "RECREATE");
 
     // Write to output file.
+    TString dir;
+    TCanvas *gcvs = new TCanvas();
     for (hmap_it = histos.begin(); hmap_it != histos.end(); ++hmap_it) {
         const char *k1 = hmap_it->first;
-        TCanvas *gcvs = new TCanvas();
 
-        TString dir = Form("%s/%s", k1, "Vertex Z");
+        dir = Form("%s/%s", k1, "Vertex Z");
         f_out->mkdir(dir);
         f_out->cd(dir);
         histos[k1][VZ]     ->Write();
@@ -440,23 +457,6 @@ int run(char *in_filename, bool use_fmt, bool debug, int nevn, int run_no, doubl
         histos[k1][PECOUE]  ->Draw("colz"); gcvs->Write(PECOUE);
         histos[k1][ECALPCAL]->Draw("colz"); gcvs->Write(ECALPCAL);
 
-        if (!strcmp(k1, PALL)) {
-            dir = Form("%s/%s/%s", k1, "CALs", "Sampling Fraction");
-            f_out->mkdir(dir);
-            f_out->cd(dir);
-            for (int cal_i = 0; cal_i < 3; ++cal_i) {
-                for (int s_i = 0; s_i < 6; ++s_i) {
-                    histos[k1][sf2D_name_arr[cal_i][s_i]]->Draw("colz");
-                    gcvs->Write(sf2D_name_arr[cal_i][s_i]);
-                    free(sf2D_name_arr[cal_i][s_i]);
-                    for (int p_i = 0; p_i < 20; ++p_i) {
-                        histos[k1][sf1D_name_arr[cal_i][s_i][p_i]]->Write();
-                        free(sf1D_name_arr[cal_i][s_i][p_i]);
-                    }
-                }
-            }
-        }
-
         if (!strcmp(k1, PELC) || !strcmp(k1, PTRE)) {
             dir = Form("%s/%s", k1, "SIDIS");
             f_out->mkdir(dir);
@@ -464,6 +464,23 @@ int run(char *in_filename, bool use_fmt, bool debug, int nevn, int run_no, doubl
             histos[k1][Q2]->Write();
             histos[k1][NU]->Write();
             histos[k1][XB]->Write();
+        }
+    }
+
+    dir = Form("%s/%s/%s", PALL, "CALs", "Sampling Fraction");
+    f_out->mkdir(dir);
+    f_out->cd(dir);
+    for (int cal_i = 0; cal_i < 3; ++cal_i) {
+        for (int s_i = 0; s_i < 6; ++s_i) {
+            histos[PALL][sf2D_name_arr[cal_i][s_i]]->Draw("colz");
+            sf_dotgraph_top[cal_i][s_i]->Draw("Psame");
+            sf_dotgraph_bot[cal_i][s_i]->Draw("Psame");
+            gcvs->Write(sf2D_name_arr[cal_i][s_i]);
+            free(sf2D_name_arr[cal_i][s_i]);
+            for (int p_i = 0; p_i < ((int) ((SF_PMAX - SF_PMIN)/SF_PSTEP)); ++p_i) {
+                histos[PALL][sf1D_name_arr[cal_i][s_i][p_i]]->Write();
+                free(sf1D_name_arr[cal_i][s_i][p_i]);
+            }
         }
     }
 
