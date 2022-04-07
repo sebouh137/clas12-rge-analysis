@@ -387,13 +387,17 @@ int run(char *in_filename, bool use_fmt, bool debug, int nevn, int run_no, doubl
 
                 // Fit.
                 TF1 *sf_gaus = new TF1(oss.str().c_str(),
-                                       "[0]*TMath::Gaus(x,[1],[2])", 0.06, 0.25);
-                sf_gaus->SetParameter(0 /* amp   */,
-                        EdivP->GetBinContent(EdivP->GetMaximumBin()));
-                sf_gaus->SetParameter(1 /* mean  */,
-                        EdivP->GetXaxis()->GetBinCenter(EdivP->GetMaximumBin()));
+                                       "[0]*TMath::Gaus(x,[1],[2]) + [3]*x*x + [4]*x + [5]", 0.06, 0.25);
+                sf_gaus->SetParameter(0 /* amp   */, EdivP->GetBinContent(EdivP->GetMaximumBin()));
+                sf_gaus->SetParameter(1 /* mean  */, EdivP->GetXaxis()->GetBinCenter(EdivP->GetMaximumBin()));
                 sf_gaus->SetParameter(2 /* sigma */, 0.5);
+                sf_gaus->SetParameter(3 /* p0 */,    0);
+                sf_gaus->SetParameter(4 /* p1 */,    0);
+                sf_gaus->SetParameter(5 /* p2 */,    0);
                 EdivP->Fit(sf_gaus, "Q", "", 0.06, 0.25);
+
+                // TODO. Extract sigma from fit.
+                // TODO. Add 3*sigma points to 2D plots.
             }
         }
     }
