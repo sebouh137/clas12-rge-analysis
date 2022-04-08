@@ -34,36 +34,36 @@ int run(char *in_filename, bool use_fmt, int nevn) {
     TGraph *sf_dotgraph_top[ncals][NSECTORS];
     TGraph *sf_dotgraph_bot[ncals][NSECTORS];
 
-    int cal_i = -1;
+    int ci = -1;
     for (const char *cal : SFARR2D) {
-        cal_i++;
-        for (int s = 1; s <= NSECTORS; ++s) {
+        ci++;
+        for (int si = 0; si < NSECTORS; ++si) {
             std::ostringstream oss; // TODO. Change this to Form() because I hate c++.
-            oss << cal << s << ")";
-            sf2D_name_arr[cal_i][s-1] = (char *) malloc(strlen(oss.str().c_str())+1);
-            strncpy(sf2D_name_arr[cal_i][s-1], oss.str().c_str(), strlen(oss.str().c_str()));
-            insert_TH2F(&histos, PALL, sf2D_name_arr[cal_i][s-1], VP, EDIVP, 200, 0, 10, 200, 0, 0.4);
-            sf_dotgraph_top[cal_i][s-1] = new TGraph();
-            sf_dotgraph_top[cal_i][s-1]->SetMarkerStyle(kFullCircle);
-            sf_dotgraph_top[cal_i][s-1]->SetMarkerColor(kRed);
-            sf_dotgraph_bot[cal_i][s-1] = new TGraph();
-            sf_dotgraph_bot[cal_i][s-1]->SetMarkerStyle(kFullCircle);
-            sf_dotgraph_bot[cal_i][s-1]->SetMarkerColor(kRed);
+            oss << cal << si+1 << ")";
+            sf2D_name_arr[ci][si] = (char *) malloc(strlen(oss.str().c_str())+1);
+            strncpy(sf2D_name_arr[ci][si], oss.str().c_str(), strlen(oss.str().c_str()));
+            insert_TH2F(&histos, PALL, sf2D_name_arr[ci][si], VP, EDIVP, 200, 0, 10, 200, 0, 0.4);
+            sf_dotgraph_top[ci][si] = new TGraph();
+            sf_dotgraph_top[ci][si]->SetMarkerStyle(kFullCircle);
+            sf_dotgraph_top[ci][si]->SetMarkerColor(kRed);
+            sf_dotgraph_bot[ci][si] = new TGraph();
+            sf_dotgraph_bot[ci][si]->SetMarkerStyle(kFullCircle);
+            sf_dotgraph_bot[ci][si]->SetMarkerColor(kRed);
         }
     }
 
-    cal_i = -1;
+    ci = -1;
     for (const char *cal : SFARR1D) {
-        cal_i++;
-        for (int s = 1; s <= NSECTORS; ++s) {
-            int p_i = -1;
+        ci++;
+        for (int si = 0; si < NSECTORS; ++si) {
+            int pi = -1;
             for (double p = SF_PMIN; p < SF_PMAX; p += SF_PSTEP) {
-                p_i++;
+                pi++;
                 std::ostringstream oss; // TODO. Change this to Form() because I hate c++.
-                oss << cal << s << " (" << p << " < P_{tot} < " << p+SF_PSTEP << ")";
-                sf1D_name_arr[cal_i][s-1][p_i] = (char *) malloc(strlen(oss.str().c_str())+1);
-                strncpy(sf1D_name_arr[cal_i][s-1][p_i], oss.str().c_str(), strlen(oss.str().c_str()));
-                insert_TH1F(&histos, PALL, sf1D_name_arr[cal_i][s-1][p_i], EDIVP, 200, 0, 0.4);
+                oss << cal << si+1 << " (" << p << " < P_{tot} < " << p+SF_PSTEP << ")";
+                sf1D_name_arr[ci][si][pi] = (char *) malloc(strlen(oss.str().c_str())+1);
+                strncpy(sf1D_name_arr[ci][si][pi], oss.str().c_str(), strlen(oss.str().c_str()));
+                insert_TH1F(&histos, PALL, sf1D_name_arr[ci][si][pi], EDIVP, 200, 0, 0.4);
             }
         }
     }
@@ -107,8 +107,8 @@ int run(char *in_filename, bool use_fmt, int nevn) {
 
         for (UInt_t pos = 0; pos < rt.index->size(); ++pos) {
             // Get basic data from track and particle banks.
-            int index      = rt.index ->at(pos);
-            int pindex     = rt.pindex->at(pos);
+            int index  = rt.index ->at(pos);
+            int pindex = rt.pindex->at(pos);
 
             // Get particle momentum from either FMT or DC.
             double px, py, pz;
@@ -125,10 +125,10 @@ int run(char *in_filename, bool use_fmt, int nevn) {
             double tot_P = calc_P(px, py, pz);
 
             // Compute energy deposited in each calorimeter per sector.
-            double sf_pcal_E[] = {0, 0, 0, 0, 0, 0};
-            double sf_ecin_E[] = {0, 0, 0, 0, 0, 0};
-            double sf_ecou_E[] = {0, 0, 0, 0, 0, 0};
-            double sf_cals_E[] = {0, 0, 0, 0, 0, 0};
+            double sf_E[ncals][NSECTORS];
+            for (int ci = 0; ci < ncals; ++ci) {
+                for (int si = 0; si < NSECTORS; ++si) sf_E[ci][si] = 0;
+            }
 
             for (UInt_t i = 0; i < rc.pindex->size(); ++i) {
                 if (rc.pindex->at(i) != pindex) continue;
@@ -140,15 +140,16 @@ int run(char *in_filename, bool use_fmt, int nevn) {
 
                 // Get detector.
                 switch(rc.layer->at(i)) {
-                    case PCAL_LYR: sf_pcal_E[si] += rc.energy->at(i); break;
-                    case ECIN_LYR: sf_ecin_E[si] += rc.energy->at(i); break;
-                    case ECOU_LYR: sf_ecou_E[si] += rc.energy->at(i); break;
+                    case PCAL_LYR: sf_E[PCAL_IDX][si] += rc.energy->at(i); break;
+                    case ECIN_LYR: sf_E[ECIN_IDX][si] += rc.energy->at(i); break;
+                    case ECOU_LYR: sf_E[ECOU_IDX][si] += rc.energy->at(i); break;
                     default:       return 2;
                 }
             }
 
-            for (int si = 0; si < NSECTORS; ++si)
-                sf_cals_E[si] = sf_pcal_E[si] + sf_ecin_E[si] + sf_ecou_E[si];
+            for (int ci = 0; ci < ncals-1; ++ci) {
+                for (int si = 0; si < NSECTORS; ++si) sf_E[CALS_IDX][si] += sf_E[ci][si];
+            }
 
             // Get momentum bin.
             if (tot_P < SF_PMIN || tot_P > SF_PMAX) continue;
@@ -159,22 +160,11 @@ int run(char *in_filename, bool use_fmt, int nevn) {
             }
 
             // Write to histograms.
-            for (int si = 0; si < NSECTORS; ++si) {
-                if (sf_pcal_E[si] > 0) {
-                    histos[sf2D_name_arr[PCAL_IDX][si]]->Fill(tot_P, sf_pcal_E[si]/tot_P);
-                    histos[sf1D_name_arr[PCAL_IDX][si][pi]]->Fill(sf_pcal_E[si]/tot_P);
-                }
-                if (sf_ecin_E[si] > 0) {
-                    histos[sf2D_name_arr[ECIN_IDX][si]]->Fill(tot_P, sf_ecin_E[si]/tot_P);
-                    histos[sf1D_name_arr[ECIN_IDX][si][pi]]->Fill(sf_ecin_E[si]/tot_P);
-                }
-                if (sf_ecou_E[si] > 0) {
-                    histos[sf2D_name_arr[ECOU_IDX][si]]->Fill(tot_P, sf_ecou_E[si]/tot_P);
-                    histos[sf1D_name_arr[ECOU_IDX][si][pi]]->Fill(sf_ecou_E[si]/tot_P);
-                }
-                if (sf_cals_E[si] > 0) {
-                    histos[sf2D_name_arr[CALS_IDX][si]]->Fill(tot_P, sf_cals_E[si]/tot_P);
-                    histos[sf1D_name_arr[CALS_IDX][si][pi]]->Fill(sf_cals_E[si]/tot_P);
+            for (int ci = 0; ci < ncals; ++ci) {
+                for (int si = 0; si < NSECTORS; ++si) {
+                    if (sf_E[ci][si] <= 0) continue;
+                    histos[sf2D_name_arr[ci][si]]->Fill(tot_P, sf_E[ci][si]/tot_P);
+                    histos[sf1D_name_arr[ci][si][pi]]->Fill(sf_E[ci][si]/tot_P);
                 }
             }
         }
@@ -184,20 +174,20 @@ int run(char *in_filename, bool use_fmt, int nevn) {
     printf("[==================================================] 100%%\n");
 
     // Fit histograms.
-    cal_i = -1;
+    ci = -1;
     for (const char *cal : SFARR1D) {
-        cal_i++;
-        for (int s = 1; s <= NSECTORS; ++s) {
-            int p_i = -1;
+        ci++;
+        for (int si = 0; si < NSECTORS; ++si) {
+            int pi = -1;
             for (double p = SF_PMIN; p < SF_PMAX; p += SF_PSTEP) {
-                p_i++;
+                pi++;
 
                 // Get ref to histogram.
-                TH1 *EdivP = histos[sf1D_name_arr[cal_i][s-1][p_i]];
+                TH1 *EdivP = histos[sf1D_name_arr[ci][si][pi]];
 
                 // Form fit string name.
                 std::ostringstream oss; // TODO. Change this to Form() because I hate c++.
-                oss << cal << s << " (" << p << " < P_{tot} < " << p+SF_PSTEP << ") fit";
+                oss << cal << si+1 << " (" << p << " < P_{tot} < " << p+SF_PSTEP << ") fit";
 
                 // Fit.
                 TF1 *sf_gaus = new TF1(oss.str().c_str(),
@@ -215,8 +205,8 @@ int run(char *in_filename, bool use_fmt, int nevn) {
                 // Extract mean and sigma from fit and add it to 2D plots.
                 double mean  = sf_gaus->GetParameter(1);
                 double sigma = sf_gaus->GetParameter(2);
-                sf_dotgraph_top[cal_i][s-1]->AddPoint(p + SF_PSTEP/2, mean + 2*sigma);
-                sf_dotgraph_bot[cal_i][s-1]->AddPoint(p + SF_PSTEP/2, mean - 2*sigma);
+                sf_dotgraph_top[ci][si]->AddPoint(p + SF_PSTEP/2, mean + 2*sigma);
+                sf_dotgraph_bot[ci][si]->AddPoint(p + SF_PSTEP/2, mean - 2*sigma);
             }
         }
     }
@@ -227,23 +217,23 @@ int run(char *in_filename, bool use_fmt, int nevn) {
     // Write to output file.
     TString dir;
     TCanvas *gcvs = new TCanvas();
-    for (cal_i = 0; cal_i < ncals; ++cal_i) {
-        dir = Form("%s", CALNAME[cal_i]);
+    for (ci = 0; ci < ncals; ++ci) {
+        dir = Form("%s", CALNAME[ci]);
         f_out->mkdir(dir);
         f_out->cd(dir);
-        for (int s_i = 0; s_i < NSECTORS; ++s_i) {
-            dir = Form("%s/sector %d", CALNAME[cal_i], s_i+1);
+        for (int si = 0; si < NSECTORS; ++si) {
+            dir = Form("%s/sector %d", CALNAME[ci], si+1);
             f_out->mkdir(dir);
             f_out->cd(dir);
 
-            histos[sf2D_name_arr[cal_i][s_i]]->Draw("colz");
-            sf_dotgraph_top[cal_i][s_i]->Draw("Psame");
-            sf_dotgraph_bot[cal_i][s_i]->Draw("Psame");
-            gcvs->Write(sf2D_name_arr[cal_i][s_i]);
-            free(sf2D_name_arr[cal_i][s_i]);
-            for (int p_i = 0; p_i < ((int) ((SF_PMAX - SF_PMIN)/SF_PSTEP)); ++p_i) {
-                histos[sf1D_name_arr[cal_i][s_i][p_i]]->Write();
-                free(sf1D_name_arr[cal_i][s_i][p_i]);
+            histos[sf2D_name_arr[ci][si]]->Draw("colz");
+            sf_dotgraph_top[ci][si]->Draw("Psame");
+            sf_dotgraph_bot[ci][si]->Draw("Psame");
+            gcvs->Write(sf2D_name_arr[ci][si]);
+            free(sf2D_name_arr[ci][si]);
+            for (int pi = 0; pi < ((int) ((SF_PMAX - SF_PMIN)/SF_PSTEP)); ++pi) {
+                histos[sf1D_name_arr[ci][si][pi]]->Write();
+                free(sf1D_name_arr[ci][si][pi]);
             }
         }
     }
