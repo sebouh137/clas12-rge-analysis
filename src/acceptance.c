@@ -7,7 +7,6 @@
 #include <TCanvas.h>
 #include <TFile.h>
 #include <TF1.h>
-#include <TGraph.h>
 #include <TH1.h>
 #include <TH1F.h>
 #include <TH2F.h>
@@ -37,10 +36,6 @@ int run(char *in_filename, bool use_fmt, bool debug, int nevn, int run_no, doubl
     histos.insert({PTRE, {}});
 
     std::map<const char *, std::map<const char *, TH1 *>>::iterator hmap_it;
-    char *sf1D_name_arr[3][6][(int) ((SF_PMAX - SF_PMIN)/SF_PSTEP)];
-    char *sf2D_name_arr[3][6];
-    TGraph *sf_dotgraph_top[3][6];
-    TGraph *sf_dotgraph_bot[3][6];
     for (hmap_it = histos.begin(); hmap_it != histos.end(); ++hmap_it) {
         const char *k1 = hmap_it->first;
         hmap_it->second = {};
@@ -70,47 +65,6 @@ int run(char *in_filename, bool use_fmt, bool debug, int nevn, int run_no, doubl
         insert_TH1F(&hmap_it->second, k1, Q2, Q2, 22, 0, 12);
         insert_TH1F(&hmap_it->second, k1, NU, NU, 22, 0, 12);
         insert_TH1F(&hmap_it->second, k1, XB, XB, 20, 0,  2);
-
-        // Sampling fraction. TODO. Some minor improvements & optimizations are required here.
-        if (!strcmp(k1, PALL)) {
-            int cal_i = -1;
-            for (const char *cal : SFARR2D) {
-                cal_i++;
-                for (int s = 1; s <= 6; ++s) {
-                    std::ostringstream oss; // TODO. Change this to Form() because I hate c++.
-                    oss << cal << s << ")";
-                    sf2D_name_arr[cal_i][s-1] = (char *) malloc(strlen(oss.str().c_str())+1);
-                    strncpy(sf2D_name_arr[cal_i][s-1], oss.str().c_str(), strlen(oss.str().c_str()));
-                    insert_TH2F(&hmap_it->second, k1, sf2D_name_arr[cal_i][s-1],
-                                VP, EDIVP, 200, 0, 10, 200, 0, 0.4);
-                    sf_dotgraph_top[cal_i][s-1] = new TGraph();
-                    sf_dotgraph_top[cal_i][s-1]->SetMarkerStyle(kFullCircle);
-                    sf_dotgraph_top[cal_i][s-1]->SetMarkerColor(kRed);
-                    sf_dotgraph_bot[cal_i][s-1] = new TGraph();
-                    sf_dotgraph_bot[cal_i][s-1]->SetMarkerStyle(kFullCircle);
-                    sf_dotgraph_bot[cal_i][s-1]->SetMarkerColor(kRed);
-                }
-            }
-
-            cal_i = -1;
-            for (const char *cal : SFARR1D) {
-                cal_i++;
-                for (int s = 1; s <= 6; ++s) {
-                    int p_i = -1;
-                    for (double p = SF_PMIN; p < SF_PMAX; p += SF_PSTEP) {
-                        p_i++;
-                        std::ostringstream oss; // TODO. Change this to Form() because I hate c++.
-                        oss << cal << s << " (" << p << " < P_{tot} < " << p+SF_PSTEP << ")";
-                        sf1D_name_arr[cal_i][s-1][p_i] = (char *) malloc(strlen(oss.str().c_str())+1);
-                        strncpy(sf1D_name_arr[cal_i][s-1][p_i], oss.str().c_str(), strlen(oss.str().c_str()));
-                        insert_TH1F(&hmap_it->second, k1,
-                                    sf1D_name_arr[cal_i][s-1][p_i],
-                                    EDIVP, 200, 0, 0.4
-                        );
-                    }
-                }
-            }
-        }
     }
 
     // Create TTree and link bank_containers.
@@ -281,55 +235,6 @@ int run(char *in_filename, bool use_fmt, bool debug, int nevn, int run_no, doubl
                 if (pcal_E > 0 && ecin_E > 0 && ecou_E > 0)
                     histos[k1][ECALPCAL]->Fill(ecin_E+ecou_E, pcal_E);
 
-                // Sampling Fraction.
-                if (!strcmp(k1, PALL)) {
-                    // Compute energy deposited in each calorimeter per sector.
-                    double sf_pcal_E[] = {0, 0, 0, 0, 0, 0};
-                    double sf_ecin_E[] = {0, 0, 0, 0, 0, 0};
-                    double sf_ecou_E[] = {0, 0, 0, 0, 0, 0};
-
-                    for (UInt_t i = 0; i < rc.pindex->size(); ++i) {
-                        if (rc.pindex->at(i) != pindex) continue;
-
-                        // Get sector.
-                        int si = rc.sector->at(i) - 1;
-                        if      (si == -1)          continue;
-                        else if (si < -1 || si > 5) return 3;
-
-                        // Get detector.
-                        switch(rc.layer->at(i)) {
-                            case PCAL_LYR: sf_pcal_E[si] += rc.energy->at(i); break;
-                            case ECIN_LYR: sf_ecin_E[si] += rc.energy->at(i); break;
-                            case ECOU_LYR: sf_ecou_E[si] += rc.energy->at(i); break;
-                            default:       return 2;
-                        }
-                    }
-
-                    // Get momentum bin.
-                    if (tot_P < SF_PMIN || tot_P > SF_PMAX) continue;
-                    int pi = -1;
-                    for (double p_cnt = SF_PMIN; p_cnt <= SF_PMAX; p_cnt += SF_PSTEP) {
-                        if (tot_P < p_cnt) break;
-                        pi++;
-                    }
-
-                    // Write to histograms.
-                    for (int si = 0; si < 6; ++si) {
-                        if (sf_pcal_E[si] > 0) {
-                            histos[k1][sf2D_name_arr[PCAL_IDX][si]]->Fill(tot_P, sf_pcal_E[si]/tot_P);
-                            histos[k1][sf1D_name_arr[PCAL_IDX][si][pi]]->Fill(sf_pcal_E[si]/tot_P);
-                        }
-                        if (sf_ecin_E[si] > 0) {
-                            histos[k1][sf2D_name_arr[ECIN_IDX][si]]->Fill(tot_P, sf_ecin_E[si]/tot_P);
-                            histos[k1][sf1D_name_arr[ECIN_IDX][si][pi]]->Fill(sf_ecin_E[si]/tot_P);
-                        }
-                        if (sf_ecou_E[si] > 0) {
-                            histos[k1][sf2D_name_arr[ECOU_IDX][si]]->Fill(tot_P, sf_ecou_E[si]/tot_P);
-                            histos[k1][sf1D_name_arr[ECOU_IDX][si][pi]]->Fill(sf_ecou_E[si]/tot_P);
-                        }
-                    }
-                }
-
                 // SIDIS variables.
                 if (pid == 11) {
                     double calc_theta(double px, double py, double pz);
@@ -379,45 +284,6 @@ int run(char *in_filename, bool use_fmt, bool debug, int nevn, int run_no, doubl
         histos[k1][VPBETA]->Fit(beta_vp_curve_name, "Q", "", 0, 12);
     }
 
-    // Sampling fraction fits.
-    int cal_i = -1;
-    for (const char *cal : SFARR1D) {
-        cal_i++;
-        for (int s = 1; s <= 6; ++s) {
-            int p_i = -1;
-            for (double p = SF_PMIN; p < SF_PMAX; p += SF_PSTEP) {
-                p_i++;
-
-                // Get ref to histogram.
-                TH1 *EdivP = histos[PALL][sf1D_name_arr[cal_i][s-1][p_i]];
-
-                // Form fit string name.
-                std::ostringstream oss; // TODO. Change this to Form() because I hate c++.
-                oss << cal << s << " (" << p << " < P_{tot} < " << p+SF_PSTEP << ") fit";
-
-                // Fit.
-                TF1 *sf_gaus = new TF1(oss.str().c_str(),
-                                       "[0]*TMath::Gaus(x,[1],[2]) + [3]*x*x + [4]*x + [5]", 0.06, 0.25);
-                sf_gaus->SetParameter(0 /* amp   */, EdivP->GetBinContent(EdivP->GetMaximumBin()));
-                sf_gaus->SetParameter(1 /* mean  */, 0.15);
-                sf_gaus->SetParLimits(1, 0.06, 0.25);
-                sf_gaus->SetParameter(2 /* sigma */, 0.05);
-                sf_gaus->SetParLimits(2, 0., 0.1);
-                sf_gaus->SetParameter(3 /* p0 */,    0);
-                sf_gaus->SetParameter(4 /* p1 */,    0);
-                sf_gaus->SetParameter(5 /* p2 */,    0);
-                EdivP->Fit(sf_gaus, "QR", "", 0.06, 0.25);
-
-                // Extract mean and sigma from fit and add it to 2D plots.
-                double mean  = sf_gaus->GetParameter(1);
-                double sigma = sf_gaus->GetParameter(2);
-
-                sf_dotgraph_top[cal_i][s-1]->AddPoint(p + SF_PSTEP/2, mean + 2*sigma);
-                sf_dotgraph_bot[cal_i][s-1]->AddPoint(p + SF_PSTEP/2, mean - 2*sigma);
-            }
-        }
-    }
-
     // Create output file.
     TFile *f_out = TFile::Open("../root_io/out.root", "RECREATE");
 
@@ -464,23 +330,6 @@ int run(char *in_filename, bool use_fmt, bool debug, int nevn, int run_no, doubl
             histos[k1][Q2]->Write();
             histos[k1][NU]->Write();
             histos[k1][XB]->Write();
-        }
-    }
-
-    dir = Form("%s/%s/%s", PALL, "CALs", "Sampling Fraction");
-    f_out->mkdir(dir);
-    f_out->cd(dir);
-    for (int cal_i = 0; cal_i < 3; ++cal_i) {
-        for (int s_i = 0; s_i < 6; ++s_i) {
-            histos[PALL][sf2D_name_arr[cal_i][s_i]]->Draw("colz");
-            sf_dotgraph_top[cal_i][s_i]->Draw("Psame");
-            sf_dotgraph_bot[cal_i][s_i]->Draw("Psame");
-            gcvs->Write(sf2D_name_arr[cal_i][s_i]);
-            free(sf2D_name_arr[cal_i][s_i]);
-            for (int p_i = 0; p_i < ((int) ((SF_PMAX - SF_PMIN)/SF_PSTEP)); ++p_i) {
-                histos[PALL][sf1D_name_arr[cal_i][s_i][p_i]]->Write();
-                free(sf1D_name_arr[cal_i][s_i][p_i]);
-            }
         }
     }
 

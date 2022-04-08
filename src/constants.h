@@ -40,6 +40,7 @@
 #define ECALPCAL "E (ECAL) vs E (PCAL)"
 
 // Sampling fraction.
+extern const char *CALNAME[3];
 extern const char *SFARR2D[3];
 extern const char *SFARR1D[3];
 #define PCAL_IDX 0 // PCAL idx in SFARR1D.
