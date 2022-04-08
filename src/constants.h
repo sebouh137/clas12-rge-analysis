@@ -40,9 +40,10 @@
 #define ECALPCAL "E (ECAL) vs E (PCAL)"
 
 // Sampling fraction.
-extern const char *CALNAME[4];
-extern const char *SFARR2D[4];
-extern const char *SFARR1D[4];
+extern const char  *CALNAME[4]; // Calorimeters names.
+extern const char  *SFARR2D[4]; // Sampling Fraction (SF) 2D arr names.
+extern const char  *SFARR1D[4]; // SF 1D arr names.
+extern const double PLIMITSARR[4][2]; // Momentum limits for 1D SF fits.
 #define PCAL_IDX 0 // PCAL idx in Sampling fraction arrays.
 #define ECIN_IDX 1 // ECIN idx in Sampling fraction arrays.
 #define ECOU_IDX 2 // ECOU idx in Sampling fraction arrays.

@@ -11,6 +11,7 @@
 #include <TH1.h>
 #include <TH1F.h>
 #include <TH2F.h>
+#include <TStyle.h>
 #include <TTree.h>
 
 #include "bank_containers.h"
@@ -21,6 +22,8 @@
 #include "utilities.h"
 
 int run(char *in_filename, bool use_fmt, int nevn) {
+    gStyle->SetOptFit();
+
     // Access input file. TODO. Make this input file*s*.
     TFile *f_in = TFile::Open(in_filename, "READ");
     if (!f_in || f_in->IsZombie()) return 1;
@@ -190,17 +193,20 @@ int run(char *in_filename, bool use_fmt, int nevn) {
                 oss << cal << si+1 << " (" << p << " < P_{tot} < " << p+SF_PSTEP << ") fit";
 
                 // Fit.
+                // TODO. Fine-tune initial parameters.
+                // TODO. Remove fits with bad chi^2.
                 TF1 *sf_gaus = new TF1(oss.str().c_str(),
-                                       "[0]*TMath::Gaus(x,[1],[2]) + [3]*x*x + [4]*x + [5]", 0.06, 0.25);
+                                       "[0]*TMath::Gaus(x,[1],[2]) + [3]*x*x + [4]*x + [5]",
+                                       PLIMITSARR[ci][0], PLIMITSARR[ci][1]);
                 sf_gaus->SetParameter(0 /* amp   */, EdivP->GetBinContent(EdivP->GetMaximumBin()));
-                sf_gaus->SetParameter(1 /* mean  */, 0.15);
-                sf_gaus->SetParLimits(1, 0.06, 0.25);
+                sf_gaus->SetParameter(1 /* mean  */, (PLIMITSARR[ci][1] - PLIMITSARR[ci][0])/2);
+                sf_gaus->SetParLimits(1, PLIMITSARR[ci][0], PLIMITSARR[ci][1]);
                 sf_gaus->SetParameter(2 /* sigma */, 0.05);
                 sf_gaus->SetParLimits(2, 0., 0.1);
                 sf_gaus->SetParameter(3 /* p0 */,    0);
                 sf_gaus->SetParameter(4 /* p1 */,    0);
                 sf_gaus->SetParameter(5 /* p2 */,    0);
-                EdivP->Fit(sf_gaus, "QR", "", 0.06, 0.25);
+                EdivP->Fit(sf_gaus, "QR", "", PLIMITSARR[ci][0], PLIMITSARR[ci][1]);
 
                 // Extract mean and sigma from fit and add it to 2D plots.
                 double mean  = sf_gaus->GetParameter(1);
