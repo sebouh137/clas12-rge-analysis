@@ -40,12 +40,13 @@
 #define ECALPCAL "E (ECAL) vs E (PCAL)"
 
 // Sampling fraction.
-extern const char *CALNAME[3];
-extern const char *SFARR2D[3];
-extern const char *SFARR1D[3];
-#define PCAL_IDX 0 // PCAL idx in SFARR1D.
-#define ECIN_IDX 1 // ECIN idx in SFARR1D.
-#define ECOU_IDX 2 // ECOU idx in SFARR1D.
+extern const char *CALNAME[4];
+extern const char *SFARR2D[4];
+extern const char *SFARR1D[4];
+#define PCAL_IDX 0 // PCAL idx in Sampling fraction arrays.
+#define ECIN_IDX 1 // ECIN idx in Sampling fraction arrays.
+#define ECOU_IDX 2 // ECOU idx in Sampling fraction arrays.
+#define CALS_IDX 3 // CALs idx in Sampling fraction arrays.
 #define SF_PMIN  1.0 // GeV
 #define SF_PMAX  9.0 // GeV
 #define SF_PSTEP 0.4 // GeV
@@ -60,6 +61,7 @@ extern const char *SFARR1D[3];
 #define BE12439  2.1864 //  15 nA.
 
 // DETECTOR CONSTANTS
+#define NSECTORS 6 // # of CLAS12 sectors.
 #define PCAL_LYR 1 // PCAL's layer id.
 #define ECIN_LYR 4 // EC inner layer id.
 #define ECOU_LYR 7 // EC outer layer id.

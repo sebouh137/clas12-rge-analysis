@@ -28,15 +28,16 @@ int run(char *in_filename, bool use_fmt, int nevn) {
     // Create and organize histos and name arrays.
     std::map<const char *, TH1 *> histos;
 
-    char *sf1D_name_arr[3][6][(int) ((SF_PMAX - SF_PMIN)/SF_PSTEP)];
-    char *sf2D_name_arr[3][6];
-    TGraph *sf_dotgraph_top[3][6];
-    TGraph *sf_dotgraph_bot[3][6];
+    const int ncals = sizeof(CALNAME)/sizeof(CALNAME[0]);
+    char *sf1D_name_arr[ncals][NSECTORS][(int) ((SF_PMAX - SF_PMIN)/SF_PSTEP)];
+    char *sf2D_name_arr[ncals][NSECTORS];
+    TGraph *sf_dotgraph_top[ncals][NSECTORS];
+    TGraph *sf_dotgraph_bot[ncals][NSECTORS];
 
     int cal_i = -1;
     for (const char *cal : SFARR2D) {
         cal_i++;
-        for (int s = 1; s <= 6; ++s) {
+        for (int s = 1; s <= NSECTORS; ++s) {
             std::ostringstream oss; // TODO. Change this to Form() because I hate c++.
             oss << cal << s << ")";
             sf2D_name_arr[cal_i][s-1] = (char *) malloc(strlen(oss.str().c_str())+1);
@@ -54,7 +55,7 @@ int run(char *in_filename, bool use_fmt, int nevn) {
     cal_i = -1;
     for (const char *cal : SFARR1D) {
         cal_i++;
-        for (int s = 1; s <= 6; ++s) {
+        for (int s = 1; s <= NSECTORS; ++s) {
             int p_i = -1;
             for (double p = SF_PMIN; p < SF_PMAX; p += SF_PSTEP) {
                 p_i++;
@@ -127,14 +128,15 @@ int run(char *in_filename, bool use_fmt, int nevn) {
             double sf_pcal_E[] = {0, 0, 0, 0, 0, 0};
             double sf_ecin_E[] = {0, 0, 0, 0, 0, 0};
             double sf_ecou_E[] = {0, 0, 0, 0, 0, 0};
+            double sf_cals_E[] = {0, 0, 0, 0, 0, 0};
 
             for (UInt_t i = 0; i < rc.pindex->size(); ++i) {
                 if (rc.pindex->at(i) != pindex) continue;
 
                 // Get sector.
                 int si = rc.sector->at(i) - 1;
-                if      (si == -1)          continue;
-                else if (si < -1 || si > 5) return 3;
+                if      (si == -1)                   continue;
+                else if (si < -1 || si > NSECTORS-1) return 3;
 
                 // Get detector.
                 switch(rc.layer->at(i)) {
@@ -145,6 +147,9 @@ int run(char *in_filename, bool use_fmt, int nevn) {
                 }
             }
 
+            for (int si = 0; si < NSECTORS; ++si)
+                sf_cals_E[si] = sf_pcal_E[si] + sf_ecin_E[si] + sf_ecou_E[si];
+
             // Get momentum bin.
             if (tot_P < SF_PMIN || tot_P > SF_PMAX) continue;
             int pi = -1;
@@ -154,7 +159,7 @@ int run(char *in_filename, bool use_fmt, int nevn) {
             }
 
             // Write to histograms.
-            for (int si = 0; si < 6; ++si) {
+            for (int si = 0; si < NSECTORS; ++si) {
                 if (sf_pcal_E[si] > 0) {
                     histos[sf2D_name_arr[PCAL_IDX][si]]->Fill(tot_P, sf_pcal_E[si]/tot_P);
                     histos[sf1D_name_arr[PCAL_IDX][si][pi]]->Fill(sf_pcal_E[si]/tot_P);
@@ -167,6 +172,10 @@ int run(char *in_filename, bool use_fmt, int nevn) {
                     histos[sf2D_name_arr[ECOU_IDX][si]]->Fill(tot_P, sf_ecou_E[si]/tot_P);
                     histos[sf1D_name_arr[ECOU_IDX][si][pi]]->Fill(sf_ecou_E[si]/tot_P);
                 }
+                if (sf_cals_E[si] > 0) {
+                    histos[sf2D_name_arr[CALS_IDX][si]]->Fill(tot_P, sf_cals_E[si]/tot_P);
+                    histos[sf1D_name_arr[CALS_IDX][si][pi]]->Fill(sf_cals_E[si]/tot_P);
+                }
             }
         }
     }
@@ -178,7 +187,7 @@ int run(char *in_filename, bool use_fmt, int nevn) {
     cal_i = -1;
     for (const char *cal : SFARR1D) {
         cal_i++;
-        for (int s = 1; s <= 6; ++s) {
+        for (int s = 1; s <= NSECTORS; ++s) {
             int p_i = -1;
             for (double p = SF_PMIN; p < SF_PMAX; p += SF_PSTEP) {
                 p_i++;
@@ -218,11 +227,11 @@ int run(char *in_filename, bool use_fmt, int nevn) {
     // Write to output file.
     TString dir;
     TCanvas *gcvs = new TCanvas();
-    for (cal_i = 0; cal_i < 3; ++cal_i) {
+    for (cal_i = 0; cal_i < ncals; ++cal_i) {
         dir = Form("%s", CALNAME[cal_i]);
         f_out->mkdir(dir);
         f_out->cd(dir);
-        for (int s_i = 0; s_i < 6; ++s_i) {
+        for (int s_i = 0; s_i < NSECTORS; ++s_i) {
             dir = Form("%s/sector %d", CALNAME[cal_i], s_i+1);
             f_out->mkdir(dir);
             f_out->cd(dir);
