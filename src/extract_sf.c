@@ -7,7 +7,7 @@
 #include <TCanvas.h>
 #include <TFile.h>
 #include <TF1.h>
-#include <TGraph.h>
+#include <TGraphErrors.h>
 #include <TH1.h>
 #include <TH1F.h>
 #include <TH2F.h>
@@ -34,8 +34,8 @@ int run(char *in_filename, bool use_fmt, int nevn) {
     const int ncals = sizeof(CALNAME)/sizeof(CALNAME[0]);
     char *sf1D_name_arr[ncals][NSECTORS][(int) ((SF_PMAX - SF_PMIN)/SF_PSTEP)];
     char *sf2D_name_arr[ncals][NSECTORS];
-    TGraph *sf_dotgraph_top[ncals][NSECTORS];
-    TGraph *sf_dotgraph_bot[ncals][NSECTORS];
+    TGraphErrors *sf_dotgraph_top[ncals][NSECTORS];
+    TGraphErrors *sf_dotgraph_bot[ncals][NSECTORS];
 
     int ci = -1;
     for (const char *cal : SFARR2D) {
@@ -46,10 +46,10 @@ int run(char *in_filename, bool use_fmt, int nevn) {
             sf2D_name_arr[ci][si] = (char *) malloc(strlen(oss.str().c_str())+1);
             strncpy(sf2D_name_arr[ci][si], oss.str().c_str(), strlen(oss.str().c_str()));
             insert_TH2F(&histos, PALL, sf2D_name_arr[ci][si], VP, EDIVP, 200, 0, 10, 200, 0, 0.4);
-            sf_dotgraph_top[ci][si] = new TGraph();
+            sf_dotgraph_top[ci][si] = new TGraphErrors();
             sf_dotgraph_top[ci][si]->SetMarkerStyle(kFullCircle);
             sf_dotgraph_top[ci][si]->SetMarkerColor(kRed);
-            sf_dotgraph_bot[ci][si] = new TGraph();
+            sf_dotgraph_bot[ci][si] = new TGraphErrors();
             sf_dotgraph_bot[ci][si]->SetMarkerStyle(kFullCircle);
             sf_dotgraph_bot[ci][si]->SetMarkerColor(kRed);
         }
@@ -182,6 +182,7 @@ int run(char *in_filename, bool use_fmt, int nevn) {
         ci++;
         for (int si = 0; si < NSECTORS; ++si) {
             int pi = -1;
+            // Fit 1D plots for each momentum bin to fill dotgraphs.
             for (double p = SF_PMIN; p < SF_PMAX; p += SF_PSTEP) {
                 pi++;
 
@@ -199,10 +200,10 @@ int run(char *in_filename, bool use_fmt, int nevn) {
                                        "[0]*TMath::Gaus(x,[1],[2]) + [3]*x*x + [4]*x + [5]",
                                        PLIMITSARR[ci][0], PLIMITSARR[ci][1]);
                 sf_gaus->SetParameter(0 /* amp   */, EdivP->GetBinContent(EdivP->GetMaximumBin()));
-                sf_gaus->SetParameter(1 /* mean  */, (PLIMITSARR[ci][1] - PLIMITSARR[ci][0])/2);
                 sf_gaus->SetParLimits(1, PLIMITSARR[ci][0], PLIMITSARR[ci][1]);
-                sf_gaus->SetParameter(2 /* sigma */, 0.05);
+                sf_gaus->SetParameter(1 /* mean  */, (PLIMITSARR[ci][1] + PLIMITSARR[ci][0])/2);
                 sf_gaus->SetParLimits(2, 0., 0.1);
+                sf_gaus->SetParameter(2 /* sigma */, 0.05);
                 sf_gaus->SetParameter(3 /* p0 */,    0);
                 sf_gaus->SetParameter(4 /* p1 */,    0);
                 sf_gaus->SetParameter(5 /* p2 */,    0);
@@ -211,9 +212,16 @@ int run(char *in_filename, bool use_fmt, int nevn) {
                 // Extract mean and sigma from fit and add it to 2D plots.
                 double mean  = sf_gaus->GetParameter(1);
                 double sigma = sf_gaus->GetParameter(2);
-                sf_dotgraph_top[ci][si]->AddPoint(p + SF_PSTEP/2, mean + 2*sigma);
-                sf_dotgraph_bot[ci][si]->AddPoint(p + SF_PSTEP/2, mean - 2*sigma);
+
+                // Only add points within PLIMITSARR borders and with an acceptable chi2.
+                if ((mean - 2*sigma > PLIMITSARR[ci][0] && mean + 2*sigma < PLIMITSARR[ci][1]) &&
+                    (sf_gaus->GetChisquare() / sf_gaus->GetNDF() < CHI2CONFORMITY)) {
+                    sf_dotgraph_top[ci][si]->AddPoint(p + SF_PSTEP/2, mean + 2*sigma);
+                    sf_dotgraph_bot[ci][si]->AddPoint(p + SF_PSTEP/2, mean - 2*sigma);
+                }
             }
+
+            // Fit dotgraphs.
         }
     }
 

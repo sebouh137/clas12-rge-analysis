@@ -51,6 +51,7 @@ extern const double PLIMITSARR[4][2]; // Momentum limits for 1D SF fits.
 #define SF_PMIN  1.0 // GeV
 #define SF_PMAX  9.0 // GeV
 #define SF_PSTEP 0.4 // GeV
+#define CHI2CONFORMITY 2
 
 #define Q2       "Q^{2}"
 #define NU       "#nu"
