@@ -21,6 +21,13 @@
 #include "io_handler.h"
 #include "utilities.h"
 
+// TODO. Add status cut.
+// TODO. Evaluate the most basic cuts and implement the necessary ones.
+// TODO. Check what happens with the acceptance of different particles (like pi+ and pi-) when you
+//       reverse the magnetic fields.
+// TODO. Check if we can run high luminosity with reverse fields.
+// TODO. Check if RG-F or RG-M ran with reverse field.
+
 int run(char *in_filename, bool use_fmt, int nevn) {
     gStyle->SetOptFit();
 
@@ -36,15 +43,18 @@ int run(char *in_filename, bool use_fmt, int nevn) {
     char *sf2D_name_arr[ncals][NSECTORS];
     TGraphErrors *sf_dotgraph_top[ncals][NSECTORS];
     TGraphErrors *sf_dotgraph_bot[ncals][NSECTORS];
+    char *sf2Dfit_name_arr[ncals][NSECTORS][2];
+    TF1 *sf_polyfit[ncals][NSECTORS][2];
 
     int ci = -1;
     for (const char *cal : SFARR2D) {
         ci++;
         for (int si = 0; si < NSECTORS; ++si) {
-            std::ostringstream oss; // TODO. Change this to Form() because I hate c++.
-            oss << cal << si+1 << ")";
-            sf2D_name_arr[ci][si] = (char *) malloc(strlen(oss.str().c_str())+1);
-            strncpy(sf2D_name_arr[ci][si], oss.str().c_str(), strlen(oss.str().c_str()));
+            // Initialize dotgraphs.
+            std::ostringstream oss_h; // TODO. Change this to Form() because I hate c++.
+            oss_h << cal << si+1 << ")";
+            sf2D_name_arr[ci][si] = (char *) malloc(strlen(oss_h.str().c_str())+1);
+            strncpy(sf2D_name_arr[ci][si], oss_h.str().c_str(), strlen(oss_h.str().c_str()));
             insert_TH2F(&histos, PALL, sf2D_name_arr[ci][si], VP, EDIVP, 200, 0, 10, 200, 0, 0.4);
             sf_dotgraph_top[ci][si] = new TGraphErrors();
             sf_dotgraph_top[ci][si]->SetMarkerStyle(kFullCircle);
@@ -52,6 +62,23 @@ int run(char *in_filename, bool use_fmt, int nevn) {
             sf_dotgraph_bot[ci][si] = new TGraphErrors();
             sf_dotgraph_bot[ci][si]->SetMarkerStyle(kFullCircle);
             sf_dotgraph_bot[ci][si]->SetMarkerColor(kRed);
+
+            // Initialize fits.
+            std::ostringstream oss_f1, oss_f2;
+            oss_f1 << cal << si+1 << ") bottom fit";
+            oss_f2 << cal << si+1 << ") top fit";
+            sf2Dfit_name_arr[ci][si][0] = (char *) malloc(strlen(oss_f1.str().c_str())+1);
+            sf2Dfit_name_arr[ci][si][1] = (char *) malloc(strlen(oss_f2.str().c_str())+1);
+            strncpy(sf2Dfit_name_arr[ci][si][0], oss_f1.str().c_str(), strlen(oss_f1.str().c_str()));
+            strncpy(sf2Dfit_name_arr[ci][si][1], oss_f2.str().c_str(), strlen(oss_f2.str().c_str()));
+            for (int i = 0; i < 2; ++i) {
+                sf_polyfit[ci][si][i] = new TF1(sf2Dfit_name_arr[ci][si][i],
+                        "[0]+[1]*x+[2]*x*x+[3]*x*x*x", SF_PMIN+SF_PSTEP, SF_PMAX-SF_PSTEP);
+                sf_polyfit[ci][si][i]->SetParameter(0 /* p0 */, 0);
+                sf_polyfit[ci][si][i]->SetParameter(1 /* p1 */, 0);
+                sf_polyfit[ci][si][i]->SetParameter(2 /* p2 */, 0);
+                sf_polyfit[ci][si][i]->SetParameter(3 /* p3 */, 0);
+            }
         }
     }
 
@@ -194,8 +221,6 @@ int run(char *in_filename, bool use_fmt, int nevn) {
                 oss << cal << si+1 << " (" << p << " < P_{tot} < " << p+SF_PSTEP << ") fit";
 
                 // Fit.
-                // TODO. Fine-tune initial parameters.
-                // TODO. Remove fits with bad chi^2.
                 TF1 *sf_gaus = new TF1(oss.str().c_str(),
                                        "[0]*TMath::Gaus(x,[1],[2]) + [3]*x*x + [4]*x + [5]",
                                        PLIMITSARR[ci][0], PLIMITSARR[ci][1]);
@@ -215,13 +240,21 @@ int run(char *in_filename, bool use_fmt, int nevn) {
 
                 // Only add points within PLIMITSARR borders and with an acceptable chi2.
                 if ((mean - 2*sigma > PLIMITSARR[ci][0] && mean + 2*sigma < PLIMITSARR[ci][1]) &&
-                    (sf_gaus->GetChisquare() / sf_gaus->GetNDF() < CHI2CONFORMITY)) {
+                    (sf_gaus->GetChisquare() / sf_gaus->GetNDF() < SF_CHI2CONFORMITY)) {
                     sf_dotgraph_top[ci][si]->AddPoint(p + SF_PSTEP/2, mean + 2*sigma);
                     sf_dotgraph_bot[ci][si]->AddPoint(p + SF_PSTEP/2, mean - 2*sigma);
                 }
             }
 
             // Fit dotgraphs.
+            if (sf_dotgraph_bot[ci][si]->GetN() > 0)
+                sf_dotgraph_bot[ci][si]->Fit(sf_polyfit[ci][si][0], "QR", "",
+                                             SF_PMIN+SF_PSTEP, SF_PMAX-SF_PSTEP);
+            if (sf_dotgraph_top[ci][si]->GetN() > 0)
+                sf_dotgraph_top[ci][si]->Fit(sf_polyfit[ci][si][1], "QR", "",
+                                             SF_PMIN+SF_PSTEP, SF_PMAX-SF_PSTEP);
+
+            // TODO. Extract and save dotgraph fits parameters to make cuts from them.
         }
     }
 
@@ -243,12 +276,15 @@ int run(char *in_filename, bool use_fmt, int nevn) {
             histos[sf2D_name_arr[ci][si]]->Draw("colz");
             sf_dotgraph_top[ci][si]->Draw("Psame");
             sf_dotgraph_bot[ci][si]->Draw("Psame");
+            sf_polyfit[ci][si][0]->Draw("same");
+            sf_polyfit[ci][si][1]->Draw("same");
             gcvs->Write(sf2D_name_arr[ci][si]);
             free(sf2D_name_arr[ci][si]);
             for (int pi = 0; pi < ((int) ((SF_PMAX - SF_PMIN)/SF_PSTEP)); ++pi) {
                 histos[sf1D_name_arr[ci][si][pi]]->Write();
                 free(sf1D_name_arr[ci][si][pi]);
             }
+            for (int i = 0; i < 2; ++i) free(sf2Dfit_name_arr[ci][si][i]);
         }
     }
 
