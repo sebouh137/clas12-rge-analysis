@@ -27,6 +27,8 @@
 //       reverse the magnetic fields.
 // TODO. Check if we can run high luminosity with reverse fields.
 // TODO. Check if RG-F or RG-M ran with reverse field.
+// TODO. See what happens to low-momentum particles inside CLAS12 through simulation and see if they
+//       are reconstructed.
 
 int run(char *in_filename, bool use_fmt, int nevn) {
     gStyle->SetOptFit();
@@ -45,6 +47,7 @@ int run(char *in_filename, bool use_fmt, int nevn) {
     TGraphErrors *sf_dotgraph_bot[ncals][NSECTORS];
     char *sf2Dfit_name_arr[ncals][NSECTORS][2];
     TF1 *sf_polyfit[ncals][NSECTORS][2];
+    double sf_fitresults[ncals][NSECTORS][2][4];
 
     int ci = -1;
     for (const char *cal : SFARR2D) {
@@ -255,6 +258,11 @@ int run(char *in_filename, bool use_fmt, int nevn) {
                                              SF_PMIN+SF_PSTEP, SF_PMAX-SF_PSTEP);
 
             // TODO. Extract and save dotgraph fits parameters to make cuts from them.
+            for (int bi = 0; bi < 2; ++bi) {
+                for (int pi = 0; pi < sf_polyfit[ci][si][bi]->GetNpar(); ++pi) {
+                    sf_fitresults[ci][si][bi][pi] = sf_polyfit[ci][si][bi]->GetParameter(pi);
+                }
+            }
         }
     }
 
@@ -285,6 +293,20 @@ int run(char *in_filename, bool use_fmt, int nevn) {
                 free(sf1D_name_arr[ci][si][pi]);
             }
             for (int i = 0; i < 2; ++i) free(sf2Dfit_name_arr[ci][si][i]);
+        }
+    }
+
+    FILE *t_out = fopen("../data/sf_results", "w");
+
+    if (t_out == NULL) return 4; 
+    for (int ci = 0; ci < 4; ++ci) {
+        for (int si = 0; si < 6; ++si) {
+            for (int bi = 0; bi < 2; ++bi) {
+                for (int pi = 0; pi < 4; ++pi) {
+                    fprintf(t_out, "%11.8f ", sf_fitresults[ci][si][bi][pi]);
+                }
+                fprintf(t_out, "\n");
+            }
         }
     }
 

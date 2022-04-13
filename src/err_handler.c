@@ -85,6 +85,10 @@ int extractsf_err(int errcode, char **in_filename) {
             break;
         case 3:
             fprintf(stderr, "Error. A particle is in an invalid sector. Check bank integrity.\n");
+            break;
+        case 4:
+            fprintf(stderr, "Error. Could not create sf_results file.\n");
+            break;
         default:
             fprintf(stderr, "Programmer Error. Error code %d not implemented in \n", errcode);
             fprintf(stderr, "acceptance_err()! You're on your own.\n");
