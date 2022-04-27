@@ -5,6 +5,7 @@
 #define PRTMASS 0.938272 // Proton mass.
 #define KMASS   0.493677 // Kaon mass.
 #define PIMASS  0.139570 // Pion mass.
+#define DMASS   1.875    // Deuterium mass.
 #define NTRMASS 0.939565 // Neutron mass.
 #define EMASS   0.000051 // Electron mass.
 

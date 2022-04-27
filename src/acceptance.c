@@ -55,8 +55,8 @@ int run(char *in_filename, bool use_fmt, bool debug, int nevn, int run_no, doubl
 
         // Vertex p.
         insert_TH1F(&hmap_it->second, k1, VP,     VP,         200, 0,    10);
-        insert_TH1F(&hmap_it->second, k1, BETA,   BETA,       200, 0.94,  1);
-        insert_TH2F(&hmap_it->second, k1, VPBETA, VP,   BETA, 200, 0,    10, 200, 0.94, 1);
+        insert_TH1F(&hmap_it->second, k1, BETA,   BETA,       200, 0,     1.1);
+        insert_TH2F(&hmap_it->second, k1, VPBETA, VP,   BETA, 200, 0,    10, 200, 0, 1.1);
 
         // Scintillator.
         insert_TH1F(&hmap_it->second, k1, DTOF,  DTOF,       200, 0, 20);
@@ -276,13 +276,14 @@ int run(char *in_filename, bool use_fmt, bool debug, int nevn, int run_no, doubl
         histos[k1][VZ]->Fit(vz_fit_name, "Q", "", -36., -30.);
 
         // Vp vs beta theoretical curve.
-        double masses[3] = {0, 0, 0};
+        double masses[4] = {0, 0, 0, 0};
         if      (!strcmp(k1, PPIP) || !strcmp(k1, PPIM)) masses[0] = PIMASS;
         else if (!strcmp(k1, PELC) || !strcmp(k1, PTRE)) masses[0] = EMASS;
         else if (!strcmp(k1, PPOS) || !strcmp(k1, PNEG)) {
              masses[0] = PRTMASS;
              masses[1] = KMASS;
              masses[2] = PIMASS;
+             masses[3] = DMASS;
         }
         else continue;
         for (uint mi = 0; mi < sizeof(masses)/sizeof(masses[0]); ++mi) {
