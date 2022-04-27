@@ -20,11 +20,14 @@
 #include "../lib/particle.h"
 #include "../lib/utilities.h"
 
-// TODO. Check and fix theoretical curves.
+// TODO. Check and fix theoretical curves. -> Ask Hayk and Raffa.
+// TODO. See why I'm not seeing any neutrals. -> ask Raffa.
+// TODO. Get simulations from RG-F, understand how they're made to do acceptance correction.
+//           -> ask Raffa.
+
 // TODO. Separate vz plot in z bins.
 // TODO. Make this as a library similar to the Analyser.
 // TODO. Evaluate acceptance in diferent regions.
-// TODO. Get simulations from RG-F, understand how they're made to do acceptance correction.
 // TODO. See simulations with Esteban.
 
 int run(char *in_filename, bool use_fmt, bool debug, int nevn, int run_no, double beam_E) {
@@ -150,13 +153,13 @@ int run(char *in_filename, bool use_fmt, bool debug, int nevn, int run_no, doubl
                 // if (ft.ndf->at(index) > 0) printf("NDF: %d\n", ft.ndf->at(index));
 
                 p = particle_init(rp.pid->at(pindex), rp.charge->at(pindex), rp.beta->at(pindex),
-                                  rp.status->at(pindex), beam_E,
+                                  rp.status->at(pindex), rt.sector->at(pos),
                                   ft.vx->at(index), ft.vy->at(index), ft.vz->at(index),
                                   ft.px->at(index), ft.py->at(index), ft.pz->at(index));
             }
             else {
                 p = particle_init(rp.pid->at(pindex), rp.charge->at(pindex), rp.beta->at(pindex),
-                                  rp.status->at(pindex), beam_E,
+                                  rp.status->at(pindex), rt.sector->at(pos),
                                   rp.vx->at(pindex), rp.vy->at(pindex), rp.vz->at(pindex),
                                   rp.px->at(pindex), rp.py->at(pindex), rp.pz->at(pindex));
             }
@@ -213,8 +216,8 @@ int run(char *in_filename, bool use_fmt, bool debug, int nevn, int run_no, doubl
 
                 // Vertex z.
                 histos[k1][VZ]     ->Fill(p.vz);
-                histos[k1][VZPHI]  ->Fill(p.vz, to_deg(p.phi));
-                histos[k1][VZTHETA]->Fill(p.vz, to_deg(p.theta));
+                histos[k1][VZPHI]  ->Fill(p.vz, to_deg(lab_phi(p)));
+                histos[k1][VZTHETA]->Fill(p.vz, to_deg(lab_theta(p)));
 
                 // Vertex p.
                 histos[k1][VP]    ->Fill(p.pz);
@@ -225,25 +228,25 @@ int run(char *in_filename, bool use_fmt, bool debug, int nevn, int run_no, doubl
                 double dtof = tof - tre_tof;
                 if (tre_tof > 0 && dtof > 0) { // Only fill if trigger electron's TOF was found.
                     histos[k1][DTOF] ->Fill(dtof);
-                    histos[k1][VPTOF]->Fill(p.P, dtof);
+                    histos[k1][VPTOF]->Fill(P(p), dtof);
                 }
 
                 // Calorimeters.
                 if (tot_E > 0) {
-                    histos[k1][PEDIVP]->Fill(p.P, tot_E/p.P);
-                    histos[k1][EEDIVP]->Fill(tot_E, tot_E/p.P);
+                    histos[k1][PEDIVP]->Fill(P(p), tot_E/P(p));
+                    histos[k1][EEDIVP]->Fill(tot_E, tot_E/P(p));
                 }
-                if (pcal_E > 0) histos[k1][PPCALE]->Fill(p.P, pcal_E);
-                if (ecin_E > 0) histos[k1][PECINE]->Fill(p.P, ecin_E);
-                if (ecou_E > 0) histos[k1][PECOUE]->Fill(p.P, ecou_E);
+                if (pcal_E > 0) histos[k1][PPCALE]->Fill(P(p), pcal_E);
+                if (ecin_E > 0) histos[k1][PECINE]->Fill(P(p), ecin_E);
+                if (ecou_E > 0) histos[k1][PECOUE]->Fill(P(p), ecou_E);
                 if (pcal_E > 0 && ecin_E > 0 && ecou_E > 0)
                     histos[k1][ECALPCAL]->Fill(ecin_E+ecou_E, pcal_E);
 
                 // SIDIS variables.
                 if (p.pid == 11) {
-                    histos[k1][Q2_STR]->Fill(p.Q2);
-                    histos[k1][NU_STR]->Fill(p.nu);
-                    histos[k1][XB_STR]->Fill(p.Xb);
+                    histos[k1][Q2_STR]->Fill(Q2(p, beam_E));
+                    histos[k1][NU_STR]->Fill(nu(p, beam_E));
+                    histos[k1][XB_STR]->Fill(Xb(p, beam_E));
                 }
             }
         }
