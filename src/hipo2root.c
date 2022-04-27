@@ -11,14 +11,14 @@
 #include "../lib/io_handler.h"
 #include "../lib/bank_containers.h"
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
     char *in_filename = NULL;
     int  run_no = -1;
 
     if (hipo2root_handle_args_err(hipo2root_handle_args(argc, argv, &in_filename, &run_no),
                                   &in_filename));
 
-    char *out_filename = (char*) malloc(22 * sizeof(char));
+    char *out_filename = (char *) malloc(22 * sizeof(char));
     if      (run_no /     10 == 0) sprintf(out_filename, "../root_io/00000%d.root", run_no);
     else if (run_no /    100 == 0) sprintf(out_filename, "../root_io/0000%d.root", run_no);
     else if (run_no /   1000 == 0) sprintf(out_filename, "../root_io/000%d.root", run_no);

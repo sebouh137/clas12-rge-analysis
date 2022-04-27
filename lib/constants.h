@@ -43,9 +43,9 @@
 #define ECALPCAL "E (ECAL) vs E (PCAL)"
 
 // Sampling fraction.
-extern const char  *CALNAME[4]; // Calorimeters names.
-extern const char  *SFARR2D[4]; // Sampling Fraction (SF) 2D arr names.
-extern const char  *SFARR1D[4]; // SF 1D arr names.
+extern const char *CALNAME[4]; // Calorimeters names.
+extern const char *SFARR2D[4]; // Sampling Fraction (SF) 2D arr names.
+extern const char *SFARR1D[4]; // SF 1D arr names.
 extern const double PLIMITSARR[4][2]; // Momentum limits for 1D SF fits.
 #define PCAL_IDX 0 // PCAL idx in Sampling fraction arrays.
 #define ECIN_IDX 1 // ECIN idx in Sampling fraction arrays.
@@ -56,9 +56,9 @@ extern const double PLIMITSARR[4][2]; // Momentum limits for 1D SF fits.
 #define SF_PSTEP 0.4 // GeV
 #define SF_CHI2CONFORMITY 2 // NOTE. This is a source of systematic error!
 
-#define Q2_STR   "Q^{2}"
-#define NU_STR   "#nu"
-#define XB_STR   "X_{bjorken}"
+#define Q2_STR "Q^{2}"
+#define NU_STR "#nu"
+#define XB_STR "X_{bjorken}"
 
 // RUN CONSTANTS (TODO. these should be in a map.)
 #define BE11983 10.3894 //  50 nA.

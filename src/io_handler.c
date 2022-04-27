@@ -17,7 +17,7 @@ int acceptance_handle_args(int argc, char **argv, bool *use_fmt, bool *debug, in
     // Handle positional argument.
     if (argc < 2) return 7;
 
-    *input_file = (char*) malloc(strlen(argv[argc - 1]) + 1);
+    *input_file = (char *) malloc(strlen(argv[argc - 1]) + 1);
     strcpy(*input_file, argv[argc - 1]);
     return handle_root_filename(*input_file, run_no, beam_energy);
 }
@@ -35,7 +35,7 @@ int extractsf_handle_args(int argc, char **argv, bool *use_fmt, int *nevents, ch
     if (*nevents == 0) return 2;
     if (argc < 2) return 5;
 
-    *input_file = (char*) malloc(strlen(argv[argc - 1]) + 1);
+    *input_file = (char *) malloc(strlen(argv[argc - 1]) + 1);
     strcpy(*input_file, argv[argc - 1]);
     return check_root_filename(*input_file);
 }
@@ -44,7 +44,7 @@ int hipo2root_handle_args(int argc, char **argv, char **input_file, int *run_no)
     if (argc < 2) return 1;
     if (argc > 3) return 2;
 
-    *input_file = (char*) malloc(strlen(argv[1]) + 1);
+    *input_file = (char *) malloc(strlen(argv[1]) + 1);
     strcpy(*input_file, argv[1]);
     return handle_hipo_filename(*input_file, run_no);
 }
