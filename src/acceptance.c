@@ -216,8 +216,8 @@ int run(char *in_filename, bool use_fmt, bool debug, int nevn, int run_no, doubl
 
                 // Vertex z.
                 histos[k1][VZ]     ->Fill(p.vz);
-                histos[k1][VZPHI]  ->Fill(p.vz, to_deg(lab_phi(p)));
-                histos[k1][VZTHETA]->Fill(p.vz, to_deg(lab_theta(p)));
+                histos[k1][VZPHI]  ->Fill(p.vz, to_deg(phi_lab(p)));
+                histos[k1][VZTHETA]->Fill(p.vz, to_deg(theta_lab(p)));
 
                 // Vertex p.
                 histos[k1][VP]    ->Fill(p.pz);

@@ -155,7 +155,7 @@ int run(char *in_filename, bool use_fmt, int nevn) {
             else {
                 px = rp.px->at(pindex); py = rp.py->at(pindex); pz = rp.pz->at(pindex);
             }
-            double tot_P = calc_P(px, py, pz);
+            double tot_P = calc_magnitude(px, py, pz);
 
             // Compute energy deposited in each calorimeter per sector.
             double sf_E[ncals][NSECTORS];
