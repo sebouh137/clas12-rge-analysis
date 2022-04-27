@@ -19,7 +19,13 @@
 #include "io_handler.h"
 #include "utilities.h"
 
-// TODO. Move sampling fraction fit to its own function.
+// TODO. Save both histograms and ntuples.
+// TODO. Separate vz plot in z bins.
+// TODO. Make this as a library similar to the Analyser.
+// TODO. Evaluate acceptance in diferent regions.
+// TODO. Get simulations from RG-F, understand how they're made to do acceptance correction.
+// TODO. See simulations with Esteban.
+
 int run(char *in_filename, bool use_fmt, bool debug, int nevn, int run_no, double beam_E) {
     // Access input file. TODO. Make this input file*s*.
     TFile *f_in = TFile::Open(in_filename, "READ");
@@ -30,6 +36,7 @@ int run(char *in_filename, bool use_fmt, bool debug, int nevn, int run_no, doubl
     histos.insert({PALL, {}});
     histos.insert({PPOS, {}});
     histos.insert({PNEG, {}});
+    histos.insert({PNEU, {}});
     histos.insert({PPIP, {}});
     histos.insert({PPIM, {}});
     histos.insert({PELC, {}});
@@ -147,15 +154,17 @@ int run(char *in_filename, bool use_fmt, bool debug, int nevn, int run_no, doubl
             //       data more than once.
 
             // Figure out which histograms are to be filled.
-            // TODO. Choose these particules from cuts, not PID.
+            // TODO. Choose these particules from cuts, not PID? Maybe using PID is fine for this
+            //       early analysis...
             std::map<const char *, bool> truth_map;
             truth_map.insert({PALL, true});
-            truth_map.insert({PPOS, charge > 0  ? true : false});
-            truth_map.insert({PNEG, charge < 0  ? true : false});
-            truth_map.insert({PPIP, pid ==  211 ? true : false});
-            truth_map.insert({PPIM, pid == -211 ? true : false});
-            truth_map.insert({PELC, pid ==   11 ? true : false});
-            truth_map.insert({PTRE, (pid == 11 && status < 0) ? true : false});
+            truth_map.insert({PPOS, charge > 0});
+            truth_map.insert({PNEG, charge < 0});
+            truth_map.insert({PNEU, charge == 0}); // Apparently there are no neutrals? Odd.
+            truth_map.insert({PPIP, pid ==  211});
+            truth_map.insert({PPIM, pid == -211});
+            truth_map.insert({PELC, pid ==   11});
+            truth_map.insert({PTRE, pid == 11 && status < 0});
 
             // Get reconstructed particle from either FMT or DC.
             // TODO. Create a particle struct with methods to update it.

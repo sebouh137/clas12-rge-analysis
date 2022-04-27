@@ -3,7 +3,7 @@ Usage instructions.
 * Set the environment variable `HIPO` to the location where hipo is installed.
 * Compile `hipo2root` by running `make` inside the `hipo2root` directory.
 
-NOTE.
+**NOTE**.
 To run with valgrind, ROOT requires some flags:
 
     valgrind --num-callers=30 --suppressions=$ROOTSYS/etc/valgrind-root.supp

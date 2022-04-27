@@ -11,6 +11,7 @@
 #define PALL "All particles"
 #define PPOS "Positive particles"
 #define PNEG "Negative particles"
+#define PNEU "Neutral particles"
 #define PPIP "Pi+"
 #define PPIM "Pi-"
 #define PELC "e-"
