@@ -70,6 +70,7 @@ int run(char *in_filename, bool use_fmt, bool debug, int nevn, int run_no, doubl
         insert_TH2F(&hmap_it->second, k1, PECOUE,   VP, E,     200, 0, 10, 200, 0, 2);
         insert_TH2F(&hmap_it->second, k1, ECALPCAL, E,  E,     200, 0,  2, 200, 0, 2);
 
+        // SIDIS.
         insert_TH1F(&hmap_it->second, k1, Q2_STR, Q2_STR, 22, 0, 12);
         insert_TH1F(&hmap_it->second, k1, NU_STR, NU_STR, 22, 0, 12);
         insert_TH1F(&hmap_it->second, k1, XB_STR, XB_STR, 20, 0,  2);
@@ -147,6 +148,7 @@ int run(char *in_filename, bool use_fmt, bool debug, int nevn, int run_no, doubl
                 if (ft.vz->size() < 1)      continue; // Track reconstructed by FMT.
                 if (ft.ndf->at(index) != 3) continue; // Track crossed 3 FMT layers.
                 // if (ft.ndf->at(index) > 0) printf("NDF: %d\n", ft.ndf->at(index));
+
                 p = particle_init(rp.pid->at(pindex), rp.charge->at(pindex), rp.beta->at(pindex),
                                   rp.status->at(pindex), beam_E,
                                   ft.vx->at(index), ft.vy->at(index), ft.vz->at(index),
@@ -166,7 +168,7 @@ int run(char *in_filename, bool use_fmt, bool debug, int nevn, int run_no, doubl
             if (chi2/ndf >= 15) continue; // Ignore tracks with high chi2.
 
             // Geometry cuts.
-            if (d_from_beamline(p) > 4) continue; // Too far from beamline.
+            if (d_from_beamline(p) > 4)  continue; // Too far from beamline.
             if (-40 > p.vz || p.vz > 40) continue; // Too far from target.
 
             // Figure out which histograms are to be filled.
@@ -274,15 +276,23 @@ int run(char *in_filename, bool use_fmt, bool debug, int nevn, int run_no, doubl
         histos[k1][VZ]->Fit(vz_fit_name, "Q", "", -36., -30.);
 
         // Vp vs beta theoretical curve.
-        double mass = 0;
-        if      (!strcmp(k1, PPIP) || !strcmp(k1, PPIM)) mass = PIMASS;
-        else if (!strcmp(k1, PELC) || !strcmp(k1, PTRE)) mass = EMASS;
+        double masses[3] = {0, 0, 0};
+        if      (!strcmp(k1, PPIP) || !strcmp(k1, PPIM)) masses[0] = PIMASS;
+        else if (!strcmp(k1, PELC) || !strcmp(k1, PTRE)) masses[0] = EMASS;
+        else if (!strcmp(k1, PPOS) || !strcmp(k1, PNEG)) {
+             masses[0] = PRTMASS;
+             masses[1] = KMASS;
+             masses[2] = PIMASS;
+        }
         else continue;
-        TString beta_vp_curve_name = Form("%s %s", k1, "beta vs vp curve");
-        TF1 *beta_vp_curve =
+        for (uint mi = 0; mi < sizeof(masses)/sizeof(masses[0]); ++mi) {
+            if (masses[mi] == 0) continue;
+            TString beta_vp_curve_name = Form("%s %s (%d)", k1, "beta vs vp curve", mi);
+            TF1 *beta_vp_curve =
                 new TF1(beta_vp_curve_name, "(x)/(sqrt([m]*[m] + x*x))", 0, 12);
-        beta_vp_curve->FixParameter(0, mass);
-        histos[k1][VPBETA]->Fit(beta_vp_curve_name, "Q", "", 0, 12);
+            beta_vp_curve->FixParameter(0, masses[mi]);
+            histos[k1][VPBETA]->Fit(beta_vp_curve_name, "Q+", "", 0, 12);
+        }
     }
 
     // Create output file.
