@@ -298,7 +298,7 @@ int run(char *in_filename, bool use_fmt, int nevn) {
 
     FILE *t_out = fopen("../data/sf_results", "w");
 
-    if (t_out == NULL) return 4; 
+    if (t_out == NULL) return 4;
     for (int ci = 0; ci < 4; ++ci) {
         for (int si = 0; si < 6; ++si) {
             for (int bi = 0; bi < 2; ++bi) {

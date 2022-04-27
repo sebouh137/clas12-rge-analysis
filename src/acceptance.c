@@ -17,9 +17,10 @@
 #include "err_handler.h"
 #include "file_handler.h"
 #include "io_handler.h"
+#include "particle.h"
 #include "utilities.h"
 
-// TODO. Save both histograms and ntuples.
+// TODO. Check and fix theoretical curves.
 // TODO. Separate vz plot in z bins.
 // TODO. Make this as a library similar to the Analyser.
 // TODO. Evaluate acceptance in diferent regions.
@@ -69,9 +70,9 @@ int run(char *in_filename, bool use_fmt, bool debug, int nevn, int run_no, doubl
         insert_TH2F(&hmap_it->second, k1, PECOUE,   VP, E,     200, 0, 10, 200, 0, 2);
         insert_TH2F(&hmap_it->second, k1, ECALPCAL, E,  E,     200, 0,  2, 200, 0, 2);
 
-        insert_TH1F(&hmap_it->second, k1, Q2, Q2, 22, 0, 12);
-        insert_TH1F(&hmap_it->second, k1, NU, NU, 22, 0, 12);
-        insert_TH1F(&hmap_it->second, k1, XB, XB, 20, 0,  2);
+        insert_TH1F(&hmap_it->second, k1, Q2_STR, Q2_STR, 22, 0, 12);
+        insert_TH1F(&hmap_it->second, k1, NU_STR, NU_STR, 22, 0, 12);
+        insert_TH1F(&hmap_it->second, k1, XB_STR, XB_STR, 20, 0,  2);
     }
 
     // Create TTree and link bank_containers.
@@ -95,11 +96,10 @@ int run(char *in_filename, bool use_fmt, bool debug, int nevn, int run_no, doubl
     }
 
     // Iterate through input file. Each TTree entry is one event.
-    int evn;
     int divcntr = 0;
     int evnsplitter = 0;
     printf("Reading %lld events from %s.\n", nevn == -1 ? t->GetEntries() : nevn, in_filename);
-    for (evn = 0; (evn < t->GetEntries()) && (nevn == -1 || evn < nevn); ++evn) {
+    for (int evn = 0; (evn < t->GetEntries()) && (nevn == -1 || evn < nevn); ++evn) {
         if (!debug && evn >= evnsplitter) {
             if (evn != 0) {
                 printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
@@ -135,58 +135,52 @@ int run(char *in_filename, bool use_fmt, bool debug, int nevn, int run_no, doubl
         for (UInt_t pos = 0; pos < rt.index->size(); ++pos) {
             // Get basic data from track and particle banks.
             int index      = rt.index ->at(pos);
-            int pindex     = rt.pindex->at(pos);
+            int pindex     = rt.pindex->at(pos); // pindex is always equal to pos!
             int ndf        = rt.ndf   ->at(pos);
             double chi2    = rt.chi2  ->at(pos);
-
-            int charge     = rp.charge ->at(pindex);
-            int pid        = rp.pid    ->at(pindex);
-            int status     = rp.status ->at(pindex);
             // double chi2pid = rp.chi2pid->at(pindex);
 
-            // General cuts.
-            // if ((int) abs(status)/1000 != 2) continue;
-            // if (abs(chi2pid) >= 3) continue; // Spurious particle.
-            if (pid == 0)       continue; // Non-identified particle.
-            if (chi2/ndf >= 15) continue; // Ignore tracks with high chi2.
-
-            // TODO. I should filter already processed pindexes so that I don't count a detector's
-            //       data more than once.
-
-            // Figure out which histograms are to be filled.
-            // TODO. Choose these particules from cuts, not PID? Maybe using PID is fine for this
-            //       early analysis...
-            std::map<const char *, bool> truth_map;
-            truth_map.insert({PALL, true});
-            truth_map.insert({PPOS, charge > 0});
-            truth_map.insert({PNEG, charge < 0});
-            truth_map.insert({PNEU, charge == 0}); // Apparently there are no neutrals? Odd.
-            truth_map.insert({PPIP, pid ==  211});
-            truth_map.insert({PPIM, pid == -211});
-            truth_map.insert({PELC, pid ==   11});
-            truth_map.insert({PTRE, pid == 11 && status < 0});
-
             // Get reconstructed particle from either FMT or DC.
-            // TODO. Create a particle struct with methods to update it.
-            double vx, vy, vz;
-            double px, py, pz;
+            particle p;
             if (use_fmt) {
                 // Apply FMT cuts.
                 if (ft.vz->size() < 1)      continue; // Track reconstructed by FMT.
                 if (ft.ndf->at(index) != 3) continue; // Track crossed 3 FMT layers.
                 // if (ft.ndf->at(index) > 0) printf("NDF: %d\n", ft.ndf->at(index));
-
-                vx = ft.vx->at(index); vy = ft.vy->at(index); vz = ft.vz->at(index);
-                px = ft.px->at(index); py = ft.py->at(index); pz = ft.pz->at(index);
+                p = particle_init(rp.pid->at(pindex), rp.charge->at(pindex), rp.beta->at(pindex),
+                                  rp.status->at(pindex), beam_E,
+                                  ft.vx->at(index), ft.vy->at(index), ft.vz->at(index),
+                                  ft.px->at(index), ft.py->at(index), ft.pz->at(index));
             }
             else {
-                vx = rp.vx->at(pindex); vy = rp.vy->at(pindex); vz = rp.vz->at(pindex);
-                px = rp.px->at(pindex); py = rp.py->at(pindex); pz = rp.pz->at(pindex);
+                p = particle_init(rp.pid->at(pindex), rp.charge->at(pindex), rp.beta->at(pindex),
+                                  rp.status->at(pindex), beam_E,
+                                  rp.vx->at(pindex), rp.vy->at(pindex), rp.vz->at(pindex),
+                                  rp.px->at(pindex), rp.py->at(pindex), rp.pz->at(pindex));
             }
 
+            // General cuts.
+            // if ((int) abs(status)/1000 != 2) continue;
+            // if (abs(chi2pid) >= 3) continue; // Spurious particle.
+            if (p.pid == 0)       continue; // Non-identified particle.
+            if (chi2/ndf >= 15) continue; // Ignore tracks with high chi2.
+
             // Geometry cuts.
-            if (vx*vx + vy*vy > 4)   continue; // Too far from beamline.
-            if (-40 > vz || vz > 40) continue; // Too far from target.
+            if (d_from_beamline(p) > 4) continue; // Too far from beamline.
+            if (-40 > p.vz || p.vz > 40) continue; // Too far from target.
+
+            // Figure out which histograms are to be filled.
+            // NOTE. Normally for analysis its preferred for me to find my own cuts to get PID, but
+            //       perhaps for this very early analysis using the banks' PID is fine.
+            std::map<const char *, bool> truth_map;
+            truth_map.insert({PALL, true});
+            truth_map.insert({PPOS, p.q > 0});
+            truth_map.insert({PNEG, p.q < 0});
+            truth_map.insert({PNEU, p.q == 0}); // Apparently there are no neutrals? Very odd.
+            truth_map.insert({PPIP, p.pid ==  211});
+            truth_map.insert({PPIM, p.pid == -211});
+            truth_map.insert({PELC, p.pid ==   11});
+            truth_map.insert({PTRE, p.is_trigger_electron});
 
             // Get calorimeters data.
             double pcal_E = 0; // PCAL total deposited energy.
@@ -216,40 +210,38 @@ int run(char *in_filename, bool use_fmt, bool debug, int nevn, int run_no, doubl
                 if (!truth_map[k1]) continue;
 
                 // Vertex z.
-                histos[k1][VZ]     ->Fill(vz);
-                histos[k1][VZPHI]  ->Fill(vz, to_deg(calc_phi(px, py)));
-                histos[k1][VZTHETA]->Fill(vz, to_deg(calc_theta(px, py, pz)));
+                histos[k1][VZ]     ->Fill(p.vz);
+                histos[k1][VZPHI]  ->Fill(p.vz, to_deg(p.phi));
+                histos[k1][VZTHETA]->Fill(p.vz, to_deg(p.theta));
 
                 // Vertex p.
-                histos[k1][VP]    ->Fill(pz);
-                histos[k1][BETA]  ->Fill(rp.beta->at(pindex));
-                histos[k1][VPBETA]->Fill(pz, rp.beta->at(pindex));
+                histos[k1][VP]    ->Fill(p.pz);
+                histos[k1][BETA]  ->Fill(p.beta);
+                histos[k1][VPBETA]->Fill(p.pz, p.beta);
 
                 // TOF. (TODO. Check FTOF resolution).
                 double dtof = tof - tre_tof;
                 if (tre_tof > 0 && dtof > 0) { // Only fill if trigger electron's TOF was found.
                     histos[k1][DTOF] ->Fill(dtof);
-                    histos[k1][VPTOF]->Fill(calc_P(px,py,pz), dtof);
+                    histos[k1][VPTOF]->Fill(p.P, dtof);
                 }
 
                 // Calorimeters.
-                double tot_P = calc_P(px,py,pz);
                 if (tot_E > 0) {
-                    histos[k1][PEDIVP]->Fill(tot_P, tot_E/tot_P);
-                    histos[k1][EEDIVP]->Fill(tot_E, tot_E/tot_P);
+                    histos[k1][PEDIVP]->Fill(p.P, tot_E/p.P);
+                    histos[k1][EEDIVP]->Fill(tot_E, tot_E/p.P);
                 }
-                if (pcal_E > 0) histos[k1][PPCALE]->Fill(tot_P, pcal_E);
-                if (ecin_E > 0) histos[k1][PECINE]->Fill(tot_P, ecin_E);
-                if (ecou_E > 0) histos[k1][PECOUE]->Fill(tot_P, ecou_E);
+                if (pcal_E > 0) histos[k1][PPCALE]->Fill(p.P, pcal_E);
+                if (ecin_E > 0) histos[k1][PECINE]->Fill(p.P, ecin_E);
+                if (ecou_E > 0) histos[k1][PECOUE]->Fill(p.P, ecou_E);
                 if (pcal_E > 0 && ecin_E > 0 && ecou_E > 0)
                     histos[k1][ECALPCAL]->Fill(ecin_E+ecou_E, pcal_E);
 
                 // SIDIS variables.
-                if (pid == 11) {
-                    double calc_theta(double px, double py, double pz);
-                    histos[k1][Q2]->Fill(calc_Q2(beam_E, calc_P(px,py,pz), calc_theta(px,py,pz)));
-                    histos[k1][NU]->Fill(calc_nu(beam_E, calc_P(px,py,pz)));
-                    histos[k1][XB]->Fill(calc_Xb(beam_E, calc_P(px,py,pz), calc_theta(px,py,pz)));
+                if (p.pid == 11) {
+                    histos[k1][Q2_STR]->Fill(p.Q2);
+                    histos[k1][NU_STR]->Fill(p.nu);
+                    histos[k1][XB_STR]->Fill(p.Xb);
                 }
             }
         }
@@ -336,9 +328,9 @@ int run(char *in_filename, bool use_fmt, bool debug, int nevn, int run_no, doubl
             dir = Form("%s/%s", k1, "SIDIS");
             f_out->mkdir(dir);
             f_out->cd(dir);
-            histos[k1][Q2]->Write();
-            histos[k1][NU]->Write();
-            histos[k1][XB]->Write();
+            histos[k1][Q2_STR]->Write();
+            histos[k1][NU_STR]->Write();
+            histos[k1][XB_STR]->Write();
         }
     }
 

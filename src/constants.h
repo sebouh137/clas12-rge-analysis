@@ -54,9 +54,9 @@ extern const double PLIMITSARR[4][2]; // Momentum limits for 1D SF fits.
 #define SF_PSTEP 0.4 // GeV
 #define SF_CHI2CONFORMITY 2 // NOTE. This is a source of systematic error!
 
-#define Q2       "Q^{2}"
-#define NU       "#nu"
-#define XB       "X_{bjorken}"
+#define Q2_STR   "Q^{2}"
+#define NU_STR   "#nu"
+#define XB_STR   "X_{bjorken}"
 
 // RUN CONSTANTS (TODO. these should be in a map.)
 #define BE11983 10.3894 //  50 nA.
