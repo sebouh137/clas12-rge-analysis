@@ -1,4 +1,4 @@
-#include "utilities.h"
+#include "../lib/utilities.h"
 
 // Pass from radians to degrees.
 double to_deg(double radians) {

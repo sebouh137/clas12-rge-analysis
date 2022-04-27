@@ -1,4 +1,4 @@
-#include "io_handler.h"
+#include "../lib/io_handler.h"
 
 int acceptance_handle_args(int argc, char **argv, bool *use_fmt, bool *debug, int *nevents,
                            char **input_file, int *run_no, double *beam_energy) {

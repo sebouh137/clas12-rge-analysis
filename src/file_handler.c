@@ -1,4 +1,4 @@
-#include "file_handler.h"
+#include "../lib/file_handler.h"
 
 int get_run_no(char *input_file, int *run_no_int) {
     // TODO. This is a very brute way to find the run number and **should** be changed.

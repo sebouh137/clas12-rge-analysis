@@ -1,4 +1,4 @@
-#include "err_handler.h"
+#include "../lib/err_handler.h"
 
 int acceptance_usage() {
     fprintf(stderr, "Usage: acceptance [-fd] [-n NEVENTS] file\n");

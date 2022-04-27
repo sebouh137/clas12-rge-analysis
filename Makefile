@@ -1,6 +1,7 @@
 BIN         := ./bin
 BLD         := ./build
 SRC         := ./src
+LIB         := ./lib
 
 CXX         := g++
 CFLAGS      := -Wall -g
@@ -30,25 +31,25 @@ $(BIN)/extract_sf: $(OBJS) $(SRC)/extract_sf.c
 $(BIN)/hipo2root: $(OBJS) $(SRC)/hipo2root.c
 	$(CXX) $(CFLAGS) $(OBJS) $(ROOTCFLAGS) $(HIPOCFLAGS) $(LZ4INCLUDES) $(SRC)/hipo2root.c -o $(BIN)/hipo2root $(ROOTCFLAGS) $(ROOTLDFLAGS) $(HIPOLIBS) $(LZ4LIBS) $(ROOTLIBS)
 
-$(BLD)/bank_containers.o: $(SRC)/bank_containers.c $(SRC)/bank_containers.h
+$(BLD)/bank_containers.o: $(SRC)/bank_containers.c $(LIB)/bank_containers.h
 	$(CXX) $(CFLAGS) -c $(SRC)/bank_containers.c -o $(BLD)/bank_containers.o $(ROOTCFLAGS) $(HIPOCFLAGS) $(ROOTLDFLAGS) $(HIPOLIBS) $(ROOTLIBS)
 
-$(BLD)/constants.o: $(SRC)/constants.c $(SRC)/constants.h
+$(BLD)/constants.o: $(SRC)/constants.c $(LIB)/constants.h
 	$(CXX) $(CFLAGS) -c $(SRC)/constants.c -o $(BLD)/constants.o
 
-$(BLD)/err_handler.o: $(SRC)/err_handler.c $(SRC)/err_handler.h
+$(BLD)/err_handler.o: $(SRC)/err_handler.c $(LIB)/err_handler.h
 	$(CXX) $(CFLAGS) -c $(SRC)/err_handler.c -o $(BLD)/err_handler.o
 
-$(BLD)/file_handler.o: $(SRC)/file_handler.c
+$(BLD)/file_handler.o: $(SRC)/file_handler.c $(LIB)/file_handler.h
 	$(CXX) $(CFLAGS) -c $(SRC)/file_handler.c -o $(BLD)/file_handler.o
 
-$(BLD)/io_handler.o: $(SRC)/io_handler.c
+$(BLD)/io_handler.o: $(SRC)/io_handler.c $(LIB)/io_handler.h
 	$(CXX) $(CFLAGS) -c $(SRC)/io_handler.c -o $(BLD)/io_handler.o
 
-$(BLD)/particle.o: $(SRC)/particle.c
+$(BLD)/particle.o: $(SRC)/particle.c $(LIB)/particle.h
 	$(CXX) $(CFLAGS) -c $(SRC)/particle.c -o $(BLD)/particle.o
 
-$(BLD)/utilities.o: $(SRC)/utilities.c
+$(BLD)/utilities.o: $(SRC)/utilities.c $(LIB)/utilities.h
 	$(CXX) $(CFLAGS) -c $(SRC)/utilities.c -o $(BLD)/utilities.o $(ROOTCFLAGS) $(ROOTLDFLAGS) $(ROOTLIBS)
 
 clean:

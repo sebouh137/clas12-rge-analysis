@@ -7,9 +7,9 @@
 #include "TTree.h"
 #include "Compression.h"
 
-#include "err_handler.h"
-#include "io_handler.h"
-#include "bank_containers.h"
+#include "../lib/err_handler.h"
+#include "../lib/io_handler.h"
+#include "../lib/bank_containers.h"
 
 int main(int argc, char** argv) {
     char *in_filename = NULL;

@@ -14,12 +14,12 @@
 #include <TStyle.h>
 #include <TTree.h>
 
-#include "bank_containers.h"
-#include "constants.h"
-#include "err_handler.h"
-#include "file_handler.h"
-#include "io_handler.h"
-#include "utilities.h"
+#include "../lib/bank_containers.h"
+#include "../lib/constants.h"
+#include "../lib/err_handler.h"
+#include "../lib/file_handler.h"
+#include "../lib/io_handler.h"
+#include "../lib/utilities.h"
 
 // TODO. Add status cut.
 // TODO. Evaluate the most basic cuts and implement the necessary ones.

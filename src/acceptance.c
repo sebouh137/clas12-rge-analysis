@@ -12,13 +12,13 @@
 #include <TH2F.h>
 #include <TTree.h>
 
-#include "bank_containers.h"
-#include "constants.h"
-#include "err_handler.h"
-#include "file_handler.h"
-#include "io_handler.h"
-#include "particle.h"
-#include "utilities.h"
+#include "../lib/bank_containers.h"
+#include "../lib/constants.h"
+#include "../lib/err_handler.h"
+#include "../lib/file_handler.h"
+#include "../lib/io_handler.h"
+#include "../lib/particle.h"
+#include "../lib/utilities.h"
 
 // TODO. Check and fix theoretical curves.
 // TODO. Separate vz plot in z bins.

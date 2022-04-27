@@ -1,4 +1,4 @@
-#include "constants.h"
+#include "../lib/constants.h"
 
 const char *CALNAME[4] = {"PCAL", "ECIN", "ECOU", "ALL"};
 const char *SFARR2D[4] = {"Vp vs E/Vp (PCAL sector ",

@@ -1,4 +1,4 @@
-#include "particle.h"
+#include "../lib/particle.h"
 
 // Initialize a new particle.
 particle particle_init(int pid, int charge, double beta, int status, double beam_E,
