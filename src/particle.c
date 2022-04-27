@@ -22,12 +22,22 @@ particle particle_init(int pid, int charge, double beta, int status, int sector,
     p.py = py;
     p.pz = pz;
 
+    // Derived vars.
+    switch (abs(pid)) {
+        case 2212: p.mass = PRTMASS; break;
+        case  321: p.mass = KMASS;   break;
+        case  211: p.mass = PIMASS;  break;
+        case 2112: p.mass = NTRMASS; break;
+        case   11: p.mass = EMASS;   break;
+        default:   p.mass = -1;
+    }
+
     // NOTE. If programs gets slow, I should cache values of Q2, nu, etc here.
 
     return p;
 }
 
-// === Particle variables ==========================================================================
+// === PARTICLE FUNCTIONS ==========================================================================
 // Get distance from beamline.
 double d_from_beamline(particle p) {
     return (p.vx*p.vx + p.vy+p.vy);
@@ -53,28 +63,7 @@ double mass2(particle p) {
     return (P(p)*P(p)) / (p.beta*p.beta);
 }
 
-// Compute the polar angle of a produced particle p with respect to the virtual photon direction.
-// `p` is the produced particle while `e` is the trigger electron.
-double theta_pq(particle p, particle e, double bE) {
-    return calc_angle(-e.px, -e.py, bE-e.pz, p.px, p.py, p.pz);
-}
-
-// Compute the azimuthal angle of a produced particle p with respect to the virtual photon direction.
-double phi_pq(particle p, particle e, double bE) {
-    double gpx = -e.px, gpy = -e.py, gpz = bE-e.pz;
-    double ppx = p.px,  ppy = p.py,  ppz = p.pz;
-
-    double phi_z = M_PI - phi_lab(p);
-    rotate_z(&gpx, &gpy, phi_z);
-    rotate_z(&ppx, &ppy, phi_z);
-
-    double phi_y = calc_angle(gpx, gpy, gpz, 0, 0, 1);
-    rotate_y(&ppx, &ppz, phi_y);
-
-    return atan2(ppy, ppx);
-}
-
-// === SIDIS variables =============================================================================
+// === SIDIS e- FUNCTIONS ==========================================================================
 // Calculate nu from beam energy and total momentum.
 double nu(particle p, double bE) {
     if (!p.is_trigger_electron) return 0; // TODO. I need an invalid return value, not zero!
@@ -117,4 +106,70 @@ double theta_photon_lab(particle p, double bE) {
 double phi_photon_lab(particle p) {
     if (!p.is_trigger_electron) return 0;
     return M_PI + phi_lab(p);
+}
+
+// === SIDIS PRODUCED PARTICLE FUNCTIONS ===========================================================
+// Compute the polar angle of a produced particle p with respect to the virtual photon direction.
+// `p` is the produced particle while `e` is the trigger electron.
+double theta_pq(particle p, particle e, double bE) {
+    return calc_angle(-e.px, -e.py, bE-e.pz, p.px, p.py, p.pz);
+}
+
+// Compute the azimuthal angle of a produced particle p with respect to the virtual photon direction.
+double phi_pq(particle p, particle e, double bE) {
+    double gpx = -e.px, gpy = -e.py, gpz = bE-e.pz;
+    double ppx = p.px,  ppy = p.py,  ppz = p.pz;
+
+    double phi_z = M_PI - phi_lab(p);
+    rotate_z(&gpx, &gpy, phi_z);
+    rotate_z(&ppx, &ppy, phi_z);
+
+    double phi_y = calc_angle(gpx, gpy, gpz, 0, 0, 1);
+    rotate_y(&ppx, &ppz, phi_y);
+
+    return atan2(ppy, ppx);
+}
+
+// Compute the cosine of the polar angle with respect to the virtual photon direction.
+double cos_theta_pq(particle p, particle e, double bE) {
+    return (p.pz*(bE-e.pz) - p.px*e.px - p.py*e.py) / (sqrt(nu(e,bE)*nu(e,bE) + Q2(e,bE)) * P(p));
+}
+
+// Return the squared momentum transverse to the virtual photon.
+double Pt2(particle p, particle e, double bE) {
+    return P(p) * P(p) * (1 - cos_theta_pq(p,e,bE)*cos_theta_pq(p,e,bE));
+}
+
+// Return the squared momentum longitudinal to the virtual photon.
+double Pl2(particle p, particle e, double bE) {
+    return P(p) * P(p) * cos_theta_pq(p,e,bE) * cos(p,e,bE);
+}
+
+// TODO. Pending description.
+double zh(particle p, particle e, double bE) {
+    return sqrt(p.mass*p.mass + P(p)*P(p)) / nu(e,bE);
+}
+
+// TODO. Pending description.
+double PlCM(particle p, particle e, double bE) {
+    return (nu(e,bE) + PRTMASS) * (sqrt(Pl2(p,e,bE)) - sqrt(Q2(e,bE) + nu(e,bE)*nu(e,bE))
+            * zh(p,e,bE)*nu(e,bE) / (nu(e,bE) + PRTMASS)) / W(e,bE);
+}
+
+// TODO. Pending description.
+double PmaxCM(particle p, particle e, double bE) {
+    return sqrt(pow(W(e,bE)*W(e,bE) - NTRMASS*NTRMASS + PIMASS*PIMASS, 2)
+            - 4*PIMASS*PIMASS*W(e,bE)*W(e,bE)) / (2*W(e,bE));
+}
+
+// Return the momentum transverse component squared of the produced particle wrt the virtual photon
+//     direction.
+double PTrans2PQ(particle p, particle e, double bE) {
+    return P(p)*P(p) * (1 - cos_theta_pq(p,e,bE)*cos_theta_pq(p,e,bE));
+}
+
+// Return the momentum longitudinal component squared of the produced particle wrt the virtual
+//     photon direction.
+double PLong2PQ(particle p, particle e, double bE) {
+    return P(p)*P(p) * cos_theta_pq(p,e,bE)*cos_theta_pq(p,e,bE);
 }
