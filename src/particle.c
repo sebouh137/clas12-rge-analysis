@@ -142,7 +142,7 @@ double Pt2(particle p, particle e, double bE) {
 
 // Return the squared momentum longitudinal to the virtual photon.
 double Pl2(particle p, particle e, double bE) {
-    return P(p) * P(p) * cos_theta_pq(p,e,bE) * cos(p,e,bE);
+    return P(p) * P(p) * cos_theta_pq(p,e,bE) * cos_theta_pq(p,e,bE);
 }
 
 // TODO. Pending description.
