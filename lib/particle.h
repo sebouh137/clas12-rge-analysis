@@ -52,5 +52,8 @@ double PlCM(particle p, particle e, double bE);
 double PmaxCM(particle p, particle e, double bE);
 double PTrans2PQ(particle p, particle e, double bE);
 double PLong2PQ(particle p, particle e, double bE);
+double Xf(particle p, particle e, double bE);
+double Mx2(particle p, particle e, double bE);
+double t_mandelstam(particle p, particle e, double bE);
 
 #endif
