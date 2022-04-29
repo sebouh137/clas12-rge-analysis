@@ -39,6 +39,7 @@ double Yb(particle p, double beam_E);
 double theta_photon_lab(particle p, double beam_E);
 double phi_photon_lab(particle p);
 double W(particle p, double beam_E);
+double W2(particle p, double bE);
 
 // SIDIS produced particle functions.
 double theta_pq(particle p, particle e, double bE);

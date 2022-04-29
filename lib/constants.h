@@ -59,6 +59,8 @@ extern const double PLIMITSARR[4][2]; // Momentum limits for 1D SF fits.
 #define Q2_STR "Q^{2}"
 #define NU_STR "#nu"
 #define XB_STR "X_{bjorken}"
+#define W2_STR  "W^{2}"
+#define Q2NU_STR "Q^{2} vs #nu"
 
 // RUN CONSTANTS (TODO. these should be in a map.)
 #define BE11983 10.3894 //  50 nA.

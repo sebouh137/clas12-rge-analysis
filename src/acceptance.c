@@ -25,10 +25,15 @@
 // TODO. Get simulations from RG-F, understand how they're made to do acceptance correction.
 //           -> ask Raffa.
 
+// Add a cut for Q2 > 1 for the momentum vs beta plots. see what happens with deuterium.
+// Add a cut for W > 2.
+
 // TODO. Separate vz plot in z bins.
 // TODO. Make this as a library similar to the Analyser.
 // TODO. Evaluate acceptance in diferent regions.
 // TODO. See simulations with Esteban.
+// TODO. Adding a functionality to be able to request a plot and get it done in one line would be
+//       the gold standard for this program.
 
 int run(char *in_filename, bool use_fmt, bool debug, int nevn, int run_no, double beam_E) {
     // Access input file. TODO. Make this input file*s*.
@@ -77,6 +82,8 @@ int run(char *in_filename, bool use_fmt, bool debug, int nevn, int run_no, doubl
         insert_TH1F(&hmap_it->second, k1, Q2_STR, Q2_STR, 22, 0, 12);
         insert_TH1F(&hmap_it->second, k1, NU_STR, NU_STR, 22, 0, 12);
         insert_TH1F(&hmap_it->second, k1, XB_STR, XB_STR, 20, 0,  2);
+        insert_TH1F(&hmap_it->second, k1, W2_STR,  W2_STR,  200, 0, 20);
+        insert_TH2F(&hmap_it->second, k1, Q2NU_STR, Q2_STR, NU_STR, 200, 0, 12, 200, 0, 12);
     }
 
     // Create TTree and link bank_containers.
@@ -100,8 +107,8 @@ int run(char *in_filename, bool use_fmt, bool debug, int nevn, int run_no, doubl
     }
 
     // Iterate through input file. Each TTree entry is one event.
-    int divcntr = 0;
-    int evnsplitter = 0;
+    int divcntr = 0; int evnsplitter = 0; // counters for fancy progress bar.
+    int pass_cntr = 0; int Q2_cntr = 0; int W_cntr = 0; // counters for cut events.
     printf("Reading %lld events from %s.\n", nevn == -1 ? t->GetEntries() : nevn, in_filename);
     for (int evn = 0; (evn < t->GetEntries()) && (nevn == -1 || evn < nevn); ++evn) {
         if (!debug && evn >= evnsplitter) {
@@ -136,6 +143,49 @@ int run(char *in_filename, bool use_fmt, bool debug, int nevn, int run_no, doubl
             if (rs.pindex->at(i) == tre_pindex && rs.time->at(i) < tre_tof) tre_tof = rs.time->at(i);
         }
 
+        // Trigger electron cuts.
+        bool Q2_pass, W_pass = false;
+        for (UInt_t pos = 0; pos < rt.index->size(); ++pos) {
+            // Get reconstructed particle from either FMT or DC.
+            int pindex = rt.pindex->at(pos);
+            if (rp.pid->at(pindex) != 11 || rp.status->at(pindex) > 0) continue;
+
+            particle p;
+            if (use_fmt) {
+                int index = rt.index->at(pos);
+                // Apply FMT cuts.
+                if (ft.vz->size() < 1)      continue; // Track reconstructed by FMT.
+                if (ft.ndf->at(index) != 3) continue; // Track crossed 3 FMT layers.
+                // if (ft.ndf->at(index) > 0) printf("NDF: %d\n", ft.ndf->at(index));
+
+                p = particle_init(rp.pid->at(pindex), rp.charge->at(pindex), rp.beta->at(pindex),
+                                  rp.status->at(pindex), rt.sector->at(pos),
+                                  ft.vx->at(index), ft.vy->at(index), ft.vz->at(index),
+                                  ft.px->at(index), ft.py->at(index), ft.pz->at(index));
+            }
+            else {
+                p = particle_init(rp.pid->at(pindex), rp.charge->at(pindex), rp.beta->at(pindex),
+                                  rp.status->at(pindex), rt.sector->at(pos),
+                                  rp.vx->at(pindex), rp.vy->at(pindex), rp.vz->at(pindex),
+                                  rp.px->at(pindex), rp.py->at(pindex), rp.pz->at(pindex));
+            }
+
+            Q2_pass = Q2(p, beam_E) > 1;
+            W_pass  = W( p, beam_E) > 2;
+        }
+
+        // Eliminate elastic scattering events and count passing events.
+        if (!Q2_pass) {
+            Q2_cntr++;
+            continue;
+        }
+        if (!W_pass) {
+            W_cntr++;
+            continue;
+        }
+        pass_cntr++;
+
+        // Process DIS event.
         for (UInt_t pos = 0; pos < rt.index->size(); ++pos) {
             // Get basic data from track and particle banks.
             int index      = rt.index ->at(pos);
@@ -243,10 +293,12 @@ int run(char *in_filename, bool use_fmt, bool debug, int nevn, int run_no, doubl
                     histos[k1][ECALPCAL]->Fill(ecin_E+ecou_E, pcal_E);
 
                 // SIDIS variables.
-                if (p.pid == 11) {
+                if (p.is_trigger_electron) {
                     histos[k1][Q2_STR]->Fill(Q2(p, beam_E));
                     histos[k1][NU_STR]->Fill(nu(p, beam_E));
                     histos[k1][XB_STR]->Fill(Xb(p, beam_E));
+                    histos[k1][W2_STR] ->Fill(W2(p, beam_E));
+                    histos[k1][Q2NU_STR]->Fill(Q2(p, beam_E), nu(p, beam_E));
                 }
             }
         }
@@ -256,6 +308,11 @@ int run(char *in_filename, bool use_fmt, bool debug, int nevn, int run_no, doubl
         printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
         printf("[==================================================] 100%%\n");
     }
+
+    // Print statistics.
+    printf("Processed events: %8d/%8lld\n", pass_cntr, t->GetEntries());
+    printf("  * Q^2 < 1 :     %8d events\n", Q2_cntr);
+    printf("  * W < 2   :     %8d events\n\n", W_cntr);
 
     // Fit histograms.
     for (hmap_it = histos.begin(); hmap_it != histos.end(); ++hmap_it) {
@@ -338,13 +395,15 @@ int run(char *in_filename, bool use_fmt, bool debug, int nevn, int run_no, doubl
         histos[k1][PECOUE]  ->Draw("colz"); gcvs->Write(PECOUE);
         histos[k1][ECALPCAL]->Draw("colz"); gcvs->Write(ECALPCAL);
 
-        if (!strcmp(k1, PELC) || !strcmp(k1, PTRE)) {
+        if (!strcmp(k1, PTRE)) {
             dir = Form("%s/%s", k1, "SIDIS");
             f_out->mkdir(dir);
             f_out->cd(dir);
             histos[k1][Q2_STR]->Write();
             histos[k1][NU_STR]->Write();
             histos[k1][XB_STR]->Write();
+            histos[k1][W2_STR] ->Write();
+            histos[k1][Q2NU_STR]->Draw("colz"); gcvs->Write(Q2NU_STR);
         }
     }
 
