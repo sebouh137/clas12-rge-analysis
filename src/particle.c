@@ -199,7 +199,7 @@ double PLong2PQ(particle p, particle e, double bE) {
 // Calculate X_f (X Feynmann).
 double Xf(particle p, particle e, double bE) {
     if (!e.is_trigger_electron || p.is_trigger_electron) return 0;
-    return PlCm(p,e,bE) / PmaxCM(p,e,bE);
+    return PlCM(p,e,bE) / PmaxCM(p,e,bE);
 }
 
 // Compute the missing mass
