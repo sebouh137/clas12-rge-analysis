@@ -20,7 +20,7 @@
 #include "../lib/particle.h"
 #include "../lib/utilities.h"
 
-// TODO. Check and fix theoretical curves. -> Ask Hayk and Raffa.
+// TODO. Check and fix theoretical curves. -> Ask Raffa.
 // TODO. See why I'm not seeing any neutrals. -> ask Raffa.
 // TODO. Get simulations from RG-F, understand how they're made to do acceptance correction.
 //           -> ask Raffa.
@@ -28,11 +28,12 @@
 // Add a cut for Q2 > 1 for the momentum vs beta plots. see what happens with deuterium.
 // Add a cut for W > 2.
 
-// TODO. Separate vz plot in z bins.
+// TODO. Add a cut on momentum vs beta to remove deuteron.
+// TODO. Separate in z bins and see what happens.
 // TODO. Make this as a library similar to the Analyser.
 // TODO. Evaluate acceptance in diferent regions.
 // TODO. See simulations with Esteban.
-// TODO. Adding a functionality to be able to request a plot and get it done in one line would be
+// NOTE. Adding a functionality to be able to request a plot and get it done in one line would be
 //       the gold standard for this program.
 
 int run(char *in_filename, bool use_fmt, bool debug, int nevn, int run_no, double beam_E) {
@@ -231,7 +232,7 @@ int run(char *in_filename, bool use_fmt, bool debug, int nevn, int run_no, doubl
             truth_map.insert({PALL, true});
             truth_map.insert({PPOS, p.q > 0});
             truth_map.insert({PNEG, p.q < 0});
-            truth_map.insert({PNEU, p.q == 0}); // Apparently there are no neutrals? Very odd.
+            truth_map.insert({PNEU, p.q == 0}); // NOTE. Apparently there are no neutrals? Very odd.
             truth_map.insert({PPIP, p.pid ==  211});
             truth_map.insert({PPIM, p.pid == -211});
             truth_map.insert({PELC, p.pid ==   11});
