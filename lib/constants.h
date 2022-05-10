@@ -42,7 +42,7 @@
 #define PECOUE   "Vp vs E (ECOU)"
 #define ECALPCAL "E (ECAL) vs E (PCAL)"
 
-// Sampling fraction.
+// Sampling fraction constants.
 extern const char *CALNAME[4]; // Calorimeters names.
 extern const char *SFARR2D[4]; // Sampling Fraction (SF) 2D arr names.
 extern const char *SFARR1D[4]; // SF 1D arr names.
@@ -56,21 +56,31 @@ extern const double PLIMITSARR[4][2]; // Momentum limits for 1D SF fits.
 #define SF_PSTEP 0.4 // GeV
 #define SF_CHI2CONFORMITY 2 // NOTE. This is a source of systematic error!
 
-#define Q2_STR "Q^{2}"
-#define NU_STR "#nu"
-#define XB_STR "X_{bjorken}"
-#define W2_STR  "W^{2}"
+// SIDIS constants.
+#define Q2_STR   "Q^{2}"
+#define NU_STR   "#nu"
+#define XB_STR   "X_{bjorken}"
+#define W2_STR   "W^{2}"
 #define Q2NU_STR "Q^{2} vs #nu"
 
-// RUN CONSTANTS (TODO. these should be in a map.)
+// Run constants (TODO. these should be in a map.)
 #define BE11983 10.3894 //  50 nA.
 #define BE12016 10.3894 // 250 nA.
 #define BE12439  2.1864 //  15 nA.
 
-// DETECTOR CONSTANTS
+// Detector constants.
 #define NSECTORS 6 // # of CLAS12 sectors.
 #define PCAL_LYR 1 // PCAL's layer id.
 #define ECIN_LYR 4 // EC inner layer id.
 #define ECOU_LYR 7 // EC outer layer id.
+
+// Cuts.
+#define FMTNLYRSCUT   3 // # of FMT layers required to accept track.
+#define Q2CUT         0 // Q2 of particle must be over this value.
+#define WCUT          0 // W of particle must be over this value.
+#define CHI2NDFCUT   15 // Chi2/NDF must be below this value.
+#define VXVYCUT       4 // sqrt(vx^2 + vy^2) must be below this value.
+#define VZLOWCUT    -40 // vz must be above this value.
+#define VZHIGHCUT    40 // vz must be below this.
 
 #endif

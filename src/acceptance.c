@@ -25,10 +25,7 @@
 // TODO. Get simulations from RG-F, understand how they're made to do acceptance correction.
 //           -> ask Raffa.
 
-// Add a cut for Q2 > 1 for the momentum vs beta plots. see what happens with deuterium.
-// Add a cut for W > 2.
-
-// TODO. Add a cut on momentum vs beta to remove deuteron.
+// TODO. Add a cut on momentum vs beta to remove deuteron?
 // TODO. Separate in z bins and see what happens.
 // TODO. Make this as a library similar to the Analyser.
 // TODO. Evaluate acceptance in diferent regions.
@@ -107,9 +104,17 @@ int run(char *in_filename, bool use_fmt, bool debug, int nevn, int run_no, doubl
         printf("\n\n\n\n");
     }
 
+    // Counters for fancy progress bar.
+    int divcntr = 0;
+    int evnsplitter = 0;
+
+    // Counters for SIDIS cuts.
+    int tot_cntr    = 0;
+    int pass_cntr   = 0;
+    int no_tre_cntr = 0;
+    int Q2_cntr     = 0;
+    int W_cntr      = 0;
     // Iterate through input file. Each TTree entry is one event.
-    int divcntr = 0; int evnsplitter = 0; // counters for fancy progress bar.
-    int pass_cntr = 0; int Q2_cntr = 0; int W_cntr = 0; // counters for cut events.
     printf("Reading %lld events from %s.\n", nevn == -1 ? t->GetEntries() : nevn, in_filename);
     for (int evn = 0; (evn < t->GetEntries()) && (nevn == -1 || evn < nevn); ++evn) {
         if (!debug && evn >= evnsplitter) {
@@ -145,18 +150,21 @@ int run(char *in_filename, bool use_fmt, bool debug, int nevn, int run_no, doubl
         }
 
         // Trigger electron cuts.
-        bool Q2_pass, W_pass = false;
+        bool no_tre_pass = false;
+        bool Q2_pass     = true;
+        bool W_pass      = true;
         for (UInt_t pos = 0; pos < rt.index->size(); ++pos) {
             // Get reconstructed particle from either FMT or DC.
             int pindex = rt.pindex->at(pos);
             if (rp.pid->at(pindex) != 11 || rp.status->at(pindex) > 0) continue;
 
+            no_tre_pass = true;
             particle p;
             if (use_fmt) {
                 int index = rt.index->at(pos);
                 // Apply FMT cuts.
-                if (ft.vz->size() < 1)      continue; // Track reconstructed by FMT.
-                if (ft.ndf->at(index) != 3) continue; // Track crossed 3 FMT layers.
+                if (ft.vz->size() < 1)               continue; // Track reconstructed by FMT.
+                if (ft.ndf->at(index) < FMTNLYRSCUT) continue; // Track crossed 3 FMT layers.
                 // if (ft.ndf->at(index) > 0) printf("NDF: %d\n", ft.ndf->at(index));
 
                 p = particle_init(rp.pid->at(pindex), rp.charge->at(pindex), rp.beta->at(pindex),
@@ -171,19 +179,16 @@ int run(char *in_filename, bool use_fmt, bool debug, int nevn, int run_no, doubl
                                   rp.px->at(pindex), rp.py->at(pindex), rp.pz->at(pindex));
             }
 
-            Q2_pass = Q2(p, beam_E) > 1;
-            W_pass  = W( p, beam_E) > 2;
+            Q2_pass = Q2(p, beam_E) >= Q2CUT;
+            W_pass  = W( p, beam_E) >= WCUT;
         }
 
         // Eliminate elastic scattering events and count passing events.
-        if (!Q2_pass) {
-            Q2_cntr++;
-            continue;
-        }
-        if (!W_pass) {
-            W_cntr++;
-            continue;
-        }
+        tot_cntr++;
+        if (!no_tre_pass) no_tre_cntr++;
+        if (!Q2_pass)     Q2_cntr++;
+        if (!W_pass)      W_cntr++;
+        if (!no_tre_pass || !Q2_pass || !W_pass) continue;
         pass_cntr++;
 
         // Process DIS event.
@@ -219,11 +224,11 @@ int run(char *in_filename, bool use_fmt, bool debug, int nevn, int run_no, doubl
             // if ((int) abs(status)/1000 != 2) continue;
             // if (abs(chi2pid) >= 3) continue; // Spurious particle.
             if (p.pid == 0)       continue; // Non-identified particle.
-            if (chi2/ndf >= 15) continue; // Ignore tracks with high chi2.
+            if (chi2/ndf >= CHI2NDFCUT) continue; // Ignore tracks with high chi2.
 
             // Geometry cuts.
-            if (d_from_beamline(p) > 4)  continue; // Too far from beamline.
-            if (-40 > p.vz || p.vz > 40) continue; // Too far from target.
+            if (d_from_beamline(p) > VXVYCUT)  continue; // Too far from beamline.
+            if (VZLOWCUT > p.vz || p.vz > VZHIGHCUT) continue; // Too far from target.
 
             // Figure out which histograms are to be filled.
             // NOTE. Normally for analysis its preferred for me to find my own cuts to get PID, but
@@ -277,7 +282,7 @@ int run(char *in_filename, bool use_fmt, bool debug, int nevn, int run_no, doubl
 
                 // TOF. (TODO. Check FTOF resolution).
                 double dtof = tof - tre_tof;
-                if (tre_tof > 0 && dtof > 0) { // Only fill if trigger electron's TOF was found.
+                if (tre_tof > 0 && dtof > 0) { // Only fill if trigger electron's, Q2CUT TOF was found.
                     histos[k1][DTOF] ->Fill(dtof);
                     histos[k1][VPTOF]->Fill(P(p), dtof);
                 }
@@ -307,13 +312,14 @@ int run(char *in_filename, bool use_fmt, bool debug, int nevn, int run_no, doubl
     if (!debug) {
         printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
         printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
-        printf("[==================================================] 100%%\n");
+        printf("[==================================================] 100%% \n");
     }
 
     // Print statistics.
-    printf("Processed events: %8d/%8lld\n", pass_cntr, t->GetEntries());
-    printf("  * Q^2 < 1 :     %8d events\n", Q2_cntr);
-    printf("  * W < 2   :     %8d events\n\n", W_cntr);
+    printf("Processed events (with particles): %8d/%8d\n", pass_cntr, tot_cntr);
+    printf("  * no trigger electron : %8d events\n", no_tre_cntr);
+    printf("  * Q^2 < %2d            : %8d events\n", Q2CUT, Q2_cntr);
+    printf("  * W   < %2d            : %8d events\n\n", WCUT, W_cntr);
 
     // Fit histograms.
     for (hmap_it = histos.begin(); hmap_it != histos.end(); ++hmap_it) {

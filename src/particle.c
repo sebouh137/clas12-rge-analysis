@@ -91,7 +91,7 @@ double Yb(particle p, double bE) {
 // Calculate the invariant mass of the electron-nucleon interaction.
 double W(particle p, double bE) {
     if (!p.is_trigger_electron) return 0;
-    return sqrt(W2(p, bE));
+    return sqrt(abs(W2(p, bE)));
 }
 // TODO. Plot W without any Q2 cuts.
 // TODO. Read a bit about resonances.
