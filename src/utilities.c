@@ -17,14 +17,16 @@ double calc_angle(double x1, double y1, double z1, double x2, double y2, double 
 
 // Rotate a vector around the y axis by theta.
 void rotate_y(double *x, double *z, double th) {
-    double x_prev = *x, z_prev = *z;
+    double x_prev = *x;
+    double z_prev = *z;
     *x =  x_prev*cos(th) + z_prev*sin(th);
     *z = -x_prev*sin(th) + z_prev*cos(th);
 }
 
 // Rotate a vector around the z axis by theta.
 void rotate_z(double *x, double *y, double th) {
-    double x_prev = *x, y_prev = *y;
+    double x_prev = *x;
+    double y_prev = *y;
     *x = x_prev*cos(th) - y_prev*sin(th);
     *y = x_prev*sin(th) + y_prev*cos(th);
 }

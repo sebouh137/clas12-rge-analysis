@@ -9,59 +9,69 @@
 #define NTRMASS 0.939565 // Neutron mass.
 #define EMASS   0.000051 // Electron mass.
 
+// PTUPLES MAP DATA CATEGORIES.
+#define METADATA_STR     "metadata"
+#define PARTICLE_STR     "particle"
+#define CALORIMETER_STR  "calorimeter"
+#define SCINTILLATOR_STR "scintillator"
+#define SIDIS_STR        "sidis"
+
 // Particle map keys.
-#define PALL "All particles"
-#define PPOS "Positive particles"
-#define PNEG "Negative particles"
-#define PNEU "Neutral particles"
-#define PPIP "Pi+"
-#define PPIM "Pi-"
-#define PELC "e-"
-#define PTRE "Trigger e-"
+#define PALL_STR "All particles"
+// #define PPOS "Positive particles"
+// #define PNEG "Negative particles"
+// #define PNEU "Neutral particles"
+// #define PPIP "Pi+"
+// #define PPIM "Pi-"
+// #define PELC "e-"
+// #define PTRE "Trigger e-"
 
-// Histogram map keys.
-#define VZ       "Vz"
-#define PHI      "#phi"
-#define VZPHI    "Vz vs #phi"
-#define THETA    "#theta"
-#define VZTHETA  "Vz vs #theta"
+// Variable names (& titles).
+#define RUNNO_STR   "run_no"
+#define EVENTNO_STR "event_no"
 
-#define VP       "Vp"
-#define BETA     "#beta"
-#define VPBETA   "Vp vs #beta"
+#define PID_STR    "pid"
+#define CHARGE_STR "charge"
+#define VX_STR     "vx (cm)"
+#define VY_STR     "vy (cm)"
+#define VZ_STR     "vz (cm)"
+#define PX_STR     "p_{x} (GeV)"
+#define PY_STR     "p_{y} (GeV)"
+#define PZ_STR     "p_{z} (GeV)"
+#define P_STR      "p (GeV)"
+#define THETA_STR  "#theta (#degree)"
+#define PHI_STR    "#phi (#degree)"
+#define BETA_STR   "#beta"
 
-#define DTOF     "#Delta TOF"
-#define VPTOF    "Vp vs #Delta TOF"
+#define PCAL_E_STR "pcal E (GeV)"
+#define ECIN_E_STR "ecin E (GeV)"
+#define ECOU_E_STR "ecou E (GeV)"
+#define TOT_E_STR  "total E (GeV)"
 
-#define E        "E"
-#define EDIVP    "E/Vp"
-#define PEDIVP   "Vp vs E/Vp"
-#define EEDIVP   "E vs E/Vp"
-#define PPCALE   "Vp vs E (PCAL)"
-#define PECINE   "Vp vs E (ECIN)"
-#define PECOUE   "Vp vs E (ECOU)"
-#define ECALPCAL "E (ECAL) vs E (PCAL)"
+#define DTOF_STR   "#Delta TOF (ns)"
+
+// TODO. Check units.
+#define Q2_STR      "Q^{2}"
+#define NU_STR      "#nu"
+#define XB_STR      "X_{bjorken}"
+#define W2_STR      "W^{2}"
+// #define PHOTONTHETA "virtual photon #theta (lab frame #degree)"
+// #define PHOTONPHI   "virtual photon #phi (lab frame #degree)"
 
 // Sampling fraction constants.
-extern const char *CALNAME[4]; // Calorimeters names.
-extern const char *SFARR2D[4]; // Sampling Fraction (SF) 2D arr names.
-extern const char *SFARR1D[4]; // SF 1D arr names.
+extern const char * CALNAME[4]; // Calorimeters names.
+extern const char * SFARR2D[4]; // Sampling Fraction (SF) 2D arr names.
+extern const char * SFARR1D[4]; // SF 1D arr names.
 extern const double PLIMITSARR[4][2]; // Momentum limits for 1D SF fits.
-#define PCAL_IDX 0 // PCAL idx in Sampling fraction arrays.
-#define ECIN_IDX 1 // ECIN idx in Sampling fraction arrays.
-#define ECOU_IDX 2 // ECOU idx in Sampling fraction arrays.
-#define CALS_IDX 3 // CALs idx in Sampling fraction arrays.
-#define SF_PMIN  1.0 // GeV
-#define SF_PMAX  9.0 // GeV
-#define SF_PSTEP 0.4 // GeV
+#define EDIVP_STR "E/Vp"
+#define PCAL_IDX  0 // PCAL idx in Sampling fraction arrays.
+#define ECIN_IDX  1 // ECIN idx in Sampling fraction arrays.
+#define ECOU_IDX  2 // ECOU idx in Sampling fraction arrays.
+#define CALS_IDX  3 // CALs idx in Sampling fraction arrays.
+#define SF_PMIN   1.0 // GeV
+#define SF_PMAX   9.0 // GeV
+#define SF_PSTEP  0.4 // GeV
 #define SF_CHI2CONFORMITY 2 // NOTE. This is a source of systematic error!
-
-// SIDIS constants.
-#define Q2_STR   "Q^{2}"
-#define NU_STR   "#nu"
-#define XB_STR   "X_{bjorken}"
-#define W2_STR   "W^{2}"
-#define Q2NU_STR "Q^{2} vs #nu"
 
 // Run constants (TODO. these should be in a map.)
 #define BE11983 10.3894 //  50 nA.
@@ -76,8 +86,8 @@ extern const double PLIMITSARR[4][2]; // Momentum limits for 1D SF fits.
 
 // Cuts.
 #define FMTNLYRSCUT   3 // # of FMT layers required to accept track.
-#define Q2CUT         0 // Q2 of particle must be over this value.
-#define WCUT          0 // W of particle must be over this value.
+#define Q2CUT         1 // Q2 of particle must be over this value.
+#define WCUT          2 // W of particle must be over this value.
 #define CHI2NDFCUT   15 // Chi2/NDF must be below this value.
 #define VXVYCUT       4 // sqrt(vx^2 + vy^2) must be below this value.
 #define VZLOWCUT    -40 // vz must be above this value.
