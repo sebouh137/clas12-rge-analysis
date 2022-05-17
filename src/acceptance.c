@@ -143,16 +143,6 @@ int run(char *in_filename, bool use_fmt, bool debug, int nevn, int run_no, doubl
                                   rp.px->at(pindex), rp.py->at(pindex), rp.pz->at(pindex));
             }
 
-            // General cuts.
-            // if ((int) abs(status)/1000 != 2) continue;
-            // if (abs(chi2pid) >= 3) continue; // Spurious particle.
-            if (p.pid == 0)       continue; // Non-identified particle.
-            if (chi2/ndf >= CHI2NDFCUT) continue; // Ignore tracks with high chi2.
-
-            // Geometry cuts.
-            if (d_from_beamline(p) > VXVYCUT)  continue; // Too far from beamline.
-            if (VZLOWCUT > p.vz || p.vz > VZHIGHCUT) continue; // Too far from target.
-
             // Get calorimeters data.
             double pcal_E = 0; // PCAL total deposited energy.
             double ecin_E = 0; // EC inner total deposited energy.
@@ -177,7 +167,6 @@ int run(char *in_filename, bool use_fmt, bool debug, int nevn, int run_no, doubl
 
             // Fill TNtuples.
             metadata_tuple->Fill(run_no, evn);
-            // TODO. Errors in vx, vy, vz, px, py, pz, P, theta, and phi...
             particle_tuple->Fill(p.pid, p.q, p.mass, p.vx, p.vy, p.vz, p.px, p.py, p.pz,
                                  P(p), theta_lab(p), phi_lab(p), p.beta);
             cal_tuple->Fill(pcal_E, ecin_E, ecou_E, tot_E);
