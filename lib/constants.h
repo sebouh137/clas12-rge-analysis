@@ -32,30 +32,29 @@
 
 #define PID_STR    "pid"
 #define CHARGE_STR "charge"
-#define MASS_STR   "mass"
-#define VX_STR     "vx (cm)"
-#define VY_STR     "vy (cm)"
-#define VZ_STR     "vz (cm)"
-#define PX_STR     "p_{x} (GeV)"
-#define PY_STR     "p_{y} (GeV)"
-#define PZ_STR     "p_{z} (GeV)"
-#define P_STR      "p (GeV)"
-#define THETA_STR  "#theta (#degree)"
-#define PHI_STR    "#phi (#degree)"
-#define BETA_STR   "#beta"
+#define MASS_STR   "mass"   // GeV.
+#define VX_STR     "vx"     // cm.
+#define VY_STR     "vy"     // cm.
+#define VZ_STR     "vz"     // cm.
+#define PX_STR     "p_{x}"  // GeV.
+#define PY_STR     "p_{y}"  // GeV.
+#define PZ_STR     "p_{z}"  // GeV.
+#define P_STR      "p"      // GeV.
+#define THETA_STR  "#theta" // #degree.
+#define PHI_STR    "#phi"   // #degree.
+#define BETA_STR   "#beta"  // adimensional.
 
-#define PCAL_E_STR "pcal E (GeV)"
-#define ECIN_E_STR "ecin E (GeV)"
-#define ECOU_E_STR "ecou E (GeV)"
-#define TOT_E_STR  "total E (GeV)"
+#define PCAL_E_STR "E_{pcal}"  // GeV.
+#define ECIN_E_STR "E_{ecin}"  // GeV.
+#define ECOU_E_STR "E_{ecou}"  // GeV.
+#define TOT_E_STR  "E_{total}" // GeV.
 
-#define DTOF_STR   "#Delta TOF (ns)"
+#define DTOF_STR   "#DeltaTOF" // ns.
 
-// TODO. Check units.
-#define Q2_STR      "Q^{2}"
-#define NU_STR      "#nu"
-#define XB_STR      "X_{bjorken}"
-#define W2_STR      "W^{2}"
+#define Q2_STR      "Q2"          // GeV^2.
+#define NU_STR      "#nu"         // GeV.
+#define XB_STR      "X_{bjorken}" // adimensional.
+#define W2_STR      "W2"          // GeV^2.
 // #define PHOTONTHETA "virtual photon #theta (lab frame #degree)"
 // #define PHOTONPHI   "virtual photon #phi (lab frame #degree)"
 
