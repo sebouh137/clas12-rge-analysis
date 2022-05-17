@@ -29,6 +29,7 @@
 // Variable names (& titles).
 #define RUNNO_STR   "run_no"
 #define EVENTNO_STR "event_no"
+#define BEAME_STR   "beam_energy"
 
 #define PID_STR    "pid"
 #define CHARGE_STR "charge"

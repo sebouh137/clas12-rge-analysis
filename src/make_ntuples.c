@@ -1,7 +1,6 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <map>
 #include <math.h>
 
 #include <TFile.h>
@@ -23,7 +22,7 @@ int run(char *in_filename, bool use_fmt, bool debug, int nevn, int run_no, doubl
     if (!f_in || f_in->IsZombie()) return 1;
 
     // Generate lists of variables.
-    const char * metadata_vars = Form("%s:%s", RUNNO_STR, EVENTNO_STR);
+    const char * metadata_vars = Form("%s:%s:%s", RUNNO_STR, EVENTNO_STR, BEAME_STR);
     const char * particle_vars = Form("%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s",
             PID_STR, CHARGE_STR, MASS_STR, VX_STR, VY_STR, VZ_STR, PX_STR, PY_STR, PZ_STR, P_STR,
             THETA_STR, PHI_STR, BETA_STR);
@@ -116,7 +115,7 @@ int run(char *in_filename, bool use_fmt, bool debug, int nevn, int run_no, doubl
                 if (rs.pindex->at(i) == pindex && rs.time->at(i) < tof) tof = rs.time->at(i);
 
             // Fill TNtuples.
-            metadata_tuple->Fill(run_no, evn);
+            metadata_tuple->Fill(run_no, evn, beam_E);
             particle_tuple->Fill(p.pid, p.q, p.mass, p.vx, p.vy, p.vz, p.px, p.py, p.pz,
                                  P(p), theta_lab(p), phi_lab(p), p.beta);
             cal_tuple->Fill(pcal_E, ecin_E, ecou_E, tot_E);
