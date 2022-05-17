@@ -60,21 +60,6 @@ int run(char *in_filename, bool use_fmt, bool debug, int nevn, int run_no, doubl
     REC_Calorimeter  rc(t);
     FMT_Tracks       ft(t);
 
-    if (debug) {
-        printf("=== NTUPLES BEFORE PROCESSING EVENTS ===========================================\n");
-        metadata_tuple->Print();
-        printf("\n");
-        particle_tuple->Print();
-        printf("\n");
-        cal_tuple->Print();
-        printf("\n");
-        scin_tuple->Print();
-        printf("\n");
-        sidis_tuple->Print();
-        printf("================================================================================\n");
-        printf("\n\n\n");
-    }
-
     // Counters for fancy progress bar.
     int divcntr     = 0;
     int evnsplitter = 0;
@@ -159,24 +144,10 @@ int run(char *in_filename, bool use_fmt, bool debug, int nevn, int run_no, doubl
         printf("[==================================================] 100%% \n");
     }
 
-    if (debug) {
-        printf("=== NTUPLES AFTER PROCESSING EVENTS ============================================\n");
-        metadata_tuple->Print();
-        printf("\n");
-        particle_tuple->Print();
-        printf("\n");
-        cal_tuple->Print();
-        printf("\n");
-        scin_tuple->Print();
-        printf("\n");
-        sidis_tuple->Print();
-        printf("================================================================================\n");
-        printf("\n\n\n");
-    }
-
     // Write to output file.
     f_out->Write();
 
+    // Clean up after ourselves.
     f_in ->Close();
     f_out->Close();
     free(in_filename);
