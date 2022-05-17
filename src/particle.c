@@ -22,7 +22,7 @@ particle particle_init(int pid, int charge, double beta, int status, int sector,
     p.py = py;
     p.pz = pz;
 
-    // Derived vars.
+    // Derived vars. TODO. We might need more PIDs.
     switch (abs(pid)) {
         case 2212: p.mass = PRTMASS; break;
         case  321: p.mass = KMASS;   break;

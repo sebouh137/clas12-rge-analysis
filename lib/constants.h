@@ -32,6 +32,7 @@
 
 #define PID_STR    "pid"
 #define CHARGE_STR "charge"
+#define MASS_STR   "mass"
 #define VX_STR     "vx (cm)"
 #define VY_STR     "vy (cm)"
 #define VZ_STR     "vz (cm)"

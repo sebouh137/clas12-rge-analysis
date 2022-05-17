@@ -32,24 +32,25 @@
 
 int run(char *in_filename, bool use_fmt, bool debug, int nevn, int run_no, double beam_E) {
     // Access input file. TODO. Make this input file*s*.
-    TFile *f_in = TFile::Open(in_filename, "READ");
+    TFile *f_in  = TFile::Open(in_filename, "READ");
+    TFile *f_out = TFile::Open("../root_io/out.root", "RECREATE"); // NOTE. This path sucks.
     if (!f_in || f_in->IsZombie()) return 1;
 
     // Generate lists of variables.
     const char * metadata_vars = Form("%s:%s", RUNNO_STR, EVENTNO_STR);
-    const char * particle_vars = Form("%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s",
-            PID_STR, CHARGE_STR, VX_STR, VY_STR, VZ_STR, PX_STR, PY_STR, PZ_STR, P_STR,
+    const char * particle_vars = Form("%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s",
+            PID_STR, CHARGE_STR, MASS_STR, VX_STR, VY_STR, VZ_STR, PX_STR, PY_STR, PZ_STR, P_STR,
             THETA_STR, PHI_STR, BETA_STR);
     const char * cal_vars  = Form("%s:%s:%s:%s", PCAL_E_STR, ECIN_E_STR, ECOU_E_STR, TOT_E_STR);
     const char * scin_vars = Form("%s", DTOF_STR);
     const char * sidis_vars = Form("%s:%s:%s:%s", Q2_STR, NU_STR, XB_STR, W2_STR);
 
     // Create tuples.
-    TNtuple metadata_tuple(METADATA_STR, METADATA_STR, metadata_vars);
-    TNtuple particle_tuple(PARTICLE_STR, PARTICLE_STR, particle_vars);
-    TNtuple cal_tuple     (CALORIMETER_STR, CALORIMETER_STR, cal_vars);
-    TNtuple scin_tuple    (SCINTILLATOR_STR, SCINTILLATOR_STR, scin_vars);
-    TNtuple sidis_tuple   (SIDIS_STR, SIDIS_STR, sidis_vars);
+    TNtuple * metadata_tuple = new TNtuple(METADATA_STR,     METADATA_STR,     metadata_vars);
+    TNtuple * particle_tuple = new TNtuple(PARTICLE_STR,     PARTICLE_STR,     particle_vars);
+    TNtuple * cal_tuple      = new TNtuple(CALORIMETER_STR,  CALORIMETER_STR,  cal_vars);
+    TNtuple * scin_tuple     = new TNtuple(SCINTILLATOR_STR, SCINTILLATOR_STR, scin_vars);
+    TNtuple * sidis_tuple    = new TNtuple(SIDIS_STR,        SIDIS_STR,        sidis_vars);
 
     // Create TTree and link bank_containers.
     TTree *t = f_in->Get<TTree>("Tree");
@@ -61,21 +62,21 @@ int run(char *in_filename, bool use_fmt, bool debug, int nevn, int run_no, doubl
 
     if (debug) {
         printf("=== NTUPLES BEFORE PROCESSING EVENTS ===========================================\n");
-        metadata_tuple.Print();
+        metadata_tuple->Print();
         printf("\n");
-        particle_tuple.Print();
+        particle_tuple->Print();
         printf("\n");
-        cal_tuple.Print();
+        cal_tuple->Print();
         printf("\n");
-        scin_tuple.Print();
+        scin_tuple->Print();
         printf("\n");
-        sidis_tuple.Print();
+        sidis_tuple->Print();
         printf("================================================================================\n");
         printf("\n\n\n");
     }
 
     // Counters for fancy progress bar.
-    int divcntr = 0;
+    int divcntr     = 0;
     int evnsplitter = 0;
 
     // Counters for SIDIS cuts.
@@ -151,7 +152,7 @@ int run(char *in_filename, bool use_fmt, bool debug, int nevn, int run_no, doubl
             }
 
             Q2_pass = Q2(p, beam_E) >= Q2CUT;
-            W_pass  = W( p, beam_E) >= WCUT;
+            W_pass  = W (p, beam_E) >= WCUT;
         }
 
         // Eliminate elastic scattering events and count passing events.
@@ -223,52 +224,14 @@ int run(char *in_filename, bool use_fmt, bool debug, int nevn, int run_no, doubl
             for (UInt_t i = 0; i < rs.pindex->size(); ++i)
                 if (rs.pindex->at(i) == pindex && rs.time->at(i) < tof) tof = rs.time->at(i);
 
-            // TODO. Replace this with filling TNtuples.
-            // // Walk through histos
-            // for (hmap_it = histos.begin(); hmap_it != histos.end(); ++hmap_it) {
-            //     const char *k1 = hmap_it->first;
-            //     if (!truth_map[k1]) continue;
-            //
-            //     // Vertex z.
-            //     histos[k1][VZ]     ->Fill(p.vz);
-            //     histos[k1][VZPHI]  ->Fill(p.vz, to_deg(phi_lab(p)));
-            //     histos[k1][VZTHETA]->Fill(p.vz, to_deg(theta_lab(p)));
-            //
-            //     histos[k1][THETA]->Fill(to_deg(theta_lab(p)));
-            //     histos[k1][E]->Fill(tot_E);
-            //
-            //     // Vertex p.
-            //     histos[k1][VP]    ->Fill(p.pz);
-            //     histos[k1][BETA]  ->Fill(p.beta);
-            //     histos[k1][VPBETA]->Fill(p.pz, p.beta);
-            //
-            //     // TOF. (TODO. Check FTOF resolution).
-            //     double dtof = tof - tre_tof;
-            //     if (tre_tof > 0 && dtof > 0) { // Only fill if trigger electron's, Q2CUT TOF was found.
-            //         histos[k1][DTOF] ->Fill(dtof);
-            //         histos[k1][VPTOF]->Fill(P(p), dtof);
-            //     }
-            //
-            //     // Calorimeters.
-            //     if (tot_E > 0) {
-            //         histos[k1][PEDIVP]->Fill(P(p), tot_E/P(p));
-            //         histos[k1][EEDIVP]->Fill(tot_E, tot_E/P(p));
-            //     }
-            //     if (pcal_E > 0) histos[k1][PPCALE]->Fill(P(p), pcal_E);
-            //     if (ecin_E > 0) histos[k1][PECINE]->Fill(P(p), ecin_E);
-            //     if (ecou_E > 0) histos[k1][PECOUE]->Fill(P(p), ecou_E);
-            //     if (pcal_E > 0 && ecin_E > 0 && ecou_E > 0)
-            //         histos[k1][ECALPCAL]->Fill(ecin_E+ecou_E, pcal_E);
-            //
-            //     // SIDIS variables.
-            //     if (p.is_trigger_electron) {
-            //         histos[k1][Q2_STR]->Fill(Q2(p, beam_E));
-            //         histos[k1][NU_STR]->Fill(nu(p, beam_E));
-            //         histos[k1][XB_STR]->Fill(Xb(p, beam_E));
-            //         histos[k1][W2_STR] ->Fill(W2(p, beam_E));
-            //         histos[k1][Q2NU_STR]->Fill(Q2(p, beam_E), nu(p, beam_E));
-            //     }
-            // }
+            // Fill TNtuples.
+            metadata_tuple->Fill(run_no, evn);
+            // TODO. Errors in vx, vy, vz, px, py, pz, P, theta, and phi...
+            particle_tuple->Fill(p.pid, p.q, p.mass, p.vx, p.vy, p.vz, p.px, p.py, p.pz,
+                                 P(p), theta_lab(p), phi_lab(p), p.beta);
+            cal_tuple->Fill(pcal_E, ecin_E, ecou_E, tot_E);
+            scin_tuple->Fill(tof);
+            sidis_tuple->Fill(Q2(p, beam_E), nu(p, beam_E), Xb(p, beam_E), W2(p, beam_E));
         }
     }
     if (!debug) {
@@ -285,76 +248,25 @@ int run(char *in_filename, bool use_fmt, bool debug, int nevn, int run_no, doubl
 
     if (debug) {
         printf("=== NTUPLES AFTER PROCESSING EVENTS ============================================\n");
-        metadata_tuple.Print();
+        metadata_tuple->Print();
         printf("\n");
-        particle_tuple.Print();
+        particle_tuple->Print();
         printf("\n");
-        cal_tuple.Print();
+        cal_tuple->Print();
         printf("\n");
-        scin_tuple.Print();
+        scin_tuple->Print();
         printf("\n");
-        sidis_tuple.Print();
+        sidis_tuple->Print();
         printf("================================================================================\n");
         printf("\n\n\n");
     }
 
-    // // Create output file.
-    // TFile *f_out = TFile::Open("../root_io/out.root", "RECREATE");
-    //
-    // // Write to output file.
-    // TString dir;
-    // TCanvas *gcvs = new TCanvas();
-    // for (hmap_it = histos.begin(); hmap_it != histos.end(); ++hmap_it) {
-    //     const char *k1 = hmap_it->first;
-    //
-    //     dir = Form("%s/%s", k1, "Vertex Z");
-    //     f_out->mkdir(dir);
-    //     f_out->cd(dir);
-    //     histos[k1][VZ]     ->Write();
-    //     histos[k1][VZPHI]  ->Draw("colz"); gcvs->Write(VZPHI);
-    //     histos[k1][VZTHETA]->Draw("colz"); gcvs->Write(VZTHETA);
-    //
-    //     histos[k1][THETA]->Write();
-    //     histos[k1][E]->Write();
-    //
-    //     dir = Form("%s/%s", k1, "Vertex P");
-    //     f_out->mkdir(dir);
-    //     f_out->cd(dir);
-    //     histos[k1][VP]    ->Write();
-    //     histos[k1][BETA]  ->Write();
-    //     histos[k1][VPBETA]->Draw("colz"); gcvs->Write(VPBETA);
-    //
-    //     dir = Form("%s/%s", k1, "DTOF");
-    //     f_out->mkdir(dir);
-    //     f_out->cd(dir);
-    //     histos[k1][DTOF] ->Write();
-    //     histos[k1][VPTOF]->Draw("colz"); gcvs->Write(VPTOF);
-    //
-    //     dir = Form("%s/%s", k1, "CALs");
-    //     f_out->mkdir(dir);
-    //     f_out->cd(dir);
-    //     histos[k1][PEDIVP]  ->Draw("colz"); gcvs->Write(PEDIVP);
-    //     histos[k1][EEDIVP]  ->Draw("colz"); gcvs->Write(EEDIVP);
-    //     histos[k1][PPCALE]  ->Draw("colz"); gcvs->Write(PPCALE);
-    //     histos[k1][PECINE]  ->Draw("colz"); gcvs->Write(PECINE);
-    //     histos[k1][PECOUE]  ->Draw("colz"); gcvs->Write(PECOUE);
-    //     histos[k1][ECALPCAL]->Draw("colz"); gcvs->Write(ECALPCAL);
-    //
-    //     if (!strcmp(k1, PTRE)) {
-    //         dir = Form("%s/%s", k1, "SIDIS");
-    //         f_out->mkdir(dir);
-    //         f_out->cd(dir);
-    //         histos[k1][Q2_STR]->Write();
-    //         histos[k1][NU_STR]->Write();
-    //         histos[k1][XB_STR]->Write();
-    //         histos[k1][W2_STR] ->Write();
-    //         histos[k1][Q2NU_STR]->Draw("colz"); gcvs->Write(Q2NU_STR);
-    //     }
-    // }
-    //
-    // f_in ->Close();
-    // f_out->Close();
-    // free(in_filename);
+    // Write to output file.
+    f_out->Write();
+
+    f_in ->Close();
+    f_out->Close();
+    free(in_filename);
 
     return 0;
 }
