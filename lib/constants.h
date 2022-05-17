@@ -59,6 +59,36 @@
 // #define PHOTONTHETA "virtual photon #theta (lab frame #degree)"
 // #define PHOTONPHI   "virtual photon #phi (lab frame #degree)"
 
+// Regular expression constants.
+#define R_PLOT1D "plot1d"
+#define R_PLOT2D "plot2d"
+
+#define R_RUNNO   "v_run_no"
+#define R_EVENTNO "v_event_no"
+#define R_BEAME   "v_beam_energy"
+#define R_PID     "v_pid"
+#define R_CHARGE  "v_charge"
+#define R_MASS    "v_mass"
+#define R_VX      "v_vx"
+#define R_VY      "v_vy"
+#define R_VZ      "v_vz"
+#define R_PX      "v_px"
+#define R_PY      "v_py"
+#define R_PZ      "v_pz"
+#define R_P       "v_p"
+#define R_THETA   "v_theta"
+#define R_PHI     "v_phi"
+#define R_BETA    "v_beta"
+#define R_PCAL_E  "v_e_pcal"
+#define R_ECIN_E  "v_e_ecin"
+#define R_ECOU_E  "v_e_ecou"
+#define R_TOT_E   "v_e_total"
+#define R_DTOF    "v_dtof"
+#define R_Q2      "v_q2"
+#define R_NU      "v_nu"
+#define R_XB      "v_x_bjorken"
+#define R_W2      "v_w2"
+
 // Sampling fraction constants.
 extern const char * CALNAME[4]; // Calorimeters names.
 extern const char * SFARR2D[4]; // Sampling Fraction (SF) 2D arr names.

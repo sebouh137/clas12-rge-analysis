@@ -1,10 +1,10 @@
 #include "../lib/io_handler.h"
 
 int draw_plots_handle_args(int argc, char ** argv, char ** command, char ** cuts, char ** binning,
-                           bool * debug, int * sample_size) {
+                           int * sample_size) {
     // Handle optional arguments.
     int opt;
-    while ((opt = getopt(argc, argv, "c:b:dn:")) != -1) {
+    while ((opt = getopt(argc, argv, "c:b:n:")) != -1) {
         switch (opt) {
             case 'c':
                 * cuts = (char *) malloc(strlen(optarg) + 1);
@@ -14,7 +14,6 @@ int draw_plots_handle_args(int argc, char ** argv, char ** command, char ** cuts
                 * binning = (char *) malloc(strlen(optarg) + 1);
                 strcpy(* binning, optarg);
                 break;
-            case 'd': * debug       = true;         break;
             case 'n': * sample_size = atoi(optarg); break;
         }
     }

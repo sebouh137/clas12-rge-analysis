@@ -9,11 +9,36 @@ int draw_plots_err(int errcode, char ** command, char ** cuts, char ** binning) 
     switch (errcode) {
         case 0:
             return 0;
+        case 1:
+            fprintf(stderr, "Programmer Error. draw_plots failed to compile the `plt_rx` "); fprintf(stderr, "regular expression. Check code.\n");
+            break;
+        case 2:
+            fprintf(stderr, "Error. command `%s` matches more than one plt_str ", * command);
+            fprintf(stderr, "regular expression.\n");
+            break;
+        case 3:
+            fprintf(stderr, "Error. command `%s` does not match any plt_str ", * command);
+            fprintf(stderr, "regular expression.\n");
+            break;
+        case 4:
+            fprintf(stderr, "Programmer Error. draw_plots failed to compile the `var_rx` "); fprintf(stderr, "regular expression. Check code.\n");
+            break;
+        case 5:
+            fprintf(stderr, "Error. command `%s` matches more than two var_str regular ", * command);
+            fprintf(stderr, " expression.\n");
+            break;
+        case 6:
+            fprintf(stderr, "Error. Number of variables inconsistent with detected plt_rx.\n");
+            break;
         default:
             fprintf(stderr, "Programmer Error. Error code %d not implemented in ", errcode);
             fprintf(stderr, "draw_plots_err()! You're on your own.\n");
             return 1;
     }
+    if (*command != NULL) free(* command);
+    if (*cuts    != NULL) free(* cuts);
+    if (*binning != NULL) free(* binning);
+    return draw_plots_usage();
 }
 
 int draw_plots_handle_args_err(int errcode, char ** command, char ** cuts, char ** binning) {

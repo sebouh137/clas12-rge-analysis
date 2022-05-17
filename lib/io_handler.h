@@ -9,7 +9,7 @@
 #include "file_handler.h"
 
 int draw_plots_handle_args(int argc, char ** argv, char ** command, char ** cuts, char ** binning,
-                           bool * debug, int * sample_size);
+                           int * sample_size);
 int make_ntuples_handle_args(int argc, char ** argv, bool * use_fmt, bool * debug, int * nevents,
                              char ** input_file, int * run_no, double * beam_energy);
 int extractsf_handle_args(int argc, char ** argv, bool * use_fmt, int * nevents,
