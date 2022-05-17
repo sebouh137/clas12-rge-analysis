@@ -79,13 +79,6 @@ int run(char *in_filename, bool use_fmt, bool debug, int nevn, int run_no, doubl
     int divcntr     = 0;
     int evnsplitter = 0;
 
-    // Counters for SIDIS cuts.
-    int tot_cntr    = 0;
-    int pass_cntr   = 0;
-    int no_tre_cntr = 0;
-    int Q2_cntr     = 0;
-    int W_cntr      = 0;
-
     // Iterate through input file. Each TTree entry is one event.
     printf("Reading %lld events from %s.\n", nevn == -1 ? t->GetEntries() : nevn, in_filename);
     for (int evn = 0; (evn < t->GetEntries()) && (nevn == -1 || evn < nevn); ++evn) {
@@ -120,48 +113,6 @@ int run(char *in_filename, bool use_fmt, bool debug, int nevn, int run_no, doubl
         for (UInt_t i = 0; i < rs.pindex->size(); ++i) {
             if (rs.pindex->at(i) == tre_pindex && rs.time->at(i) < tre_tof) tre_tof = rs.time->at(i);
         }
-
-        // Apply SIDIS cuts.
-        bool no_tre_pass = false;
-        bool Q2_pass     = true;
-        bool W_pass      = true;
-        for (UInt_t pos = 0; pos < rt.index->size(); ++pos) {
-            // Get reconstructed particle from either FMT or DC.
-            int pindex = rt.pindex->at(pos);
-            if (rp.pid->at(pindex) != 11 || rp.status->at(pindex) > 0) continue;
-
-            no_tre_pass = true;
-            particle p;
-            if (use_fmt) {
-                int index = rt.index->at(pos);
-                // Apply FMT cuts.
-                if (ft.vz->size() < 1)               continue; // Track reconstructed by FMT.
-                if (ft.ndf->at(index) < FMTNLYRSCUT) continue; // Track crossed 3 FMT layers.
-                // if (ft.ndf->at(index) > 0) printf("NDF: %d\n", ft.ndf->at(index));
-
-                p = particle_init(rp.pid->at(pindex), rp.charge->at(pindex), rp.beta->at(pindex),
-                                  rp.status->at(pindex), rt.sector->at(pos),
-                                  ft.vx->at(index), ft.vy->at(index), ft.vz->at(index),
-                                  ft.px->at(index), ft.py->at(index), ft.pz->at(index));
-            }
-            else {
-                p = particle_init(rp.pid->at(pindex), rp.charge->at(pindex), rp.beta->at(pindex),
-                                  rp.status->at(pindex), rt.sector->at(pos),
-                                  rp.vx->at(pindex), rp.vy->at(pindex), rp.vz->at(pindex),
-                                  rp.px->at(pindex), rp.py->at(pindex), rp.pz->at(pindex));
-            }
-
-            Q2_pass = Q2(p, beam_E) >= Q2CUT;
-            W_pass  = W (p, beam_E) >= WCUT;
-        }
-
-        // Eliminate elastic scattering events and count passing events.
-        tot_cntr++;
-        if (!no_tre_pass) no_tre_cntr++;
-        if (!Q2_pass)     Q2_cntr++;
-        if (!W_pass)      W_cntr++;
-        if (!no_tre_pass || !Q2_pass || !W_pass) continue;
-        pass_cntr++;
 
         // Process DIS event.
         for (UInt_t pos = 0; pos < rt.index->size(); ++pos) {
@@ -239,12 +190,6 @@ int run(char *in_filename, bool use_fmt, bool debug, int nevn, int run_no, doubl
         printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
         printf("[==================================================] 100%% \n");
     }
-
-    // Print statistics.
-    printf("Processed events (with particles): %8d/%8d\n", pass_cntr, tot_cntr);
-    printf("  * no trigger electron : %8d events\n", no_tre_cntr);
-    printf("  * Q^2 < %2d            : %8d events\n", Q2CUT, Q2_cntr);
-    printf("  * W   < %2d            : %8d events\n\n", WCUT, W_cntr);
 
     if (debug) {
         printf("=== NTUPLES AFTER PROCESSING EVENTS ============================================\n");
