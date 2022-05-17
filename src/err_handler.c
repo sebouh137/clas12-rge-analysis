@@ -1,5 +1,38 @@
 #include "../lib/err_handler.h"
 
+int draw_plots_usage() {
+    fprintf(stderr, "TODO.\n");
+    return 1;
+}
+
+int draw_plots_err(int errcode, char ** command, char ** cuts, char ** binning) {
+    switch (errcode) {
+        case 0:
+            return 0;
+        default:
+            fprintf(stderr, "Programmer Error. Error code %d not implemented in ", errcode);
+            fprintf(stderr, "draw_plots_err()! You're on your own.\n");
+            return 1;
+    }
+}
+
+int draw_plots_handle_args_err(int errcode, char ** command, char ** cuts, char ** binning) {
+    switch (errcode) {
+        case 0:
+            return 0;
+        case 1:
+            fprintf(stderr, "Error. No command provided.\n");
+            if (*command != NULL) free(* command);
+            if (*cuts    != NULL) free(* cuts);
+            if (*binning != NULL) free(* binning);
+            return draw_plots_usage();
+        default:
+            fprintf(stderr, "Programmer Error. Error code %d not implemented in ", errcode);
+            fprintf(stderr, "draw_plots_handle_args()! You're on your own.\n");
+            return 1;
+    }
+}
+
 int make_ntuples_usage() {
     fprintf(stderr, "Usage: make_ntuples [-fd] [-n NEVENTS] file\n");
     fprintf(stderr, " * -f: Use FMT data. If unspecified, program will only use DC data.\n");
@@ -9,7 +42,7 @@ int make_ntuples_usage() {
     return 1;
 }
 
-int make_ntuples_handle_args_err(int errcode, char **in_filename, int run_no) {
+int make_ntuples_handle_args_err(int errcode, char ** in_filename, int run_no) {
     switch (errcode) {
         case 0:
             return 0;
@@ -19,20 +52,20 @@ int make_ntuples_handle_args_err(int errcode, char **in_filename, int run_no) {
             fprintf(stderr, "Error. nevents should be a number greater than 0.\n");
             return make_ntuples_usage();
         case 3:
-            fprintf(stderr, "Error. input file (%s) should be a root file.\n", *in_filename);
-            free(*in_filename);
+            fprintf(stderr, "Error. input file (%s) should be a root file.\n", * in_filename);
+            free(* in_filename);
             return 1;
         case 4:
-            fprintf(stderr, "Error. %s does not exist!\n", *in_filename);
-            free(*in_filename);
+            fprintf(stderr, "Error. %s does not exist!\n", * in_filename);
+            free(* in_filename);
             return 1;
         case 5:
-            fprintf(stderr, "Error. Run number could not be extracted from %s.\n", *in_filename);
-            free(*in_filename);
+            fprintf(stderr, "Error. Run number could not be extracted from %s.\n", * in_filename);
+            free(* in_filename);
             return 1;
         case 6:
             fprintf(stderr, "Error. Run number %d not in database. Add from clas12mon.\n", run_no);
-            free(in_filename);
+            free(* in_filename);
             return 1;
         case 7:
             fprintf(stderr, "Error. No file name provided.\n");
@@ -44,12 +77,12 @@ int make_ntuples_handle_args_err(int errcode, char **in_filename, int run_no) {
     }
 }
 
-int make_ntuples_err(int errcode, char **in_filename) {
+int make_ntuples_err(int errcode, char ** in_filename) {
     switch (errcode) {
         case 0:
             return 0;
         case 1:
-            fprintf(stderr, "Error. %s is not a valid ROOT file.\n", *in_filename);
+            fprintf(stderr, "Error. %s is not a valid ROOT file.\n", * in_filename);
             break;
         case 2:
             fprintf(stderr, "Error. Invalid EC layer. Check bank data or add layer to constants.\n");
@@ -61,7 +94,7 @@ int make_ntuples_err(int errcode, char **in_filename) {
             fprintf(stderr, "make_ntuples_err()! You're on your own.\n");
             break;
     }
-    free(*in_filename);
+    free(* in_filename);
     return 1;
 }
 
@@ -73,12 +106,12 @@ int extractsf_usage() {
     return 1;
 }
 
-int extractsf_err(int errcode, char **in_filename) {
+int extractsf_err(int errcode, char ** in_filename) {
     switch (errcode) {
         case 0:
             return 0;
         case 1:
-            fprintf(stderr, "Error. %s is not a valid ROOT file.\n", *in_filename);
+            fprintf(stderr, "Error. %s is not a valid ROOT file.\n", * in_filename);
             break;
         case 2:
             fprintf(stderr, "Error. Invalid EC layer. Check bank data or add layer to constants.\n");
@@ -94,11 +127,11 @@ int extractsf_err(int errcode, char **in_filename) {
             fprintf(stderr, "make_ntuples_err()! You're on your own.\n");
             break;
     }
-    free(*in_filename);
+    free(* in_filename);
     return 1;
 }
 
-int extractsf_handle_args_err(int errcode, char **in_filename) {
+int extractsf_handle_args_err(int errcode, char ** in_filename) {
     switch (errcode) {
         case 0:
             return 0;
@@ -108,12 +141,12 @@ int extractsf_handle_args_err(int errcode, char **in_filename) {
             fprintf(stderr, "Error. nevents should be a number greater than 0.\n");
             return extractsf_usage();
         case 3:
-            fprintf(stderr, "Error. input file (%s) should be a root file.\n", *in_filename);
-            free(*in_filename);
+            fprintf(stderr, "Error. input file (%s) should be a root file.\n", * in_filename);
+            free(* in_filename);
             return 1;
         case 4:
-            fprintf(stderr, "Error. %s does not exist!\n", *in_filename);
-            free(*in_filename);
+            fprintf(stderr, "Error. %s does not exist!\n", * in_filename);
+            free(* in_filename);
             return 1;
         case 5:
             fprintf(stderr, "Error. No file name provided.\n");
@@ -130,7 +163,7 @@ int hipo2root_usage() {
     return 1;
 }
 
-int hipo2root_handle_args_err(int errcode, char **in_filename) {
+int hipo2root_handle_args_err(int errcode, char ** in_filename) {
     switch (errcode) {
         case 0:
             return 0;
@@ -141,12 +174,12 @@ int hipo2root_handle_args_err(int errcode, char **in_filename) {
             fprintf(stderr, "Error. Too many arguments, only a file name is needed.\n");
             return hipo2root_usage();
         case 3:
-            fprintf(stderr, "Error. input file (%s) should be a hipo file.\n", *in_filename);
-            free(*in_filename);
+            fprintf(stderr, "Error. input file (%s) should be a hipo file.\n", * in_filename);
+            free(* in_filename);
             return 1;
         case 4:
-            fprintf(stderr, "Error. %s does not exist!\n", *in_filename);
-            free(*in_filename);
+            fprintf(stderr, "Error. %s does not exist!\n", * in_filename);
+            free(* in_filename);
             return 1;
         default:
             fprintf(stderr, "Programmer Error. Error code %d not implemented in \n", errcode);

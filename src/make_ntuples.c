@@ -15,7 +15,7 @@
 #include "../lib/particle.h"
 #include "../lib/utilities.h"
 
-int run(char *in_filename, bool use_fmt, bool debug, int nevn, int run_no, double beam_E) {
+int run(char * in_filename, bool use_fmt, bool debug, int nevn, int run_no, double beam_E) {
     // Access input file. TODO. Make this input file*s*, as in multiple files.
     TFile *f_in  = TFile::Open(in_filename, "READ");
     TFile *f_out = TFile::Open("../root_io/out.root", "RECREATE"); // NOTE. This path sucks.

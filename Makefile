@@ -21,7 +21,11 @@ LZ4INCLUDES := -I$(HIPO)/lz4/lib
 OBJS        := $(BLD)/bank_containers.o $(BLD)/constants.o $(BLD)/err_handler.o \
 			   $(BLD)/file_handler.o $(BLD)/io_handler.o $(BLD)/particle.o $(BLD)/utilities.o
 
-all: $(BIN)/hipo2root $(BIN)/extract_sf $(BIN)/make_ntuples
+all: $(BIN)/hipo2root $(BIN)/extract_sf $(BIN)/make_ntuples $(BIN)/draw_plots
+
+$(BIN)/draw_plots: $(OBJS) $(SRC)/draw_plots.c
+	$(CXX) $(CFLAGS) $(OBJS) $(SRC)/draw_plots.c -o $(BIN)/draw_plots $(ROOTCFLAGS) \
+	$(ROOTLDFLAGS) $(ROOTLIBS)
 
 $(BIN)/make_ntuples: $(OBJS) $(SRC)/make_ntuples.c
 	$(CXX) $(CFLAGS) $(OBJS) $(SRC)/make_ntuples.c -o $(BIN)/make_ntuples $(ROOTCFLAGS) \
