@@ -1,7 +1,7 @@
 #include "../lib/err_handler.h"
 
-int acceptance_usage() {
-    fprintf(stderr, "Usage: acceptance [-fd] [-n NEVENTS] file\n");
+int make_ntuples_usage() {
+    fprintf(stderr, "Usage: make_ntuples [-fd] [-n NEVENTS] file\n");
     fprintf(stderr, " * -f: Use FMT data. If unspecified, program will only use DC data.\n");
     fprintf(stderr, " * -d: Activate debug mode. Only use when programming new features.\n");
     fprintf(stderr, " * -n NEVENTS: Specify number of events to be processed with optarg.\n");
@@ -9,15 +9,15 @@ int acceptance_usage() {
     return 1;
 }
 
-int acceptance_handle_args_err(int errcode, char **in_filename, int run_no) {
+int make_ntuples_handle_args_err(int errcode, char **in_filename, int run_no) {
     switch (errcode) {
         case 0:
             return 0;
         case 1:
-            return acceptance_usage();
+            return make_ntuples_usage();
         case 2:
             fprintf(stderr, "Error. nevents should be a number greater than 0.\n");
-            return acceptance_usage();
+            return make_ntuples_usage();
         case 3:
             fprintf(stderr, "Error. input file (%s) should be a root file.\n", *in_filename);
             free(*in_filename);
@@ -36,15 +36,15 @@ int acceptance_handle_args_err(int errcode, char **in_filename, int run_no) {
             return 1;
         case 7:
             fprintf(stderr, "Error. No file name provided.\n");
-            return acceptance_usage();
+            return make_ntuples_usage();
         default:
             fprintf(stderr, "Programmer Error. Error code %d not implemented in ", errcode);
-            fprintf(stderr, "acceptance_handle_args()! You're on your own.\n");
+            fprintf(stderr, "make_ntuples_handle_args()! You're on your own.\n");
             return 1;
     }
 }
 
-int acceptance_err(int errcode, char **in_filename) {
+int make_ntuples_err(int errcode, char **in_filename) {
     switch (errcode) {
         case 0:
             return 0;
@@ -58,7 +58,7 @@ int acceptance_err(int errcode, char **in_filename) {
             fprintf(stderr, "Error. A particle is in an invalid sector. Check bank integrity.\n");
         default:
             fprintf(stderr, "Programmer Error. Error code %d not implemented in \n", errcode);
-            fprintf(stderr, "acceptance_err()! You're on your own.\n");
+            fprintf(stderr, "make_ntuples_err()! You're on your own.\n");
             break;
     }
     free(*in_filename);
@@ -91,7 +91,7 @@ int extractsf_err(int errcode, char **in_filename) {
             break;
         default:
             fprintf(stderr, "Programmer Error. Error code %d not implemented in \n", errcode);
-            fprintf(stderr, "acceptance_err()! You're on your own.\n");
+            fprintf(stderr, "make_ntuples_err()! You're on your own.\n");
             break;
     }
     free(*in_filename);

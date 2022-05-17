@@ -1,6 +1,6 @@
 #include "../lib/io_handler.h"
 
-int acceptance_handle_args(int argc, char **argv, bool *use_fmt, bool *debug, int *nevents,
+int make_ntuples_handle_args(int argc, char **argv, bool *use_fmt, bool *debug, int *nevents,
                            char **input_file, int *run_no, double *beam_energy) {
     // Handle optional arguments.
     int opt;

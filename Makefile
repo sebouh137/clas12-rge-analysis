@@ -18,21 +18,26 @@ HIPOLIBS    := -L$(HIPO)/lib -lhipo4
 LZ4LIBS     := -L$(HIPO)/lz4/lib -llz4
 LZ4INCLUDES := -I$(HIPO)/lz4/lib
 
-OBJS        := $(BLD)/bank_containers.o $(BLD)/constants.o $(BLD)/err_handler.o $(BLD)/file_handler.o $(BLD)/io_handler.o $(BLD)/particle.o $(BLD)/utilities.o
+OBJS        := $(BLD)/bank_containers.o $(BLD)/constants.o $(BLD)/err_handler.o \
+			   $(BLD)/file_handler.o $(BLD)/io_handler.o $(BLD)/particle.o $(BLD)/utilities.o
 
-all: $(BIN)/hipo2root $(BIN)/extract_sf $(BIN)/acceptance
+all: $(BIN)/hipo2root $(BIN)/extract_sf $(BIN)/make_ntuples
 
-$(BIN)/acceptance: $(OBJS) $(SRC)/acceptance.c
-	$(CXX) $(CFLAGS) $(OBJS) $(SRC)/acceptance.c -o $(BIN)/acceptance $(ROOTCFLAGS) $(HIPOCFLAGS) $(ROOTLDFLAGS) $(HIPOLIBS) $(ROOTLIBS)
+$(BIN)/make_ntuples: $(OBJS) $(SRC)/make_ntuples.c
+	$(CXX) $(CFLAGS) $(OBJS) $(SRC)/make_ntuples.c -o $(BIN)/make_ntuples $(ROOTCFLAGS) \
+	$(HIPOCFLAGS) $(ROOTLDFLAGS) $(HIPOLIBS) $(ROOTLIBS)
 
 $(BIN)/extract_sf: $(OBJS) $(SRC)/extract_sf.c
-	$(CXX) $(CFLAGS) $(OBJS) $(SRC)/extract_sf.c -o $(BIN)/extract_sf $(ROOTCFLAGS) $(HIPOCFLAGS) $(ROOTLDFLAGS) $(HIPOLIBS) $(ROOTLIBS)
+	$(CXX) $(CFLAGS) $(OBJS) $(SRC)/extract_sf.c -o $(BIN)/extract_sf $(ROOTCFLAGS) $(HIPOCFLAGS) \
+	$(ROOTLDFLAGS) $(HIPOLIBS) $(ROOTLIBS)
 
 $(BIN)/hipo2root: $(OBJS) $(SRC)/hipo2root.c
-	$(CXX) $(CFLAGS) $(OBJS) $(ROOTCFLAGS) $(HIPOCFLAGS) $(LZ4INCLUDES) $(SRC)/hipo2root.c -o $(BIN)/hipo2root $(ROOTCFLAGS) $(ROOTLDFLAGS) $(HIPOLIBS) $(LZ4LIBS) $(ROOTLIBS)
+	$(CXX) $(CFLAGS) $(OBJS) $(ROOTCFLAGS) $(HIPOCFLAGS) $(LZ4INCLUDES) $(SRC)/hipo2root.c \
+	-o $(BIN)/hipo2root $(ROOTCFLAGS) $(ROOTLDFLAGS) $(HIPOLIBS) $(LZ4LIBS) $(ROOTLIBS)
 
 $(BLD)/bank_containers.o: $(SRC)/bank_containers.c $(LIB)/bank_containers.h
-	$(CXX) $(CFLAGS) -c $(SRC)/bank_containers.c -o $(BLD)/bank_containers.o $(ROOTCFLAGS) $(HIPOCFLAGS) $(ROOTLDFLAGS) $(HIPOLIBS) $(ROOTLIBS)
+	$(CXX) $(CFLAGS) -c $(SRC)/bank_containers.c -o $(BLD)/bank_containers.o $(ROOTCFLAGS) \
+	$(HIPOCFLAGS) $(ROOTLDFLAGS) $(HIPOLIBS) $(ROOTLIBS)
 
 $(BLD)/constants.o: $(SRC)/constants.c $(LIB)/constants.h
 	$(CXX) $(CFLAGS) -c $(SRC)/constants.c -o $(BLD)/constants.o
@@ -47,10 +52,12 @@ $(BLD)/io_handler.o: $(SRC)/io_handler.c $(LIB)/io_handler.h
 	$(CXX) $(CFLAGS) -c $(SRC)/io_handler.c -o $(BLD)/io_handler.o
 
 $(BLD)/particle.o: $(SRC)/particle.c $(LIB)/particle.h
-	$(CXX) $(CFLAGS) -c $(SRC)/particle.c -o $(BLD)/particle.o  $(ROOTCFLAGS) $(HIPOCFLAGS) $(ROOTLDFLAGS) $(HIPOLIBS) $(ROOTLIBS)
+	$(CXX) $(CFLAGS) -c $(SRC)/particle.c -o $(BLD)/particle.o  $(ROOTCFLAGS) $(HIPOCFLAGS) \
+	$(ROOTLDFLAGS) $(HIPOLIBS) $(ROOTLIBS)
 
 $(BLD)/utilities.o: $(SRC)/utilities.c $(LIB)/utilities.h
-	$(CXX) $(CFLAGS) -c $(SRC)/utilities.c -o $(BLD)/utilities.o $(ROOTCFLAGS) $(ROOTLDFLAGS) $(ROOTLIBS)
+	$(CXX) $(CFLAGS) -c $(SRC)/utilities.c -o $(BLD)/utilities.o $(ROOTCFLAGS) $(ROOTLDFLAGS) \
+	$(ROOTLIBS)
 
 clean:
 	@echo "Removing all build files and binaries."

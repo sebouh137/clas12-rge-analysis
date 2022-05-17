@@ -4,7 +4,6 @@
 #include <map>
 #include <math.h>
 
-#include <TCanvas.h>
 #include <TFile.h>
 #include <TNtuple.h>
 #include <TTree.h>
@@ -17,21 +16,8 @@
 #include "../lib/particle.h"
 #include "../lib/utilities.h"
 
-// TODO. Check and fix theoretical curves. -> Ask Raffa.
-// TODO. See why I'm not seeing any neutrals. -> ask Raffa.
-// TODO. Get simulations from RG-F, understand how they're made to do acceptance correction.
-//           -> ask Raffa.
-
-// TODO. Add a cut on momentum vs beta to remove deuteron?
-// TODO. Separate in z bins and see what happens.
-// TODO. Make this as a library similar to the Analyser.
-// TODO. Evaluate acceptance in diferent regions.
-// TODO. See simulations with Esteban.
-// NOTE. Adding a functionality to be able to request a plot and get it done in one line would be
-//       the gold standard for this program.
-
 int run(char *in_filename, bool use_fmt, bool debug, int nevn, int run_no, double beam_E) {
-    // Access input file. TODO. Make this input file*s*.
+    // Access input file. TODO. Make this input file*s*, as in multiple files.
     TFile *f_in  = TFile::Open(in_filename, "READ");
     TFile *f_out = TFile::Open("../root_io/out.root", "RECREATE"); // NOTE. This path sucks.
     if (!f_in || f_in->IsZombie()) return 1;
@@ -164,8 +150,8 @@ int main(int argc, char ** argv) {
     double beam_E      = -1;
     char * in_filename = NULL;
 
-    if (acceptance_handle_args_err(acceptance_handle_args(argc, argv, &use_fmt, &debug, &nevn,
+    if (make_ntuples_handle_args_err(make_ntuples_handle_args(argc, argv, &use_fmt, &debug, &nevn,
             &in_filename, &run_no, &beam_E), &in_filename, run_no))
         return 1;
-    return acceptance_err(run(in_filename, use_fmt, debug, nevn, run_no, beam_E), &in_filename);
+    return make_ntuples_err(run(in_filename, use_fmt, debug, nevn, run_no, beam_E), &in_filename);
 }

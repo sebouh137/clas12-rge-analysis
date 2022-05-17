@@ -8,4 +8,5 @@ To run with valgrind, ROOT requires some flags:
 
     valgrind --num-callers=30 --suppressions=$ROOTSYS/etc/valgrind-root.supp
 
-Not sure if I'm using hipo wrong or if it has a ton of memory leaks. Gotta check this issue at some point.
+Not sure if I'm using ROOT and hipo wrong or if they have a ton of memory leaks.
+Gotta check this issue at some point.
