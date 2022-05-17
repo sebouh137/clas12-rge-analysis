@@ -47,7 +47,7 @@ $(BLD)/io_handler.o: $(SRC)/io_handler.c $(LIB)/io_handler.h
 	$(CXX) $(CFLAGS) -c $(SRC)/io_handler.c -o $(BLD)/io_handler.o
 
 $(BLD)/particle.o: $(SRC)/particle.c $(LIB)/particle.h
-	$(CXX) $(CFLAGS) -c $(SRC)/particle.c -o $(BLD)/particle.o  $(ROOTCFLAGS) $(ROOTLDFLAGS) $(ROOTLIBS)
+	$(CXX) $(CFLAGS) -c $(SRC)/particle.c -o $(BLD)/particle.o  $(ROOTCFLAGS) $(HIPOCFLAGS) $(ROOTLDFLAGS) $(HIPOLIBS) $(ROOTLIBS)
 
 $(BLD)/utilities.o: $(SRC)/utilities.c $(LIB)/utilities.h
 	$(CXX) $(CFLAGS) -c $(SRC)/utilities.c -o $(BLD)/utilities.o $(ROOTCFLAGS) $(ROOTLDFLAGS) $(ROOTLIBS)

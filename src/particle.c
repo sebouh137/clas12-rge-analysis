@@ -2,12 +2,20 @@
 
 // TODO. Essentially all methods in this file require testing. Get to that.
 
+// Initialize an empty particle.
+particle particle_init() {
+    particle p;
+    p.is_valid = false;
+    return p;
+}
+
 // Initialize a new particle.
 particle particle_init(int pid, int charge, double beta, int status, int sector,
                        double vx, double vy, double vz, double px, double py, double pz) {
     particle p;
 
     // Inherent vars.
+    p.is_valid = true;
     p.is_trigger_electron = (pid == 11 && status < 0);
     p.pid    = pid;
     p.q      = charge;
@@ -35,6 +43,31 @@ particle particle_init(int pid, int charge, double beta, int status, int sector,
     // NOTE. If programs gets slow, I should cache values of Q2, nu, etc here.
 
     return p;
+}
+
+// Initialize a new particle from the particle and track banks.
+particle particle_init(REC_Particle * rp, REC_Track * rt, int pos) {
+    int pindex = rt->pindex->at(pos); // pindex is always equal to pos!
+
+    return particle_init(rp->pid->at(pindex), rp->charge->at(pindex), rp->beta->at(pindex),
+                         rp->status->at(pindex), rt->sector->at(pos),
+                         rp->vx->at(pindex), rp->vy->at(pindex), rp->vz->at(pindex),
+                         rp->px->at(pindex), rp->py->at(pindex), rp->pz->at(pindex));
+}
+
+// Initialize a new particle from the particle, tracks, and FMT banks.
+particle particle_init(REC_Particle * rp, REC_Track * rt, FMT_Tracks * ft, int pos) {
+    int index  = rt->index->at(pos);
+    int pindex = rt->pindex->at(pos); // pindex is always equal to pos!
+
+    // Apply FMT cuts.
+    if (ft->vz->size() < 1)               return particle_init(); // Track reconstructed by FMT.
+    if (ft->ndf->at(index) < FMTNLYRSCUT) return particle_init(); // Track crossed 3 FMT layers.
+
+    return particle_init(rp->pid->at(pindex), rp->charge->at(pindex), rp->beta->at(pindex),
+                         rp->status->at(pindex), rt->sector->at(pos),
+                         ft->vx->at(index), ft->vy->at(index), ft->vz->at(index),
+                         ft->px->at(index), ft->py->at(index), ft->pz->at(index));
 }
 
 // === PARTICLE FUNCTIONS ==========================================================================

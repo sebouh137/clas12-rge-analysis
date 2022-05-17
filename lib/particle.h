@@ -4,10 +4,12 @@
 #include <math.h>
 #include <stdbool.h>
 
+#include "bank_containers.h"
 #include "constants.h"
 #include "utilities.h"
 
 typedef struct {
+    bool is_valid;
     bool is_trigger_electron;
     // EB vars.
     int pid;
@@ -25,6 +27,8 @@ typedef struct {
 // particle functions.
 particle particle_init(int pid, int charge, double beta, int status, int sector,
                        double vx, double vy, double vz, double px, double py, double pz);
+particle particle_init(REC_Particle * rp, REC_Track * rt, int pos);
+particle particle_init(REC_Particle * rp, REC_Track * rt, FMT_Tracks * ft, int pos);
 double d_from_beamline(particle p);
 double theta_lab(particle p);
 double phi_lab(particle p);

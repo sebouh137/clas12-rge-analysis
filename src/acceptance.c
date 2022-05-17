@@ -116,32 +116,11 @@ int run(char *in_filename, bool use_fmt, bool debug, int nevn, int run_no, doubl
 
         // Process DIS event.
         for (UInt_t pos = 0; pos < rt.index->size(); ++pos) {
-            // Get basic data from track and particle banks.
-            int index      = rt.index ->at(pos);
-            int pindex     = rt.pindex->at(pos); // pindex is always equal to pos!
-            int ndf        = rt.ndf   ->at(pos);
-            double chi2    = rt.chi2  ->at(pos);
-            // double chi2pid = rp.chi2pid->at(pindex);
+            int pindex = rt.pindex->at(pos); // pindex is always equal to pos!
 
             // Get reconstructed particle from either FMT or DC.
-            particle p;
-            if (use_fmt) {
-                // Apply FMT cuts.
-                if (ft.vz->size() < 1)      continue; // Track reconstructed by FMT.
-                if (ft.ndf->at(index) != 3) continue; // Track crossed 3 FMT layers.
-                // if (ft.ndf->at(index) > 0) printf("NDF: %d\n", ft.ndf->at(index));
-
-                p = particle_init(rp.pid->at(pindex), rp.charge->at(pindex), rp.beta->at(pindex),
-                                  rp.status->at(pindex), rt.sector->at(pos),
-                                  ft.vx->at(index), ft.vy->at(index), ft.vz->at(index),
-                                  ft.px->at(index), ft.py->at(index), ft.pz->at(index));
-            }
-            else {
-                p = particle_init(rp.pid->at(pindex), rp.charge->at(pindex), rp.beta->at(pindex),
-                                  rp.status->at(pindex), rt.sector->at(pos),
-                                  rp.vx->at(pindex), rp.vy->at(pindex), rp.vz->at(pindex),
-                                  rp.px->at(pindex), rp.py->at(pindex), rp.pz->at(pindex));
-            }
+            particle p = use_fmt ? particle_init(&rp, &rt, &ft, pos) : particle_init(&rp, &rt, pos);
+            if (!p.is_valid) continue;
 
             // Get calorimeters data.
             double pcal_E = 0; // PCAL total deposited energy.
