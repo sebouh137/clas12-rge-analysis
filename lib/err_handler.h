@@ -5,8 +5,7 @@
 #include <stdlib.h>
 
 int draw_plots_usage();
-int draw_plots_err(int errcode, char ** command, char ** cuts, char ** binning);
-int draw_plots_handle_args_err(int errcode, char **command, char **cuts, char **binning);
+int draw_plots_err(int errcode);
 int make_ntuples_usage();
 int make_ntuples_handle_args_err(int errcode, char **in_filename, int run_no);
 int make_ntuples_err(int errcode, char **in_filename);

@@ -1,33 +1,5 @@
 #include "../lib/io_handler.h"
 
-int draw_plots_handle_args(int argc, char ** argv, char ** command, char ** cuts, char ** binning,
-                           int * sample_size) {
-    // Handle optional arguments.
-    int opt;
-    while ((opt = getopt(argc, argv, "c:b:n:")) != -1) {
-        switch (opt) {
-            case 'c':
-                * cuts = (char *) malloc(strlen(optarg) + 1);
-                strcpy(* cuts, optarg);
-                break;
-            case 'b':
-                * binning = (char *) malloc(strlen(optarg) + 1);
-                strcpy(* binning, optarg);
-                break;
-            case 'n': * sample_size = atoi(optarg); break;
-        }
-    }
-
-    // Handle positional argument.
-    if (argc < 2) return 1;
-    * command = (char *) malloc(strlen(argv[argc - 1]) + 1);
-    strcpy(* command, argv[argc - 1]);
-
-    // NOTE. Due to their complexity, error checking of command, cuts, and binning is left to the
-    //       caller.
-    return 0;
-}
-
 int make_ntuples_handle_args(int argc, char ** argv, bool * use_fmt, bool * debug, int * nevents,
                            char ** input_file, int * run_no, double * beam_energy) {
     // Handle optional arguments.
