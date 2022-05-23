@@ -30,7 +30,6 @@ int run(char * command, char * cuts, char * binning, int sample_size) {
 
     // TODO. Turn everything into lowercase.
 
-
     // TODO. Prepare cuts.
 
     // TODO. Prepare binning.
@@ -69,6 +68,46 @@ int run(char * command, char * cuts, char * binning, int sample_size) {
     if (px == 0 && (vx == -1 || vy != -1)) return 6;
     if (px == 1 && (vx == -1 || vy == -1)) return 6;
     printf("Vars are: %d, %d\n", vx, vy);
+
+    // TODO. Define ranges.
+    double rx[2] = {0., 0.};
+    double ry[2] = {0., 0.};
+    {
+        // regmatch_t pos_rx[2];
+        regex_t ran_rx[2];
+        if (regcomp(&ran_rx[0], "xm_([^[:space:]]*)/g", 0))      return 7; // Match the first number.
+        if (regcomp(&ran_rx[1], "xr\[[^,]+,[ ]*([^\]]*)", 0)) return 7; // Match the second number.
+
+        printf("command: \"%s\"\n", command);
+
+        regmatch_t pmatch[2];
+        if (regexec(&ran_rx[0], command, 0, pmatch, 0) == 0) printf("AHAA!\n");
+
+        // TEST
+        char * result;
+        result = (char *) malloc(pmatch[1].rm_eo - pmatch[1].rm_so);
+        strncpy(result, &command[pmatch[1].rm_so], pmatch[1].rm_eo - pmatch[1].rm_so);
+        printf("a matched substring \"%s\" is found at position %d to %d.\n",
+                result, pmatch[1].rm_so, pmatch[1].rm_eo - 1);
+
+        // later on ...
+        free(result);
+
+        // for (int ri = 0; ri < 3; ++ri)
+        //     regexec(&ran_rx[ri], command, 0, &pos_rx[ri], 0);
+        //
+        // printf("pos_rx:\n");
+        // for (int ri = 0; ri < 3; ++ri)
+        //     printf("  * [%d, %d]\n", pos_rx[ri][0], pos_rx[ri][1]);
+
+        // regex_t ran_ry[2];
+        // if (regcomp(&ran_ry[0], "yr\[([^,]*)", 0))        return 7;
+        // if (regcomp(&ran_ry[1], "yr\[[^,;]+,[ ]*([^]]*)", 0))  return 7;
+    }
+
+    // TODO. Define number of bins in plot.
+
+    // TODO. Plot.
 
     // Clean up after ourselves.
     f_in->Close();

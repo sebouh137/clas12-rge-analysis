@@ -25,7 +25,7 @@ int draw_plots_err(int errcode, char ** command, char ** cuts, char ** binning) 
             break;
         case 5:
             fprintf(stderr, "Error. command `%s` matches more than two var_str regular ", * command);
-            fprintf(stderr, " expression.\n");
+            fprintf(stderr, "expressions.\n");
             break;
         case 6:
             fprintf(stderr, "Error. Number of variables inconsistent with detected plt_rx.\n");
