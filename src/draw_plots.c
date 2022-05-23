@@ -76,7 +76,16 @@ int run() {
         ry[1] = catch_double();
     }
 
-    // TODO. Define number of bins in plot.
+    // Define number of bins in plot.
+    long bx = -1;
+    printf("\nDefine number of bins for x axis:\n");
+    bx = catch_long();
+
+    long by = -1;
+    if (px == 1) {
+        printf("\nDefine number of bins for y axis:\n");
+        by = catch_long();
+    }
 
     // TODO. Plot.
 

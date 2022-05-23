@@ -46,6 +46,22 @@ int catch_string(const char * list[], int size) {
     return x;
 }
 
+// Catch a long value from stdin.
+long catch_long() {
+    long r;
+    while (true) {
+        char str[32];
+        char * endptr;
+        printf(">>> ");
+        scanf("%31s", str);
+        r = strtol(str, &endptr, 10);
+
+        if (endptr != str) break;
+    }
+
+    return r;
+}
+
 // Catch a double value from stdin.
 double catch_double() {
     double r;
@@ -58,6 +74,7 @@ double catch_double() {
 
         if (endptr != str) break;
     }
+
     return r;
 }
 

@@ -23,7 +23,7 @@ OBJS        := $(BLD)/bank_containers.o $(BLD)/constants.o $(BLD)/err_handler.o 
 
 all: $(BIN)/hipo2root $(BIN)/extract_sf $(BIN)/make_ntuples $(BIN)/draw_plots
 
-$(BIN)/draw_plots: $(BLD)/utilities.o $(SRC)/draw_plots.c
+$(BIN)/draw_plots: $(OBJS) $(SRC)/draw_plots.c
 	$(CXX) $(CFLAGS) $(OBJS) $(SRC)/draw_plots.c -o $(BIN)/draw_plots $(ROOTCFLAGS) \
 	$(ROOTLDFLAGS) $(ROOTLIBS)
 

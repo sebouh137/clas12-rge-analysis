@@ -17,6 +17,7 @@ void rotate_y(double *x, double *z, double th);
 void rotate_z(double *x, double *y, double th);
 int catch_string(const char * list[], int size);
 double catch_double();
+long catch_long();
 int insert_TH1F(std::map<const char *, TH1 *> *map, const char *k, const char *n, const char *xn,
                int bins, double min, double max);
 int insert_TH2F(std::map<const char *, TH1 *> *map, const char *k,
