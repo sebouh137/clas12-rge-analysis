@@ -31,6 +31,36 @@ void rotate_z(double *x, double *y, double th) {
     *y = x_prev*sin(th) + y_prev*cos(th);
 }
 
+// Catch a string within a list.
+int catch_string(const char * list[], int size) {
+    double x;
+    while (true) {
+        char str[32];
+        printf(">>> ");
+        scanf("%31s", str);
+
+        for (int i = 0; i < size; ++i) if (!strcmp(str, list[i])) x = i;
+        if (x != -1) break;
+    }
+
+    return x;
+}
+
+// Catch a double value from stdin.
+double catch_double() {
+    double r;
+    while (true) {
+        char str[32];
+        char * endptr;
+        printf(">>> ");
+        scanf("%31s", str);
+        r = strtod(str, &endptr);
+
+        if (endptr != str) break;
+    }
+    return r;
+}
+
 // Insert a 1-dimensional histogram of floating point numbers into a map.
 int insert_TH1F(std::map<const char *, TH1 *> *map, const char *k, const char *n, const char *xn,
                int bins, double min, double max) {

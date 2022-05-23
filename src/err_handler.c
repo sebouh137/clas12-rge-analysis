@@ -1,22 +1,5 @@
 #include "../lib/err_handler.h"
 
-int draw_plots_usage() {
-    fprintf(stderr, "TODO.\n");
-    return 1;
-}
-
-int draw_plots_err(int errcode) {
-    switch (errcode) {
-        case 0:
-            return 0;
-        default:
-            fprintf(stderr, "Programmer Error. Error code %d not implemented in ", errcode);
-            fprintf(stderr, "draw_plots_err()! You're on your own.\n");
-            return 1;
-    }
-    return draw_plots_usage();
-}
-
 int make_ntuples_usage() {
     fprintf(stderr, "Usage: make_ntuples [-fd] [-n NEVENTS] file\n");
     fprintf(stderr, " * -f: Use FMT data. If unspecified, program will only use DC data.\n");
