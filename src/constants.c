@@ -24,6 +24,12 @@ const double PLIMITSARR[4][2] = {
 const char * PLOT_LIST[PLOT_LIST_SIZE] = {
         R_PLOT1D, R_PLOT2D
 };
+const char * DIM_LIST[PLOT_LIST_SIZE] = {
+        S_DIM1, S_DIM2
+};
+const char * RAN_LIST[2] = {
+        S_LOWER, S_UPPER
+};
 const char * R_VAR_LIST[VAR_LIST_SIZE] = {
         R_RUNNO, R_EVENTNO, R_BEAME, R_PID, R_CHARGE, R_MASS, R_VX, R_VY, R_VZ, R_PX, R_PY, R_PZ,
         R_P, R_THETA, R_PHI, R_BETA, R_PCAL_E, R_ECIN_E, R_ECOU_E, R_TOT_E, R_DTOF, R_Q2, R_NU,

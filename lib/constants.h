@@ -22,8 +22,16 @@
 // Plot types.
 #define PLOT_LIST_SIZE 2
 extern const char * PLOT_LIST[PLOT_LIST_SIZE];
+extern const char * DIM_LIST[PLOT_LIST_SIZE];
 #define R_PLOT1D "1d"
 #define R_PLOT2D "2d"
+#define S_DIM1   "x"
+#define S_DIM2   "y"
+
+// Miscellaneous.
+extern const char * RAN_LIST[2];
+#define S_LOWER "lower"
+#define S_UPPER "upper"
 
 // All variables.
 #define VAR_LIST_SIZE 25 // METADATA + PARTICLE + CALORIMETER + SCINTILLATOR + SIDIS.

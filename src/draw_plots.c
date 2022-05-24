@@ -34,101 +34,78 @@ int run() {
 
     if (!f_in || f_in->IsZombie()) return 1;
 
-    // TODO. A smart struct would simplify the code here and reduce the amount of constants and
-    //       arrays by A LOT.
     // TODO. This function could receive a few arguments to speed things up. Pre-configured cuts,
     //       binnings, and corrections would be nice.
     // TODO. Prepare cuts.
     // TODO. Prepare corrections (acceptance, radiative, Feynman, etc...).
     // TODO. Prepare binning.
 
+    // === PLOTTING ================================================================================
     // Check if we are to make a 1D or 2D plot.
     printf("\nPlot type? [");
     for (int pi = 0; pi < PLOT_LIST_SIZE; ++pi) printf("%s, ", PLOT_LIST[pi]);
     printf("\b\b]:\n");
     int px = catch_string(PLOT_LIST, PLOT_LIST_SIZE);
+    int pn = px + 1; // Number of histogram axes.
 
     // Check variable(s) to be plotted.
-    printf("\nDefine variable to be plotted on the x axis. Available variables:\n[");
-    for (int vi = 0; vi < VAR_LIST_SIZE; ++vi) printf("%s, ", R_VAR_LIST[vi]);
-    printf("\b\b]\n");
-    int vx = catch_string(R_VAR_LIST, VAR_LIST_SIZE);
-    char * vx_tuplename;
-    find_ntuple(&vx_tuplename, vx);
-
-    int vy;
-    char * vy_tuplename;
-    if (px == 1) {
-        printf("\nDefine variable to be plotted on the y axis. Available variables:\n[");
+    int vx[pn];
+    char * vx_tuplename[pn];
+    for (int pi = 0; pi < pn; ++pi) {
+        printf("\nDefine var to be plotted on the %s axis. Available vars:\n[", DIM_LIST[pi]);
         for (int vi = 0; vi < VAR_LIST_SIZE; ++vi) printf("%s, ", R_VAR_LIST[vi]);
         printf("\b\b]\n");
-        vy = catch_string(R_VAR_LIST, VAR_LIST_SIZE);
-        find_ntuple(&vy_tuplename, vy);
+        vx[pi] = catch_string(R_VAR_LIST, VAR_LIST_SIZE);
+        find_ntuple(&vx_tuplename[pi], vx[pi]);
     }
 
     // Define ranges.
-    double rx[2] = {0, 0};
-    double ry[2] = {0, 0};
-
-    printf("\nDefine lower limit for x axis:\n");
-    rx[0] = catch_double();
-    printf("\nDefine upper limit for x axis:\n");
-    rx[1] = catch_double();
-
-    if (px == 1) {
-        printf("\nDefine lower limit for y axis:\n");
-        ry[0] = catch_double();
-        printf("\nDefine upper limit for y axis:\n");
-        ry[1] = catch_double();
+    double rx[pn][2];
+    for (int pi = 0; pi < pn; ++pi) {
+        for (int ri = 0; ri < 2; ++ri) {
+            printf("\nDefine %s limit for %s axis:\n", RAN_LIST[ri], DIM_LIST[pi]);
+            rx[pi][ri] = catch_double();
+        }
     }
 
     // Define number of bins in plot.
-    long bx = -1;
-    printf("\nDefine number of bins for x axis:\n");
-    bx = catch_long();
+    long bx[pn];
+    for (int pi = 0; pi < pn; ++pi) {
+        printf("\nDefine number of bins for %s axis:\n", DIM_LIST[pi]);
+        bx[pi] = catch_long();
+    }
 
-    long by = -1;
+    // Plot.
+    TCanvas * gcvs = new TCanvas();
+    TH1 * plt;
+    if (px == 0)
+        plt = new TH1F(S_VAR_LIST[vx[0]], S_VAR_LIST[vx[0]], bx[0], rx[0][0], rx[0][1]);
     if (px == 1) {
-        printf("\nDefine number of bins for y axis:\n");
-        by = catch_long();
+        TString name = Form("%s vs %s", S_VAR_LIST[vx[0]], S_VAR_LIST[vx[1]]);
+        plt = new TH2F(name, name, bx[0], rx[0][0], rx[0][1], bx[1], rx[1][0], rx[1][1]);
     }
 
-    if (px == 0) { // 1D plot.
-        // TODO. Use the strings from "TITLE_STR" for fancier axes names and titles...
-        TH1F * plt = new TH1F(S_VAR_LIST[vx], S_VAR_LIST[vx], bx, rx[0], rx[1]);
-        TNtuple * t = (TNtuple *) f_in->Get(vx_tuplename);
-        Float_t var;
-        t->SetBranchAddress(S_VAR_LIST[vx], &var);
-        for (int i = 0; i < t->GetEntries(); ++i) {
-            t->GetEntry(i);
-            plt->Fill(var);
-        }
-        plt->Write();
+    TNtuple * t[pn];
+    Float_t var[pn];
+    for (int pi = 0; pi < pn; ++pi) {
+        t[pi] = (TNtuple *) f_in->Get(vx_tuplename[pi]);
+        t[pi]->SetBranchAddress(S_VAR_LIST[vx[pi]], &var[pi]);
     }
-    else if (px == 1) { // 2D plot.
-        // TODO. Use the strings from "TITLE_STR" for fancier axes names and titles...
-        TCanvas *gcvs = new TCanvas();
-        TH2F * plt = new TH2F(S_VAR_LIST[vx], Form("%s vs %s", S_VAR_LIST[vx], S_VAR_LIST[vy]),
-                             bx, rx[0], rx[1], by, ry[0], ry[1]);
-        TNtuple * tx = (TNtuple *) f_in->Get(vx_tuplename);
-        TNtuple * ty = (TNtuple *) f_in->Get(vy_tuplename);
-        Float_t varx, vary;
-        tx->SetBranchAddress(S_VAR_LIST[vx], &varx);
-        ty->SetBranchAddress(S_VAR_LIST[vy], &vary);
-        for (int i = 0; i < tx->GetEntries(); ++i) {
-            tx->GetEntry(i);
-            ty->GetEntry(i);
-            plt->Fill(varx, vary);
-        }
+    for (int i = 0; i < t[0]->GetEntries(); ++i) {
+        for (int pi = 0; pi < pn; ++pi) t[pi]->GetEntry(i);
+        if (px == 0) plt->Fill(var[0]);
+        if (px == 1) plt->Fill(var[0], var[1]);
+    }
+    if (px == 0) plt->Write();
+    if (px == 1) {
         plt->Draw("colz");
         gcvs->Write();
     }
 
-    // Clean up after ourselves.
+    // === CLEAN-UP ================================================================================
     f_in ->Close();
     f_out->Close();
-    free(vx_tuplename);
-    if (px == 1) free(vy_tuplename);
+    for (int pi = 0; pi < pn; ++pi) free(vx_tuplename[pi]);
 
     return 0;
 }
