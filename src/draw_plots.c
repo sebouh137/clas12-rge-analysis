@@ -34,18 +34,22 @@ int run() {
 
     if (!f_in || f_in->IsZombie()) return 1;
 
-    // NOTE. This function could receive a few arguments to speed things up. Pre-configured cuts,
+    // NOTE. This function could receive a few arguments to speed IO up. Pre-configured cuts,
     //       binnings, and corrections would be nice.
-    // TODO. Prepare cuts.
     // TODO. Prepare corrections (acceptance, radiative, Feynman, etc...).
     // TODO. Prepare binning.
 
     // === CUTS ====================================================================================
-    printf("\nApply general cuts? [y/n]\n"); // TODO. Figure out how to catch no input.
+    printf("\nApply general cuts? [y/n]\n");
     bool general_cuts = catch_yn();
-
     printf("\nApply geometry cuts? [y/n]\n");
     bool geometry_cuts = catch_yn();
+    printf("\nApply SIDIS cuts? [y/n]\n");
+    bool sidis_cuts = catch_yn();
+
+    // TODO.
+    // printf("\nApply any custom cut? [y/n]\n");
+    // bool custom_cuts = catch_yn();
 
     // === PLOTTING ================================================================================
     // Check if we are to make a 1D or 2D plot.
@@ -92,14 +96,57 @@ int run() {
         plt = new TH2F(name, name, bx[0], rx[0][0], rx[0][1], bx[1], rx[1][0], rx[1][1]);
     }
 
+    // Apply SIDIS cuts, checking which event numbers should be skipped.
+    int nruns   =  1;
+    int nevents = -1;
+    { // Count number of events. NOTE. There's probably a cleaner way to do this.
+        TNtuple * cuts = (TNtuple *) f_in->Get(S_CUTS);
+        Float_t c_evn; cuts->SetBranchAddress(S_EVENTNO, &c_evn);
+        for (int i = 0; i < cuts->GetEntries(); ++i) {
+            cuts->GetEntry(i);
+            if (c_evn > nevents) nevents = (int) (c_evn+0.5);
+        }
+    }
+
+    bool valid_event[nevents];
+    { // Check which events pass SIDIS cuts.
+        TNtuple * cuts = (TNtuple *) f_in->Get(S_CUTS);
+        Float_t c_evn;    cuts->SetBranchAddress(S_EVENTNO, &c_evn);
+        Float_t c_pid;    cuts->SetBranchAddress(S_PID,     &c_pid);
+        Float_t c_status; cuts->SetBranchAddress(S_STATUS,  &c_status);
+        Float_t c_q2;     cuts->SetBranchAddress(S_Q2,      &c_q2);
+        Float_t c_w2;     cuts->SetBranchAddress(S_W2,      &c_w2);
+
+        Float_t current_evn = -1;
+        bool no_tre_pass, Q2_pass, W2_pass;
+        for (int i = 0; i < cuts->GetEntries(); ++i) {
+            cuts->GetEntry(i);
+            if (c_evn != current_evn) {
+                current_evn = c_evn;
+                valid_event[(int) (c_evn+0.5)] = false;
+                no_tre_pass = false;
+                Q2_pass     = true;
+                W2_pass     = true;
+            }
+
+            if (c_pid != 11 || c_status > 0) continue;
+            no_tre_pass = true;
+            Q2_pass = c_q2 >= Q2CUT;
+            W2_pass = c_w2 >= W2CUT;
+
+            valid_event[(int) (c_evn+0.5)] = no_tre_pass && Q2_pass && W2_pass;
+        }
+    }
+
     // TNtuples for cuts.
     TNtuple * cuts = (TNtuple *) f_in->Get(S_CUTS);
-    Float_t c_pid;  cuts->SetBranchAddress(S_PID,  &c_pid);
-    Float_t c_ndf;  cuts->SetBranchAddress(S_NDF,  &c_ndf);
-    Float_t c_chi2; cuts->SetBranchAddress(S_CHI2, &c_chi2);
-    Float_t c_vx;   cuts->SetBranchAddress(S_VX,   &c_vx);
-    Float_t c_vy;   cuts->SetBranchAddress(S_VY,   &c_vy);
-    Float_t c_vz;   cuts->SetBranchAddress(S_VZ,   &c_vz);
+    Float_t c_evn;  cuts->SetBranchAddress(S_EVENTNO, &c_evn);
+    Float_t c_pid;  cuts->SetBranchAddress(S_PID,     &c_pid);
+    Float_t c_ndf;  cuts->SetBranchAddress(S_NDF,     &c_ndf);
+    Float_t c_chi2; cuts->SetBranchAddress(S_CHI2,    &c_chi2);
+    Float_t c_vx;   cuts->SetBranchAddress(S_VX,      &c_vx);
+    Float_t c_vy;   cuts->SetBranchAddress(S_VY,      &c_vy);
+    Float_t c_vz;   cuts->SetBranchAddress(S_VZ,      &c_vz);
 
     // TNtuples of plotted variables.
     TNtuple * t[pn];
@@ -122,6 +169,8 @@ int run() {
             if (sqrt(c_vx*c_vx + c_vy*c_vy) > VXVYCUT) continue; // Too far from beamline.
             if (VZLOWCUT > c_vz || c_vz > VZHIGHCUT)   continue; // Too far from target.
         }
+
+        if (sidis_cuts && !valid_event[(int) (c_evn+0.5)]) continue; // Event didn't pass SIDIS cut.
 
         // Fill histogram.
         if (px == 0) plt->Fill(var[0]);

@@ -122,13 +122,15 @@ extern const char * SIDIS_LIST[SIDIS_LIST_SIZE];
 
 // Cuts.
 #define S_CUTS "cuts"
-#define CUTS_LIST_SIZE 6
+#define CUTS_LIST_SIZE 11
 extern const char * CUTS_LIST[CUTS_LIST_SIZE];
 
 #define S_CHI2    "#chi2"
 #define R_CHI2    "chi2"
 #define S_NDF     "NDF"
 #define R_NDF     "ndf"
+#define S_STATUS  "status"
+#define R_STATUS  "status"
 
 // Sampling fraction constants.
 extern const char * CALNAME[4]; // Calorimeters names.
@@ -159,7 +161,7 @@ extern const double PLIMITSARR[4][2]; // Momentum limits for 1D SF fits.
 // Cuts.
 #define FMTNLYRSCUT   3 // # of FMT layers required to accept track.
 #define Q2CUT         1 // Q2 of particle must be over this value.
-#define WCUT          2 // W of particle must be over this value.
+#define W2CUT         4 // W2 of particle must be over this value.
 #define CHI2NDFCUT   15 // Chi2/NDF must be below this value.
 #define VXVYCUT       4 // sqrt(vx^2 + vy^2) must be below this value.
 #define VZLOWCUT    -40 // vz must be above this value.

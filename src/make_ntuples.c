@@ -30,7 +30,8 @@ int run(char * in_filename, bool use_fmt, bool debug, int nevn, int run_no, doub
     const char * cal_vars  = Form("%s:%s:%s:%s", S_PCAL_E, S_ECIN_E, S_ECOU_E, S_TOT_E);
     const char * scin_vars = Form("%s", S_DTOF);
     const char * sidis_vars = Form("%s:%s:%s:%s", S_Q2, S_NU, S_XB, S_W2);
-    const char * cuts_vars = Form("%s:%s:%s:%s:%s:%s", S_PID, S_CHI2, S_NDF, S_VX, S_VY, S_VZ);
+    const char * cuts_vars = Form("%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s",
+            S_RUNNO, S_EVENTNO, S_PID, S_STATUS, S_CHI2, S_NDF, S_VX, S_VY, S_VZ, S_Q2, S_W2);
 
     // Create tuples.
     TNtuple * metadata_tuple = new TNtuple(S_METADATA,     S_METADATA,     metadata_vars);
@@ -118,8 +119,9 @@ int run(char * in_filename, bool use_fmt, bool debug, int nevn, int run_no, doub
                 if (rs.pindex->at(i) == pindex && rs.time->at(i) < tof) tof = rs.time->at(i);
 
             // Get miscellaneous data.
-            double chi2 = rt.chi2->at(pos);
-            double ndf  = rt.ndf ->at(pos);
+            int status  = rp.status->at(pindex);
+            double chi2 = rt.chi2  ->at(pos);
+            double ndf  = rt.ndf   ->at(pos);
 
             // Fill TNtuples.
             metadata_tuple->Fill(run_no, evn, beam_E);
@@ -128,7 +130,8 @@ int run(char * in_filename, bool use_fmt, bool debug, int nevn, int run_no, doub
             cal_tuple->Fill(pcal_E, ecin_E, ecou_E, tot_E);
             scin_tuple->Fill(tof);
             sidis_tuple->Fill(Q2(p, beam_E), nu(p, beam_E), Xb(p, beam_E), W2(p, beam_E));
-            cuts_tuple->Fill(p.pid, chi2, ndf, p.vx, p.vy, p.vz);
+            cuts_tuple->Fill(run_no, evn, p.pid, status, chi2, ndf, p.vx, p.vy, p.vz, Q2(p, beam_E),
+                             W2(p, beam_E));
         }
     }
     if (!debug) {

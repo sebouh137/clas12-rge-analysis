@@ -60,5 +60,5 @@ const char * SIDIS_LIST[SIDIS_LIST_SIZE] = {
         R_Q2, R_NU, R_XB, R_W2
 };
 const char * CUTS_LIST[CUTS_LIST_SIZE] = {
-        R_PID, R_CHI2, R_NDF, R_VX, R_VY, R_VZ
+        R_RUNNO, R_EVENTNO, R_PID, R_STATUS, R_CHI2, R_NDF, R_VX, R_VY, R_VZ, R_Q2, R_W2
 };

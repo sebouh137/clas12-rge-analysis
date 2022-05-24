@@ -31,7 +31,9 @@ void rotate_z(double *x, double *y, double th) {
     *y = x_prev*sin(th) + y_prev*cos(th);
 }
 
+// Catch a y or n input.
 bool catch_yn() {
+    // TODO. Figure out how to catch no input so that this can be [Y/n].
     while (true) {
         char str[32];
         printf(">>> ");
