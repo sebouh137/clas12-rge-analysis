@@ -21,7 +21,19 @@ const double PLIMITSARR[4][2] = {
         {0.000, 0.400},
         {0.150, 0.300}
 };
-
+const char * PLOT_LIST[PLOT_LIST_SIZE] = {
+        R_PLOT1D, R_PLOT2D
+};
+const char * R_VAR_LIST[VAR_LIST_SIZE] = {
+        R_RUNNO, R_EVENTNO, R_BEAME, R_PID, R_CHARGE, R_MASS, R_VX, R_VY, R_VZ, R_PX, R_PY, R_PZ,
+        R_P, R_THETA, R_PHI, R_BETA, R_PCAL_E, R_ECIN_E, R_ECOU_E, R_TOT_E, R_DTOF, R_Q2, R_NU,
+        R_XB, R_W2
+};
+const char * S_VAR_LIST[VAR_LIST_SIZE] = {
+        S_RUNNO, S_EVENTNO, S_BEAME, S_PID, S_CHARGE, S_MASS, S_VX, S_VY, S_VZ, S_PX, S_PY, S_PZ,
+        S_P, S_THETA, S_PHI, S_BETA, S_PCAL_E, S_ECIN_E, S_ECOU_E, S_TOT_E, S_DTOF, S_Q2, S_NU,
+        S_XB, S_W2
+};
 const char * METADATA_LIST[METADATA_LIST_SIZE] = {
         R_RUNNO, R_EVENTNO, R_BEAME
 };

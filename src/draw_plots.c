@@ -43,35 +43,27 @@ int run() {
     // TODO. Prepare binning.
 
     // Check if we are to make a 1D or 2D plot.
-    int plt_n =  2;
-    const char * plt_str[plt_n] = {R_PLOT1D, R_PLOT2D};
-
     printf("\nPlot type? [");
-    for (int pi = 0; pi < plt_n; ++pi) printf("%s, ", plt_str[pi]);
+    for (int pi = 0; pi < PLOT_LIST_SIZE; ++pi) printf("%s, ", PLOT_LIST[pi]);
     printf("\b\b]:\n");
-    int px = catch_string(plt_str, plt_n);
+    int px = catch_string(PLOT_LIST, PLOT_LIST_SIZE);
 
     // Check variable(s) to be plotted.
-    int n_vars = 24;
-    const char * var_str[n_vars] = {R_RUNNO, R_EVENTNO, R_BEAME, R_PID, R_CHARGE, R_MASS, R_VX,
-            R_VY, R_VZ, R_PX, R_PY, R_PZ, R_P, R_THETA, R_PHI, R_BETA, R_PCAL_E, R_ECIN_E, R_ECOU_E,
-            R_TOT_E, R_DTOF, R_Q2, R_NU, R_XB, R_W2};
-
     printf("\nDefine variable to be plotted on the x axis. Available variables:\n[");
-    for (int vi = 0; vi < n_vars; ++vi) printf("%s, ", var_str[vi]);
+    for (int vi = 0; vi < VAR_LIST_SIZE; ++vi) printf("%s, ", R_VAR_LIST[vi]);
     printf("\b\b]\n");
-    int vx = catch_string(var_str, n_vars);
+    int vx = catch_string(R_VAR_LIST, VAR_LIST_SIZE);
     char * vx_tuplename;
-    find_ntuple(&vx_tuplename, var_str, vx);
+    find_ntuple(&vx_tuplename, vx);
 
     int vy;
     char * vy_tuplename;
     if (px == 1) {
         printf("\nDefine variable to be plotted on the y axis. Available variables:\n[");
-        for (int vi = 0; vi < n_vars; ++vi) printf("%s, ", var_str[vi]);
+        for (int vi = 0; vi < VAR_LIST_SIZE; ++vi) printf("%s, ", R_VAR_LIST[vi]);
         printf("\b\b]\n");
-        vy = catch_string(var_str, n_vars);
-        find_ntuple(&vy_tuplename, var_str, vy);
+        vy = catch_string(R_VAR_LIST, VAR_LIST_SIZE);
+        find_ntuple(&vy_tuplename, vy);
     }
 
     // Define ranges.
@@ -103,26 +95,26 @@ int run() {
 
     if (px == 0) { // 1D plot.
         // TODO. Use the strings from "TITLE_STR" for fancier axes names and titles...
-        TH1F * plt = new TH1F(var_str[vx], var_str[vx], bx, rx[0], rx[1]);
+        TH1F * plt = new TH1F(S_VAR_LIST[vx], S_VAR_LIST[vx], bx, rx[0], rx[1]);
         TNtuple * t = (TNtuple *) f_in->Get(vx_tuplename);
         Float_t var;
-        t->SetBranchAddress(var_str[vx], &var);
+        t->SetBranchAddress(S_VAR_LIST[vx], &var);
         for (int i = 0; i < t->GetEntries(); ++i) {
             t->GetEntry(i);
             plt->Fill(var);
         }
         plt->Write();
     }
-    else if (px == 1) { // TODO. 2D plot.
+    else if (px == 1) { // 2D plot.
         // TODO. Use the strings from "TITLE_STR" for fancier axes names and titles...
         TCanvas *gcvs = new TCanvas();
-        TH2F * plt = new TH2F(var_str[vx], Form("%s vs %s", var_str[vx], var_str[vy]),
+        TH2F * plt = new TH2F(S_VAR_LIST[vx], Form("%s vs %s", S_VAR_LIST[vx], S_VAR_LIST[vy]),
                              bx, rx[0], rx[1], by, ry[0], ry[1]);
         TNtuple * tx = (TNtuple *) f_in->Get(vx_tuplename);
         TNtuple * ty = (TNtuple *) f_in->Get(vy_tuplename);
         Float_t varx, vary;
-        tx->SetBranchAddress(var_str[vx], &varx);
-        ty->SetBranchAddress(var_str[vy], &vary);
+        tx->SetBranchAddress(S_VAR_LIST[vx], &varx);
+        ty->SetBranchAddress(S_VAR_LIST[vy], &vary);
         for (int i = 0; i < tx->GetEntries(); ++i) {
             tx->GetEntry(i);
             ty->GetEntry(i);

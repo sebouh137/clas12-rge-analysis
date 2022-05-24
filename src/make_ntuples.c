@@ -22,21 +22,21 @@ int run(char * in_filename, bool use_fmt, bool debug, int nevn, int run_no, doub
     TFile *f_out = TFile::Open("../root_io/ntuples.root", "RECREATE"); // NOTE. This path sucks.
     if (!f_in || f_in->IsZombie()) return 1;
 
-    // Generate lists of variables.
-    const char * metadata_vars = Form("%s:%s:%s", RUNNO_STR, EVENTNO_STR, BEAME_STR);
+    // Generate lists of variables. TODO. This should be done with the variable arrays in constants.
+    const char * metadata_vars = Form("%s:%s:%s", S_RUNNO, S_EVENTNO, S_BEAME);
     const char * particle_vars = Form("%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s",
-            PID_STR, CHARGE_STR, MASS_STR, VX_STR, VY_STR, VZ_STR, PX_STR, PY_STR, PZ_STR, P_STR,
-            THETA_STR, PHI_STR, BETA_STR);
-    const char * cal_vars  = Form("%s:%s:%s:%s", PCAL_E_STR, ECIN_E_STR, ECOU_E_STR, TOT_E_STR);
-    const char * scin_vars = Form("%s", DTOF_STR);
-    const char * sidis_vars = Form("%s:%s:%s:%s", Q2_STR, NU_STR, XB_STR, W2_STR);
+            S_PID, S_CHARGE, S_MASS, S_VX, S_VY, S_VZ, S_PX, S_PY, S_PZ, S_P,
+            S_THETA, S_PHI, S_BETA);
+    const char * cal_vars  = Form("%s:%s:%s:%s", S_PCAL_E, S_ECIN_E, S_ECOU_E, S_TOT_E);
+    const char * scin_vars = Form("%s", S_DTOF);
+    const char * sidis_vars = Form("%s:%s:%s:%s", S_Q2, S_NU, S_XB, S_W2);
 
     // Create tuples.
-    TNtuple * metadata_tuple = new TNtuple(METADATA_STR,     METADATA_STR,     metadata_vars);
-    TNtuple * particle_tuple = new TNtuple(PARTICLE_STR,     PARTICLE_STR,     particle_vars);
-    TNtuple * cal_tuple      = new TNtuple(CALORIMETER_STR,  CALORIMETER_STR,  cal_vars);
-    TNtuple * scin_tuple     = new TNtuple(SCINTILLATOR_STR, SCINTILLATOR_STR, scin_vars);
-    TNtuple * sidis_tuple    = new TNtuple(SIDIS_STR,        SIDIS_STR,        sidis_vars);
+    TNtuple * metadata_tuple = new TNtuple(S_METADATA,     S_METADATA,     metadata_vars);
+    TNtuple * particle_tuple = new TNtuple(S_PARTICLE,     S_PARTICLE,     particle_vars);
+    TNtuple * cal_tuple      = new TNtuple(S_CALORIMETER,  S_CALORIMETER,  cal_vars);
+    TNtuple * scin_tuple     = new TNtuple(S_SCINTILLATOR, S_SCINTILLATOR, scin_vars);
+    TNtuple * sidis_tuple    = new TNtuple(S_SIDIS,        S_SIDIS,        sidis_vars);
 
     // Create TTree and link bank_containers.
     TTree *t = f_in->Get<TTree>("Tree");
