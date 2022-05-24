@@ -3,6 +3,7 @@
 
 #include <map>
 #include <math.h>
+#include <stdbool.h>
 
 #include <TH1.h>
 #include <TH1F.h>
@@ -15,6 +16,7 @@ double calc_magnitude(double x, double y, double z);
 double calc_angle(double x1, double y1, double z1, double x2, double y2, double z2);
 void rotate_y(double *x, double *z, double th);
 void rotate_z(double *x, double *y, double th);
+bool catch_yn();
 int catch_string(const char * list[], int size);
 double catch_double();
 long catch_long();

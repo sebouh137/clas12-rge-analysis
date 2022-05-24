@@ -30,6 +30,7 @@ int run(char * in_filename, bool use_fmt, bool debug, int nevn, int run_no, doub
     const char * cal_vars  = Form("%s:%s:%s:%s", S_PCAL_E, S_ECIN_E, S_ECOU_E, S_TOT_E);
     const char * scin_vars = Form("%s", S_DTOF);
     const char * sidis_vars = Form("%s:%s:%s:%s", S_Q2, S_NU, S_XB, S_W2);
+    const char * cuts_vars = Form("%s:%s:%s:%s:%s:%s", S_PID, S_CHI2, S_NDF, S_VX, S_VY, S_VZ);
 
     // Create tuples.
     TNtuple * metadata_tuple = new TNtuple(S_METADATA,     S_METADATA,     metadata_vars);
@@ -37,6 +38,7 @@ int run(char * in_filename, bool use_fmt, bool debug, int nevn, int run_no, doub
     TNtuple * cal_tuple      = new TNtuple(S_CALORIMETER,  S_CALORIMETER,  cal_vars);
     TNtuple * scin_tuple     = new TNtuple(S_SCINTILLATOR, S_SCINTILLATOR, scin_vars);
     TNtuple * sidis_tuple    = new TNtuple(S_SIDIS,        S_SIDIS,        sidis_vars);
+    TNtuple * cuts_tuple     = new TNtuple(S_CUTS,         S_CUTS,         cuts_vars);
 
     // Create TTree and link bank_containers.
     TTree *t = f_in->Get<TTree>("Tree");
@@ -115,6 +117,10 @@ int run(char * in_filename, bool use_fmt, bool debug, int nevn, int run_no, doub
             for (UInt_t i = 0; i < rs.pindex->size(); ++i)
                 if (rs.pindex->at(i) == pindex && rs.time->at(i) < tof) tof = rs.time->at(i);
 
+            // Get miscellaneous data.
+            double chi2 = rt.chi2->at(pos);
+            double ndf  = rt.ndf ->at(pos);
+
             // Fill TNtuples.
             metadata_tuple->Fill(run_no, evn, beam_E);
             particle_tuple->Fill(p.pid, p.q, p.mass, p.vx, p.vy, p.vz, p.px, p.py, p.pz,
@@ -122,6 +128,7 @@ int run(char * in_filename, bool use_fmt, bool debug, int nevn, int run_no, doub
             cal_tuple->Fill(pcal_E, ecin_E, ecou_E, tot_E);
             scin_tuple->Fill(tof);
             sidis_tuple->Fill(Q2(p, beam_E), nu(p, beam_E), Xb(p, beam_E), W2(p, beam_E));
+            cuts_tuple->Fill(p.pid, chi2, ndf, p.vx, p.vy, p.vz);
         }
     }
     if (!debug) {

@@ -120,6 +120,16 @@ extern const char * SIDIS_LIST[SIDIS_LIST_SIZE];
 // #define PHOTONTHETA "virtual photon #theta (lab frame #degree)"
 // #define PHOTONPHI   "virtual photon #phi (lab frame #degree)"
 
+// Cuts.
+#define S_CUTS "cuts"
+#define CUTS_LIST_SIZE 6
+extern const char * CUTS_LIST[CUTS_LIST_SIZE];
+
+#define S_CHI2    "#chi2"
+#define R_CHI2    "chi2"
+#define S_NDF     "NDF"
+#define R_NDF     "ndf"
+
 // Sampling fraction constants.
 extern const char * CALNAME[4]; // Calorimeters names.
 extern const char * SFARR2D[4]; // Sampling Fraction (SF) 2D arr names.

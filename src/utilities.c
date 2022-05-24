@@ -31,6 +31,17 @@ void rotate_z(double *x, double *y, double th) {
     *y = x_prev*sin(th) + y_prev*cos(th);
 }
 
+bool catch_yn() {
+    while (true) {
+        char str[32];
+        printf(">>> ");
+        scanf("%31s", str);
+
+        if (!strcmp(str, "y") || !strcmp(str, "Y")) return true;
+        if (!strcmp(str, "n") || !strcmp(str, "N")) return false;
+    }
+}
+
 // Catch a string within a list.
 int catch_string(const char * list[], int size) {
     double x;

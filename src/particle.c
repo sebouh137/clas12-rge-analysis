@@ -73,7 +73,7 @@ particle particle_init(REC_Particle * rp, REC_Track * rt, FMT_Tracks * ft, int p
 // === PARTICLE FUNCTIONS ==========================================================================
 // Get distance from beamline.
 double d_from_beamline(particle p) {
-    return (p.vx*p.vx + p.vy+p.vy);
+    return (sqrt(p.vx*p.vx + p.vy+p.vy));
 }
 
 // Calculate theta angle in the lab frame from momentum components of particle.
