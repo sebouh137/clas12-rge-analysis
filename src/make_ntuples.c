@@ -15,10 +15,11 @@
 #include "../lib/particle.h"
 #include "../lib/utilities.h"
 
+// TODO. Make this program write using both dc and fmt data.
 int run(char * in_filename, bool use_fmt, bool debug, int nevn, int run_no, double beam_E) {
     // Access input file. TODO. Make this input file*s*, as in multiple files.
     TFile *f_in  = TFile::Open(in_filename, "READ");
-    TFile *f_out = TFile::Open("../root_io/out.root", "RECREATE"); // NOTE. This path sucks.
+    TFile *f_out = TFile::Open("../root_io/ntuples.root", "RECREATE"); // NOTE. This path sucks.
     if (!f_in || f_in->IsZombie()) return 1;
 
     // Generate lists of variables.

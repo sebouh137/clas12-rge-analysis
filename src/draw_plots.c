@@ -28,11 +28,17 @@
 //       the gold standard for this program.
 
 int run() {
-    TFile *f_in  = TFile::Open("../root_io/out.root", "READ"); // NOTE. This path sucks.
+    TFile *f_in  = TFile::Open("../root_io/ntuples.root", "READ");   // NOTE. This path sucks.
+    TFile *f_out = TFile::Open("../root_io/plots.root", "RECREATE"); // NOTE. Again. This path sucks.
+
     if (!f_in || f_in->IsZombie()) return 1;
 
+    // TODO. A smart struct would simplify the code here and reduce the amount of constants and
+    //       arrays by A LOT.
+    // TODO. This function could receive a few arguments to speed things up. Pre-configured cuts,
+    //       binnings, and corrections would be nice.
     // TODO. Prepare cuts.
-
+    // TODO. Prepare corrections (acceptance, radiative, Feynman, etc...).
     // TODO. Prepare binning.
 
     // Check if we are to make a 1D or 2D plot.
@@ -56,7 +62,6 @@ int run() {
     int vx = catch_string(var_str, n_vars);
     char * vx_tuplename;
     find_ntuple(&vx_tuplename, var_str, vx);
-    printf("vx_tuplename = %s\n", vx_tuplename);
 
     int vy;
     char * vy_tuplename;
@@ -95,13 +100,20 @@ int run() {
         by = catch_long();
     }
 
-    // TODO. Plot.
     if (px == 0) { // 1D plot.
         // TODO. Use the strings from "TITLE_STR" for fancier axes names and titles...
-        // TH1 * plt = new TH1F(var_str[vx], var_str[vx], bx, rx[0], rx[1]);
-        // TODO. Continue from here...
+        TH1 * plt = new TH1F(var_str[vx], var_str[vx], bx, rx[0], rx[1]);
+        TNtuple * t = (TNtuple *) f_in->Get(vx_tuplename);
+        Float_t var;
+        t->SetBranchAddress(var_str[vx], &var);
+        int nentries = t->GetEntries();
+        for (int i = 0; i < nentries; ++i) {
+            t->GetEntry(i);
+            plt->Fill(var);
+        }
+        plt->Write(); // TODO. This is failing...
     }
-    else if (px == 1) { // 2D plot.
+    else if (px == 1) { // TODO. 2D plot.
         // TODO. Use the strings from "TITLE_STR" for fancier axes names and titles...
         // TH1 * plt = new TH2F(Form(var_str[vx], Form("%s vs %s", var_str[vx], var_str[vy]),
         //                      bx, rx[0], rx[1], by, ry[0], ry[1]));
@@ -109,9 +121,10 @@ int run() {
     }
 
     // Clean up after ourselves.
-    f_in->Close();
+    f_in ->Close();
+    f_out->Close();
     free(vx_tuplename);
-    free(vy_tuplename);
+    if (px == 1) free(vy_tuplename);
 
     return 0;
 }
