@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <TCanvas.h>
 #include <TFile.h>
 #include <TH1.h>
 #include <TH1F.h>
@@ -102,22 +103,33 @@ int run() {
 
     if (px == 0) { // 1D plot.
         // TODO. Use the strings from "TITLE_STR" for fancier axes names and titles...
-        TH1 * plt = new TH1F(var_str[vx], var_str[vx], bx, rx[0], rx[1]);
+        TH1F * plt = new TH1F(var_str[vx], var_str[vx], bx, rx[0], rx[1]);
         TNtuple * t = (TNtuple *) f_in->Get(vx_tuplename);
         Float_t var;
         t->SetBranchAddress(var_str[vx], &var);
-        int nentries = t->GetEntries();
-        for (int i = 0; i < nentries; ++i) {
+        for (int i = 0; i < t->GetEntries(); ++i) {
             t->GetEntry(i);
             plt->Fill(var);
         }
-        plt->Write(); // TODO. This is failing...
+        plt->Write();
     }
     else if (px == 1) { // TODO. 2D plot.
         // TODO. Use the strings from "TITLE_STR" for fancier axes names and titles...
-        // TH1 * plt = new TH2F(Form(var_str[vx], Form("%s vs %s", var_str[vx], var_str[vy]),
-        //                      bx, rx[0], rx[1], by, ry[0], ry[1]));
-        // TODO. Continue from here...
+        TCanvas *gcvs = new TCanvas();
+        TH2F * plt = new TH2F(var_str[vx], Form("%s vs %s", var_str[vx], var_str[vy]),
+                             bx, rx[0], rx[1], by, ry[0], ry[1]);
+        TNtuple * tx = (TNtuple *) f_in->Get(vx_tuplename);
+        TNtuple * ty = (TNtuple *) f_in->Get(vy_tuplename);
+        Float_t varx, vary;
+        tx->SetBranchAddress(var_str[vx], &varx);
+        ty->SetBranchAddress(var_str[vy], &vary);
+        for (int i = 0; i < tx->GetEntries(); ++i) {
+            tx->GetEntry(i);
+            ty->GetEntry(i);
+            plt->Fill(varx, vary);
+        }
+        plt->Draw("colz");
+        gcvs->Write();
     }
 
     // Clean up after ourselves.
