@@ -78,6 +78,46 @@ double catch_double() {
     return r;
 }
 
+int find_ntuple(char ** tuplename, const char * list[], int x) {
+    for (int i = 0; i < METADATA_LIST_SIZE; ++i) {
+        if (!strcmp(list[x], METADATA_LIST[i])) {
+            * tuplename = (char *) malloc(strlen(METADATA_STR) + 1);
+            strcpy(* tuplename, METADATA_STR);
+            return 0;
+        }
+    }
+    for (int i = 0; i < PARTICLE_LIST_SIZE; ++i) {
+        if (!strcmp(list[x], PARTICLE_LIST[i])) {
+            * tuplename = (char *) malloc(strlen(PARTICLE_STR) + 1);
+            strcpy(* tuplename, PARTICLE_STR);
+            return 0;
+        }
+    }
+    for (int i = 0; i < CALORIMETER_LIST_SIZE; ++i) {
+        if (!strcmp(list[x], CALORIMETER_LIST[i])) {
+            * tuplename = (char *) malloc(strlen(CALORIMETER_STR) + 1);
+            strcpy(* tuplename, CALORIMETER_STR);
+            return 0;
+        }
+    }
+    for (int i = 0; i < SCINTILLATOR_LIST_SIZE; ++i) {
+        if (!strcmp(list[x], SCINTILLATOR_LIST[i])) {
+            * tuplename = (char *) malloc(strlen(SCINTILLATOR_STR) + 1);
+            strcpy(* tuplename, SCINTILLATOR_STR);
+            return 0;
+        }
+    }
+    for (int i = 0; i < SIDIS_LIST_SIZE; ++i) {
+        if (!strcmp(list[x], SIDIS_LIST[i])) {
+            * tuplename = (char *) malloc(strlen(SIDIS_STR) + 1);
+            strcpy(* tuplename, SIDIS_STR);
+            return 0;
+        }
+    }
+
+    return 1;
+}
+
 // Insert a 1-dimensional histogram of floating point numbers into a map.
 int insert_TH1F(std::map<const char *, TH1 *> *map, const char *k, const char *n, const char *xn,
                int bins, double min, double max) {

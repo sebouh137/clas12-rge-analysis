@@ -9,7 +9,7 @@
 #define NTRMASS 0.939565 // Neutron mass.
 #define EMASS   0.000051 // Electron mass.
 
-// PTUPLES MAP DATA CATEGORIES.
+// NTUPLES MAP DATA CATEGORIES.
 #define METADATA_STR     "metadata"
 #define PARTICLE_STR     "particle"
 #define CALORIMETER_STR  "calorimeter"
@@ -89,6 +89,17 @@
 #define R_XB      "x_bjorken"
 #define R_W2      "w2"
 
+#define METADATA_LIST_SIZE 3
+#define PARTICLE_LIST_SIZE 13
+#define CALORIMETER_LIST_SIZE 4
+#define SCINTILLATOR_LIST_SIZE 1
+#define SIDIS_LIST_SIZE 4
+extern const char * METADATA_LIST[METADATA_LIST_SIZE];
+extern const char * PARTICLE_LIST[PARTICLE_LIST_SIZE];
+extern const char * CALORIMETER_LIST[CALORIMETER_LIST_SIZE];
+extern const char * SCINTILLATOR_LIST[SCINTILLATOR_LIST_SIZE];
+extern const char * SIDIS_LIST[SIDIS_LIST_SIZE];
+
 // Sampling fraction constants.
 extern const char * CALNAME[4]; // Calorimeters names.
 extern const char * SFARR2D[4]; // Sampling Fraction (SF) 2D arr names.
@@ -104,7 +115,7 @@ extern const double PLIMITSARR[4][2]; // Momentum limits for 1D SF fits.
 #define SF_PSTEP  0.4 // GeV
 #define SF_CHI2CONFORMITY 2 // NOTE. This is a source of systematic error!
 
-// Run constants (TODO. these should be in a map.)
+// Run constants (TODO. these should be in a map or taken from clas12mon.)
 #define BE11983 10.3894 //  50 nA.
 #define BE12016 10.3894 // 250 nA.
 #define BE12439  2.1864 //  15 nA.

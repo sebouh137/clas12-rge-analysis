@@ -4,7 +4,10 @@
 #include <stdlib.h>
 
 #include <TFile.h>
-// #include <TNtuple.h>
+#include <TH1.h>
+#include <TH1F.h>
+#include <TH2F.h>
+#include <TNtuple.h>
 
 // #include "../lib/constants.h"
 // #include "../lib/err_handler.h"
@@ -51,13 +54,18 @@ int run() {
     for (int vi = 0; vi < n_vars; ++vi) printf("%s, ", var_str[vi]);
     printf("\b\b]\n");
     int vx = catch_string(var_str, n_vars);
+    char * vx_tuplename;
+    find_ntuple(&vx_tuplename, var_str, vx);
+    printf("vx_tuplename = %s\n", vx_tuplename);
 
     int vy;
+    char * vy_tuplename;
     if (px == 1) {
         printf("\nDefine variable to be plotted on the y axis. Available variables:\n[");
         for (int vi = 0; vi < n_vars; ++vi) printf("%s, ", var_str[vi]);
         printf("\b\b]\n");
         vy = catch_string(var_str, n_vars);
+        find_ntuple(&vy_tuplename, var_str, vy);
     }
 
     // Define ranges.
@@ -88,9 +96,22 @@ int run() {
     }
 
     // TODO. Plot.
+    if (px == 0) { // 1D plot.
+        // TODO. Use the strings from "TITLE_STR" for fancier axes names and titles...
+        // TH1 * plt = new TH1F(var_str[vx], var_str[vx], bx, rx[0], rx[1]);
+        // TODO. Continue from here...
+    }
+    else if (px == 1) { // 2D plot.
+        // TODO. Use the strings from "TITLE_STR" for fancier axes names and titles...
+        // TH1 * plt = new TH2F(Form(var_str[vx], Form("%s vs %s", var_str[vx], var_str[vy]),
+        //                      bx, rx[0], rx[1], by, ry[0], ry[1]));
+        // TODO. Continue from here...
+    }
 
     // Clean up after ourselves.
     f_in->Close();
+    free(vx_tuplename);
+    free(vy_tuplename);
 
     return 0;
 }
