@@ -97,7 +97,7 @@ int run() {
     }
 
     // Apply SIDIS cuts, checking which event numbers should be skipped.
-    int nruns   =  1;
+    // int nruns   =  1; // TODO.
     int nevents = -1;
     { // Count number of events. NOTE. There's probably a cleaner way to do this.
         TNtuple * cuts = (TNtuple *) f_in->Get(S_CUTS);
@@ -171,6 +171,16 @@ int run() {
         }
 
         if (sidis_cuts && !valid_event[(int) (c_evn+0.5)]) continue; // Event didn't pass SIDIS cut.
+
+        // SIDIS variables only make sense for some particles.
+        bool sidis_pass = true;
+        for (int pi = 0; pi < pn; ++pi) {
+            for (int li = 0; li < SIDIS_LIST_SIZE; ++li) {
+                if (!strcmp(R_VAR_LIST[vx[pi]], SIDIS_LIST[li]) && var[pi] < 1e-6)
+                    sidis_pass = false;
+            }
+        }
+        if (!sidis_pass) continue;
 
         // Fill histogram.
         if (px == 0) plt->Fill(var[0]);
