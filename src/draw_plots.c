@@ -24,9 +24,10 @@
 
 // TODO. Separate in z bins and see what happens.
 // TODO. Evaluate acceptance in diferent regions.
+
 // TODO. See simulations with Esteban.
-// NOTE. Adding a functionality to be able to request a plot and get it done in one line would be
-//       the gold standard for this program.
+// TODO. Separate bins in directories.
+// TODO. Give the program the capacity to output more than one plot per run.
 
 int run() {
     TFile * f_in  = TFile::Open("../root_io/ntuples.root", "READ");   // NOTE. This path sucks.
@@ -67,6 +68,7 @@ int run() {
     int    bvx[dbins];
     char * bvx_tuplename[dbins];
     double brx[dbins][2];
+    double b_interval[dbins];
     long   bbx[dbins];
     for (long bdi = 0; bdi < dbins; ++bdi) {
         // variable.
@@ -85,6 +87,9 @@ int run() {
         // nbins.
         printf("\nDefine number of bins for bin in dimension %ld:\n", bdi);
         bbx[bdi] = catch_long();
+
+        // binning interval.
+        b_interval[bdi] = (brx[bdi][1] - brx[bdi][0])/bbx[bdi];
     }
 
     // === PLOT SETUP ==============================================================================
@@ -160,21 +165,13 @@ int run() {
         valid_event[(int) (c_evn+0.5)] = no_tre_pass && Q2_pass && W2_pass;
     }
 
+    // === SETUP NTUPLES ===========================================================================
     // TNtuples for cuts.
     Float_t c_ndf;  cuts->SetBranchAddress(S_NDF,     &c_ndf);
     Float_t c_chi2; cuts->SetBranchAddress(S_CHI2,    &c_chi2);
     Float_t c_vx;   cuts->SetBranchAddress(S_VX,      &c_vx);
     Float_t c_vy;   cuts->SetBranchAddress(S_VY,      &c_vy);
     Float_t c_vz;   cuts->SetBranchAddress(S_VZ,      &c_vz);
-
-    // === PLOT ====================================================================================
-    TH1 * plt;
-    if (px == 0)
-        plt = new TH1F(S_VAR_LIST[vx[0]], S_VAR_LIST[vx[0]], bx[0], rx[0][0], rx[0][1]);
-    if (px == 1) {
-        TString name = Form("%s vs %s", S_VAR_LIST[vx[0]], S_VAR_LIST[vx[1]]);
-        plt = new TH2F(name, name, bx[0], rx[0][0], rx[0][1], bx[1], rx[1][0], rx[1][1]);
-    }
 
     // TNtuples of plotted variables.
     TNtuple * t[pn];
@@ -183,9 +180,37 @@ int run() {
         t[pi] = (TNtuple *) f_in->Get(vx_tuplename[pi]);
         t[pi]->SetBranchAddress(S_VAR_LIST[vx[pi]], &var[pi]);
     }
+
+    // TNtuples of binning variable (TODO. Make this variable*s*).
+    TNtuple * bt;
+    Float_t b_var;
+    bt = (TNtuple *) f_in->Get(bvx_tuplename[0]);
+    bt->SetBranchAddress(S_VAR_LIST[bvx[0]], &b_var);
+
+    // === PLOT ====================================================================================
+    // Create plot, separated by 1D binning (TODO. 2D, 3D, and N-dimensional binning pending...).
+    TH1 * plt[bbx[0]];
+    for (int bbi = 0; bbi < bbx[0]; ++bbi) {
+        double b_low  = brx[0][0] + b_interval[0]* bbi;
+        double b_high = brx[0][0] + b_interval[0]*(bbi+1);
+
+        if (px == 0) {
+            TString name = Form("%s (%s: %6.2f, %6.2f)", S_VAR_LIST[vx[0]], S_VAR_LIST[bvx[0]],
+                                b_low, b_high);
+            plt[bbi] = new TH1F(name, name, bx[0], rx[0][0], rx[0][1]);
+        }
+        if (px == 1) {
+            TString name = Form("%s vs %s (%s: %6.2f, %6.2f)", S_VAR_LIST[vx[0]], S_VAR_LIST[vx[1]],
+                                S_VAR_LIST[bvx[0]], b_low, b_high);
+            plt[bbi] = new TH2F(name, name, bx[0], rx[0][0], rx[0][1], bx[1], rx[1][0], rx[1][1]);
+        }
+    }
+
+    // Run through events.
     for (int i = 0; i < t[0]->GetEntries(); ++i) {
         cuts->GetEntry(i);
         for (int pi = 0; pi < pn; ++pi) t[pi]->GetEntry(i);
+        bt->GetEntry(i);
 
         // Apply cuts.
         if (general_cuts) {
@@ -210,22 +235,36 @@ int run() {
         }
         if (!sidis_pass) continue;
 
-        // Fill histogram.
-        if (px == 0) plt->Fill(var[0]);
-        if (px == 1) plt->Fill(var[0], var[1]);
+        // Fill histogram in its corresponding bin.
+        for (int bbi = 0; bbi < bbx[0]; ++bbi) {
+            double b_low  = brx[0][0] + b_interval[0]* bbi;
+            double b_high = brx[0][0] + b_interval[0]*(bbi+1);
+
+            if (b_low < b_var && b_var <= b_high) {
+                if (px == 0) plt[bbi]->Fill(var[0]);
+                if (px == 1) plt[bbi]->Fill(var[0], var[1]);
+            }
+        }
     }
+
     TCanvas * gcvs = new TCanvas();
-    if (px == 0) plt->Write();
-    if (px == 1) {
-        plt->Draw("colz");
-        gcvs->Write();
+    for (int bbi = 0; bbi < bbx[0]; ++bbi) {
+        if (px == 0) plt[bbi]->Write();
+        if (px == 1) {
+            double b_low  = brx[0][0] + b_interval[0]* bbi;
+            double b_high = brx[0][0] + b_interval[0]*(bbi+1);
+            TString name = Form("%s vs %s (%s: %6.2f, %6.2f)", S_VAR_LIST[vx[0]], S_VAR_LIST[vx[1]],
+                                S_VAR_LIST[bvx[0]], b_low, b_high);
+            plt[bbi]->Draw("colz");
+            gcvs->Write(name);
+        }
     }
 
     // === CLEAN-UP ================================================================================
     f_in ->Close();
     f_out->Close();
-    for (int pi = 0; pi < pn;    ++pi) free( vx_tuplename[pi]);
-    for (int di = 0; di < dbins; ++di) free(bvx_tuplename[di]);
+    for (int  pi  = 0; pi  < pn;    ++pi)  free( vx_tuplename[pi]);
+    for (long bdi = 0; bdi < dbins; ++bdi) free(bvx_tuplename[bdi]);
 
     return 0;
 }
