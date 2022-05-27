@@ -40,16 +40,29 @@ int run() {
     // TODO. Prepare binning.
 
     // === CUTS ====================================================================================
-    printf("\nApply general cuts? [y/n]\n");
-    bool general_cuts = catch_yn();
-    printf("\nApply geometry cuts? [y/n]\n");
-    bool geometry_cuts = catch_yn();
-    printf("\nApply SIDIS cuts? [y/n]\n");
-    bool sidis_cuts = catch_yn();
+    bool general_cuts  = false;
+    bool geometry_cuts = false;
+    bool sidis_cuts    = false;
+    printf("\nApply all default cuts? [y/n]\n");
+    if (!catch_yn()) {
+        printf("\nApply general cuts? [y/n]\n");
+        general_cuts = catch_yn();
+        printf("\nApply geometry cuts? [y/n]\n");
+        geometry_cuts = catch_yn();
+        printf("\nApply SIDIS cuts? [y/n]\n");
+        sidis_cuts = catch_yn();
+    }
+    else {
+        general_cuts  = true;
+        geometry_cuts = true;
+        sidis_cuts    = true;
+    }
 
     // TODO.
     // printf("\nApply any custom cut? [y/n]\n");
     // bool custom_cuts = catch_yn();
+
+    // === BINNING =================================================================================
 
     // === PLOTTING ================================================================================
     // Check if we are to make a 1D or 2D plot.
@@ -99,49 +112,41 @@ int run() {
     // Apply SIDIS cuts, checking which event numbers should be skipped.
     // int nruns   =  1; // TODO.
     int nevents = -1;
-    { // Count number of events. NOTE. There's probably a cleaner way to do this.
-        TNtuple * cuts = (TNtuple *) f_in->Get(S_CUTS);
-        Float_t c_evn; cuts->SetBranchAddress(S_EVENTNO, &c_evn);
-        for (int i = 0; i < cuts->GetEntries(); ++i) {
-            cuts->GetEntry(i);
-            if (c_evn > nevents) nevents = (int) (c_evn+0.5);
-        }
+    // Count number of events. NOTE. There's probably a cleaner way to do this.
+    TNtuple * cuts = (TNtuple *) f_in->Get(S_CUTS);
+    Float_t c_evn; cuts->SetBranchAddress(S_EVENTNO, &c_evn);
+    for (int i = 0; i < cuts->GetEntries(); ++i) {
+        cuts->GetEntry(i);
+        if (c_evn > nevents) nevents = (int) (c_evn+0.5);
     }
 
     bool valid_event[nevents];
-    { // Check which events pass SIDIS cuts.
-        TNtuple * cuts = (TNtuple *) f_in->Get(S_CUTS);
-        Float_t c_evn;    cuts->SetBranchAddress(S_EVENTNO, &c_evn);
-        Float_t c_pid;    cuts->SetBranchAddress(S_PID,     &c_pid);
-        Float_t c_status; cuts->SetBranchAddress(S_STATUS,  &c_status);
-        Float_t c_q2;     cuts->SetBranchAddress(S_Q2,      &c_q2);
-        Float_t c_w2;     cuts->SetBranchAddress(S_W2,      &c_w2);
+    Float_t c_pid;    cuts->SetBranchAddress(S_PID,     &c_pid);
+    Float_t c_status; cuts->SetBranchAddress(S_STATUS,  &c_status);
+    Float_t c_q2;     cuts->SetBranchAddress(S_Q2,      &c_q2);
+    Float_t c_w2;     cuts->SetBranchAddress(S_W2,      &c_w2);
 
-        Float_t current_evn = -1;
-        bool no_tre_pass, Q2_pass, W2_pass;
-        for (int i = 0; i < cuts->GetEntries(); ++i) {
-            cuts->GetEntry(i);
-            if (c_evn != current_evn) {
-                current_evn = c_evn;
-                valid_event[(int) (c_evn+0.5)] = false;
-                no_tre_pass = false;
-                Q2_pass     = true;
-                W2_pass     = true;
-            }
-
-            if (c_pid != 11 || c_status > 0) continue;
-            no_tre_pass = true;
-            Q2_pass = c_q2 >= Q2CUT;
-            W2_pass = c_w2 >= W2CUT;
-
-            valid_event[(int) (c_evn+0.5)] = no_tre_pass && Q2_pass && W2_pass;
+    Float_t current_evn = -1;
+    bool no_tre_pass, Q2_pass, W2_pass;
+    for (int i = 0; i < cuts->GetEntries(); ++i) {
+        cuts->GetEntry(i);
+        if (c_evn != current_evn) {
+            current_evn = c_evn;
+            valid_event[(int) (c_evn+0.5)] = false;
+            no_tre_pass = false;
+            Q2_pass     = true;
+            W2_pass     = true;
         }
+
+        if (c_pid != 11 || c_status > 0) continue;
+        no_tre_pass = true;
+        Q2_pass = c_q2 >= Q2CUT;
+        W2_pass = c_w2 >= W2CUT;
+
+        valid_event[(int) (c_evn+0.5)] = no_tre_pass && Q2_pass && W2_pass;
     }
 
     // TNtuples for cuts.
-    TNtuple * cuts = (TNtuple *) f_in->Get(S_CUTS);
-    Float_t c_evn;  cuts->SetBranchAddress(S_EVENTNO, &c_evn);
-    Float_t c_pid;  cuts->SetBranchAddress(S_PID,     &c_pid);
     Float_t c_ndf;  cuts->SetBranchAddress(S_NDF,     &c_ndf);
     Float_t c_chi2; cuts->SetBranchAddress(S_CHI2,    &c_chi2);
     Float_t c_vx;   cuts->SetBranchAddress(S_VX,      &c_vx);
