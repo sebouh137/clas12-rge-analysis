@@ -37,9 +37,8 @@ int run() {
     // NOTE. This function could receive a few arguments to speed IO up. Pre-configured cuts,
     //       binnings, and corrections would be nice.
     // TODO. Prepare corrections (acceptance, radiative, Feynman, etc...).
-    // TODO. Prepare binning.
 
-    // === CUTS ====================================================================================
+    // === CUT SETUP ===============================================================================
     bool general_cuts  = false;
     bool geometry_cuts = false;
     bool sidis_cuts    = false;
@@ -62,9 +61,33 @@ int run() {
     // printf("\nApply any custom cut? [y/n]\n");
     // bool custom_cuts = catch_yn();
 
-    // === BINNING =================================================================================
+    // === BINNING SETUP ===========================================================================
+    printf("\nNumber of dimensions for binning?\n");
+    long dbins = catch_long();
+    int    bvx[dbins];
+    char * bvx_tuplename[dbins];
+    double brx[dbins][2];
+    long   bbx[dbins];
+    for (long bdi = 0; bdi < dbins; ++bdi) {
+        // variable.
+        printf("\nDefine var for bin in dimension %ld. Available vars:\n[", bdi);
+        for (int vi = 0; vi < VAR_LIST_SIZE; ++vi) printf("%s, ", R_VAR_LIST[vi]);
+        printf("\b\b]\n");
+        bvx[bdi] = catch_string(R_VAR_LIST, VAR_LIST_SIZE);
+        find_ntuple(&bvx_tuplename[bdi], bvx[bdi]);
 
-    // === PLOTTING ================================================================================
+        // range.
+        for (int ri = 0; ri < 2; ++ri) {
+            printf("\nDefine %s limit for bin in dimension %ld:\n", RAN_LIST[ri], bdi);
+            brx[bdi][ri] = catch_double();
+        }
+
+        // nbins.
+        printf("\nDefine number of bins for bin in dimension %ld:\n", bdi);
+        bbx[bdi] = catch_long();
+    }
+
+    // === PLOT SETUP ==============================================================================
     // Check if we are to make a 1D or 2D plot.
     printf("\nPlot type? [");
     for (int pi = 0; pi < PLOT_LIST_SIZE; ++pi) printf("%s, ", PLOT_LIST[pi]);
@@ -99,16 +122,7 @@ int run() {
         bx[pi] = catch_long();
     }
 
-    // Plot.
-    TCanvas * gcvs = new TCanvas();
-    TH1 * plt;
-    if (px == 0)
-        plt = new TH1F(S_VAR_LIST[vx[0]], S_VAR_LIST[vx[0]], bx[0], rx[0][0], rx[0][1]);
-    if (px == 1) {
-        TString name = Form("%s vs %s", S_VAR_LIST[vx[0]], S_VAR_LIST[vx[1]]);
-        plt = new TH2F(name, name, bx[0], rx[0][0], rx[0][1], bx[1], rx[1][0], rx[1][1]);
-    }
-
+    // === APPLY CUTS ==============================================================================
     // Apply SIDIS cuts, checking which event numbers should be skipped.
     // int nruns   =  1; // TODO.
     int nevents = -1;
@@ -153,6 +167,15 @@ int run() {
     Float_t c_vy;   cuts->SetBranchAddress(S_VY,      &c_vy);
     Float_t c_vz;   cuts->SetBranchAddress(S_VZ,      &c_vz);
 
+    // === PLOT ====================================================================================
+    TH1 * plt;
+    if (px == 0)
+        plt = new TH1F(S_VAR_LIST[vx[0]], S_VAR_LIST[vx[0]], bx[0], rx[0][0], rx[0][1]);
+    if (px == 1) {
+        TString name = Form("%s vs %s", S_VAR_LIST[vx[0]], S_VAR_LIST[vx[1]]);
+        plt = new TH2F(name, name, bx[0], rx[0][0], rx[0][1], bx[1], rx[1][0], rx[1][1]);
+    }
+
     // TNtuples of plotted variables.
     TNtuple * t[pn];
     Float_t var[pn];
@@ -191,6 +214,7 @@ int run() {
         if (px == 0) plt->Fill(var[0]);
         if (px == 1) plt->Fill(var[0], var[1]);
     }
+    TCanvas * gcvs = new TCanvas();
     if (px == 0) plt->Write();
     if (px == 1) {
         plt->Draw("colz");
@@ -200,7 +224,8 @@ int run() {
     // === CLEAN-UP ================================================================================
     f_in ->Close();
     f_out->Close();
-    for (int pi = 0; pi < pn; ++pi) free(vx_tuplename[pi]);
+    for (int pi = 0; pi < pn;    ++pi) free( vx_tuplename[pi]);
+    for (int di = 0; di < dbins; ++di) free(bvx_tuplename[di]);
 
     return 0;
 }
