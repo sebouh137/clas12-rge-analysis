@@ -29,6 +29,45 @@
 // TODO. Separate bins in directories.
 // TODO. Give the program the capacity to output more than one plot per run.
 
+int name_plt(TH1 * plt[], TString * name, int * idx, long dbins, long depth, int px, long bx[],
+             double rx[][2], int bvx[], long bbx[], double brx[][2], double b_interval[]) {
+    if (depth == dbins) {
+        if (px == 0) plt[* idx] =
+                new TH1F(* name, * name, bx[0], rx[0][0], rx[0][1]);
+        if (px == 1) plt[* idx] =
+                new TH2F(* name, * name, bx[0], rx[0][0], rx[0][1], bx[1], rx[1][0], rx[1][1]);
+        ++(* idx);
+        return 0;
+    }
+
+    for (int bbi = 0; bbi < bbx[depth]; ++bbi) {
+        double b_low  = brx[depth][0] + b_interval[depth]* bbi;
+        double b_high = brx[depth][0] + b_interval[depth]*(bbi+1);
+
+        TString name_cpy = name->Copy();
+        name_cpy.Append(Form(" (%s: %6.2f, %6.2f)", S_VAR_LIST[bvx[depth]], b_low, b_high));
+        name_plt(plt, &name_cpy, idx, dbins, depth+1, px, bx, rx, bvx, bbx, brx, b_interval);
+    }
+
+    return 0;
+}
+
+int find_idx(long dbins, long depth, Float_t var[], long bx[], double rx[][2], double interval[]) {
+    if (depth == dbins) return 0;
+    for (int bi = 0; bi < bx[depth]; ++bi) {
+        double low  = rx[depth][0] + interval[depth]* bi;
+        double high = rx[depth][0] + interval[depth]*(bi+1);
+
+        if (low < var[depth] && var[depth] < high) {
+            int dim_factor = 1;
+            for (int di = depth+1; di < dbins; ++di) dim_factor *= bx[di];
+            return bi*dim_factor + find_idx(dbins, depth+1, var, bx, rx, interval);
+        }
+    }
+
+    return -1; // Variable is not within binning range.
+}
+
 int run() {
     TFile * f_in  = TFile::Open("../root_io/ntuples.root", "READ");   // NOTE. This path sucks.
     TFile * f_out = TFile::Open("../root_io/plots.root", "RECREATE"); // NOTE. Again. This path sucks.
@@ -40,6 +79,8 @@ int run() {
     // TODO. Prepare corrections (acceptance, radiative, Feynman, etc...).
 
     // === CUT SETUP ===============================================================================
+    // TODO. What particles should be used? All? e-? positive? k+? trigger e-? etc...
+
     bool general_cuts  = false;
     bool geometry_cuts = false;
     bool sidis_cuts    = false;
@@ -182,35 +223,30 @@ int run() {
     }
 
     // TNtuples of binning variable (TODO. Make this variable*s*).
-    TNtuple * bt;
-    Float_t b_var;
-    bt = (TNtuple *) f_in->Get(bvx_tuplename[0]);
-    bt->SetBranchAddress(S_VAR_LIST[bvx[0]], &b_var);
+    TNtuple * bt[dbins];
+    Float_t b_var[dbins];
+    for (long bdi = 0; bdi < dbins; ++bdi) {
+        bt[bdi] = (TNtuple *) f_in->Get(bvx_tuplename[bdi]);
+        bt[bdi]->SetBranchAddress(S_VAR_LIST[bvx[bdi]], &b_var[bdi]);
+    }
 
     // === PLOT ====================================================================================
-    // Create plot, separated by 1D binning (TODO. 2D, 3D, and N-dimensional binning pending...).
-    TH1 * plt[bbx[0]];
-    for (int bbi = 0; bbi < bbx[0]; ++bbi) {
-        double b_low  = brx[0][0] + b_interval[0]* bbi;
-        double b_high = brx[0][0] + b_interval[0]*(bbi+1);
+    // Create plots, separated by n-dimensional binning.
+    long plt_size = 1;
+    for (int bdi = 0; bdi < dbins; ++bdi) plt_size *= bbx[bdi];
 
-        if (px == 0) {
-            TString name = Form("%s (%s: %6.2f, %6.2f)", S_VAR_LIST[vx[0]], S_VAR_LIST[bvx[0]],
-                                b_low, b_high);
-            plt[bbi] = new TH1F(name, name, bx[0], rx[0][0], rx[0][1]);
-        }
-        if (px == 1) {
-            TString name = Form("%s vs %s (%s: %6.2f, %6.2f)", S_VAR_LIST[vx[0]], S_VAR_LIST[vx[1]],
-                                S_VAR_LIST[bvx[0]], b_low, b_high);
-            plt[bbi] = new TH2F(name, name, bx[0], rx[0][0], rx[0][1], bx[1], rx[1][0], rx[1][1]);
-        }
-    }
+    TH1 * plt[plt_size];
+    TString name;
+    int idx = 0;
+    if (px == 0) name = Form("%s", S_VAR_LIST[vx[0]]);
+    if (px == 1) name = Form("%s vs %s", S_VAR_LIST[vx[0]], S_VAR_LIST[vx[1]]);
+    name_plt(plt, &name, &idx, dbins, 0, px, bx, rx, bvx, bbx, brx, b_interval);
 
     // Run through events.
     for (int i = 0; i < t[0]->GetEntries(); ++i) {
         cuts->GetEntry(i);
         for (int pi = 0; pi < pn; ++pi) t[pi]->GetEntry(i);
-        bt->GetEntry(i);
+        for (long bdi = 0; bdi < dbins; ++bdi) bt[bdi]->GetEntry(i);
 
         // Apply cuts.
         if (general_cuts) {
@@ -236,29 +272,15 @@ int run() {
         if (!sidis_pass) continue;
 
         // Fill histogram in its corresponding bin.
-        for (int bbi = 0; bbi < bbx[0]; ++bbi) {
-            double b_low  = brx[0][0] + b_interval[0]* bbi;
-            double b_high = brx[0][0] + b_interval[0]*(bbi+1);
+        int idx = find_idx(dbins, 0, b_var, bbx, brx, b_interval);
+        if (idx == -1) continue;
 
-            if (b_low < b_var && b_var <= b_high) {
-                if (px == 0) plt[bbi]->Fill(var[0]);
-                if (px == 1) plt[bbi]->Fill(var[0], var[1]);
-            }
-        }
+        if (px == 0) plt[idx]->Fill(var[0]);
+        if (px == 1) plt[idx]->Fill(var[0], var[1]);
     }
 
-    TCanvas * gcvs = new TCanvas();
-    for (int bbi = 0; bbi < bbx[0]; ++bbi) {
-        if (px == 0) plt[bbi]->Write();
-        if (px == 1) {
-            double b_low  = brx[0][0] + b_interval[0]* bbi;
-            double b_high = brx[0][0] + b_interval[0]*(bbi+1);
-            TString name = Form("%s vs %s (%s: %6.2f, %6.2f)", S_VAR_LIST[vx[0]], S_VAR_LIST[vx[1]],
-                                S_VAR_LIST[bvx[0]], b_low, b_high);
-            plt[bbi]->Draw("colz");
-            gcvs->Write(name);
-        }
-    }
+    // TODO. Separate in dirs, this is very messy in high dimensional binning.
+    for (int plti = 0; plti < plt_size; ++plti) plt[plti]->Write();
 
     // === CLEAN-UP ================================================================================
     f_in ->Close();
