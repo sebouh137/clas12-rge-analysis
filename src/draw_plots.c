@@ -25,10 +25,10 @@
 // TODO. Separate in z bins and see what happens.
 // TODO. Evaluate acceptance in diferent regions.
 
-// TODO. See simulations with Esteban.
-// TODO. Separate bins in directories.
+// TODO. See simulations with Esteban or get them from RG-F.
 // TODO. Give the program the capacity to output more than one plot per run.
 
+// Assign name to plots, recursively going through binnings.
 int name_plt(TH1 * plt[], TString * name, int * idx, long dbins, long depth, int px, long bx[],
              double rx[][2], int bvx[], long bbx[], double brx[][2], double b_interval[]) {
     if (depth == dbins) {
@@ -52,6 +52,26 @@ int name_plt(TH1 * plt[], TString * name, int * idx, long dbins, long depth, int
     return 0;
 }
 
+int find_bin(TString * name, int plt_size, int idx, long dbins, long depth, int prev_dim_factor,
+             int vx[], long bx[], double rx[][2], double interval[]) {
+    if (depth == dbins) return 0;
+
+    // Find index in array (for this dimension).
+    int dim_factor = 1;
+    for (int di = depth+1; di < dbins; ++di) dim_factor *= bx[di];
+    int bi = (idx/dim_factor)%prev_dim_factor;
+
+    // Get limits.
+    double low  = rx[depth][0] + interval[depth]* bi;
+    double high = rx[depth][0] + interval[depth]*(bi+1);
+
+    // Append dir to name.
+    name->Append(Form("%s (%6.2f, %6.2f)/", S_VAR_LIST[vx[depth]], low, high));
+
+    return find_bin(name, plt_size, idx, dbins, depth+1, dim_factor, vx, bx, rx, interval);
+}
+
+// Find index of plot in array, recursively going through binnings.
 int find_idx(long dbins, long depth, Float_t var[], long bx[], double rx[][2], double interval[]) {
     if (depth == dbins) return 0;
     for (int bi = 0; bi < bx[depth]; ++bi) {
@@ -66,6 +86,11 @@ int find_idx(long dbins, long depth, Float_t var[], long bx[], double rx[][2], d
     }
 
     return -1; // Variable is not within binning range.
+}
+
+// TODO. Draw all standard plots.
+int draw_std_plots() {
+    return 1;
 }
 
 int run() {
@@ -84,7 +109,7 @@ int run() {
     bool general_cuts  = false;
     bool geometry_cuts = false;
     bool sidis_cuts    = false;
-    printf("\nApply all default cuts? [y/n]\n");
+    printf("\nApply all default cuts (general, geometry, SIDIS)? [y/n]\n");
     if (!catch_yn()) {
         printf("\nApply general cuts? [y/n]\n");
         general_cuts = catch_yn();
@@ -134,6 +159,8 @@ int run() {
     }
 
     // === PLOT SETUP ==============================================================================
+    // TODO. Check if we are to make a particular plot or all standard plots.
+
     // Check if we are to make a 1D or 2D plot.
     printf("\nPlot type? [");
     for (int pi = 0; pi < PLOT_LIST_SIZE; ++pi) printf("%s, ", PLOT_LIST[pi]);
@@ -265,7 +292,7 @@ int run() {
         bool sidis_pass = true;
         for (int pi = 0; pi < pn; ++pi) {
             for (int li = 0; li < SIDIS_LIST_SIZE; ++li) {
-                if (!strcmp(R_VAR_LIST[vx[pi]], SIDIS_LIST[li]) && var[pi] < 1e-6)
+                if (!strcmp(R_VAR_LIST[vx[pi]], SIDIS_LIST[li]) && var[pi] < 1e-9)
                     sidis_pass = false;
             }
         }
@@ -279,8 +306,16 @@ int run() {
         if (px == 1) plt[idx]->Fill(var[0], var[1]);
     }
 
-    // TODO. Separate in dirs, this is very messy in high dimensional binning.
-    for (int plti = 0; plti < plt_size; ++plti) plt[plti]->Write();
+    for (int plti = 0; plti < plt_size; ++plti) {
+        // Find dir.
+        TString dir;
+        find_bin(&dir, plt_size, plti, dbins, 0, INT_MAX, bvx, bbx, brx, b_interval);
+        f_out->mkdir(dir);
+        f_out->cd(dir);
+
+        // Write plot(s).
+        plt[plti]->Write();
+    }
 
     // === CLEAN-UP ================================================================================
     f_in ->Close();
