@@ -59,7 +59,7 @@ int find_bin(TString * name, int plt_size, int idx, long dbins, long depth, int 
     // Find index in array (for this dimension).
     int dim_factor = 1;
     for (int di = depth+1; di < dbins; ++di) dim_factor *= bx[di];
-    int bi = (idx/dim_factor)%prev_dim_factor;
+    int bi = (idx%prev_dim_factor)/dim_factor;
 
     // Get limits.
     double low  = rx[depth][0] + interval[depth]* bi;
