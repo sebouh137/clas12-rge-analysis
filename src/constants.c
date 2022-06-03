@@ -24,7 +24,7 @@ const double PLIMITSARR[4][2] = {
 const char * PLOT_LIST[PLOT_LIST_SIZE] = {
         R_PLOT1D, R_PLOT2D
 };
-const char * DIM_LIST[PLOT_LIST_SIZE] = {
+const char * DIM_LIST[DIM_LIST_SIZE] = {
         S_DIM1, S_DIM2
 };
 const char * RAN_LIST[2] = {

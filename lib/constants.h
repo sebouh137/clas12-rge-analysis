@@ -22,9 +22,11 @@
 // Plot types.
 #define PLOT_LIST_SIZE 2
 extern const char * PLOT_LIST[PLOT_LIST_SIZE];
-extern const char * DIM_LIST[PLOT_LIST_SIZE];
-#define R_PLOT1D "1d"
-#define R_PLOT2D "2d"
+#define R_PLOT1D   "1d"
+#define R_PLOT2D   "2d"
+
+#define DIM_LIST_SIZE 2
+extern const char * DIM_LIST[DIM_LIST_SIZE];
 #define S_DIM1   "x"
 #define S_DIM2   "y"
 

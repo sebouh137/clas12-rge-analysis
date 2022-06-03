@@ -32,6 +32,7 @@
 int name_plt(TH1 * plt[], TString * name, int * idx, long dbins, long depth, int px, long bx[],
              double rx[][2], int bvx[], long bbx[], double brx[][2], double b_interval[]) {
     if (depth == dbins) {
+        // Create plot and increase index.
         if (px == 0) plt[* idx] =
                 new TH1F(* name, * name, bx[0], rx[0][0], rx[0][1]);
         if (px == 1) plt[* idx] =
@@ -41,11 +42,15 @@ int name_plt(TH1 * plt[], TString * name, int * idx, long dbins, long depth, int
     }
 
     for (int bbi = 0; bbi < bbx[depth]; ++bbi) {
+        // Find limits.
         double b_low  = brx[depth][0] + b_interval[depth]* bbi;
         double b_high = brx[depth][0] + b_interval[depth]*(bbi+1);
 
+        // Append bin limits to name.
         TString name_cpy = name->Copy();
         name_cpy.Append(Form(" (%s: %6.2f, %6.2f)", S_VAR_LIST[bvx[depth]], b_low, b_high));
+
+        // Continue down the line.
         name_plt(plt, &name_cpy, idx, dbins, depth+1, px, bx, rx, bvx, bbx, brx, b_interval);
     }
 
@@ -75,9 +80,11 @@ int find_bin(TString * name, int plt_size, int idx, long dbins, long depth, int 
 int find_idx(long dbins, long depth, Float_t var[], long bx[], double rx[][2], double interval[]) {
     if (depth == dbins) return 0;
     for (int bi = 0; bi < bx[depth]; ++bi) {
+        // Define bin limits.
         double low  = rx[depth][0] + interval[depth]* bi;
         double high = rx[depth][0] + interval[depth]*(bi+1);
 
+        // Find bin for var.
         if (low < var[depth] && var[depth] < high) {
             int dim_factor = 1;
             for (int di = depth+1; di < dbins; ++di) dim_factor *= bx[di];
@@ -95,7 +102,7 @@ int draw_std_plots() {
 
 int run() {
     TFile * f_in  = TFile::Open("../root_io/ntuples.root", "READ");   // NOTE. This path sucks.
-    TFile * f_out = TFile::Open("../root_io/plots.root", "RECREATE"); // NOTE. Again. This path sucks.
+    TFile * f_out = TFile::Open("../root_io/plots.root", "RECREATE"); // NOTE. This path sucks.
 
     if (!f_in || f_in->IsZombie()) return 1;
 
@@ -130,7 +137,7 @@ int run() {
 
     // === BINNING SETUP ===========================================================================
     printf("\nNumber of dimensions for binning?\n");
-    long dbins = catch_long();
+    long   dbins = catch_long();
     int    bvx[dbins];
     char * bvx_tuplename[dbins];
     double brx[dbins][2];
@@ -159,40 +166,43 @@ int run() {
     }
 
     // === PLOT SETUP ==============================================================================
-    // TODO. Check if we are to make a particular plot or all standard plots.
+    // TODO. Add support for more than one plot.
+    // TODO. Add support for all standard plots.
 
-    // Check if we are to make a 1D or 2D plot.
-    printf("\nPlot type? [");
-    for (int pi = 0; pi < PLOT_LIST_SIZE; ++pi) printf("%s, ", PLOT_LIST[pi]);
-    printf("\b\b]:\n");
-    int px = catch_string(PLOT_LIST, PLOT_LIST_SIZE);
-    int pn = px + 1; // Number of histogram axes.
+    // Number of plots.
+    printf("\nDefine number of plots.\n");
+    long pn = catch_long();
 
-    // Check variable(s) to be plotted.
-    int vx[pn];
-    char * vx_tuplename[pn];
-    for (int pi = 0; pi < pn; ++pi) {
-        printf("\nDefine var to be plotted on the %s axis. Available vars:\n[", DIM_LIST[pi]);
-        for (int vi = 0; vi < VAR_LIST_SIZE; ++vi) printf("%s, ", R_VAR_LIST[vi]);
-        printf("\b\b]\n");
-        vx[pi] = catch_string(R_VAR_LIST, VAR_LIST_SIZE);
-        find_ntuple(&vx_tuplename[pi], vx[pi]);
-    }
+    int    px[pn];
+    int    vx[pn][2];
+    char * vx_tuplename[pn][2];
+    double rx[pn][2][2];
+    long   bx[pn][2];
+    for (long pi = 0; pi < pn; ++pi) {
+        // Check if we are to make a 1D or 2D plot.
+        printf("\nPlot %ld type? [", pi);
+        for (int vi = 0; vi < PLOT_LIST_SIZE; ++vi) printf("%s, ", PLOT_LIST[vi]);
+        printf("\b\b]:\n");
+        px[pi] = catch_string(PLOT_LIST, PLOT_LIST_SIZE);
 
-    // Define ranges.
-    double rx[pn][2];
-    for (int pi = 0; pi < pn; ++pi) {
-        for (int ri = 0; ri < 2; ++ri) {
-            printf("\nDefine %s limit for %s axis:\n", RAN_LIST[ri], DIM_LIST[pi]);
-            rx[pi][ri] = catch_double();
+        for (int di = 0; di < px[pi]+1; ++di) {
+            // Check variable(s) to be plotted.
+            printf("\nDefine var to be plotted on the %s axis. Available vars:\n[", DIM_LIST[di]);
+            for (int vi = 0; vi < VAR_LIST_SIZE; ++vi) printf("%s, ", R_VAR_LIST[vi]);
+            printf("\b\b]\n");
+            vx[pi][di] = catch_string(R_VAR_LIST, VAR_LIST_SIZE);
+            find_ntuple(&vx_tuplename[pi][di], vx[pi][di]);
+
+            // Define ranges.
+            for (int ri = 0; ri < 2; ++ri) {
+                printf("\nDefine %s limit for %s axis:\n", RAN_LIST[ri], DIM_LIST[di]);
+                rx[pi][di][ri] = catch_double();
+            }
+
+            // Define number of bins in plot.
+            printf("\nDefine number of bins for %s axis:\n", DIM_LIST[di]);
+            bx[pi][di] = catch_long();
         }
-    }
-
-    // Define number of bins in plot.
-    long bx[pn];
-    for (int pi = 0; pi < pn; ++pi) {
-        printf("\nDefine number of bins for %s axis:\n", DIM_LIST[pi]);
-        bx[pi] = catch_long();
     }
 
     // === APPLY CUTS ==============================================================================
@@ -241,15 +251,7 @@ int run() {
     Float_t c_vy;   cuts->SetBranchAddress(S_VY,      &c_vy);
     Float_t c_vz;   cuts->SetBranchAddress(S_VZ,      &c_vz);
 
-    // TNtuples of plotted variables.
-    TNtuple * t[pn];
-    Float_t var[pn];
-    for (int pi = 0; pi < pn; ++pi) {
-        t[pi] = (TNtuple *) f_in->Get(vx_tuplename[pi]);
-        t[pi]->SetBranchAddress(S_VAR_LIST[vx[pi]], &var[pi]);
-    }
-
-    // TNtuples of binning variable (TODO. Make this variable*s*).
+    // TNtuples of binnings.
     TNtuple * bt[dbins];
     Float_t b_var[dbins];
     for (long bdi = 0; bdi < dbins; ++bdi) {
@@ -257,23 +259,39 @@ int run() {
         bt[bdi]->SetBranchAddress(S_VAR_LIST[bvx[bdi]], &b_var[bdi]);
     }
 
+    // TNtuples of plotted variables.
+    TNtuple * t[pn][2];
+    Float_t var[pn][2];
+    for (int pi = 0; pi < pn; ++pi) {
+        for (int di = 0; di < px[pi]+1; ++di) {
+            t[pi][di] = (TNtuple *) f_in->Get(vx_tuplename[pi][di]);
+            t[pi][di]->SetBranchAddress(S_VAR_LIST[vx[pi][di]], &var[pi][di]);
+        }
+    }
+
     // === PLOT ====================================================================================
     // Create plots, separated by n-dimensional binning.
     long plt_size = 1;
     for (int bdi = 0; bdi < dbins; ++bdi) plt_size *= bbx[bdi];
 
-    TH1 * plt[plt_size];
-    TString name;
-    int idx = 0;
-    if (px == 0) name = Form("%s", S_VAR_LIST[vx[0]]);
-    if (px == 1) name = Form("%s vs %s", S_VAR_LIST[vx[0]], S_VAR_LIST[vx[1]]);
-    name_plt(plt, &name, &idx, dbins, 0, px, bx, rx, bvx, bbx, brx, b_interval);
+    TH1 * plt[pn][plt_size];
+    for (int pi = 0; pi < pn; ++pi) {
+        TString name;
+        int idx = 0;
+        if (px[pi] == 0) name = Form("%s", S_VAR_LIST[vx[pi][0]]);
+        if (px[pi] == 1) name = Form("%s vs %s", S_VAR_LIST[vx[pi][0]], S_VAR_LIST[vx[pi][1]]);
+        name_plt(plt[pi], &name, &idx, dbins, 0, px[pi], bx[pi], rx[pi], bvx, bbx, brx, b_interval);
+    }
 
     // Run through events.
-    for (int i = 0; i < t[0]->GetEntries(); ++i) {
+    for (int i = 0; i < t[0][0]->GetEntries(); ++i) {
         cuts->GetEntry(i);
-        for (int pi = 0; pi < pn; ++pi) t[pi]->GetEntry(i);
         for (long bdi = 0; bdi < dbins; ++bdi) bt[bdi]->GetEntry(i);
+        for (int pi = 0; pi < pn; ++pi) {
+            for (int di = 0; di < px[pi]+1; ++di) {
+                t[pi][di]->GetEntry(i);
+            }
+        }
 
         // Apply cuts.
         if (general_cuts) {
@@ -288,22 +306,24 @@ int run() {
 
         if (sidis_cuts && !valid_event[(int) (c_evn+0.5)]) continue; // Event didn't pass SIDIS cut.
 
-        // SIDIS variables only make sense for some particles.
-        bool sidis_pass = true;
         for (int pi = 0; pi < pn; ++pi) {
-            for (int li = 0; li < SIDIS_LIST_SIZE; ++li) {
-                if (!strcmp(R_VAR_LIST[vx[pi]], SIDIS_LIST[li]) && var[pi] < 1e-9)
+            // SIDIS variables only make sense for some particles.
+            bool sidis_pass = true;
+            for (int di = 0; di < px[pi]+1; ++di) {
+                for (int li = 0; li < SIDIS_LIST_SIZE; ++li) {
+                    if (!strcmp(R_VAR_LIST[vx[pi][di]], SIDIS_LIST[li]) && var[pi][di] < 1e-9)
                     sidis_pass = false;
+                }
             }
+            if (!sidis_pass) continue;
+
+            // Fill histogram in its corresponding bin.
+            int idx = find_idx(dbins, 0, b_var, bbx, brx, b_interval);
+            if (idx == -1) continue;
+
+            if (px[pi] == 0) plt[pi][idx]->Fill(var[pi][0]);
+            if (px[pi] == 1) plt[pi][idx]->Fill(var[pi][0], var[pi][1]);
         }
-        if (!sidis_pass) continue;
-
-        // Fill histogram in its corresponding bin.
-        int idx = find_idx(dbins, 0, b_var, bbx, brx, b_interval);
-        if (idx == -1) continue;
-
-        if (px == 0) plt[idx]->Fill(var[0]);
-        if (px == 1) plt[idx]->Fill(var[0], var[1]);
     }
 
     for (int plti = 0; plti < plt_size; ++plti) {
@@ -314,13 +334,17 @@ int run() {
         f_out->cd(dir);
 
         // Write plot(s).
-        plt[plti]->Write();
+        for (int pi = 0; pi < pn; ++pi) plt[pi][plti]->Write();
     }
 
     // === CLEAN-UP ================================================================================
     f_in ->Close();
     f_out->Close();
-    for (int  pi  = 0; pi  < pn;    ++pi)  free( vx_tuplename[pi]);
+    for (int  pi = 0; pi < pn; ++pi) {
+        for (int di = 0; di < px[pi]; ++ di) {
+            free(vx_tuplename[pi]);
+        }
+    }
     for (long bdi = 0; bdi < dbins; ++bdi) free(bvx_tuplename[bdi]);
 
     return 0;
