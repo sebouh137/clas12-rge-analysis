@@ -10,7 +10,7 @@
 #include <TH2F.h>
 #include <TNtuple.h>
 
-// #include "../lib/constants.h"
+#include "../lib/constants.h"
 // #include "../lib/err_handler.h"
 // #include "../lib/file_handler.h"
 // #include "../lib/io_handler.h"
@@ -24,7 +24,6 @@
 
 // TODO. Separate in z bins and see what happens.
 // TODO. Evaluate **acceptance** in diferent regions.
-
 // TODO. See simulations with Esteban or get them from RG-F.
 
 // Assign name to plots, recursively going through binnings.
@@ -94,11 +93,6 @@ int find_idx(long dbins, long depth, Float_t var[], long bx[], double rx[][2], d
     return -1; // Variable is not within binning range.
 }
 
-// TODO. Draw all standard plots.
-int draw_std_plots() {
-    return 1;
-}
-
 int run() {
     TFile * f_in  = TFile::Open("../root_io/ntuples.root", "READ");   // NOTE. This path sucks.
     TFile * f_out = TFile::Open("../root_io/plots.root", "RECREATE"); // NOTE. This path sucks.
@@ -138,7 +132,6 @@ int run() {
     printf("\nNumber of dimensions for binning?\n");
     long   dbins = catch_long();
     int    bvx[dbins];
-    char * bvx_tuplename[dbins];
     double brx[dbins][2];
     double b_interval[dbins];
     long   bbx[dbins];
@@ -148,7 +141,6 @@ int run() {
         for (int vi = 0; vi < VAR_LIST_SIZE; ++vi) printf("%s, ", R_VAR_LIST[vi]);
         printf("\b\b]\n");
         bvx[bdi] = catch_string(R_VAR_LIST, VAR_LIST_SIZE);
-        find_ntuple(&bvx_tuplename[bdi], bvx[bdi]);
 
         // range.
         for (int ri = 0; ri < 2; ++ri) {
@@ -165,7 +157,6 @@ int run() {
     }
 
     // === PLOT SETUP ==============================================================================
-    // TODO. Add support for all standard plots.
     // Number of plots.
     printf("\nDefine number of plots (Set to 0 to just draw standard plots).\n");
     long pn = catch_long();
@@ -178,7 +169,6 @@ int run() {
 
     int    px[pn];
     int    vx[pn][2];
-    char * vx_tuplename[pn][2];
     double rx[pn][2][2];
     long   bx[pn][2];
     for (long pi = 0; pi < pn && !stdplt; ++pi) {
@@ -194,7 +184,6 @@ int run() {
             for (int vi = 0; vi < VAR_LIST_SIZE; ++vi) printf("%s, ", R_VAR_LIST[vi]);
             printf("\b\b]\n");
             vx[pi][di] = catch_string(R_VAR_LIST, VAR_LIST_SIZE);
-            find_ntuple(&vx_tuplename[pi][di], vx[pi][di]);
 
             // Define ranges.
             for (int ri = 0; ri < 2; ++ri) {
@@ -211,11 +200,6 @@ int run() {
         // Setup the 8 standard plots.
         memcpy(px, STD_PX, sizeof px);
         memcpy(vx, STD_VX, sizeof vx);
-        for (int pi = 0; pi < pn; ++pi) {
-            for (int di = 0; di < 2; ++di) {
-                find_ntuple(&vx_tuplename[pi][di], vx[pi][di]);
-            }
-        }
         memcpy(rx, STD_RX, sizeof rx);
         memcpy(bx, STD_BX, sizeof bx);
     }
@@ -305,14 +289,6 @@ int run() {
     Float_t c_vy;   cuts->SetBranchAddress(S_VY,      &c_vy);
     Float_t c_vz;   cuts->SetBranchAddress(S_VZ,      &c_vz);
 
-    // TNtuples of binnings. TODO. Maybe this should use the vars array...
-    TNtuple * bt[dbins];
-    Float_t b_var[dbins];
-    for (long bdi = 0; bdi < dbins; ++bdi) {
-        bt[bdi] = (TNtuple *) f_in->Get(bvx_tuplename[bdi]);
-        bt[bdi]->SetBranchAddress(S_VAR_LIST[bvx[bdi]], &b_var[bdi]);
-    }
-
     // === PLOT ====================================================================================
     // Create plots, separated by n-dimensional binning.
     long plt_size = 1;
@@ -330,7 +306,6 @@ int run() {
     // Run through events.
     for (int i = 0; i < t_meta->GetEntries(); ++i) {
         cuts->GetEntry(i);
-        for (long bdi = 0; bdi < dbins; ++bdi) bt[bdi]->GetEntry(i);
         t_meta ->GetEntry(i);
         t_part ->GetEntry(i);
         t_cal  ->GetEntry(i);
@@ -350,21 +325,26 @@ int run() {
 
         if (sidis_cuts && !valid_event[(int) (c_evn+0.5)]) continue; // Event didn't pass SIDIS cut.
 
+        // Prepare binning vars.
+        Float_t b_vars[dbins];
+        for (long bdi = 0; bdi < dbins; ++bdi) b_vars[bdi] = vars[bvx[bdi]];
+
         for (int pi = 0; pi < pn; ++pi) {
             // SIDIS variables only make sense for some particles.
             bool sidis_pass = true;
             for (int di = 0; di < px[pi]+1; ++di) {
                 for (int li = 0; li < SIDIS_LIST_SIZE; ++li) {
                     if (!strcmp(R_VAR_LIST[vx[pi][di]], SIDIS_LIST[li]) && vars[vx[pi][di]] < 1e-9)
-                    sidis_pass = false;
+                        sidis_pass = false;
                 }
             }
             if (!sidis_pass) continue;
 
-            // Fill histogram in its corresponding bin.
-            int idx = find_idx(dbins, 0, b_var, bbx, brx, b_interval);
+            // Find corresponding bin.
+            int idx = find_idx(dbins, 0, b_vars, bbx, brx, b_interval);
             if (idx == -1) continue;
 
+            // Fill histogram.
             if (px[pi] == 0) plt[pi][idx]->Fill(vars[vx[pi][0]]);
             if (px[pi] == 1) plt[pi][idx]->Fill(vars[vx[pi][0]], vars[vx[pi][1]]);
         }
@@ -384,12 +364,6 @@ int run() {
     // === CLEAN-UP ================================================================================
     f_in ->Close();
     f_out->Close();
-    for (int  pi = 0; pi < pn; ++pi) {
-        for (int di = 0; di < px[pi]; ++ di) {
-            free(vx_tuplename[pi][di]);
-        }
-    }
-    for (long bdi = 0; bdi < dbins; ++bdi) free(bvx_tuplename[bdi]);
 
     return 0;
 }
