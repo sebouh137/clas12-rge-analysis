@@ -196,76 +196,33 @@ int run() {
             bx[pi][di] = catch_long();
         }
     }
-    if (stdplt) {
-        // Setup the 8 standard plots.
+    if (stdplt) { // Setup standard plots.
         memcpy(px, STD_PX, sizeof px);
         memcpy(vx, STD_VX, sizeof vx);
         memcpy(rx, STD_RX, sizeof rx);
         memcpy(bx, STD_BX, sizeof bx);
     }
 
-    // TODO. Debug printout.
-    // printf("px: (vx, vy), ((rx[0], rx[1]), (ry[0], ry[1])), (bx , by )\n");
-    // for (int pi = 0; pi < pn; ++pi) {
-    //     printf("%2d: (%2d, %2d), ((%5.1f, %5.1f), (%5.1f, %5.1f)), (%3ld, %3ld)\n",
-    //     px[pi], vx[pi][0], vx[pi][1], rx[pi][0][0], rx[pi][0][1], rx[pi][1][0], rx[pi][1][1],
-    //     bx[pi][0], bx[pi][1]);
-    // }
-
     // === NTUPLES SETUP ===========================================================================
-    TNtuple * t[TNTUPLES_N] = {
-        (TNtuple *) f_in->Get(S_METADATA),
-        (TNtuple *) f_in->Get(S_PARTICLE),
-        (TNtuple *) f_in->Get(S_TRACKING),
-        (TNtuple *) f_in->Get(S_CALORIMETER),
-        (TNtuple *) f_in->Get(S_SCINTILLATOR),
-        (TNtuple *) f_in->Get(S_SIDIS)
-    };
-
+    TNtuple * t = (TNtuple *) f_in->Get(S_PARTICLE);
     Float_t vars[VAR_LIST_SIZE];
-    double tntuple_sizes[TNTUPLES_N];
-    {
-        double tot = 0.;
-        for (int ti = 0; ti < TNTUPLES_N; ++ti) {
-            if (ti == 0) tot += METADATA_LIST_SIZE;
-            if (ti == 1) tot += PARTICLE_LIST_SIZE;
-            if (ti == 2) tot += TRACKING_LIST_SIZE;
-            if (ti == 3) tot += CALORIMETER_LIST_SIZE;
-            if (ti == 4) tot += SCINTILLATOR_LIST_SIZE;
-            if (ti == 5) tot += SIDIS_LIST_SIZE;
-            tntuple_sizes[ti] = tot;
-        }
-    }
-
-    for (int vi = 0; vi < VAR_LIST_SIZE; ++vi) {
-        bool found = false;
-        for (int ti = 0; ti < TNTUPLES_N; ++ti) {
-            if (vi < tntuple_sizes[ti]) {
-                t[ti]->SetBranchAddress(S_VAR_LIST[vi], &vars[vi]);
-                found = true;
-                break;
-            }
-        }
-        if (!found) return 1; // TODO. Implement error.
-    }
+    for (int vi = 0; vi < VAR_LIST_SIZE; ++vi) t->SetBranchAddress(S_VAR_LIST[vi], &vars[vi]);
 
     // === APPLY CUTS ==============================================================================
     // Apply SIDIS cuts, checking which event numbers should be skipped.
     // int nruns   =  1; // TODO.
     int nevents = -1;
     // Count number of events. NOTE. There's probably a cleaner way to do this.
-    for (int i = 0; i < t[0]->GetEntries(); ++i) {
-        t[A_METADATA]->GetEntry(i);
+    for (int i = 0; i < t->GetEntries(); ++i) {
+        t->GetEntry(i);
         if (vars[A_EVENTNO] > nevents) nevents = (int) (vars[A_EVENTNO]+0.5);
     }
 
     bool valid_event[nevents];
     Float_t current_evn = -1;
     bool no_tre_pass, Q2_pass, W2_pass;
-    for (int i = 0; i < t[0]->GetEntries(); ++i) {
-        t[A_METADATA]->GetEntry(i);
-        t[A_PARTICLE]->GetEntry(i);
-        t[A_SIDIS]   ->GetEntry(i);
+    for (int i = 0; i < t->GetEntries(); ++i) {
+        t->GetEntry(i);
         if (vars[A_EVENTNO] != current_evn) {
             current_evn = vars[A_EVENTNO];
             valid_event[(int) (vars[A_EVENTNO]+0.5)] = false;
@@ -297,8 +254,8 @@ int run() {
     }
 
     // Run through events.
-    for (int i = 0; i < t[0]->GetEntries(); ++i) {
-        for (int ti = 0; ti < TNTUPLES_N; ++ti) t[ti]->GetEntry(i);
+    for (int i = 0; i < t->GetEntries(); ++i) {
+        t->GetEntry(i);
 
         // Apply cuts.
         if (general_cuts) {
@@ -321,8 +278,8 @@ int run() {
             // SIDIS variables only make sense for some particles.
             bool sidis_pass = true;
             for (int di = 0; di < px[pi]+1; ++di) {
-                for (int li = 0; li < SIDIS_LIST_SIZE; ++li) {
-                    if (!strcmp(R_VAR_LIST[vx[pi][di]], SIDIS_LIST[li]) && vars[vx[pi][di]] < 1e-9)
+                for (int li = 0; li < DIS_LIST_SIZE; ++li) {
+                    if (!strcmp(R_VAR_LIST[vx[pi][di]], DIS_LIST[li]) && vars[vx[pi][di]] < 1e-9)
                         sidis_pass = false;
                 }
             }

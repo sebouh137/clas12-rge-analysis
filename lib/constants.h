@@ -43,17 +43,13 @@ extern const double STD_RX[STDPLT_LIST_SIZE][2][2];
 extern const long   STD_BX[STDPLT_LIST_SIZE][2];
 
 // All variables.
+#define S_PARTICLE "particle"
 #define TNTUPLES_N     6 // Number of TNtuples.
 #define VAR_LIST_SIZE 28 // METADATA + PARTICLE + TRACKING + CALORIMETER + SCINTILLATOR + SIDIS.
 extern const char * R_VAR_LIST[VAR_LIST_SIZE];
 extern const char * S_VAR_LIST[VAR_LIST_SIZE];
 
 // Metadata.
-#define S_METADATA "metadata"
-#define A_METADATA 0
-#define METADATA_LIST_SIZE 3
-extern const char * METADATA_LIST[METADATA_LIST_SIZE];
-
 #define S_RUNNO   "run_no"
 #define R_RUNNO   "run_no"
 #define A_RUNNO   0
@@ -65,11 +61,6 @@ extern const char * METADATA_LIST[METADATA_LIST_SIZE];
 #define A_BEAME   2
 
 // Particle.
-#define S_PARTICLE "particle"
-#define A_PARTICLE 1
-#define PARTICLE_LIST_SIZE 14
-extern const char * PARTICLE_LIST[PARTICLE_LIST_SIZE];
-
 #define S_PID    "pid"
 #define R_PID    "pid"
 #define A_PID    3
@@ -114,11 +105,6 @@ extern const char * PARTICLE_LIST[PARTICLE_LIST_SIZE];
 #define A_BETA   16
 
 // Tracking.
-#define S_TRACKING "tracking"
-#define A_TRACKING 2
-#define TRACKING_LIST_SIZE 2
-extern const char * TRACKING_LIST[TRACKING_LIST_SIZE];
-
 #define S_CHI2   "chi2"
 #define R_CHI2   "chi2"
 #define A_CHI2   17
@@ -127,11 +113,6 @@ extern const char * TRACKING_LIST[TRACKING_LIST_SIZE];
 #define A_NDF    18
 
 // Calorimeter.
-#define S_CALORIMETER "calorimeter"
-#define A_CALORIMETER 3
-#define CALORIMETER_LIST_SIZE 4
-extern const char * CALORIMETER_LIST[CALORIMETER_LIST_SIZE];
-
 #define S_PCAL_E "E_{pcal}"  // GeV.
 #define R_PCAL_E "e_pcal"
 #define A_PCAL_E 19
@@ -146,20 +127,13 @@ extern const char * CALORIMETER_LIST[CALORIMETER_LIST_SIZE];
 #define A_TOT_E  22
 
 // Scintillator.
-#define S_SCINTILLATOR "scintillator"
-#define A_SCINTILLATOR 4
-#define SCINTILLATOR_LIST_SIZE 1
-extern const char * SCINTILLATOR_LIST[SCINTILLATOR_LIST_SIZE];
-
 #define S_DTOF "#DeltaTOF" // ns.
 #define R_DTOF "dtof"
 #define A_DTOF 23
 
-// SIDIS.
-#define S_SIDIS "sidis"
-#define A_SIDIS 5
-#define SIDIS_LIST_SIZE 4
-extern const char * SIDIS_LIST[SIDIS_LIST_SIZE];
+// DIS.
+#define DIS_LIST_SIZE 4
+extern const char * DIS_LIST[DIS_LIST_SIZE];
 
 #define S_Q2 "Q2"          // GeV^2.
 #define R_Q2 "q2"

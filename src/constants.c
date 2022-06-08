@@ -51,23 +51,7 @@ const char * S_VAR_LIST[VAR_LIST_SIZE] = {
         S_DTOF,
         S_Q2, S_NU, S_XB, S_W2
 };
-const char * METADATA_LIST[METADATA_LIST_SIZE] = {
-        R_RUNNO, R_EVENTNO, R_BEAME
-};
-const char * PARTICLE_LIST[PARTICLE_LIST_SIZE] = {
-        R_PID, R_STATUS, R_CHARGE, R_MASS, R_VX, R_VY, R_VZ, R_PX, R_PY, R_PZ, R_P, R_THETA, R_PHI,
-        R_BETA
-};
-const char * TRACKING_LIST[TRACKING_LIST_SIZE] = {
-        R_CHI2, R_NDF
-};
-const char * CALORIMETER_LIST[CALORIMETER_LIST_SIZE] = {
-        R_PCAL_E, R_ECIN_E, R_ECOU_E, R_TOT_E
-};
-const char * SCINTILLATOR_LIST[SCINTILLATOR_LIST_SIZE] = {
-        R_DTOF
-};
-const char * SIDIS_LIST[SIDIS_LIST_SIZE] = {
+const char * DIS_LIST[DIS_LIST_SIZE] = {
         R_Q2, R_NU, R_XB, R_W2
 };
 

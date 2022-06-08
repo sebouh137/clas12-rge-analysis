@@ -22,39 +22,29 @@ int run(char * in_filename, bool use_fmt, bool debug, int nevn, int run_no, doub
     TFile *f_out = TFile::Open("../root_io/ntuples.root", "RECREATE"); // NOTE. This path sucks.
     if (!f_in || f_in->IsZombie()) return 1;
 
-    // Generate lists of variables. TODO. This should be done with the variable arrays in constants.
-    const char * metadata_vars = Form("%s:%s:%s", S_RUNNO, S_EVENTNO, S_BEAME);
-    const char * particle_vars = Form("%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s",
-            S_PID, S_STATUS, S_CHARGE, S_MASS, S_VX, S_VY, S_VZ, S_PX, S_PY, S_PZ, S_P,
-            S_THETA, S_PHI, S_BETA);
-    const char * tracking_vars = Form("%s:%s", S_CHI2, S_NDF);
-    const char * cal_vars  = Form("%s:%s:%s:%s", S_PCAL_E, S_ECIN_E, S_ECOU_E, S_TOT_E);
-    const char * scin_vars = Form("%s", S_DTOF);
-    const char * sidis_vars = Form("%s:%s:%s:%s", S_Q2, S_NU, S_XB, S_W2);
+    // Generate lists of variables.
+    TString vars("");
+    for (int vi = 0; vi < VAR_LIST_SIZE; ++vi) {
+        vars.Append(Form("%s", S_VAR_LIST[vi]));
+        if (vi != VAR_LIST_SIZE-1) vars.Append(":");
+    }
 
-    // Create tuples.
-    TNtuple * metadata_tuple = new TNtuple(S_METADATA,     S_METADATA,     metadata_vars);
-    TNtuple * particle_tuple = new TNtuple(S_PARTICLE,     S_PARTICLE,     particle_vars);
-    TNtuple * tracking_tuple = new TNtuple(S_TRACKING,     S_TRACKING,     tracking_vars);
-    TNtuple * cal_tuple      = new TNtuple(S_CALORIMETER,  S_CALORIMETER,  cal_vars);
-    TNtuple * scin_tuple     = new TNtuple(S_SCINTILLATOR, S_SCINTILLATOR, scin_vars);
-    TNtuple * sidis_tuple    = new TNtuple(S_SIDIS,        S_SIDIS,        sidis_vars);
-
-    // Create TTree and link bank_containers.
-    TTree *t = f_in->Get<TTree>("Tree");
-    REC_Particle     rp(t);
-    REC_Track        rt(t);
-    REC_Scintillator rs(t);
-    REC_Calorimeter  rc(t);
-    FMT_Tracks       ft(t);
+    // Create TTree and TNTuples.
+    TTree * t_in    = f_in->Get<TTree>("Tree");
+    TNtuple * t_out = new TNtuple(S_PARTICLE, S_PARTICLE, vars);
+    REC_Particle     rp(t_in);
+    REC_Track        rt(t_in);
+    REC_Scintillator rs(t_in);
+    REC_Calorimeter  rc(t_in);
+    FMT_Tracks       ft(t_in);
 
     // Counters for fancy progress bar.
     int divcntr     = 0;
     int evnsplitter = 0;
 
     // Iterate through input file. Each TTree entry is one event.
-    printf("Reading %lld events from %s.\n", nevn == -1 ? t->GetEntries() : nevn, in_filename);
-    for (int evn = 0; (evn < t->GetEntries()) && (nevn == -1 || evn < nevn); ++evn) {
+    printf("Reading %lld events from %s.\n", nevn == -1 ? t_in->GetEntries() : nevn, in_filename);
+    for (int evn = 0; (evn < t_in->GetEntries()) && (nevn == -1 || evn < nevn); ++evn) {
         if (!debug && evn >= evnsplitter) {
             if (evn != 0) {
                 printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
@@ -68,14 +58,14 @@ int run(char * in_filename, bool use_fmt, bool debug, int nevn, int run_no, doub
             printf("] %2d%%", divcntr);
             fflush(stdout);
             divcntr++;
-            evnsplitter = nevn == -1 ? (t->GetEntries() / 100) * divcntr : (nevn/100) * divcntr;
+            evnsplitter = nevn == -1 ? (t_in->GetEntries() / 100) * divcntr : (nevn/100) * divcntr;
         }
 
-        rp.get_entries(t, evn);
-        rt.get_entries(t, evn);
-        rs.get_entries(t, evn);
-        rc.get_entries(t, evn);
-        ft.get_entries(t, evn);
+        rp.get_entries(t_in, evn);
+        rt.get_entries(t_in, evn);
+        rs.get_entries(t_in, evn);
+        rc.get_entries(t_in, evn);
+        ft.get_entries(t_in, evn);
 
         // Filter events without the necessary banks.
         if (rp.vz->size() == 0 || rt.pindex->size() == 0) continue;
@@ -122,14 +112,21 @@ int run(char * in_filename, bool use_fmt, bool debug, int nevn, int run_no, doub
             double chi2 = rt.chi2  ->at(pos);
             double ndf  = rt.ndf   ->at(pos);
 
-            // Fill TNtuples.
-            metadata_tuple->Fill(run_no, evn, beam_E);
-            particle_tuple->Fill(p.pid, status, p.q, p.mass, p.vx, p.vy, p.vz, p.px, p.py, p.pz,
-                                 P(p), theta_lab(p), phi_lab(p), p.beta);
-            tracking_tuple->Fill(chi2, ndf);
-            cal_tuple->Fill(pcal_E, ecin_E, ecou_E, tot_E);
-            scin_tuple->Fill(tof);
-            sidis_tuple->Fill(Q2(p, beam_E), nu(p, beam_E), Xb(p, beam_E), W2(p, beam_E));
+            // Fill TNtuples. TODO. This probably could be implemented more elegantly.
+            // NOTE. If adding new variables, check their order in S_VAR_LIST.
+            Float_t v[VAR_LIST_SIZE] = {
+                (Float_t) run_no, (Float_t) evn, (Float_t) beam_E,
+                (Float_t) p.pid, (Float_t) status, (Float_t) p.q, (Float_t) p.mass, (Float_t) p.vx,
+                        (Float_t) p.vy, (Float_t) p.vz, (Float_t) p.px, (Float_t) p.py,
+                        (Float_t) p.pz, (Float_t) P(p), (Float_t) theta_lab(p),
+                        (Float_t) phi_lab(p), (Float_t) p.beta,
+                (Float_t) chi2, (Float_t) ndf,
+                (Float_t) pcal_E, (Float_t) ecin_E, (Float_t) ecou_E, (Float_t) tot_E,
+                (Float_t) tof,
+                (Float_t) Q2(p, beam_E), (Float_t) nu(p, beam_E), (Float_t) Xb(p, beam_E),
+                        (Float_t) W2(p, beam_E)
+            };
+            t_out->Fill(v);
         }
     }
     if (!debug) {
