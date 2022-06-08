@@ -342,7 +342,7 @@ int run() {
     f_out->Close();
     for (int  pi = 0; pi < pn; ++pi) {
         for (int di = 0; di < px[pi]; ++ di) {
-            free(vx_tuplename[pi]);
+            free(vx_tuplename[pi][di]);
         }
     }
     for (long bdi = 0; bdi < dbins; ++bdi) free(bvx_tuplename[bdi]);
