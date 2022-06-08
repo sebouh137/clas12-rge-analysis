@@ -213,17 +213,19 @@ int run() {
     // }
 
     // === NTUPLES SETUP ===========================================================================
-    TNtuple * t_meta  = (TNtuple *) f_in->Get(S_METADATA);
-    TNtuple * t_part  = (TNtuple *) f_in->Get(S_PARTICLE);
-    TNtuple * t_cal   = (TNtuple *) f_in->Get(S_CALORIMETER);
-    TNtuple * t_sci   = (TNtuple *) f_in->Get(S_SCINTILLATOR);
-    TNtuple * t_sidis = (TNtuple *) f_in->Get(S_SIDIS);
+    TNtuple * t[TNTUPLES_N] = {
+        (TNtuple *) f_in->Get(S_METADATA),
+        (TNtuple *) f_in->Get(S_PARTICLE),
+        (TNtuple *) f_in->Get(S_CALORIMETER),
+        (TNtuple *) f_in->Get(S_SCINTILLATOR),
+        (TNtuple *) f_in->Get(S_SIDIS)
+    };
 
     Float_t vars[VAR_LIST_SIZE];
-    double tntuple_sizes[5];
+    double tntuple_sizes[TNTUPLES_N];
     {
         double tot = 0.;
-        for (int ti = 0; ti < 5; ++ti) {
+        for (int ti = 0; ti < TNTUPLES_N; ++ti) {
             if (ti == 0) tot += METADATA_LIST_SIZE;
             if (ti == 1) tot += PARTICLE_LIST_SIZE;
             if (ti == 2) tot += CALORIMETER_LIST_SIZE;
@@ -234,12 +236,15 @@ int run() {
     }
 
     for (int vi = 0; vi < VAR_LIST_SIZE; ++vi) {
-        if      (vi < tntuple_sizes[0]) t_meta ->SetBranchAddress(S_VAR_LIST[vi], &vars[vi]);
-        else if (vi < tntuple_sizes[1]) t_part ->SetBranchAddress(S_VAR_LIST[vi], &vars[vi]);
-        else if (vi < tntuple_sizes[2]) t_cal  ->SetBranchAddress(S_VAR_LIST[vi], &vars[vi]);
-        else if (vi < tntuple_sizes[3]) t_sci  ->SetBranchAddress(S_VAR_LIST[vi], &vars[vi]);
-        else if (vi < tntuple_sizes[4]) t_sidis->SetBranchAddress(S_VAR_LIST[vi], &vars[vi]);
-        else return 1; // TODO. Implement error.
+        bool found = false;
+        for (int ti = 0; ti < TNTUPLES_N; ++ti) {
+            if (vi < tntuple_sizes[ti]) {
+                t[ti]->SetBranchAddress(S_VAR_LIST[vi], &vars[vi]);
+                found = true;
+                break;
+            }
+        }
+        if (!found) return 1; // TODO. Implement error.
     }
 
     // === APPLY CUTS ==============================================================================
@@ -304,13 +309,9 @@ int run() {
     }
 
     // Run through events.
-    for (int i = 0; i < t_meta->GetEntries(); ++i) {
+    for (int i = 0; i < t[0]->GetEntries(); ++i) {
         cuts->GetEntry(i);
-        t_meta ->GetEntry(i);
-        t_part ->GetEntry(i);
-        t_cal  ->GetEntry(i);
-        t_sci  ->GetEntry(i);
-        t_sidis->GetEntry(i);
+        for (int ti = 0; ti < TNTUPLES_N; ++ti) t[ti]->GetEntry(i);
 
         // Apply cuts.
         if (general_cuts) {
