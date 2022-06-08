@@ -24,22 +24,21 @@ int run(char * in_filename, bool use_fmt, bool debug, int nevn, int run_no, doub
 
     // Generate lists of variables. TODO. This should be done with the variable arrays in constants.
     const char * metadata_vars = Form("%s:%s:%s", S_RUNNO, S_EVENTNO, S_BEAME);
-    const char * particle_vars = Form("%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s",
-            S_PID, S_CHARGE, S_MASS, S_VX, S_VY, S_VZ, S_PX, S_PY, S_PZ, S_P,
+    const char * particle_vars = Form("%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s",
+            S_PID, S_STATUS, S_CHARGE, S_MASS, S_VX, S_VY, S_VZ, S_PX, S_PY, S_PZ, S_P,
             S_THETA, S_PHI, S_BETA);
+    const char * tracking_vars = Form("%s:%s", S_CHI2, S_NDF);
     const char * cal_vars  = Form("%s:%s:%s:%s", S_PCAL_E, S_ECIN_E, S_ECOU_E, S_TOT_E);
     const char * scin_vars = Form("%s", S_DTOF);
     const char * sidis_vars = Form("%s:%s:%s:%s", S_Q2, S_NU, S_XB, S_W2);
-    const char * cuts_vars = Form("%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s",
-            S_RUNNO, S_EVENTNO, S_PID, S_STATUS, S_CHI2, S_NDF, S_VX, S_VY, S_VZ, S_Q2, S_W2);
 
     // Create tuples.
     TNtuple * metadata_tuple = new TNtuple(S_METADATA,     S_METADATA,     metadata_vars);
     TNtuple * particle_tuple = new TNtuple(S_PARTICLE,     S_PARTICLE,     particle_vars);
+    TNtuple * tracking_tuple = new TNtuple(S_TRACKING,     S_TRACKING,     tracking_vars);
     TNtuple * cal_tuple      = new TNtuple(S_CALORIMETER,  S_CALORIMETER,  cal_vars);
     TNtuple * scin_tuple     = new TNtuple(S_SCINTILLATOR, S_SCINTILLATOR, scin_vars);
     TNtuple * sidis_tuple    = new TNtuple(S_SIDIS,        S_SIDIS,        sidis_vars);
-    TNtuple * cuts_tuple     = new TNtuple(S_CUTS,         S_CUTS,         cuts_vars);
 
     // Create TTree and link bank_containers.
     TTree *t = f_in->Get<TTree>("Tree");
@@ -125,13 +124,12 @@ int run(char * in_filename, bool use_fmt, bool debug, int nevn, int run_no, doub
 
             // Fill TNtuples.
             metadata_tuple->Fill(run_no, evn, beam_E);
-            particle_tuple->Fill(p.pid, p.q, p.mass, p.vx, p.vy, p.vz, p.px, p.py, p.pz,
+            particle_tuple->Fill(p.pid, status, p.q, p.mass, p.vx, p.vy, p.vz, p.px, p.py, p.pz,
                                  P(p), theta_lab(p), phi_lab(p), p.beta);
+            tracking_tuple->Fill(chi2, ndf);
             cal_tuple->Fill(pcal_E, ecin_E, ecou_E, tot_E);
             scin_tuple->Fill(tof);
             sidis_tuple->Fill(Q2(p, beam_E), nu(p, beam_E), Xb(p, beam_E), W2(p, beam_E));
-            cuts_tuple->Fill(run_no, evn, p.pid, status, chi2, ndf, p.vx, p.vy, p.vz, Q2(p, beam_E),
-                             W2(p, beam_E));
         }
     }
     if (!debug) {

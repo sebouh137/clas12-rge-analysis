@@ -216,6 +216,7 @@ int run() {
     TNtuple * t[TNTUPLES_N] = {
         (TNtuple *) f_in->Get(S_METADATA),
         (TNtuple *) f_in->Get(S_PARTICLE),
+        (TNtuple *) f_in->Get(S_TRACKING),
         (TNtuple *) f_in->Get(S_CALORIMETER),
         (TNtuple *) f_in->Get(S_SCINTILLATOR),
         (TNtuple *) f_in->Get(S_SIDIS)
@@ -228,9 +229,10 @@ int run() {
         for (int ti = 0; ti < TNTUPLES_N; ++ti) {
             if (ti == 0) tot += METADATA_LIST_SIZE;
             if (ti == 1) tot += PARTICLE_LIST_SIZE;
-            if (ti == 2) tot += CALORIMETER_LIST_SIZE;
-            if (ti == 3) tot += SCINTILLATOR_LIST_SIZE;
-            if (ti == 4) tot += SIDIS_LIST_SIZE;
+            if (ti == 2) tot += TRACKING_LIST_SIZE;
+            if (ti == 3) tot += CALORIMETER_LIST_SIZE;
+            if (ti == 4) tot += SCINTILLATOR_LIST_SIZE;
+            if (ti == 5) tot += SIDIS_LIST_SIZE;
             tntuple_sizes[ti] = tot;
         }
     }
@@ -248,51 +250,37 @@ int run() {
     }
 
     // === APPLY CUTS ==============================================================================
-    // TODO. Maybe this should use the vars array...
     // Apply SIDIS cuts, checking which event numbers should be skipped.
     // int nruns   =  1; // TODO.
     int nevents = -1;
     // Count number of events. NOTE. There's probably a cleaner way to do this.
-    TNtuple * cuts = (TNtuple *) f_in->Get(S_CUTS);
-    Float_t c_evn; cuts->SetBranchAddress(S_EVENTNO, &c_evn);
-    for (int i = 0; i < cuts->GetEntries(); ++i) {
-        cuts->GetEntry(i);
-        if (c_evn > nevents) nevents = (int) (c_evn+0.5);
+    for (int i = 0; i < t[0]->GetEntries(); ++i) {
+        t[A_METADATA]->GetEntry(i);
+        if (vars[A_EVENTNO] > nevents) nevents = (int) (vars[A_EVENTNO]+0.5);
     }
 
     bool valid_event[nevents];
-    Float_t c_pid;    cuts->SetBranchAddress(S_PID,     &c_pid);
-    Float_t c_status; cuts->SetBranchAddress(S_STATUS,  &c_status);
-    Float_t c_q2;     cuts->SetBranchAddress(S_Q2,      &c_q2);
-    Float_t c_w2;     cuts->SetBranchAddress(S_W2,      &c_w2);
-
     Float_t current_evn = -1;
     bool no_tre_pass, Q2_pass, W2_pass;
-    for (int i = 0; i < cuts->GetEntries(); ++i) {
-        cuts->GetEntry(i);
-        if (c_evn != current_evn) {
-            current_evn = c_evn;
-            valid_event[(int) (c_evn+0.5)] = false;
+    for (int i = 0; i < t[0]->GetEntries(); ++i) {
+        t[A_METADATA]->GetEntry(i);
+        t[A_PARTICLE]->GetEntry(i);
+        t[A_SIDIS]   ->GetEntry(i);
+        if (vars[A_EVENTNO] != current_evn) {
+            current_evn = vars[A_EVENTNO];
+            valid_event[(int) (vars[A_EVENTNO]+0.5)] = false;
             no_tre_pass = false;
             Q2_pass     = true;
             W2_pass     = true;
         }
 
-        if (c_pid != 11 || c_status > 0) continue;
+        if (vars[A_PID] != 11 || vars[A_STATUS] > 0) continue;
         no_tre_pass = true;
-        Q2_pass = c_q2 >= Q2CUT;
-        W2_pass = c_w2 >= W2CUT;
+        Q2_pass = vars[A_Q2] >= Q2CUT;
+        W2_pass = vars[A_W2] >= W2CUT;
 
-        valid_event[(int) (c_evn+0.5)] = no_tre_pass && Q2_pass && W2_pass;
+        valid_event[(int) (vars[A_EVENTNO]+0.5)] = no_tre_pass && Q2_pass && W2_pass;
     }
-
-    // === SETUP NTUPLES ===========================================================================
-    // TNtuples for cuts. TODO. Maybe this should use the vars array...
-    Float_t c_ndf;  cuts->SetBranchAddress(S_NDF,     &c_ndf);
-    Float_t c_chi2; cuts->SetBranchAddress(S_CHI2,    &c_chi2);
-    Float_t c_vx;   cuts->SetBranchAddress(S_VX,      &c_vx);
-    Float_t c_vy;   cuts->SetBranchAddress(S_VY,      &c_vy);
-    Float_t c_vz;   cuts->SetBranchAddress(S_VZ,      &c_vz);
 
     // === PLOT ====================================================================================
     // Create plots, separated by n-dimensional binning.
@@ -310,21 +298,20 @@ int run() {
 
     // Run through events.
     for (int i = 0; i < t[0]->GetEntries(); ++i) {
-        cuts->GetEntry(i);
         for (int ti = 0; ti < TNTUPLES_N; ++ti) t[ti]->GetEntry(i);
 
         // Apply cuts.
         if (general_cuts) {
-            if (-0.5 < c_pid && c_pid < 0.5) continue; // Non-identified particle.
-            if (c_chi2/c_ndf >= CHI2NDFCUT)  continue; // Ignore tracks with high chi2.
+            if (-0.5 < vars[A_PID] && vars[A_PID] < 0.5) continue; // Non-identified particle.
+            if (vars[A_CHI2]/vars[A_NDF] >= CHI2NDFCUT)  continue; // Ignore tracks with high chi2.
         }
 
         if (geometry_cuts) {
-            if (sqrt(c_vx*c_vx + c_vy*c_vy) > VXVYCUT) continue; // Too far from beamline.
-            if (VZLOWCUT > c_vz || c_vz > VZHIGHCUT)   continue; // Too far from target.
+            if (sqrt(vars[A_VX]*vars[A_VX] + vars[A_VY]*vars[A_VY]) > VXVYCUT) continue;
+            if (VZLOWCUT > vars[A_VZ] || vars[A_VZ] > VZHIGHCUT) continue;
         }
 
-        if (sidis_cuts && !valid_event[(int) (c_evn+0.5)]) continue; // Event didn't pass SIDIS cut.
+        if (sidis_cuts && !valid_event[(int) (vars[A_EVENTNO]+0.5)]) continue;
 
         // Prepare binning vars.
         Float_t b_vars[dbins];

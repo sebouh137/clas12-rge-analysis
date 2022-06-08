@@ -43,13 +43,14 @@ extern const double STD_RX[STDPLT_LIST_SIZE][2][2];
 extern const long   STD_BX[STDPLT_LIST_SIZE][2];
 
 // All variables.
-#define TNTUPLES_N     5 // Number of TNtuples.
-#define VAR_LIST_SIZE 25 // METADATA + PARTICLE + CALORIMETER + SCINTILLATOR + SIDIS.
+#define TNTUPLES_N     6 // Number of TNtuples.
+#define VAR_LIST_SIZE 28 // METADATA + PARTICLE + TRACKING + CALORIMETER + SCINTILLATOR + SIDIS.
 extern const char * R_VAR_LIST[VAR_LIST_SIZE];
 extern const char * S_VAR_LIST[VAR_LIST_SIZE];
 
 // Metadata.
 #define S_METADATA "metadata"
+#define A_METADATA 0
 #define METADATA_LIST_SIZE 3
 extern const char * METADATA_LIST[METADATA_LIST_SIZE];
 
@@ -65,7 +66,8 @@ extern const char * METADATA_LIST[METADATA_LIST_SIZE];
 
 // Particle.
 #define S_PARTICLE "particle"
-#define PARTICLE_LIST_SIZE 13
+#define A_PARTICLE 1
+#define PARTICLE_LIST_SIZE 14
 extern const char * PARTICLE_LIST[PARTICLE_LIST_SIZE];
 
 #define S_PID    "pid"
@@ -74,98 +76,105 @@ extern const char * PARTICLE_LIST[PARTICLE_LIST_SIZE];
 #define S_CHARGE "charge"
 #define R_CHARGE "charge"
 #define A_CHARGE 4
+#define S_STATUS "status"
+#define R_STATUS "status"
+#define A_STATUS 5
 #define S_MASS   "mass"   // GeV.
 #define R_MASS   "mass"
-#define A_MASS   5
+#define A_MASS   6
 #define S_VX     "vx"     // cm.
 #define R_VX     "vx"
-#define A_VX     6
+#define A_VX     7
 #define S_VY     "vy"     // cm.
 #define R_VY     "vy"
-#define A_VY     7
+#define A_VY     8
 #define S_VZ     "vz"     // cm.
 #define R_VZ     "vz"
-#define A_VZ     8
+#define A_VZ     9
 #define S_PX     "p_{x}"  // GeV.
 #define R_PX     "px"
-#define A_PX     9
+#define A_PX     10
 #define S_PY     "p_{y}"  // GeV.
 #define R_PY     "py"
-#define A_PY     10
+#define A_PY     11
 #define S_PZ     "p_{z}"  // GeV.
 #define R_PZ     "pz"
-#define A_PZ     11
+#define A_PZ     12
 #define S_P      "p"      // GeV.
 #define R_P      "p"
-#define A_P      12
+#define A_P      13
 #define S_THETA  "#theta" // #degree.
 #define R_THETA  "theta"
-#define A_THETA  13
+#define A_THETA  14
 #define S_PHI    "#phi"   // #degree.
 #define R_PHI    "phi"
-#define A_PHI    14
+#define A_PHI    15
 #define S_BETA   "#beta"  // adimensional.
 #define R_BETA   "beta"
-#define A_BETA   15
+#define A_BETA   16
+
+// Tracking.
+#define S_TRACKING "tracking"
+#define A_TRACKING 2
+#define TRACKING_LIST_SIZE 2
+extern const char * TRACKING_LIST[TRACKING_LIST_SIZE];
+
+#define S_CHI2   "chi2"
+#define R_CHI2   "chi2"
+#define A_CHI2   17
+#define S_NDF    "NDF"
+#define R_NDF    "NDF"
+#define A_NDF    18
 
 // Calorimeter.
 #define S_CALORIMETER "calorimeter"
+#define A_CALORIMETER 3
 #define CALORIMETER_LIST_SIZE 4
 extern const char * CALORIMETER_LIST[CALORIMETER_LIST_SIZE];
 
 #define S_PCAL_E "E_{pcal}"  // GeV.
 #define R_PCAL_E "e_pcal"
-#define A_PCAL_E 16
+#define A_PCAL_E 19
 #define S_ECIN_E "E_{ecin}"  // GeV.
 #define R_ECIN_E "e_ecin"
-#define A_ECIN_E 17
+#define A_ECIN_E 20
 #define S_ECOU_E "E_{ecou}"  // GeV.
 #define R_ECOU_E "e_ecou"
-#define A_ECOU_E 18
+#define A_ECOU_E 21
 #define S_TOT_E  "E_{total}" // GeV.
 #define R_TOT_E  "e_total"
-#define A_TOT_E  19
+#define A_TOT_E  22
 
 // Scintillator.
 #define S_SCINTILLATOR "scintillator"
+#define A_SCINTILLATOR 4
 #define SCINTILLATOR_LIST_SIZE 1
 extern const char * SCINTILLATOR_LIST[SCINTILLATOR_LIST_SIZE];
 
 #define S_DTOF "#DeltaTOF" // ns.
 #define R_DTOF "dtof"
-#define A_DTOF 20
+#define A_DTOF 23
 
 // SIDIS.
 #define S_SIDIS "sidis"
+#define A_SIDIS 5
 #define SIDIS_LIST_SIZE 4
 extern const char * SIDIS_LIST[SIDIS_LIST_SIZE];
 
 #define S_Q2 "Q2"          // GeV^2.
 #define R_Q2 "q2"
-#define A_Q2 21
+#define A_Q2 24
 #define S_NU "#nu"         // GeV.
 #define R_NU "nu"
-#define A_NU 22
+#define A_NU 25
 #define S_XB "X_{bjorken}" // adimensional.
 #define R_XB "x_bjorken"
-#define A_XB 23
+#define A_XB 26
 #define S_W2 "W2"          // GeV^2.
 #define R_W2 "w2"
-#define A_W2 24
+#define A_W2 27
 // #define PHOTONTHETA "virtual photon #theta (lab frame #degree)"
 // #define PHOTONPHI   "virtual photon #phi (lab frame #degree)"
-
-// Cuts.
-#define S_CUTS "cuts"
-#define CUTS_LIST_SIZE 11
-extern const char * CUTS_LIST[CUTS_LIST_SIZE];
-
-#define S_CHI2    "#chi2"
-#define R_CHI2    "chi2"
-#define S_NDF     "NDF"
-#define R_NDF     "ndf"
-#define S_STATUS  "status"
-#define R_STATUS  "status"
 
 // Sampling fraction constants.
 extern const char * CALNAME[4]; // Calorimeters names.
