@@ -1,5 +1,6 @@
 #include "../lib/constants.h"
 
+// Sampling fraction constant arrays.
 const char * CALNAME[4] = {
         "PCAL", "ECIN", "ECOU", "ALL"
 };
@@ -21,6 +22,8 @@ const double PLIMITSARR[4][2] = {
         {0.000, 0.400},
         {0.150, 0.300}
 };
+
+// Plotting constant arrays.
 const char * PLOT_LIST[PLOT_LIST_SIZE] = {
         R_PLOT1D, R_PLOT2D
 };
@@ -61,4 +64,35 @@ const char * SIDIS_LIST[SIDIS_LIST_SIZE] = {
 };
 const char * CUTS_LIST[CUTS_LIST_SIZE] = {
         R_RUNNO, R_EVENTNO, R_PID, R_STATUS, R_CHI2, R_NDF, R_VX, R_VY, R_VZ, R_Q2, R_W2
+};
+
+// Standard plots constant arrays.
+// const int STD_PX[STDPLT_LIST_SIZE] = {
+//         1, /* p vs beta */ 1, /* p vs dTOF */ 1, /* p vs E    */ 0, /* Q^2       */
+//         0, /* nu        */ 0, /* X_bjorken */ 0, /* W^2       */ 1  /* Q2 vs nu  */
+// };
+// const int STD_VX[STDPLT_LIST_SIZE][2] = {
+//         {12,15}, {12,20}, {12,19}, {21,-1}, {22,-1}, {23,-1}, {24,-1}, {21,22}
+// };
+// const double STD_RX[STDPLT_LIST_SIZE][2][2] = {
+//         {{ 0,10},{ 0, 1}}, {{ 0,10},{ 0,20}}, {{ 0,10},{ 0, 3}}, {{ 0,12},{-1,-1}},
+//         {{ 0,12},{-1,-1}}, {{ 0, 2},{-1,-1}}, {{ 0,20},{-1,-1}}, {{ 0,12},{ 0,12}}
+// };
+// const long STD_BX[STDPLT_LIST_SIZE][2] = {
+//         {200,200}, {200,100}, {200,200}, { 22, -1}, { 22, -1}, { 20, -1}, {200, -1}, {200,200}
+// };
+
+const int STD_PX[STDPLT_LIST_SIZE] = {
+        1, /* p vs beta */ 0, /* Q^2       */
+        0, /* nu        */ 0, /* X_bjorken */ 0 /* W^2       */
+};
+const int STD_VX[STDPLT_LIST_SIZE][2] = {
+        {12,15}, {21,-1}, {22,-1}, {23,-1}, {24,-1}
+};
+const double STD_RX[STDPLT_LIST_SIZE][2][2] = {
+        {{ 0,10},{ 0, 1}}, {{ 0,12},{-1,-1}},
+        {{ 0,12},{-1,-1}}, {{ 0, 2},{-1,-1}}, {{ 0,20},{-1,-1}}
+};
+const long STD_BX[STDPLT_LIST_SIZE][2] = {
+        {200,200}, { 22, -1}, { 22, -1}, { 20, -1}, {200, -1}
 };

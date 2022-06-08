@@ -23,10 +23,9 @@
 //           -> Ask Raffa.
 
 // TODO. Separate in z bins and see what happens.
-// TODO. Evaluate acceptance in diferent regions.
+// TODO. Evaluate **acceptance** in diferent regions.
 
 // TODO. See simulations with Esteban or get them from RG-F.
-// TODO. Give the program the capacity to output more than one plot per run.
 
 // Assign name to plots, recursively going through binnings.
 int name_plt(TH1 * plt[], TString * name, int * idx, long dbins, long depth, int px, long bx[],
@@ -166,19 +165,23 @@ int run() {
     }
 
     // === PLOT SETUP ==============================================================================
-    // TODO. Add support for more than one plot.
     // TODO. Add support for all standard plots.
-
     // Number of plots.
-    printf("\nDefine number of plots.\n");
+    printf("\nDefine number of plots (Set to 0 to just draw standard plots).\n");
     long pn = catch_long();
+
+    bool stdplt = false;
+    if (pn == 0) {
+        stdplt = true;
+        pn     = STDPLT_LIST_SIZE;
+    }
 
     int    px[pn];
     int    vx[pn][2];
     char * vx_tuplename[pn][2];
     double rx[pn][2][2];
     long   bx[pn][2];
-    for (long pi = 0; pi < pn; ++pi) {
+    for (long pi = 0; pi < pn && !stdplt; ++pi) {
         // Check if we are to make a 1D or 2D plot.
         printf("\nPlot %ld type? [", pi);
         for (int vi = 0; vi < PLOT_LIST_SIZE; ++vi) printf("%s, ", PLOT_LIST[vi]);
@@ -204,6 +207,26 @@ int run() {
             bx[pi][di] = catch_long();
         }
     }
+    if (stdplt) {
+        // Setup the 8 standard plots.
+        memcpy(px, STD_PX, sizeof px);
+        memcpy(vx, STD_VX, sizeof vx);
+        for (int pi = 0; pi < pn; ++pi) {
+            for (int di = 0; di < 2; ++di) {
+                find_ntuple(&vx_tuplename[pi][di], vx[pi][di]);
+            }
+        }
+        memcpy(rx, STD_RX, sizeof rx);
+        memcpy(bx, STD_BX, sizeof bx);
+    }
+
+    // TODO. Debug printout.
+    // printf("px: (vx, vy), ((rx[0], rx[1]), (ry[0], ry[1])), (bx , by )\n");
+    // for (int pi = 0; pi < pn; ++pi) {
+    //     printf("%2d: (%2d, %2d), ((%5.1f, %5.1f), (%5.1f, %5.1f)), (%3ld, %3ld)\n",
+    //     px[pi], vx[pi][0], vx[pi][1], rx[pi][0][0], rx[pi][0][1], rx[pi][1][0], rx[pi][1][1],
+    //     bx[pi][0], bx[pi][1]);
+    // }
 
     // === APPLY CUTS ==============================================================================
     // Apply SIDIS cuts, checking which event numbers should be skipped.

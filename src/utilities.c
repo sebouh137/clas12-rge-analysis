@@ -92,6 +92,7 @@ double catch_double() {
 }
 
 int find_ntuple(char ** tuplename, int x) {
+    if (x == -1) return 0;
     for (int i = 0; i < METADATA_LIST_SIZE; ++i) {
         if (!strcmp(R_VAR_LIST[x], METADATA_LIST[i])) {
             * tuplename = (char *) malloc(strlen(S_METADATA) + 1);
