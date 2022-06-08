@@ -5,7 +5,12 @@ double to_deg(double radians) {
     return radians * (180.0 / M_PI);
 }
 
-// Compute a vector's magnitude from its components.
+// Compute a 2D vector's magnitude from its components.
+double calc_magnitude(double x, double y) {
+    return sqrt(x*x + y*y);
+}
+
+// Compute a 3D vector's magnitude from its components.
 double calc_magnitude(double x, double y, double z) {
     return sqrt(x*x + y*y + z*z);
 }

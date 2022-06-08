@@ -264,7 +264,7 @@ int run() {
         }
 
         if (geometry_cuts) {
-            if (sqrt(vars[A_VX]*vars[A_VX] + vars[A_VY]*vars[A_VY]) > VXVYCUT) continue;
+            if (calc_magnitude(vars[A_VX], vars[A_VY]) > VXVYCUT) continue;
             if (VZLOWCUT > vars[A_VZ] || vars[A_VZ] > VZHIGHCUT) continue;
         }
 
