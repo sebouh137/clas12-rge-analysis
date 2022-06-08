@@ -36,14 +36,13 @@ extern const char * RAN_LIST[2];
 #define S_UPPER "upper"
 
 // "Standard" plots.
-// #define STDPLT_LIST_SIZE 8
-#define STDPLT_LIST_SIZE 5
+#define STDPLT_LIST_SIZE 8
 extern const int    STD_PX[STDPLT_LIST_SIZE];
 extern const int    STD_VX[STDPLT_LIST_SIZE][2];
 extern const double STD_RX[STDPLT_LIST_SIZE][2][2];
 extern const long   STD_BX[STDPLT_LIST_SIZE][2];
 
-// All variables.
+// All variables. TODO. Store the address of every constant.
 #define VAR_LIST_SIZE 25 // METADATA + PARTICLE + CALORIMETER + SCINTILLATOR + SIDIS.
 extern const char * R_VAR_LIST[VAR_LIST_SIZE];
 extern const char * S_VAR_LIST[VAR_LIST_SIZE];

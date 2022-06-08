@@ -228,7 +228,38 @@ int run() {
     //     bx[pi][0], bx[pi][1]);
     // }
 
+    // === NTUPLES SETUP ===========================================================================
+    TNtuple * t_meta  = (TNtuple *) f_in->Get(S_METADATA);
+    TNtuple * t_part  = (TNtuple *) f_in->Get(S_PARTICLE);
+    TNtuple * t_cal   = (TNtuple *) f_in->Get(S_CALORIMETER);
+    TNtuple * t_sci   = (TNtuple *) f_in->Get(S_SCINTILLATOR);
+    TNtuple * t_sidis = (TNtuple *) f_in->Get(S_SIDIS);
+
+    Float_t vars[VAR_LIST_SIZE];
+    double tntuple_sizes[5];
+    {
+        double tot = 0.;
+        for (int ti = 0; ti < 5; ++ti) {
+            if (ti == 0) tot += METADATA_LIST_SIZE;
+            if (ti == 1) tot += PARTICLE_LIST_SIZE;
+            if (ti == 2) tot += CALORIMETER_LIST_SIZE;
+            if (ti == 3) tot += SCINTILLATOR_LIST_SIZE;
+            if (ti == 4) tot += SIDIS_LIST_SIZE;
+            tntuple_sizes[ti] = tot;
+        }
+    }
+
+    for (int vi = 0; vi < VAR_LIST_SIZE; ++vi) {
+        if      (vi < tntuple_sizes[0]) t_meta ->SetBranchAddress(S_VAR_LIST[vi], &vars[vi]);
+        else if (vi < tntuple_sizes[1]) t_part ->SetBranchAddress(S_VAR_LIST[vi], &vars[vi]);
+        else if (vi < tntuple_sizes[2]) t_cal  ->SetBranchAddress(S_VAR_LIST[vi], &vars[vi]);
+        else if (vi < tntuple_sizes[3]) t_sci  ->SetBranchAddress(S_VAR_LIST[vi], &vars[vi]);
+        else if (vi < tntuple_sizes[4]) t_sidis->SetBranchAddress(S_VAR_LIST[vi], &vars[vi]);
+        else return 1; // TODO. Implement error.
+    }
+
     // === APPLY CUTS ==============================================================================
+    // TODO. Maybe this should use the vars array...
     // Apply SIDIS cuts, checking which event numbers should be skipped.
     // int nruns   =  1; // TODO.
     int nevents = -1;
@@ -267,29 +298,19 @@ int run() {
     }
 
     // === SETUP NTUPLES ===========================================================================
-    // TNtuples for cuts.
+    // TNtuples for cuts. TODO. Maybe this should use the vars array...
     Float_t c_ndf;  cuts->SetBranchAddress(S_NDF,     &c_ndf);
     Float_t c_chi2; cuts->SetBranchAddress(S_CHI2,    &c_chi2);
     Float_t c_vx;   cuts->SetBranchAddress(S_VX,      &c_vx);
     Float_t c_vy;   cuts->SetBranchAddress(S_VY,      &c_vy);
     Float_t c_vz;   cuts->SetBranchAddress(S_VZ,      &c_vz);
 
-    // TNtuples of binnings.
+    // TNtuples of binnings. TODO. Maybe this should use the vars array...
     TNtuple * bt[dbins];
     Float_t b_var[dbins];
     for (long bdi = 0; bdi < dbins; ++bdi) {
         bt[bdi] = (TNtuple *) f_in->Get(bvx_tuplename[bdi]);
         bt[bdi]->SetBranchAddress(S_VAR_LIST[bvx[bdi]], &b_var[bdi]);
-    }
-
-    // TNtuples of plotted variables.
-    TNtuple * t[pn][2];
-    Float_t var[pn][2];
-    for (int pi = 0; pi < pn; ++pi) {
-        for (int di = 0; di < px[pi]+1; ++di) {
-            t[pi][di] = (TNtuple *) f_in->Get(vx_tuplename[pi][di]);
-            t[pi][di]->SetBranchAddress(S_VAR_LIST[vx[pi][di]], &var[pi][di]);
-        }
     }
 
     // === PLOT ====================================================================================
@@ -307,14 +328,14 @@ int run() {
     }
 
     // Run through events.
-    for (int i = 0; i < t[0][0]->GetEntries(); ++i) {
+    for (int i = 0; i < t_meta->GetEntries(); ++i) {
         cuts->GetEntry(i);
         for (long bdi = 0; bdi < dbins; ++bdi) bt[bdi]->GetEntry(i);
-        for (int pi = 0; pi < pn; ++pi) {
-            for (int di = 0; di < px[pi]+1; ++di) {
-                t[pi][di]->GetEntry(i);
-            }
-        }
+        t_meta ->GetEntry(i);
+        t_part ->GetEntry(i);
+        t_cal  ->GetEntry(i);
+        t_sci  ->GetEntry(i);
+        t_sidis->GetEntry(i);
 
         // Apply cuts.
         if (general_cuts) {
@@ -334,7 +355,7 @@ int run() {
             bool sidis_pass = true;
             for (int di = 0; di < px[pi]+1; ++di) {
                 for (int li = 0; li < SIDIS_LIST_SIZE; ++li) {
-                    if (!strcmp(R_VAR_LIST[vx[pi][di]], SIDIS_LIST[li]) && var[pi][di] < 1e-9)
+                    if (!strcmp(R_VAR_LIST[vx[pi][di]], SIDIS_LIST[li]) && vars[vx[pi][di]] < 1e-9)
                     sidis_pass = false;
                 }
             }
@@ -344,8 +365,8 @@ int run() {
             int idx = find_idx(dbins, 0, b_var, bbx, brx, b_interval);
             if (idx == -1) continue;
 
-            if (px[pi] == 0) plt[pi][idx]->Fill(var[pi][0]);
-            if (px[pi] == 1) plt[pi][idx]->Fill(var[pi][0], var[pi][1]);
+            if (px[pi] == 0) plt[pi][idx]->Fill(vars[vx[pi][0]]);
+            if (px[pi] == 1) plt[pi][idx]->Fill(vars[vx[pi][0]], vars[vx[pi][1]]);
         }
     }
 
