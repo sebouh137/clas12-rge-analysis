@@ -42,7 +42,7 @@ extern const int    STD_VX[STDPLT_LIST_SIZE][2];
 extern const double STD_RX[STDPLT_LIST_SIZE][2][2];
 extern const long   STD_BX[STDPLT_LIST_SIZE][2];
 
-// All variables. TODO. Store the address of every constant.
+// All variables.
 #define TNTUPLES_N     5 // Number of TNtuples.
 #define VAR_LIST_SIZE 25 // METADATA + PARTICLE + CALORIMETER + SCINTILLATOR + SIDIS.
 extern const char * R_VAR_LIST[VAR_LIST_SIZE];
@@ -55,10 +55,13 @@ extern const char * METADATA_LIST[METADATA_LIST_SIZE];
 
 #define S_RUNNO   "run_no"
 #define R_RUNNO   "run_no"
+#define A_RUNNO   0
 #define S_EVENTNO "event_no"
 #define R_EVENTNO "event_no"
+#define A_EVENTNO 1
 #define S_BEAME   "beam_energy"
 #define R_BEAME   "beam_energy"
+#define A_BEAME   2
 
 // Particle.
 #define S_PARTICLE "particle"
@@ -67,30 +70,43 @@ extern const char * PARTICLE_LIST[PARTICLE_LIST_SIZE];
 
 #define S_PID    "pid"
 #define R_PID    "pid"
+#define A_PID    3
 #define S_CHARGE "charge"
 #define R_CHARGE "charge"
+#define A_CHARGE 4
 #define S_MASS   "mass"   // GeV.
 #define R_MASS   "mass"
+#define A_MASS   5
 #define S_VX     "vx"     // cm.
 #define R_VX     "vx"
+#define A_VX     6
 #define S_VY     "vy"     // cm.
 #define R_VY     "vy"
+#define A_VY     7
 #define S_VZ     "vz"     // cm.
 #define R_VZ     "vz"
+#define A_VZ     8
 #define S_PX     "p_{x}"  // GeV.
 #define R_PX     "px"
+#define A_PX     9
 #define S_PY     "p_{y}"  // GeV.
 #define R_PY     "py"
+#define A_PY     10
 #define S_PZ     "p_{z}"  // GeV.
 #define R_PZ     "pz"
+#define A_PZ     11
 #define S_P      "p"      // GeV.
 #define R_P      "p"
+#define A_P      12
 #define S_THETA  "#theta" // #degree.
 #define R_THETA  "theta"
+#define A_THETA  13
 #define S_PHI    "#phi"   // #degree.
 #define R_PHI    "phi"
+#define A_PHI    14
 #define S_BETA   "#beta"  // adimensional.
 #define R_BETA   "beta"
+#define A_BETA   15
 
 // Calorimeter.
 #define S_CALORIMETER "calorimeter"
@@ -99,12 +115,16 @@ extern const char * CALORIMETER_LIST[CALORIMETER_LIST_SIZE];
 
 #define S_PCAL_E "E_{pcal}"  // GeV.
 #define R_PCAL_E "e_pcal"
+#define A_PCAL_E 16
 #define S_ECIN_E "E_{ecin}"  // GeV.
 #define R_ECIN_E "e_ecin"
+#define A_ECIN_E 17
 #define S_ECOU_E "E_{ecou}"  // GeV.
 #define R_ECOU_E "e_ecou"
+#define A_ECOU_E 18
 #define S_TOT_E  "E_{total}" // GeV.
 #define R_TOT_E  "e_total"
+#define A_TOT_E  19
 
 // Scintillator.
 #define S_SCINTILLATOR "scintillator"
@@ -113,6 +133,7 @@ extern const char * SCINTILLATOR_LIST[SCINTILLATOR_LIST_SIZE];
 
 #define S_DTOF "#DeltaTOF" // ns.
 #define R_DTOF "dtof"
+#define A_DTOF 20
 
 // SIDIS.
 #define S_SIDIS "sidis"
@@ -121,12 +142,16 @@ extern const char * SIDIS_LIST[SIDIS_LIST_SIZE];
 
 #define S_Q2 "Q2"          // GeV^2.
 #define R_Q2 "q2"
+#define A_Q2 21
 #define S_NU "#nu"         // GeV.
 #define R_NU "nu"
+#define A_NU 22
 #define S_XB "X_{bjorken}" // adimensional.
 #define R_XB "x_bjorken"
+#define A_XB 23
 #define S_W2 "W2"          // GeV^2.
 #define R_W2 "w2"
+#define A_W2 24
 // #define PHOTONTHETA "virtual photon #theta (lab frame #degree)"
 // #define PHOTONPHI   "virtual photon #phi (lab frame #degree)"
 

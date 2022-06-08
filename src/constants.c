@@ -72,7 +72,8 @@ const int STD_PX[STDPLT_LIST_SIZE] = {
         0, /* nu        */ 0, /* X_bjorken */ 0, /* W^2       */ 1  /* Q2 vs nu  */
 };
 const int STD_VX[STDPLT_LIST_SIZE][2] = {
-        {12,15}, {12,20}, {12,19}, {21,-1}, {22,-1}, {23,-1}, {24,-1}, {21,22}
+        {A_P,A_BETA}, {A_P,A_DTOF}, {A_P,A_TOT_E}, {A_Q2,-1}, {A_NU,-1}, {A_XB,-1}, {A_W2,-1},
+        {A_Q2,A_NU}
 };
 const double STD_RX[STDPLT_LIST_SIZE][2][2] = {
         {{ 0,10},{ 0, 1}}, {{ 0,10},{ 0,20}}, {{ 0,10},{ 0, 3}}, {{ 0,12},{-1,-1}},
