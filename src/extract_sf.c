@@ -58,7 +58,7 @@ int run(char *in_filename, bool use_fmt, int nevn) {
             oss_h << cal << si+1 << ")";
             sf2D_name_arr[ci][si] = (char *) malloc(strlen(oss_h.str().c_str())+1);
             strncpy(sf2D_name_arr[ci][si], oss_h.str().c_str(), strlen(oss_h.str().c_str()));
-            insert_TH2F(&histos, S_PALL, sf2D_name_arr[ci][si], S_P, S_EDIVP, 200, 0, 10, 200, 0, 0.4);
+            insert_TH2F(&histos, R_PALL, sf2D_name_arr[ci][si], S_P, S_EDIVP, 200, 0, 10, 200, 0, 0.4);
             sf_dotgraph_top[ci][si] = new TGraphErrors();
             sf_dotgraph_top[ci][si]->SetMarkerStyle(kFullCircle);
             sf_dotgraph_top[ci][si]->SetMarkerColor(kRed);
@@ -96,7 +96,7 @@ int run(char *in_filename, bool use_fmt, int nevn) {
                 oss << cal << si+1 << " (" << p << " < P_{tot} < " << p+SF_PSTEP << ")";
                 sf1D_name_arr[ci][si][pi] = (char *) malloc(strlen(oss.str().c_str())+1);
                 strncpy(sf1D_name_arr[ci][si][pi], oss.str().c_str(), strlen(oss.str().c_str()));
-                insert_TH1F(&histos, S_PALL, sf1D_name_arr[ci][si][pi], S_EDIVP, 200, 0, 0.4);
+                insert_TH1F(&histos, R_PALL, sf1D_name_arr[ci][si][pi], S_EDIVP, 200, 0, 0.4);
             }
         }
     }

@@ -9,15 +9,25 @@
 #define NTRMASS 0.939565 // Neutron mass.
 #define EMASS   0.000051 // Electron mass.
 
-// Particle map keys.
-#define S_PALL "All particles"
-// #define PPOS "Positive particles"
-// #define PNEG "Negative particles"
-// #define PNEU "Neutral particles"
-// #define PPIP "Pi+"
-// #define PPIM "Pi-"
-// #define PELC "e-"
-// #define PTRE "Trigger e-"
+// Particle cut array.
+#define PART_LIST_SIZE 4
+extern const char * PART_LIST[PART_LIST_SIZE];
+#define R_PALL "all"        // All particles.
+#define A_PALL 0
+#define R_PPOS "+"          // Positive.
+#define A_PPOS 1
+#define R_PNEG "-"          // Negative.
+#define A_PNEG 2
+#define R_PNEU "neutral"    // Neutral.
+#define A_PNEU 3
+#define R_PELC "e-"         // Electron.
+#define A_PELC 4
+#define R_PTRE "trigger e-" // Trigger electron.
+#define A_PTRE 5
+#define R_PPIM "pi+"        // Pion +.
+#define A_PPIM 6
+#define R_PPIP "pi-"        // Pion -.
+#define A_PPIP 7
 
 // Plot types.
 #define PLOT_LIST_SIZE 2

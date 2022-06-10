@@ -23,6 +23,11 @@ const double PLIMITSARR[4][2] = {
         {0.150, 0.300}
 };
 
+// Particle constant array.
+const char * PART_LIST[PART_LIST_SIZE] = {
+    R_PALL, R_PPOS, R_PNEG, R_PNEU
+};
+
 // Plotting constant arrays.
 const char * PLOT_LIST[PLOT_LIST_SIZE] = {
         R_PLOT1D, R_PLOT2D

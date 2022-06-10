@@ -105,17 +105,21 @@ int run() {
 
     // === CUT SETUP ===============================================================================
     // TODO. What particles should be used? All? e-? positive? k+? trigger e-? etc...
+    printf("\nWhat particle should be plotted? Available cuts:\n[");
+    for (int pi = 0; pi < PART_LIST_SIZE; ++pi) printf("%s, ", PART_LIST[pi]);
+    printf("\b\b]\n");
+    int part = catch_string(PART_LIST, PART_LIST_SIZE);
 
     bool general_cuts  = false;
     bool geometry_cuts = false;
     bool sidis_cuts    = false;
-    printf("\nApply all default cuts (general, geometry, SIDIS)? [y/n]\n");
+    printf("\nApply all default cuts (general, geometry, DIS)? [y/n]\n");
     if (!catch_yn()) {
         printf("\nApply general cuts? [y/n]\n");
         general_cuts = catch_yn();
         printf("\nApply geometry cuts? [y/n]\n");
         geometry_cuts = catch_yn();
-        printf("\nApply SIDIS cuts? [y/n]\n");
+        printf("\nApply DIS cuts? [y/n]\n");
         sidis_cuts = catch_yn();
     }
     else {
@@ -258,6 +262,10 @@ int run() {
         t->GetEntry(i);
 
         // Apply cuts.
+        if (part == A_PPOS && !(vars[A_CHARGE] >  0)) continue; // TODO. This one isn't working...?
+        if (part == A_PNEU && !(vars[A_CHARGE] == 0)) continue;
+        if (part == A_PNEG && !(vars[A_CHARGE] <  0)) continue;
+
         if (general_cuts) {
             if (-0.5 < vars[A_PID] && vars[A_PID] < 0.5) continue; // Non-identified particle.
             if (vars[A_CHI2]/vars[A_NDF] >= CHI2NDFCUT)  continue; // Ignore tracks with high chi2.
