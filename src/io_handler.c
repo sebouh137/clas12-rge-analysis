@@ -74,7 +74,7 @@ int check_hipo_filename(char * input_file) {
 }
 
 int handle_hipo_filename(char * input_file, int * run_no) {
-    int chk = check_root_filename(input_file);
+    int chk = check_hipo_filename(input_file);
     if (chk) return chk;
 
     // Get run number from filename.

@@ -16,7 +16,8 @@ int main(int argc, char **argv) {
     int  run_no = -1;
 
     if (hipo2root_handle_args_err(hipo2root_handle_args(argc, argv, &in_filename, &run_no),
-                                  &in_filename));
+                                  &in_filename))
+        return 1;
 
     char *out_filename = (char *) malloc(22 * sizeof(char));
     if      (run_no /     10 == 0) sprintf(out_filename, "../root_io/00000%d.root", run_no);
