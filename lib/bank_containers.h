@@ -81,6 +81,22 @@ public:
     int get_entries(TTree *t, int idx);
 };
 
+class REC_Cherenkov {
+private:
+    int nrows;
+    int set_nrows(int in_nrows);
+public:
+    std::vector<Short_t> *pindex;   TBranch *b_pindex;
+    std::vector<Byte_t>  *detector; TBranch *b_detector;
+    std::vector<Float_t> *nphe;     TBranch *b_nphe;
+    REC_Cherenkov();
+    REC_Cherenkov(TTree *t);
+    int get_nrows();
+    int link_branches(TTree *t);
+    int fill(hipo::bank b);
+    int get_entries(TTree *t, int idx);
+};
+
 class FMT_Tracks {
 private:
     int nrows;

@@ -224,8 +224,8 @@ REC_Scintillator::REC_Scintillator() {
     time   = {};
 }
 REC_Scintillator::REC_Scintillator(TTree *t) {
-    pindex = nullptr; pindex = nullptr;
-    time   = nullptr; time   = nullptr;
+    pindex = nullptr; b_pindex = nullptr;
+    time   = nullptr; b_time   = nullptr;
     t->SetBranchAddress("REC::Scintillator::pindex", &pindex, &b_pindex);
     t->SetBranchAddress("REC::Scintillator::time",   &time,   &b_time);
 }
@@ -252,6 +252,49 @@ int REC_Scintillator::fill(hipo::bank b) {
 int REC_Scintillator::get_entries(TTree *t, int idx) {
     b_pindex->GetEntry(t->LoadTree(idx));
     b_time  ->GetEntry(t->LoadTree(idx));
+    return 0;
+}
+
+REC_Cherenkov::REC_Cherenkov() {
+    nrows  = 0;
+    pindex = {};
+    nphe   = {};
+}
+REC_Cherenkov::REC_Cherenkov(TTree *t) {
+    pindex   = nullptr; b_pindex   = nullptr;
+    detector = nullptr; b_detector = nullptr;
+    nphe     = nullptr; b_nphe     = nullptr;
+    t->SetBranchAddress("REC::Cherenkov::pindex",   &pindex,   &b_pindex);
+    t->SetBranchAddress("REC::Cherenkov::detector", &detector, &b_detector);
+    t->SetBranchAddress("REC::Cherenkov::nphe",     &nphe,     &b_nphe);
+}
+int REC_Cherenkov::link_branches(TTree *t) {
+    t->Branch("REC::Cherenkov::pindex",   &pindex);
+    t->Branch("REC::Cherenkov::detector", &detector);
+    t->Branch("REC::Cherenkov::nphe",     &nphe);
+    return 0;
+}
+int REC_Cherenkov::set_nrows(int in_nrows) {
+    nrows = in_nrows;
+    pindex  ->resize(nrows);
+    detector->resize(nrows);
+    nphe    ->resize(nrows);
+    return 0;
+}
+int REC_Cherenkov::get_nrows() {return nrows;}
+int REC_Cherenkov::fill(hipo::bank b) {
+    set_nrows(b.getRows());
+    for (int row = 0; row < nrows; ++row) {
+        pindex  ->at(row) = (int16_t) b.getShort("pindex", row);
+        detector->at(row) = (int8_t)  b.getByte("detector", row);
+        nphe    ->at(row) = b.getFloat("nphe", row);
+    }
+    return 0;
+}
+int REC_Cherenkov::get_entries(TTree *t, int idx) {
+    b_pindex  ->GetEntry(t->LoadTree(idx));
+    b_detector->GetEntry(t->LoadTree(idx));
+    b_nphe    ->GetEntry(t->LoadTree(idx));
     return 0;
 }
 
