@@ -109,6 +109,11 @@ int run() {
     for (int pi = 0; pi < PART_LIST_SIZE; ++pi) printf("%s, ", PART_LIST[pi]);
     printf("\b\b]\n");
     int part = catch_string(PART_LIST, PART_LIST_SIZE);
+    int p_charge;
+    if      (part == A_PPOS || part == A_PPST || part == A_PPIP) p_charge = 1;
+    else if (part == A_PNEU || part == A_PPIN) p_charge = 0;
+    else if (part == A_PNEG || part == A_PTRE || part == A_PELC || part == A_PPIM) p_charge = -1;
+    else p_charge = 2;
 
     bool general_cuts  = false;
     bool geometry_cuts = false;
@@ -262,9 +267,9 @@ int run() {
         t->GetEntry(i);
 
         // Apply cuts.
-        if (part == A_PPOS && !(vars[A_CHARGE] >  0)) continue; // TODO. This one isn't working...?
-        if (part == A_PNEU && !(vars[A_CHARGE] == 0)) continue;
-        if (part == A_PNEG && !(vars[A_CHARGE] <  0)) continue;
+        if (p_charge ==  1 && !(vars[A_CHARGE] >  0)) continue; // TODO. This one isn't working...?
+        if (p_charge ==  0 && !(vars[A_CHARGE] == 0)) continue;
+        if (p_charge == -1 && !(vars[A_CHARGE] <  0)) continue;
 
         if (general_cuts) {
             if (-0.5 < vars[A_PID] && vars[A_PID] < 0.5) continue; // Non-identified particle.

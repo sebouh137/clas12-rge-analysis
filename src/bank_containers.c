@@ -256,9 +256,10 @@ int REC_Scintillator::get_entries(TTree *t, int idx) {
 }
 
 REC_Cherenkov::REC_Cherenkov() {
-    nrows  = 0;
-    pindex = {};
-    nphe   = {};
+    nrows    = 0;
+    pindex   = {};
+    detector = {};
+    nphe     = {};
 }
 REC_Cherenkov::REC_Cherenkov(TTree *t) {
     pindex   = nullptr; b_pindex   = nullptr;

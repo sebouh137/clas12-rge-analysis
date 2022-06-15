@@ -31,11 +31,12 @@ int main(int argc, char **argv) {
     f->SetCompressionAlgorithm(ROOT::kLZ4);
 
     TTree *tree = new TTree("Tree", "Tree");
-    REC_Particle rp;     rp.link_branches(tree);
-    REC_Track rt;        rt.link_branches(tree);
-    REC_Calorimeter rc;  rc.link_branches(tree);
-    REC_Scintillator rs; rs.link_branches(tree);
-    FMT_Tracks ft;       ft.link_branches(tree);
+    REC_Particle     rpart; rpart.link_branches(tree);
+    REC_Track        rtrk;  rtrk .link_branches(tree);
+    REC_Calorimeter  rcal;  rcal .link_branches(tree);
+    REC_Cherenkov    rche;  rche .link_branches(tree);
+    REC_Scintillator rsci;  rsci .link_branches(tree);
+    FMT_Tracks       ftrk;  ftrk .link_branches(tree);
 
     // Setup.
     hipo::reader reader;
@@ -44,11 +45,12 @@ int main(int argc, char **argv) {
     hipo::dictionary factory;
     reader.readDictionary(factory);
 
-    hipo::bank rp_b(factory.getSchema("REC::Particle"));
-    hipo::bank rt_b(factory.getSchema("REC::Track"));
-    hipo::bank rc_b(factory.getSchema("REC::Calorimeter"));
-    hipo::bank rs_b(factory.getSchema("REC::Scintillator"));
-    hipo::bank ft_b(factory.getSchema("FMT::Tracks"));
+    hipo::bank rpart_b(factory.getSchema("REC::Particle"));
+    hipo::bank rtrk_b( factory.getSchema("REC::Track"));
+    hipo::bank rcal_b( factory.getSchema("REC::Calorimeter"));
+    hipo::bank rche_b( factory.getSchema("REC::Cherenkov"));
+    hipo::bank rsci_b( factory.getSchema("REC::Scintillator"));
+    hipo::bank ftrk_b( factory.getSchema("FMT::Tracks"));
     hipo::event event;
 
     int c = 0;
@@ -61,12 +63,14 @@ int main(int argc, char **argv) {
         }
         reader.read(event);
 
-        event.getStructure(rp_b); rp.fill(rp_b);
-        event.getStructure(rt_b); rt.fill(rt_b);
-        event.getStructure(rc_b); rc.fill(rc_b);
-        event.getStructure(rs_b); rs.fill(rs_b);
-        event.getStructure(ft_b); ft.fill(ft_b);
-        if (rp.get_nrows() + rt.get_nrows() + rs.get_nrows() + rc.get_nrows() + ft.get_nrows() > 0)
+        event.getStructure(rpart_b); rpart.fill(rpart_b);
+        event.getStructure(rtrk_b);  rtrk .fill(rtrk_b);
+        event.getStructure(rcal_b);  rcal .fill(rcal_b);
+        event.getStructure(rche_b);  rche .fill(rche_b);
+        event.getStructure(rsci_b);  rsci .fill(rsci_b);
+        event.getStructure(ftrk_b);  ftrk .fill(ftrk_b);
+        if (rpart.get_nrows() + rtrk.get_nrows() + rcal.get_nrows()
+                + rche.get_nrows()  + rsci.get_nrows() + ftrk.get_nrows() > 0)
             tree->Fill();
     }
     printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
