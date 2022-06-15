@@ -44,6 +44,7 @@ const char * R_VAR_LIST[VAR_LIST_SIZE] = {
                 R_BETA,
         R_CHI2, R_NDF,
         R_PCAL_E, R_ECIN_E, R_ECOU_E, R_TOT_E,
+        R_HTCC_NPHE, R_LTCC_NPHE,
         R_DTOF,
         R_Q2, R_NU, R_XB, R_W2
 };
@@ -53,6 +54,7 @@ const char * S_VAR_LIST[VAR_LIST_SIZE] = {
                 S_BETA,
         S_CHI2, S_NDF,
         S_PCAL_E, S_ECIN_E, S_ECOU_E, S_TOT_E,
+        S_HTCC_NPHE, S_LTCC_NPHE,
         S_DTOF,
         S_Q2, S_NU, S_XB, S_W2
 };

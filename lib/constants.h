@@ -54,19 +54,18 @@ extern const long   STD_BX[STDPLT_LIST_SIZE][2];
 
 // All variables.
 #define S_PARTICLE "particle"
-#define TNTUPLES_N     6 // Number of TNtuples.
-#define VAR_LIST_SIZE 28 // METADATA + PARTICLE + TRACKING + CALORIMETER + SCINTILLATOR + SIDIS.
+#define VAR_LIST_SIZE 30
 extern const char * R_VAR_LIST[VAR_LIST_SIZE];
 extern const char * S_VAR_LIST[VAR_LIST_SIZE];
 
 // Metadata.
-#define S_RUNNO   "run_no"
+#define S_RUNNO   "N_{run}"
 #define R_RUNNO   "run_no"
 #define A_RUNNO   0
-#define S_EVENTNO "event_no"
+#define S_EVENTNO "N_{event}"
 #define R_EVENTNO "event_no"
 #define A_EVENTNO 1
-#define S_BEAME   "beam_energy"
+#define S_BEAME   "E_{beam}"
 #define R_BEAME   "beam_energy"
 #define A_BEAME   2
 
@@ -136,10 +135,18 @@ extern const char * S_VAR_LIST[VAR_LIST_SIZE];
 #define R_TOT_E  "e_total"
 #define A_TOT_E  22
 
+// Cherenkov.
+#define S_HTCC_NPHE "Nphe_{HTCC}"
+#define R_HTCC_NPHE "htcc_nphe"
+#define A_HTCC_NPHE 23
+#define S_LTCC_NPHE "Nphe_{LTCC}"
+#define R_LTCC_NPHE "ltcc_nphe"
+#define A_LTCC_NPHE 24
+
 // Scintillator.
 #define S_DTOF "#DeltaTOF" // ns.
 #define R_DTOF "dtof"
-#define A_DTOF 23
+#define A_DTOF 25
 
 // DIS.
 #define DIS_LIST_SIZE 4
@@ -147,16 +154,16 @@ extern const char * DIS_LIST[DIS_LIST_SIZE];
 
 #define S_Q2 "Q2"          // GeV^2.
 #define R_Q2 "q2"
-#define A_Q2 24
+#define A_Q2 26
 #define S_NU "#nu"         // GeV.
 #define R_NU "nu"
-#define A_NU 25
+#define A_NU 27
 #define S_XB "X_{bjorken}" // adimensional.
 #define R_XB "x_bjorken"
-#define A_XB 26
+#define A_XB 28
 #define S_W2 "W2"          // GeV^2.
 #define R_W2 "w2"
-#define A_W2 27
+#define A_W2 29
 // #define PHOTONTHETA "virtual photon #theta (lab frame #degree)"
 // #define PHOTONPHI   "virtual photon #phi (lab frame #degree)"
 
@@ -181,10 +188,12 @@ extern const double PLIMITSARR[4][2]; // Momentum limits for 1D SF fits.
 #define BE12439  2.1864 //  15 nA.
 
 // Detector constants.
-#define NSECTORS 6 // # of CLAS12 sectors.
-#define PCAL_LYR 1 // PCAL's layer id.
-#define ECIN_LYR 4 // EC inner layer id.
-#define ECOU_LYR 7 // EC outer layer id.
+#define NSECTORS 6  // # of CLAS12 sectors.
+#define PCAL_LYR 1  // PCAL's layer id.
+#define ECIN_LYR 4  // EC inner layer id.
+#define ECOU_LYR 7  // EC outer layer id.
+#define HTCC_ID  15 // HTCC detector id.
+#define LTCC_ID  16 // LTCC detector id.
 
 // Cuts.
 #define FMTNLYRSCUT   3 // # of FMT layers required to accept track.

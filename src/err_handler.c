@@ -55,7 +55,8 @@ int make_ntuples_err(int errcode, char ** in_filename) {
             fprintf(stderr, "Error. Invalid EC layer. Check bank data or add layer to constants.\n");
             break;
         case 3:
-            fprintf(stderr, "Error. A particle is in an invalid sector. Check bank integrity.\n");
+            fprintf(stderr, "Error. Invalid Cherenkov Counter ID. Check bank integrity.\n");
+            break;
         default:
             fprintf(stderr, "Programmer Error. Error code %d not implemented in \n", errcode);
             fprintf(stderr, "make_ntuples_err()! You're on your own.\n");

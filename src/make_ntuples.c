@@ -30,13 +30,14 @@ int run(char * in_filename, bool use_fmt, bool debug, int nevn, int run_no, doub
     }
 
     // Create TTree and TNTuples.
-    TTree * t_in    = f_in->Get<TTree>("Tree");
+    TTree   * t_in  = f_in->Get<TTree>("Tree");
     TNtuple * t_out = new TNtuple(S_PARTICLE, S_PARTICLE, vars);
-    REC_Particle     rp(t_in);
-    REC_Track        rt(t_in);
-    REC_Scintillator rs(t_in);
-    REC_Calorimeter  rc(t_in);
-    FMT_Tracks       ft(t_in);
+    REC_Particle     rpart(t_in);
+    REC_Track        rtrk (t_in);
+    REC_Calorimeter  rcal (t_in);
+    REC_Cherenkov    rche (t_in);
+    REC_Scintillator rsci (t_in);
+    FMT_Tracks       ftrk (t_in);
 
     // Counters for fancy progress bar.
     int divcntr     = 0;
@@ -61,58 +62,73 @@ int run(char * in_filename, bool use_fmt, bool debug, int nevn, int run_no, doub
             evnsplitter = nevn == -1 ? (t_in->GetEntries() / 100) * divcntr : (nevn/100) * divcntr;
         }
 
-        rp.get_entries(t_in, evn);
-        rt.get_entries(t_in, evn);
-        rs.get_entries(t_in, evn);
-        rc.get_entries(t_in, evn);
-        ft.get_entries(t_in, evn);
+        rpart.get_entries(t_in, evn);
+        rtrk .get_entries(t_in, evn);
+        rsci .get_entries(t_in, evn);
+        rcal .get_entries(t_in, evn);
+        rche .get_entries(t_in, evn);
+        ftrk .get_entries(t_in, evn);
 
         // Filter events without the necessary banks.
-        if (rp.vz->size() == 0 || rt.pindex->size() == 0) continue;
+        if (rpart.vz->size() == 0 || rtrk.pindex->size() == 0) continue;
 
         // Find trigger electron's TOF.
-        int tre_pindex = rt.pindex->at(0);
+        int tre_pindex = rtrk.pindex->at(0);
         double tre_tof = INFINITY;
-        for (UInt_t i = 0; i < rs.pindex->size(); ++i) {
-            if (rs.pindex->at(i) == tre_pindex && rs.time->at(i) < tre_tof) tre_tof = rs.time->at(i);
+        for (UInt_t i = 0; i < rsci.pindex->size(); ++i) {
+            if (rsci.pindex->at(i) == tre_pindex && rsci.time->at(i) < tre_tof)
+                tre_tof = rsci.time->at(i);
         }
 
         // Process DIS event.
-        for (UInt_t pos = 0; pos < rt.index->size(); ++pos) {
-            int pindex = rt.pindex->at(pos); // pindex is always equal to pos!
+        for (UInt_t pos = 0; pos < rtrk.index->size(); ++pos) {
+            int pindex = rtrk.pindex->at(pos); // pindex is always equal to pos!
 
             // Get reconstructed particle from either FMT or DC.
-            particle p = use_fmt ? particle_init(&rp, &rt, &ft, pos) : particle_init(&rp, &rt, pos);
+            particle p = use_fmt ? particle_init(&rpart, &rtrk, &ftrk, pos)
+                                 : particle_init(&rpart, &rtrk, pos);
             if (!p.is_valid) continue;
 
             // Get calorimeters data.
             double pcal_E = 0; // PCAL total deposited energy.
             double ecin_E = 0; // EC inner total deposited energy.
             double ecou_E = 0; // EC outer total deposited energy.
-            for (UInt_t i = 0; i < rc.pindex->size(); ++i) {
-                if (rc.pindex->at(i) == pindex) {
-                    int lyr = (int) rc.layer->at(i);
+            for (UInt_t i = 0; i < rcal.pindex->size(); ++i) {
+                if (rcal.pindex->at(i) == pindex) {
+                    int lyr = (int) rcal.layer->at(i);
                     // TODO. Add correction via sampling fraction.
 
-                    if      (lyr == PCAL_LYR) pcal_E += rc.energy->at(i);
-                    else if (lyr == ECIN_LYR) ecin_E += rc.energy->at(i);
-                    else if (lyr == ECOU_LYR) ecou_E += rc.energy->at(i);
+                    if      (lyr == PCAL_LYR) pcal_E += rcal.energy->at(i);
+                    else if (lyr == ECIN_LYR) ecin_E += rcal.energy->at(i);
+                    else if (lyr == ECOU_LYR) ecou_E += rcal.energy->at(i);
                     else return 2;
                 }
             }
             double tot_E = pcal_E + ecin_E + ecou_E;
 
+            // Get Cherenkov counters data.
+            double ltcc_nphe = 0; // Number of photoelectrons deposited in ltcc.
+            double htcc_nphe = 0; // Number of photoelectrons deposited in htcc.
+            for (UInt_t i = 0; i < rche.pindex->size(); ++i) {
+                if (rche.pindex->at(i) == pindex) {
+                    int detector = rche.detector->at(i);
+                    if      (detector == HTCC_ID) htcc_nphe += rche.nphe->at(i);
+                    else if (detector == LTCC_ID) ltcc_nphe += rche.nphe->at(i);
+                    else return 3;
+                }
+            }
+
             // Get scintillators data.
             double tof = INFINITY;
-            for (UInt_t i = 0; i < rs.pindex->size(); ++i)
-                if (rs.pindex->at(i) == pindex && rs.time->at(i) < tof) tof = rs.time->at(i);
+            for (UInt_t i = 0; i < rsci.pindex->size(); ++i)
+                if (rsci.pindex->at(i) == pindex && rsci.time->at(i) < tof) tof = rsci.time->at(i);
 
             // Get miscellaneous data.
-            int status  = rp.status->at(pindex);
-            double chi2 = rt.chi2  ->at(pos);
-            double ndf  = rt.ndf   ->at(pos);
+            int status  = rpart.status->at(pindex);
+            double chi2 = rtrk.chi2   ->at(pos);
+            double ndf  = rtrk.ndf    ->at(pos);
 
-            // Fill TNtuples. TODO. This probably could be implemented more elegantly.
+            // Fill TNtuples. TODO. This probably should be implemented more elegantly.
             // NOTE. If adding new variables, check their order in S_VAR_LIST.
             Float_t v[VAR_LIST_SIZE] = {
                 (Float_t) run_no, (Float_t) evn, (Float_t) beam_E,
@@ -122,6 +138,7 @@ int run(char * in_filename, bool use_fmt, bool debug, int nevn, int run_no, doub
                         (Float_t) phi_lab(p), (Float_t) p.beta,
                 (Float_t) chi2, (Float_t) ndf,
                 (Float_t) pcal_E, (Float_t) ecin_E, (Float_t) ecou_E, (Float_t) tot_E,
+                (Float_t) htcc_nphe, (Float_t) ltcc_nphe,
                 (Float_t) tof,
                 (Float_t) Q2(p, beam_E), (Float_t) nu(p, beam_E), (Float_t) Xb(p, beam_E),
                         (Float_t) W2(p, beam_E)
