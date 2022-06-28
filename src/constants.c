@@ -1,5 +1,17 @@
 #include "../lib/constants.h"
 
+// Mass array in GeV.
+const std::map<int, double> MASS = {
+        {  11,  0.000051}, // electron
+        { 211,  0.139570}, // pion
+        { 321,  0.493677}, // Kaon
+        {2212,  0.938272}, // Proton
+        {2112,  0.939565}, // Neutron
+        {  22,  0},        // photon
+        {  45, -1},        // unidentified particle.
+        {   0, -1}         // unidentified particle.
+};
+
 // Sampling fraction constant arrays.
 const char * CALNAME[4] = {
         "PCAL", "ECIN", "ECOU", "ALL"

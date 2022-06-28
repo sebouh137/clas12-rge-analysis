@@ -1,13 +1,14 @@
 #ifndef CONSTANTS
 #define CONSTANTS
 
+#include <map>
+
+// Physics constants.
+#define SPEEDOFLIGHT 29.9792458
+
 // Masses.
-#define PRTMASS 0.938272 // Proton mass.
-#define KMASS   0.493677 // Kaon mass.
-#define PIMASS  0.139570 // Pion mass.
-#define DMASS   1.875    // Deuterium mass.
-#define NTRMASS 0.939565 // Neutron mass.
-#define EMASS   0.000051 // Electron mass.
+#define PIDS_SIZE 8
+extern const std::map<int, double> MASS;
 
 // Particle cut array.
 #define PART_LIST_SIZE 4
@@ -20,14 +21,18 @@ extern const char * PART_LIST[PART_LIST_SIZE];
 #define A_PNEG 2
 #define R_PNEU "neutral"    // Neutral.
 #define A_PNEU 3
-#define R_PELC "e-"         // Electron.
-#define A_PELC 4
 #define R_PTRE "trigger e-" // Trigger electron.
-#define A_PTRE 5
-#define R_PPIM "pi+"        // Pion +.
-#define A_PPIM 6
-#define R_PPIP "pi-"        // Pion -.
-#define A_PPIP 7
+#define A_PTRE 4
+#define R_PELC "e-"         // Electron.
+#define A_PELC 5
+#define R_PPST "e+"         // Positron.
+#define A_PPST 6
+#define R_PPIM "pi-"        // Pion -.
+#define A_PPIM 7
+#define R_PPIP "pi+"        // Pion +.
+#define A_PPIP 8
+#define R_PPIN "pi0"        // Pion 0.
+#define A_PPIN 9
 
 // Plot types.
 #define PLOT_LIST_SIZE 2
@@ -195,7 +200,7 @@ extern const double PLIMITSARR[4][2]; // Momentum limits for 1D SF fits.
 #define HTCC_ID  15 // HTCC detector id.
 #define LTCC_ID  16 // LTCC detector id.
 
-// Cuts.
+// General Cuts.
 #define FMTNLYRSCUT   3 // # of FMT layers required to accept track.
 #define Q2CUT         1 // Q2 of particle must be over this value.
 #define W2CUT         4 // W2 of particle must be over this value.
@@ -203,5 +208,14 @@ extern const double PLIMITSARR[4][2]; // Momentum limits for 1D SF fits.
 #define VXVYCUT       4 // sqrt(vx^2 + vy^2) must be below this value.
 #define VZLOWCUT    -40 // vz must be above this value.
 #define VZHIGHCUT    40 // vz must be below this.
+
+// PID Cuts. Most numbers come from `/calibration/eb/` from the CCDB.
+#define HTCC_NPHE_CUT   2     // # of HTCC photoelectrons required to consider particle passed HTCC.
+#define LTCC_NPHE_CUT   2     // # of LTCC photoelectrons required to consider particle passed LTCC.
+#define MIN_PCAL_ENERGY 0.060 // Min energy deposited in PCAL to assign pid = 11.
+#define NEUTRON_MAXBETA 0.9   // Max beta allowed to assign pid == 2212.
+#define HTCC_PION_THRESHOLD 4.9 // Momentum required to consider particle crossing HTCC as pion.
+#define LTCC_PION_THRESHOLD 3.0 // Momentum required to consider particle crossing LTCC as pion.
+#define LTCC_KAON_THRESHOLD 5.0 // Momentum required to consider particle crossing LTCC as kaon.
 
 #endif

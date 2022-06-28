@@ -1,5 +1,9 @@
 #include "../lib/particle.h"
 
+const int PID_POSITIVE[PID_POSITIVE_SIZE] = {-11,  211,  321,  2212, 45};
+const int PID_NEGATIVE[PID_NEGATIVE_SIZE] = { 11, -211, -321, -2212};
+const int PID_NEUTRAL [PID_NEUTRAL_SIZE]  = { 22, 2112};
+
 // TODO. Essentially all methods in this file require testing. Get to that.
 
 // Initialize an empty particle.
@@ -9,48 +13,10 @@ particle particle_init() {
     return p;
 }
 
-// Initialize a new particle.
-particle particle_init(int pid, int charge, double beta, int status, int sector,
-                       double vx, double vy, double vz, double px, double py, double pz) {
-    particle p;
-
-    // Inherent vars.
-    p.is_valid = true;
-    p.is_trigger_electron = (pid == 11 && status < 0);
-    p.pid    = pid;
-    p.q      = charge;
-    p.beta   = beta;
-    p.sector = sector;
-
-    // Tracking vars.
-    p.vx = vx;
-    p.vy = vy;
-    p.vz = vz;
-    p.px = px;
-    p.py = py;
-    p.pz = pz;
-
-    // Derived vars. TODO. We might need more PIDs.
-    switch (abs(pid)) {
-        case 2212: p.mass = PRTMASS; break;
-        case  321: p.mass = KMASS;   break;
-        case  211: p.mass = PIMASS;  break;
-        case 2112: p.mass = NTRMASS; break;
-        case   11: p.mass = EMASS;   break;
-        default:   p.mass = -1;
-    }
-
-    // NOTE. If programs gets slow, I should cache values of Q2, nu, etc here.
-
-    return p;
-}
-
 // Initialize a new particle from the particle and track banks.
 particle particle_init(REC_Particle * rp, REC_Track * rt, int pos) {
     int pindex = rt->pindex->at(pos); // pindex is always equal to pos!
-
-    return particle_init(rp->pid->at(pindex), rp->charge->at(pindex), rp->beta->at(pindex),
-                         rp->status->at(pindex), rt->sector->at(pos),
+    return particle_init(rp->charge->at(pindex), rp->beta->at(pindex), rt->sector->at(pos),
                          rp->vx->at(pindex), rp->vy->at(pindex), rp->vz->at(pindex),
                          rp->px->at(pindex), rp->py->at(pindex), rp->pz->at(pindex));
 }
@@ -64,10 +30,143 @@ particle particle_init(REC_Particle * rp, REC_Track * rt, FMT_Tracks * ft, int p
     if (ft->vz->size() < 1)               return particle_init(); // Track reconstructed by FMT.
     if (ft->ndf->at(index) < FMTNLYRSCUT) return particle_init(); // Track crossed 3 FMT layers.
 
-    return particle_init(rp->pid->at(pindex), rp->charge->at(pindex), rp->beta->at(pindex),
-                         rp->status->at(pindex), rt->sector->at(pos),
+    return particle_init(rp->charge->at(pindex), rp->beta->at(pindex), rt->sector->at(pos),
                          ft->vx->at(index), ft->vy->at(index), ft->vz->at(index),
                          ft->px->at(index), ft->py->at(index), ft->pz->at(index));
+}
+
+// Initialize a new particle.
+particle particle_init(int charge, double beta, int sector,
+                       double vx, double vy, double vz, double px, double py, double pz) {
+    particle p;
+
+    // Inherent vars.
+    p.is_valid = true;
+    p.pid    = 0; // If particle identification later fails, PID will be 0.
+    p.q      = charge;
+    p.beta   = beta;
+    p.sector = sector;
+
+    // Tracking vars.
+    p.vx = vx;
+    p.vy = vy;
+    p.vz = vz;
+    p.px = px;
+    p.py = py;
+    p.pz = pz;
+
+    // NOTE. If programs gets slow, I should cache values of Q2, nu, etc here.
+    return p;
+}
+
+// Set PID from all available information. This function mimics PIDMatch from the EB engine.
+int set_pid(particle * p, int status, double tot_E, double pcal_E, int htcc_nphe, int ltcc_nphe) {
+    // Create PID list.
+    int pid_list_size;
+    if      (p->q >  0) pid_list_size = PID_POSITIVE_SIZE;
+    else if (p->q == 0) pid_list_size = PID_NEUTRAL_SIZE;
+    else                pid_list_size = PID_NEGATIVE_SIZE;
+
+    int pid_list[pid_list_size];
+    for (int pi = 0; p->q >  0 && pi < pid_list_size; ++pi) pid_list[pi] = PID_POSITIVE[pi];
+    for (int pi = 0; p->q == 0 && pi < pid_list_size; ++pi) pid_list[pi] = PID_NEUTRAL [pi];
+    for (int pi = 0; p->q <  0 && pi < pid_list_size; ++pi) pid_list[pi] = PID_NEGATIVE[pi];
+
+    // Perform checks.
+    bool e_check = is_electron(tot_E, pcal_E, htcc_nphe);
+
+    int timing_pid = best_pid_from_timing(p->q, tot_E, P(*p), p->beta, pid_list, pid_list_size);
+
+    bool htcc_signal_check = htcc_nphe > HTCC_NPHE_CUT;
+    bool ltcc_signal_check = ltcc_nphe > LTCC_NPHE_CUT;
+
+    bool htcc_pion_threshold = P(*p) > HTCC_PION_THRESHOLD;
+    bool ltcc_pion_threshold = P(*p) > LTCC_PION_THRESHOLD;
+    // bool ltcc_kaon_threshold = P(*p) > LTCC_KAON_THRESHOLD;
+
+    // Match PID.
+    for (int pi = 0; p->pid == 0 && pi < pid_list_size; ++pi) {
+        bool tpid_check = pid_list[pi] == timing_pid;
+        p->pid = match_pid(pid_list[pi], p->q, e_check, tpid_check, htcc_signal_check,
+                           ltcc_signal_check, htcc_pion_threshold, ltcc_pion_threshold);
+    }
+
+    // Check if particle is trigger electron.
+    p->is_trigger_electron = (p->pid == 11 && status < 0);
+
+    // Define mass from PID.
+    p->mass = MASS.at(abs(p->pid));
+
+    return 0;
+}
+
+// Check if a particle satisfies all requirements to be considered an electron or positron.
+bool is_electron(double tot_E, double pcal_E, double htcc_nphe) {
+    if (tot_E < 1e-9) return false; // Require ECAL.
+    if (htcc_nphe < HTCC_NPHE_CUT) return false;
+    // TODO. Require ECAL Sampling fraction. Code from CLAS12 reconstruction:
+    // final double sfNSigma = SamplingFractions.getNSigma(11,p,ccdb);
+    // final double nSigmaCut = ccdb.getSectorDouble(EBCCDBEnum.ELEC_SF_nsigma,sector);
+    // if (abs(sfNSigma) > nSigmaCut) return false;
+    if (pcal_E < MIN_PCAL_ENERGY) return false;
+
+    return true;
+}
+
+int best_pid_from_timing(int charge, double tot_E, double p, double beta, int pid_list[],
+                         int pid_list_size) {
+    if (charge == 0) return beta < NEUTRON_MAXBETA ? 2212 : (tot_E > 1e-9 ? 22 : 0);
+    else {
+        // Compare momentum-computed beta with tof-computed beta.
+        int min_pid = 0;
+        double min_diff = DBL_MAX;
+        for (int pi = 0; pi < pid_list_size; ++pi) {
+            double mass = MASS.at(abs(pid_list[pi]));
+            double p_beta = p/(sqrt(mass*mass * SPEEDOFLIGHT*SPEEDOFLIGHT + p*p));
+            double diff = abs(p_beta - beta);
+            if (diff < min_diff) {
+                min_pid  = pid_list[pi];
+                min_diff = diff;
+            }
+        }
+        return min_pid;
+    }
+}
+
+// Match PID hypothesis with available checks.
+int match_pid(int hyp, int q, bool e, bool tpid, bool htcc_s, bool ltcc_s, bool htcc_p,
+              bool ltcc_p) {
+    switch(abs(hyp)) {
+        case 11:
+            if (e) return hyp;
+            break;
+        case 211:
+            if (!e && (tpid || (htcc_s && ltcc_p)))
+                return hyp;
+            break;
+        case 321:
+            if (!e && tpid) {
+                if (ltcc_s && ltcc_p) return q * 211; // veto back to pion.
+                else return hyp;
+            }
+            break;
+        case 2212:
+            if (!e && tpid) {
+                if (ltcc_s && ltcc_p) return q * 211; // veto back to pion.
+                else return hyp;
+            }
+            break;
+        case 45:
+            if (!e && tpid) return hyp;
+            break;
+        case 2112:
+            if (tpid) return hyp;
+            break;
+        case 22:
+            if (tpid) return hyp;
+            break;
+    }
+    return 0;
 }
 
 // === PARTICLE FUNCTIONS ==========================================================================
@@ -112,7 +211,7 @@ double Q2(particle p, double bE) {
 // Calculate x_bjorken from beam energy, particle momentum, and theta angle.
 double Xb(particle p, double bE) {
     if (!p.is_trigger_electron) return 0;
-    return Q2(p, bE) / (2*PRTMASS*nu(p, bE));
+    return Q2(p, bE) / (2*MASS.at(2212)*nu(p, bE));
 }
 
 // Calculate y_bjorken from beam energy and nu.
@@ -132,7 +231,7 @@ double W(particle p, double bE) {
 // Calculate the squared invariant mass of the electron-nucleon interaction.
 double W2(particle p, double bE) {
     if (!p.is_trigger_electron) return 0;
-    return PRTMASS*PRTMASS + 2*PRTMASS*nu(p, bE) - Q2(p, bE);
+    return MASS.at(2212)*MASS.at(2212) + 2*MASS.at(2212)*nu(p, bE) - Q2(p, bE);
 }
 
 // NOTE. double s(particle p) ?
@@ -204,15 +303,15 @@ double zh(particle p, particle e, double bE) {
 // Return the longitudinal momentum in the center of mass frame.
 double PlCM(particle p, particle e, double bE) {
     if (!e.is_trigger_electron || p.is_trigger_electron) return 0;
-    return (nu(e,bE) + PRTMASS) * (sqrt(Pl2(p,e,bE)) - sqrt(Q2(e,bE) + nu(e,bE)*nu(e,bE))
-            * zh(p,e,bE)*nu(e,bE) / (nu(e,bE) + PRTMASS)) / W(e,bE);
+    return (nu(e,bE) + MASS.at(2212)) * (sqrt(Pl2(p,e,bE)) - sqrt(Q2(e,bE) + nu(e,bE)*nu(e,bE))
+            * zh(p,e,bE)*nu(e,bE) / (nu(e,bE) + MASS.at(2212))) / W(e,bE);
 }
 
 // Obtain the maximum possible value that the momentum could've had in the center of mass frame.
 double PmaxCM(particle p, particle e, double bE) {
     if (!e.is_trigger_electron || p.is_trigger_electron) return 0;
-    return sqrt(pow(W(e,bE)*W(e,bE) - NTRMASS*NTRMASS + PIMASS*PIMASS, 2)
-            - 4*PIMASS*PIMASS*W(e,bE)*W(e,bE)) / (2*W(e,bE));
+    return sqrt(pow(W(e,bE)*W(e,bE) - MASS.at(2112)*MASS.at(2112) + MASS.at(211)*MASS.at(211), 2)
+            - 4*MASS.at(211)*MASS.at(211)*W(e,bE)*W(e,bE)) / (2*W(e,bE));
 }
 
 // Return the momentum transverse component squared of the produced particle wrt the virtual photon
@@ -238,13 +337,13 @@ double Xf(particle p, particle e, double bE) {
 // Compute the missing mass
 double Mx2(particle p, particle e, double bE) {
     if (!e.is_trigger_electron || p.is_trigger_electron) return 0;
-    return W(e,bE)*W(e,bE) - 2*nu(e,bE)*zh(p,e,bE) * (nu(e,bE) + PRTMASS) + PIMASS*PIMASS
-            + 2*sqrt((Q2(e,bE) + nu(e,bE)*nu(e,bE)) * Pl2(p,e,bE));
+    return W(e,bE)*W(e,bE) - 2*nu(e,bE)*zh(p,e,bE) * (nu(e,bE) + MASS.at(2212))
+            + MASS.at(211)*MASS.at(211) + 2*sqrt((Q2(e,bE) + nu(e,bE)*nu(e,bE)) * Pl2(p,e,bE));
 }
 
 // Compute Mandelstam t. TODO. Make sure that that is what this is!
 double t_mandelstam(particle p, particle e, double bE) {
     if (!e.is_trigger_electron || p.is_trigger_electron) return 0;
-    return 2*sqrt((nu(e,bE)*nu(e,bE) + Q2(e,bE)) * Pl2(p,e,bE)) + PIMASS*PIMASS - Q2(e,bE)
-            - 2*nu(e,bE)*nu(e,bE)*zh(p,e,bE);
+    return 2*sqrt((nu(e,bE)*nu(e,bE) + Q2(e,bE)) * Pl2(p,e,bE)) + MASS.at(211)*MASS.at(211)
+            - Q2(e,bE) - 2*nu(e,bE)*nu(e,bE)*zh(p,e,bE);
 }

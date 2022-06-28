@@ -8,6 +8,13 @@
 #include "constants.h"
 #include "utilities.h"
 
+#define PID_POSITIVE_SIZE 5
+#define PID_NEGATIVE_SIZE 4
+#define PID_NEUTRAL_SIZE  2
+extern const int PID_POSITIVE[PID_POSITIVE_SIZE];
+extern const int PID_NEGATIVE[PID_NEGATIVE_SIZE];
+extern const int PID_NEUTRAL[PID_NEUTRAL_SIZE];
+
 typedef struct {
     bool is_valid;
     bool is_trigger_electron;
@@ -25,10 +32,17 @@ typedef struct {
 } particle;
 
 // particle functions.
-particle particle_init(int pid, int charge, double beta, int status, int sector,
-                       double vx, double vy, double vz, double px, double py, double pz);
+particle particle_init();
 particle particle_init(REC_Particle * rp, REC_Track * rt, int pos);
 particle particle_init(REC_Particle * rp, REC_Track * rt, FMT_Tracks * ft, int pos);
+particle particle_init(int charge, double beta, int sector,
+                       double vx, double vy, double vz, double px, double py, double pz);
+int set_pid(particle * p, int status, double tot_E, double pcal_E, int htcc_nphe, int ltcc_nphe);
+bool is_electron(double tot_E, double pcal_E, double htcc_nphe);
+int best_pid_from_timing(int charge, double tot_E, double p, double beta, int pid_list[],
+                         int pid_list_size);
+int match_pid(int hyp, int q, bool e, bool tpid, bool htcc_s, bool ltcc_s, bool htcc_p,
+              bool ltcc_p);
 double d_from_beamline(particle p);
 double theta_lab(particle p);
 double phi_lab(particle p);

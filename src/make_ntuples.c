@@ -107,8 +107,8 @@ int run(char * in_filename, bool use_fmt, bool debug, int nevn, int run_no, doub
             double tot_E = pcal_E + ecin_E + ecou_E;
 
             // Get Cherenkov counters data.
-            double ltcc_nphe = 0; // Number of photoelectrons deposited in ltcc.
-            double htcc_nphe = 0; // Number of photoelectrons deposited in htcc.
+            int htcc_nphe = 0; // Number of photoelectrons deposited in htcc.
+            int ltcc_nphe = 0; // Number of photoelectrons deposited in ltcc.
             for (UInt_t i = 0; i < rche.pindex->size(); ++i) {
                 if (rche.pindex->at(i) == pindex) {
                     int detector = rche.detector->at(i);
