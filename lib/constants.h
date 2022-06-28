@@ -2,12 +2,20 @@
 #define CONSTANTS
 
 // Masses.
-#define PRTMASS 0.938272 // Proton mass.
-#define KMASS   0.493677 // Kaon mass.
-#define PIMASS  0.139570 // Pion mass.
-#define DMASS   1.875    // Deuterium mass.
-#define NTRMASS 0.939565 // Neutron mass.
-#define EMASS   0.000051 // Electron mass.
+#define EMASS      0.000051 // Electron mass.
+#define PRTMASS    0.938272 // Proton mass.
+#define NTRMASS    0.939565 // Neutron mass.
+#define DMASS      1.875    // Deuterium mass.
+
+#define PIMASS     0.139570 // Charged Pion mass.
+#define KMASS      0.493677 // Charged Kaon mass.
+#define ETAMASS	   0.547853 // Eta mass.
+#define OMEGAMASS  0.782650 // Omega mass.
+#define MUONMASS   0.105658 // Muon mass.
+
+#define PIZEROMASS 0.134977 // Neutral Pion mass.
+#define KZEROMASS  0.497614 // Neutral Kaon mass.
+#define GAMMAMASS  0.       // Photon mass.
 
 // Particle cut array.
 #define PART_LIST_SIZE 4
