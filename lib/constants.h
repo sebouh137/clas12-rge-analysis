@@ -7,7 +7,6 @@
 #define SPEEDOFLIGHT 29.9792458
 
 // Masses.
-#define PIDS_SIZE 8
 extern const std::map<int, double> MASS;
 
 // Particle cut array.
