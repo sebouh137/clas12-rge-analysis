@@ -21,15 +21,6 @@
 #include "../lib/io_handler.h"
 #include "../lib/utilities.h"
 
-// TODO. Add status cut.
-// TODO. Evaluate the most basic cuts and implement the necessary ones.
-// TODO. Check what happens with the acceptance of different particles (like pi+ and pi-) when you
-//       reverse the magnetic fields.
-// TODO. Check if we can run high luminosity with reverse fields.
-// TODO. Check if RG-F or RG-M ran with reverse field.
-// TODO. See what happens to low-momentum particles inside CLAS12 through simulation and see if they
-//       are reconstructed.
-
 int run(char *in_filename, bool use_fmt, int nevn) {
     gStyle->SetOptFit();
 
