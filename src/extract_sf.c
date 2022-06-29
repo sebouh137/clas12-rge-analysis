@@ -34,11 +34,10 @@ int run(char *in_filename, bool use_fmt, int nevn) {
     const int ncals = sizeof(CALNAME)/sizeof(CALNAME[0]);
     char *sf1D_name_arr[ncals][NSECTORS][(int) ((SF_PMAX - SF_PMIN)/SF_PSTEP)];
     char *sf2D_name_arr[ncals][NSECTORS];
-    TGraphErrors *sf_dotgraph_top[ncals][NSECTORS];
-    TGraphErrors *sf_dotgraph_bot[ncals][NSECTORS];
-    char *sf2Dfit_name_arr[ncals][NSECTORS][2];
-    TF1 *sf_polyfit[ncals][NSECTORS][2];
-    double sf_fitresults[ncals][NSECTORS][2][4];
+    TGraphErrors *sf_dotgraph[ncals][NSECTORS];
+    char *sf2Dfit_name_arr[ncals][NSECTORS];
+    TF1 *sf_polyfit[ncals][NSECTORS];
+    double sf_fitresults[ncals][NSECTORS][4];
 
     int ci = -1;
     for (const char *cal : SFARR2D) {
@@ -51,30 +50,22 @@ int run(char *in_filename, bool use_fmt, int nevn) {
             strncpy(sf2D_name_arr[ci][si], oss_h.str().c_str(), strlen(oss_h.str().c_str()));
             insert_TH2F(&histos, R_PALL, sf2D_name_arr[ci][si], S_P, S_EDIVP,
                         200, 0, 10, 200, 0, 0.4);
-            sf_dotgraph_top[ci][si] = new TGraphErrors();
-            sf_dotgraph_top[ci][si]->SetMarkerStyle(kFullCircle);
-            sf_dotgraph_top[ci][si]->SetMarkerColor(kRed);
-            sf_dotgraph_bot[ci][si] = new TGraphErrors();
-            sf_dotgraph_bot[ci][si]->SetMarkerStyle(kFullCircle);
-            sf_dotgraph_bot[ci][si]->SetMarkerColor(kRed);
+            sf_dotgraph[ci][si] = new TGraphErrors();
+            sf_dotgraph[ci][si]->SetMarkerStyle(kFullCircle);
+            sf_dotgraph[ci][si]->SetMarkerColor(kRed);
 
             // Initialize fits.
-            std::ostringstream oss_f1, oss_f2;
-            oss_f1 << cal << si+1 << ") bottom fit";
-            oss_f2 << cal << si+1 << ") top fit";
-            sf2Dfit_name_arr[ci][si][0] = (char *) malloc(strlen(oss_f1.str().c_str())+1);
-            sf2Dfit_name_arr[ci][si][1] = (char *) malloc(strlen(oss_f2.str().c_str())+1);
-            strncpy(sf2Dfit_name_arr[ci][si][0], oss_f1.str().c_str(), strlen(oss_f1.str().c_str()));
-            strncpy(sf2Dfit_name_arr[ci][si][1], oss_f2.str().c_str(), strlen(oss_f2.str().c_str()));
-            for (int i = 0; i < 2; ++i) {
-                sf_polyfit[ci][si][i] = new TF1(sf2Dfit_name_arr[ci][si][i],
-                        "[0]*([1]+[2]/x + [3]/(x*x))", SF_PMIN+SF_PSTEP, SF_PMAX-SF_PSTEP);
-                        // "[0]+[1]*x+[2]*x*x+[3]*x*x*x", SF_PMIN+SF_PSTEP, SF_PMAX-SF_PSTEP);
-                sf_polyfit[ci][si][i]->SetParameter(0 /* p0 */, 1);
-                sf_polyfit[ci][si][i]->SetParameter(1 /* p1 */, 0);
-                sf_polyfit[ci][si][i]->SetParameter(2 /* p2 */, 0);
-                sf_polyfit[ci][si][i]->SetParameter(3 /* p3 */, 0);
-            }
+            std::ostringstream oss_f;
+            oss_f << cal << si+1 << ")";
+            sf2Dfit_name_arr[ci][si] = (char *) malloc(strlen(oss_f.str().c_str())+1);
+            strncpy(sf2Dfit_name_arr[ci][si], oss_f.str().c_str(), strlen(oss_f.str().c_str()));
+            sf_polyfit[ci][si] = new TF1(sf2Dfit_name_arr[ci][si],
+                    "[0]*([1]+[2]/x + [3]/(x*x))", SF_PMIN+SF_PSTEP, SF_PMAX-SF_PSTEP);
+                    // "[0]+[1]*x+[2]*x*x+[3]*x*x*x", SF_PMIN+SF_PSTEP, SF_PMAX-SF_PSTEP);
+            sf_polyfit[ci][si]->SetParameter(0 /* p0 */, 0.25);
+            sf_polyfit[ci][si]->SetParameter(1 /* p1 */, 1);
+            sf_polyfit[ci][si]->SetParameter(2 /* p2 */, 0);
+            sf_polyfit[ci][si]->SetParameter(3 /* p3 */, 0);
         }
     }
 
@@ -236,26 +227,18 @@ int run(char *in_filename, bool use_fmt, int nevn) {
 
                 // Only add points within PLIMITSARR borders and with an acceptable chi2.
                 if ((mean - 2*sigma > PLIMITSARR[ci][0] && mean + 2*sigma < PLIMITSARR[ci][1]) &&
-                    (sf_gaus->GetChisquare() / sf_gaus->GetNDF() < SF_CHI2CONFORMITY)) {
-                    sf_dotgraph_top[ci][si]->AddPoint(p + SF_PSTEP/2, mean + 2*sigma);
-                    sf_dotgraph_bot[ci][si]->AddPoint(p + SF_PSTEP/2, mean - 2*sigma);
+                        (sf_gaus->GetChisquare() / sf_gaus->GetNDF() < SF_CHI2CONFORMITY))
+                    sf_dotgraph[ci][si]->AddPoint(p + SF_PSTEP/2, mean);
                 }
-            }
 
             // Fit dotgraphs.
-            if (sf_dotgraph_bot[ci][si]->GetN() > 0)
-                sf_dotgraph_bot[ci][si]->Fit(sf_polyfit[ci][si][0], "QR", "",
-                                             SF_PMIN+SF_PSTEP, SF_PMAX-SF_PSTEP);
-            if (sf_dotgraph_top[ci][si]->GetN() > 0)
-                sf_dotgraph_top[ci][si]->Fit(sf_polyfit[ci][si][1], "QR", "",
-                                             SF_PMIN+SF_PSTEP, SF_PMAX-SF_PSTEP);
+            if (sf_dotgraph[ci][si]->GetN() > 0)
+                sf_dotgraph[ci][si]->Fit(sf_polyfit[ci][si], "QR", "",
+                                         SF_PMIN+SF_PSTEP, SF_PMAX-SF_PSTEP);
 
             // Extract and save dotgraph fits parameters to make cuts from them.
-            for (int bi = 0; bi < 2; ++bi) {
-                for (int pi = 0; pi < sf_polyfit[ci][si][bi]->GetNpar(); ++pi) {
-                    sf_fitresults[ci][si][bi][pi] = sf_polyfit[ci][si][bi]->GetParameter(pi);
-                }
-            }
+            for (int pi = 0; pi < sf_polyfit[ci][si]->GetNpar(); ++pi)
+                sf_fitresults[ci][si][pi] = sf_polyfit[ci][si]->GetParameter(pi);
         }
     }
 
@@ -275,17 +258,15 @@ int run(char *in_filename, bool use_fmt, int nevn) {
             f_out->cd(dir);
 
             histos[sf2D_name_arr[ci][si]]->Draw("colz");
-            sf_dotgraph_top[ci][si]->Draw("Psame");
-            sf_dotgraph_bot[ci][si]->Draw("Psame");
-            sf_polyfit[ci][si][0]->Draw("same");
-            sf_polyfit[ci][si][1]->Draw("same");
+            sf_dotgraph[ci][si]->Draw("Psame");
+            sf_polyfit[ci][si]->Draw("same");
             gcvs->Write(sf2D_name_arr[ci][si]);
             free(sf2D_name_arr[ci][si]);
             for (int pi = 0; pi < ((int) ((SF_PMAX - SF_PMIN)/SF_PSTEP)); ++pi) {
                 histos[sf1D_name_arr[ci][si][pi]]->Write();
                 free(sf1D_name_arr[ci][si][pi]);
             }
-            for (int i = 0; i < 2; ++i) free(sf2Dfit_name_arr[ci][si][i]);
+            free(sf2Dfit_name_arr[ci][si]);
         }
     }
 
@@ -295,12 +276,10 @@ int run(char *in_filename, bool use_fmt, int nevn) {
     if (t_out == NULL) return 4;
     for (int ci = 0; ci < 4; ++ci) {
         for (int si = 0; si < 6; ++si) {
-            for (int bi = 0; bi < 2; ++bi) {
-                for (int pi = 0; pi < 4; ++pi) {
-                    fprintf(t_out, "%11.8f ", sf_fitresults[ci][si][bi][pi]);
-                }
-                fprintf(t_out, "\n");
+            for (int pi = 0; pi < 4; ++pi) {
+                fprintf(t_out, "%11.8f ", sf_fitresults[ci][si][pi]);
             }
+            fprintf(t_out, "\n");
         }
     }
 
