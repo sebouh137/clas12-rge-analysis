@@ -81,3 +81,8 @@ const double STD_RX[STDPLT_LIST_SIZE][2][2] = {
 const long STD_BX[STDPLT_LIST_SIZE][2] = {
         {200,200}, {200,100}, {200,200}, { 22, -1}, { 22, -1}, { 20, -1}, {200, -1}, {200,200}
 };
+
+// Pid arrays
+const int HPID_ARRAY[NHADRONS] = {
+        211, -211, 2212, 2112, 321, -321, 221, 223, 111, 311
+};

@@ -17,6 +17,10 @@ particle particle_init(int pid, int charge, double beta, int status, int sector,
     // Inherent vars.
     p.is_valid = true;
     p.is_trigger_electron = (pid == 11 && status < 0);
+    p.is_hadron = false;
+    if(!p.is_trigger_electron){
+        for(int i = 0 ; i < NHADRONS ; i++){if(HPID_ARRAY[i] == (int)pid) {p.is_hadron = true; break;}}
+    }
     p.pid    = pid;
     p.q      = charge;
     p.beta   = beta;
@@ -96,7 +100,7 @@ double mass2(particle p) {
     return (P(p)*P(p)) / (p.beta*p.beta);
 }
 
-// === SIDIS e- FUNCTIONS ==========================================================================
+// === DIS e- FUNCTIONS ==========================================================================
 // Calculate nu from beam energy and total momentum.
 double nu(particle p, double bE) {
     if (!p.is_trigger_electron) return 0; // TODO. I need an invalid return value, not zero!
@@ -116,6 +120,7 @@ double Xb(particle p, double bE) {
 }
 
 // Calculate y_bjorken from beam energy and nu.
+// Yb (?)
 double Yb(particle p, double bE) {
     if (!p.is_trigger_electron) return 0;
     return nu(p, bE) / bE;
@@ -156,13 +161,13 @@ double phi_photon_lab(particle p) {
 // Compute the polar angle of a produced particle p with respect to the virtual photon direction.
 // `p` is the produced particle while `e` is the trigger electron.
 double theta_pq(particle p, particle e, double bE) {
-    if (!e.is_trigger_electron || p.is_trigger_electron) return 0;
+    if (!p.is_hadron) return 0;
     return calc_angle(-e.px, -e.py, bE-e.pz, p.px, p.py, p.pz);
 }
 
 // Compute the azimuthal angle of a produced particle p with respect to the virtual photon direction.
 double phi_pq(particle p, particle e, double bE) {
-    if (!e.is_trigger_electron || p.is_trigger_electron) return 0;
+    if (!p.is_hadron) return 0;
 
     double gpx = -e.px, gpy = -e.py, gpz = bE-e.pz;
     double ppx = p.px,  ppy = p.py,  ppz = p.pz;
@@ -179,38 +184,38 @@ double phi_pq(particle p, particle e, double bE) {
 
 // Compute the cosine of the polar angle with respect to the virtual photon direction.
 double cos_theta_pq(particle p, particle e, double bE) {
-    if (!e.is_trigger_electron || p.is_trigger_electron) return 0;
+    if (!p.is_hadron) return 0;
     return (p.pz*(bE-e.pz) - p.px*e.px - p.py*e.py) / (sqrt(nu(e,bE)*nu(e,bE) + Q2(e,bE)) * P(p));
 }
 
 // Return the squared momentum transverse to the virtual photon.
 double Pt2(particle p, particle e, double bE) {
-    if (!e.is_trigger_electron || p.is_trigger_electron) return 0;
+    if (!p.is_hadron) return 0;
     return P(p) * P(p) * (1 - cos_theta_pq(p,e,bE)*cos_theta_pq(p,e,bE));
 }
 
 // Return the squared momentum longitudinal to the virtual photon.
 double Pl2(particle p, particle e, double bE) {
-    if (!e.is_trigger_electron || p.is_trigger_electron) return 0;
+    if (!p.is_hadron) return 0;
     return P(p) * P(p) * cos_theta_pq(p,e,bE) * cos_theta_pq(p,e,bE);
 }
 
 // Obtain the fraction of the virtual photon energy taken by the produced particle in the lab frame.
 double zh(particle p, particle e, double bE) {
-    if (!e.is_trigger_electron || p.is_trigger_electron) return 0;
+    if (!p.is_hadron) return 0;
     return sqrt(p.mass*p.mass + P(p)*P(p)) / nu(e,bE);
 }
 
 // Return the longitudinal momentum in the center of mass frame.
 double PlCM(particle p, particle e, double bE) {
-    if (!e.is_trigger_electron || p.is_trigger_electron) return 0;
+    if (!p.is_hadron) return 0;
     return (nu(e,bE) + PRTMASS) * (sqrt(Pl2(p,e,bE)) - sqrt(Q2(e,bE) + nu(e,bE)*nu(e,bE))
             * zh(p,e,bE)*nu(e,bE) / (nu(e,bE) + PRTMASS)) / W(e,bE);
 }
 
 // Obtain the maximum possible value that the momentum could've had in the center of mass frame.
 double PmaxCM(particle p, particle e, double bE) {
-    if (!e.is_trigger_electron || p.is_trigger_electron) return 0;
+    if (!p.is_hadron) return 0;
     return sqrt(pow(W(e,bE)*W(e,bE) - NTRMASS*NTRMASS + PIMASS*PIMASS, 2)
             - 4*PIMASS*PIMASS*W(e,bE)*W(e,bE)) / (2*W(e,bE));
 }
@@ -218,33 +223,33 @@ double PmaxCM(particle p, particle e, double bE) {
 // Return the momentum transverse component squared of the produced particle wrt the virtual photon
 //     direction.
 double PTrans2PQ(particle p, particle e, double bE) {
-    if (!e.is_trigger_electron || p.is_trigger_electron) return 0;
+    if (!p.is_hadron) return 0;
     return P(p)*P(p) * (1 - cos_theta_pq(p,e,bE)*cos_theta_pq(p,e,bE));
 }
 
 // Return the momentum longitudinal component squared of the produced particle wrt the virtual
 //     photon direction.
 double PLong2PQ(particle p, particle e, double bE) {
-    if (!e.is_trigger_electron || p.is_trigger_electron) return 0;
+    if (!p.is_hadron) return 0;
     return P(p)*P(p) * cos_theta_pq(p,e,bE)*cos_theta_pq(p,e,bE);
 }
 
 // Calculate X_f (X Feynmann).
 double Xf(particle p, particle e, double bE) {
-    if (!e.is_trigger_electron || p.is_trigger_electron) return 0;
+    if (!p.is_hadron) return 0;
     return PlCM(p,e,bE) / PmaxCM(p,e,bE);
 }
 
 // Compute the missing mass
 double Mx2(particle p, particle e, double bE) {
-    if (!e.is_trigger_electron || p.is_trigger_electron) return 0;
+    if (!p.is_hadron) return 0;
     return W(e,bE)*W(e,bE) - 2*nu(e,bE)*zh(p,e,bE) * (nu(e,bE) + PRTMASS) + PIMASS*PIMASS
             + 2*sqrt((Q2(e,bE) + nu(e,bE)*nu(e,bE)) * Pl2(p,e,bE));
 }
 
 // Compute Mandelstam t. TODO. Make sure that that is what this is!
 double t_mandelstam(particle p, particle e, double bE) {
-    if (!e.is_trigger_electron || p.is_trigger_electron) return 0;
+    if (!p.is_hadron) return 0;
     return 2*sqrt((nu(e,bE)*nu(e,bE) + Q2(e,bE)) * Pl2(p,e,bE)) + PIMASS*PIMASS - Q2(e,bE)
             - 2*nu(e,bE)*nu(e,bE)*zh(p,e,bE);
 }

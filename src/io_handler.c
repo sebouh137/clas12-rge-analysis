@@ -22,7 +22,7 @@ int make_ntuples_handle_args(int argc, char ** argv, bool * use_simul,bool * use
     strcpy(* input_file, argv[argc - 1]);
 
     int make_ntuples_handle_args_result = 0;
-    if (*use_simul == false){
+    if (!*use_simul){
         make_ntuples_handle_args_result = handle_root_filename_data(* input_file, run_no, beam_energy);
     } else{
         make_ntuples_handle_args_result = handle_root_filename_simul(* input_file, beam_energy);
@@ -67,7 +67,7 @@ int hipo2root_handle_args(int argc, char ** argv, char ** input_file, int * run_
     strcpy(* input_file, argv[argc - 1]);
 
     int handle_hipo_filename_result = 0;
-    if(*use_simul == false){
+    if(!*use_simul){
        handle_hipo_filename_result = handle_hipo_filename_data(* input_file, run_no);
     } else{
        handle_hipo_filename_result = handle_hipo_filename_simul(* input_file);

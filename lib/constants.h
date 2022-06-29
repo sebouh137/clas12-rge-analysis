@@ -1,6 +1,10 @@
 #ifndef CONSTANTS
 #define CONSTANTS
 
+// Hadronic pid array
+#define NHADRONS   10
+extern const int   HPID_ARRAY[NHADRONS];
+
 // Masses.
 #define EMASS      0.000051 // Electron mass.
 #define PRTMASS    0.938272 // Proton mass.
@@ -160,7 +164,7 @@ extern const char * S_VAR_LIST[VAR_LIST_SIZE];
 #define DIS_LIST_SIZE 4
 extern const char * DIS_LIST[DIS_LIST_SIZE];
 
-#define S_Q2 "Q^{2}"       // GeV^2.
+#define S_Q2 "Q2"       // GeV^2.
 #define R_Q2 "q2"
 #define A_Q2 26
 #define S_NU "#nu"         // GeV.
@@ -169,7 +173,7 @@ extern const char * DIS_LIST[DIS_LIST_SIZE];
 #define S_XB "x_{bjorken}" // adimensional.
 #define R_XB "x_bjorken"
 #define A_XB 28
-#define S_W2 "W^{2}"       // GeV^2.
+#define S_W2 "W2"       // GeV^2.
 #define R_W2 "w2"
 #define A_W2 29
 
@@ -181,10 +185,10 @@ extern const char * SIDIS_LIST[SIDIS_LIST_SIZE];
 #define S_ZH      "z_{h}"          // adimensional.
 #define R_ZH      "zh"
 #define A_ZH       30
-#define S_PT2     "P_{t}^{2}"         // GeV^2.
+#define S_PT2     "Pt2"         // GeV^2.
 #define R_PT2     "pt2"
 #define A_PT2      31
-#define S_PL2     "P_{l}^{2}"         // GeV^2.
+#define S_PL2     "Pl2"         // GeV^2.
 #define R_PL2     "pl2"
 #define A_PL2      32
 #define S_PHIPQ   "#phi_{PQ}"       // Rad.

@@ -18,8 +18,6 @@
 // TODO. Make this program write using both dc and fmt data.
 int run(char * in_filename, char * out_filename, bool use_simul, bool use_fmt, bool debug, int nevn, int run_no, double beam_E) {
     // Access input file. TODO. Make this input file*s*, as in multiple files
-    printf("Input  : %s\n",in_filename);
-    printf("Output : %s\n",out_filename);
     TFile *f_in  = TFile::Open(in_filename, "READ");
     TFile *f_out = TFile::Open(out_filename, "RECREATE"); // NOTE. This path sucks. // EM: yes, it does
 
@@ -85,8 +83,17 @@ int run(char * in_filename, char * out_filename, bool use_simul, bool use_fmt, b
         }
 
         // Process DIS event.
-        // adding electron counter in event
-        int ecounter = 0;
+        // Checking existence of trigger electron in event
+        particle p_el = particle_init();
+        for (UInt_t pos = 0; pos < rtrk.index->size(); ++pos) {
+            p_el = use_fmt ? particle_init(&rpart, &rtrk, &ftrk, pos)
+                           : particle_init(&rpart, &rtrk, pos);
+            if(p_el.is_trigger_electron) break;
+        }
+        // Guarding statement
+        if(!p_el.is_trigger_electron) continue;
+
+        // Processing particles
         for (UInt_t pos = 0; pos < rtrk.index->size(); ++pos) {
             int pindex = rtrk.pindex->at(pos); // pindex is always equal to pos!
 
@@ -94,17 +101,6 @@ int run(char * in_filename, char * out_filename, bool use_simul, bool use_fmt, b
             particle p = use_fmt ? particle_init(&rpart, &rtrk, &ftrk, pos)
                                  : particle_init(&rpart, &rtrk, pos);
             if (!p.is_valid) continue;
-
-            // Filter events with an electron
-            // this works if the trigger electron is the first entry in a given event...
-            particle p_el;
-            if (p.pid==11){
-                ecounter++;
-                p_el = use_fmt ? particle_init(&rpart, &rtrk, &ftrk, pos)
-                                 : particle_init(&rpart, &rtrk, pos);
-            }
-            // guarding statement
-            if (ecounter==0) continue;
 
             // Get calorimeters data.
             double pcal_E = 0; // PCAL total deposited energy.
@@ -145,22 +141,7 @@ int run(char * in_filename, char * out_filename, bool use_simul, bool use_fmt, b
             double chi2 = rtrk.chi2   ->at(pos);
             double ndf  = rtrk.ndf    ->at(pos);
 
-            // Fill TNtuples. TODO. This probably should be implemented more elegantly.
-            // Note. Adding option for hadronic variables.
-            float Zh_var      = 0;
-            float Pt2_var     = 0;
-            float Pl2_var     = 0;
-            float ThetaPQ_var = 0;
-            float PhiPQ_var   = 0;
-            // hadronic filter
-            if(p.pid==211||p.pid==-211||p.pid==2212||p.pid==2112||p.pid==321||p.pid==-321||p.pid==221||p.pid==223||p.pid==111||p.pid==311){
-                Zh_var      = zh(p, p_el, beam_E);
-                Pt2_var     = Pt2(p, p_el, beam_E);
-                Pl2_var     = Pl2(p, p_el, beam_E);
-                PhiPQ_var   = phi_pq(p, p_el, beam_E);
-                ThetaPQ_var = theta_pq(p, p_el, beam_E);
-            }
-            
+            // Filling the TNtuple
             Float_t v[VAR_LIST_SIZE] = {
                 (Float_t) run_no, (Float_t) evn, (Float_t) beam_E,
                 (Float_t) p.pid, (Float_t) status, (Float_t) p.q, (Float_t) p.mass, (Float_t) p.vx,
@@ -171,8 +152,8 @@ int run(char * in_filename, char * out_filename, bool use_simul, bool use_fmt, b
                 (Float_t) pcal_E, (Float_t) ecin_E, (Float_t) ecou_E, (Float_t) tot_E,
                 (Float_t) htcc_nphe, (Float_t) ltcc_nphe,
                 (Float_t) tof,
-                (Float_t) Q2(p_el, beam_E), (Float_t) nu(p_el, beam_E), (Float_t) Xb(p_el, beam_E), (Float_t) W2(p_el, beam_E),
-                Zh_var,Pt2_var,Pl2_var,PhiPQ_var,ThetaPQ_var
+                (Float_t) Q2(p, beam_E), (Float_t) nu(p, beam_E), (Float_t) Xb(p, beam_E), (Float_t) W2(p, beam_E),
+                (Float_t) zh(p, p_el, beam_E),(Float_t) Pt2(p, p_el, beam_E),(Float_t) Pl2(p, p_el, beam_E),(Float_t) phi_pq(p, p_el, beam_E),(Float_t) theta_pq(p, p_el, beam_E)
             };
             t_out->Fill(v);
         }
@@ -214,5 +195,4 @@ int main(int argc, char ** argv) {
     sprintf(out_filename, "ntuple_%s", in_filename);
     
     return make_ntuples_err(run(in_filename, out_filename, use_simul, use_fmt, debug, nevn, run_no, beam_E), &in_filename);
-    printf("Done\n");
 }

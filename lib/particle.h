@@ -11,6 +11,7 @@
 typedef struct {
     bool is_valid;
     bool is_trigger_electron;
+    bool is_hadron;
     // EB vars.
     int pid;
     int q;
@@ -25,6 +26,7 @@ typedef struct {
 } particle;
 
 // particle functions.
+particle particle_init();
 particle particle_init(int pid, int charge, double beta, int status, int sector,
                        double vx, double vy, double vz, double px, double py, double pz);
 particle particle_init(REC_Particle * rp, REC_Track * rt, int pos);
