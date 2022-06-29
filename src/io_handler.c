@@ -25,7 +25,7 @@ int make_ntuples_handle_args(int argc, char ** argv, bool * use_simul,bool * use
     if (*use_simul == false){
         make_ntuples_handle_args_result = handle_root_filename_data(* input_file, run_no, beam_energy);
     } else{
-        make_ntuples_handle_args_result = handle_root_filename_simul(* input_file, run_no, beam_energy);
+        make_ntuples_handle_args_result = handle_root_filename_simul(* input_file, beam_energy);
     }
     return make_ntuples_handle_args_result;
 }
@@ -92,7 +92,7 @@ int handle_root_filename_data(char * input_file, int * run_no, double * beam_ene
     return 0;
 }
 
-int handle_root_filename_simul(char * input_file, int* run_no, double * beam_energy) {
+int handle_root_filename_simul(char * input_file, double * beam_energy) {
     int chk = check_root_filename(input_file);
     if (chk) return chk;
 
