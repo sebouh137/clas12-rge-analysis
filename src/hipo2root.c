@@ -1,5 +1,10 @@
 #include <cstdlib>
 #include <iostream>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+
 
 #include "reader.h"
 #include "utils.h"
@@ -12,20 +17,35 @@
 #include "../lib/bank_containers.h"
 
 int main(int argc, char **argv) {
-    char *in_filename = NULL;
-    int  run_no = -1;
+    char *in_filename  = NULL;
+    char *out_filename = NULL;
 
-    if (hipo2root_handle_args_err(hipo2root_handle_args(argc, argv, &in_filename, &run_no),
-                                  &in_filename))
-        return 1;
-
-    char *out_filename = (char *) malloc(22 * sizeof(char));
-    if      (run_no /     10 == 0) sprintf(out_filename, "../root_io/00000%d.root", run_no);
-    else if (run_no /    100 == 0) sprintf(out_filename, "../root_io/0000%d.root", run_no);
-    else if (run_no /   1000 == 0) sprintf(out_filename, "../root_io/000%d.root", run_no);
-    else if (run_no /  10000 == 0) sprintf(out_filename, "../root_io/00%d.root", run_no);
-    else if (run_no / 100000 == 0) sprintf(out_filename, "../root_io/0%d.root", run_no);
-    else                           sprintf(out_filename, "../root_io/%d.root", run_no);
+    int  run_no    = -1;
+    bool use_simul = false;
+    
+    if (hipo2root_handle_args_err(hipo2root_handle_args(argc, argv, &in_filename, &run_no, &use_simul),
+                                      &in_filename))
+            return 1;
+        
+    if(use_simul==false){
+        // Data process
+        printf("Data type!\n");
+        
+        out_filename = (char *) malloc(22 * sizeof(char));
+        if      (run_no /     10 == 0) sprintf(out_filename, "../root_io/00000%d.root", run_no);
+        else if (run_no /    100 == 0) sprintf(out_filename, "../root_io/0000%d.root", run_no);
+        else if (run_no /   1000 == 0) sprintf(out_filename, "../root_io/000%d.root", run_no);
+        else if (run_no /  10000 == 0) sprintf(out_filename, "../root_io/00%d.root", run_no);
+        else if (run_no / 100000 == 0) sprintf(out_filename, "../root_io/0%d.root", run_no);
+        else                           sprintf(out_filename, "../root_io/%d.root", run_no);
+    } else{
+        // Simul process
+        printf("Simul type!\n");
+        
+        // Creates file in current folder
+        out_filename = (char *) malloc(5 + strlen(argv[argc - 1]) + 1);        
+        sprintf(out_filename, "%s.root", argv[argc - 1]);
+    }
 
     TFile *f = TFile::Open(out_filename, "RECREATE");
     f->SetCompressionAlgorithm(ROOT::kLZ4);
@@ -77,6 +97,7 @@ int main(int argc, char **argv) {
     printf("Read %8d events... Done!\n", c);
 
     // Clean up.
+    tree->Write();
     f->Close();
     free(in_filename);
     free(out_filename);

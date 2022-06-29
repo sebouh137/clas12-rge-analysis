@@ -16,10 +16,13 @@
 #include "../lib/utilities.h"
 
 // TODO. Make this program write using both dc and fmt data.
-int run(char * in_filename, bool use_fmt, bool debug, int nevn, int run_no, double beam_E) {
-    // Access input file. TODO. Make this input file*s*, as in multiple files.
+int run(char * in_filename, char * out_filename, bool use_simul, bool use_fmt, bool debug, int nevn, int run_no, double beam_E) {
+    // Access input file. TODO. Make this input file*s*, as in multiple files
+    printf("Input  : %s\n",in_filename);
+    printf("Output : %s\n",out_filename);
     TFile *f_in  = TFile::Open(in_filename, "READ");
-    TFile *f_out = TFile::Open("../root_io/ntuples.root", "RECREATE"); // NOTE. This path sucks.
+    TFile *f_out = TFile::Open(out_filename, "RECREATE"); // NOTE. This path sucks. // EM: yes, it does
+
     if (!f_in || f_in->IsZombie()) return 1;
 
     // Generate lists of variables.
@@ -31,6 +34,7 @@ int run(char * in_filename, bool use_fmt, bool debug, int nevn, int run_no, doub
 
     // Create TTree and TNTuples.
     TTree   * t_in  = f_in->Get<TTree>("Tree");
+    if(t_in ==NULL) return 1;
     TNtuple * t_out = new TNtuple(S_PARTICLE, S_PARTICLE, vars);
     REC_Particle     rpart(t_in);
     REC_Track        rtrk (t_in);
@@ -81,6 +85,8 @@ int run(char * in_filename, bool use_fmt, bool debug, int nevn, int run_no, doub
         }
 
         // Process DIS event.
+        // adding electron counter in event
+        int ecounter = 0;
         for (UInt_t pos = 0; pos < rtrk.index->size(); ++pos) {
             int pindex = rtrk.pindex->at(pos); // pindex is always equal to pos!
 
@@ -88,6 +94,17 @@ int run(char * in_filename, bool use_fmt, bool debug, int nevn, int run_no, doub
             particle p = use_fmt ? particle_init(&rpart, &rtrk, &ftrk, pos)
                                  : particle_init(&rpart, &rtrk, pos);
             if (!p.is_valid) continue;
+
+            // Filter events with an electron
+            // this works if the trigger electron is the first entry in a given event...
+            particle p_el;
+            if (p.pid==11){
+                ecounter++;
+                p_el = use_fmt ? particle_init(&rpart, &rtrk, &ftrk, pos)
+                                 : particle_init(&rpart, &rtrk, pos);
+            }
+            // guarding statement
+            if (ecounter==0) continue;
 
             // Get calorimeters data.
             double pcal_E = 0; // PCAL total deposited energy.
@@ -129,19 +146,33 @@ int run(char * in_filename, bool use_fmt, bool debug, int nevn, int run_no, doub
             double ndf  = rtrk.ndf    ->at(pos);
 
             // Fill TNtuples. TODO. This probably should be implemented more elegantly.
-            // NOTE. If adding new variables, check their order in S_VAR_LIST.
+            // Note. Adding option for hadronic variables.
+            float Zh_var      = 0;
+            float Pt2_var     = 0;
+            float Pl2_var     = 0;
+            float ThetaPQ_var = 0;
+            float PhiPQ_var   = 0;
+            // hadronic filter
+            if(p.pid==211||p.pid==-211||p.pid==2212||p.pid==2112||p.pid==321||p.pid==-321||p.pid==221||p.pid==223||p.pid==111||p.pid==311){
+                Zh_var      = zh(p, p_el, beam_E);
+                Pt2_var     = Pt2(p, p_el, beam_E);
+                Pl2_var     = Pl2(p, p_el, beam_E);
+                PhiPQ_var   = phi_pq(p, p_el, beam_E);
+                ThetaPQ_var = theta_pq(p, p_el, beam_E);
+            }
+            
             Float_t v[VAR_LIST_SIZE] = {
                 (Float_t) run_no, (Float_t) evn, (Float_t) beam_E,
                 (Float_t) p.pid, (Float_t) status, (Float_t) p.q, (Float_t) p.mass, (Float_t) p.vx,
-                        (Float_t) p.vy, (Float_t) p.vz, (Float_t) p.px, (Float_t) p.py,
-                        (Float_t) p.pz, (Float_t) P(p), (Float_t) theta_lab(p),
-                        (Float_t) phi_lab(p), (Float_t) p.beta,
+                (Float_t) p.vy, (Float_t) p.vz, (Float_t) p.px, (Float_t) p.py,
+                (Float_t) p.pz, (Float_t) P(p), (Float_t) theta_lab(p),
+                (Float_t) phi_lab(p), (Float_t) p.beta,
                 (Float_t) chi2, (Float_t) ndf,
                 (Float_t) pcal_E, (Float_t) ecin_E, (Float_t) ecou_E, (Float_t) tot_E,
                 (Float_t) htcc_nphe, (Float_t) ltcc_nphe,
                 (Float_t) tof,
-                (Float_t) Q2(p, beam_E), (Float_t) nu(p, beam_E), (Float_t) Xb(p, beam_E),
-                        (Float_t) W2(p, beam_E)
+                (Float_t) Q2(p_el, beam_E), (Float_t) nu(p_el, beam_E), (Float_t) Xb(p_el, beam_E), (Float_t) W2(p_el, beam_E),
+                Zh_var,Pt2_var,Pl2_var,PhiPQ_var,ThetaPQ_var
             };
             t_out->Fill(v);
         }
@@ -165,15 +196,23 @@ int run(char * in_filename, bool use_fmt, bool debug, int nevn, int run_no, doub
 
 // Call program from terminal, C-style.
 int main(int argc, char ** argv) {
-    bool use_fmt       = false;
-    bool debug         = false;
-    int nevn           = -1;
-    int run_no         = -1;
-    double beam_E      = -1;
-    char * in_filename = NULL;
+    bool use_simul      = false;
+    bool use_fmt        = false;
+    bool debug          = false;
+    int nevn            = -1;
+    int run_no          = -1;
+    double beam_E       = -1;
+    char * in_filename  = NULL;
+    char * out_filename = NULL;
 
-    if (make_ntuples_handle_args_err(make_ntuples_handle_args(argc, argv, &use_fmt, &debug, &nevn,
+    if (make_ntuples_handle_args_err(make_ntuples_handle_args(argc, argv, &use_simul, &use_fmt, &debug, &nevn,
             &in_filename, &run_no, &beam_E), &in_filename, run_no))
         return 1;
-    return make_ntuples_err(run(in_filename, use_fmt, debug, nevn, run_no, beam_E), &in_filename);
+    
+    // set the output filename in function of the input filename
+    out_filename = (char*) malloc(strlen(argv[argc - 1]) + 1 + 8); //size of input + 14
+    sprintf(out_filename, "ntuple_%s", in_filename);
+    
+    return make_ntuples_err(run(in_filename, out_filename, use_simul, use_fmt, debug, nevn, run_no, beam_E), &in_filename);
+    printf("Done\n");
 }
