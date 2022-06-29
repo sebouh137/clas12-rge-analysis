@@ -128,7 +128,8 @@ int extractsf_handle_args_err(int errcode, char ** in_filename) {
 }
 
 int hipo2root_usage() {
-    fprintf(stderr, "Usage: hipo2root filename\n");
+    fprintf(stderr, "Usage: hipo2root [-s] filename\n");
+    fprintf(stderr, " * -s: This option is to specify the use of simulations instead of data.\n");
     return 1;
 }
 
