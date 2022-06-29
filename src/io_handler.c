@@ -23,7 +23,7 @@ int make_ntuples_handle_args(int argc, char ** argv, bool * use_fmt, bool * debu
 }
 
 int extractsf_handle_args(int argc, char ** argv, bool * use_fmt, int * nevents,
-                          char ** input_file) {
+                          char ** input_file, int * run_no) {
     // Handle optional arguments.
     int opt;
     while ((opt = getopt(argc, argv, "fn:")) != -1) {
@@ -38,7 +38,7 @@ int extractsf_handle_args(int argc, char ** argv, bool * use_fmt, int * nevents,
 
     * input_file = (char *) malloc(strlen(argv[argc - 1]) + 1);
     strcpy(* input_file, argv[argc - 1]);
-    return check_root_filename(* input_file);
+    return handle_root_filename(* input_file, run_no);
 }
 
 int hipo2root_handle_args(int argc, char ** argv, char ** input_file, int * run_no) {
@@ -56,12 +56,17 @@ int check_root_filename(char * input_file) {
     return 0;
 }
 
+int handle_root_filename(char * input_file, int * run_no) {
+    double dump = 0.;
+    return handle_root_filename(input_file, run_no, &dump);
+}
+
 int handle_root_filename(char * input_file, int * run_no, double * beam_energy) {
     int chk = check_root_filename(input_file);
     if (chk) return chk;
 
     // Get run number and beam energy from filename.
-    if (!get_run_no(input_file, run_no))       return 5;
+    if (!get_run_no(input_file, run_no))        return 5;
     if (get_beam_energy(* run_no, beam_energy)) return 6;
 
     return 0;

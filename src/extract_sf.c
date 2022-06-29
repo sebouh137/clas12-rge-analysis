@@ -21,7 +21,7 @@
 #include "../lib/io_handler.h"
 #include "../lib/utilities.h"
 
-int run(char *in_filename, bool use_fmt, int nevn) {
+int run(char *in_filename, bool use_fmt, int nevn, int run_no) {
     gStyle->SetOptFit();
 
     // Access input file. TODO. Make this input file*s*.
@@ -245,7 +245,7 @@ int run(char *in_filename, bool use_fmt, int nevn) {
     }
 
     // Create output file.
-    TFile *f_out = TFile::Open("../root_io/sf_study.root", "RECREATE");
+    TFile *f_out = TFile::Open(Form("../root_io/sf_study_%06d.root", run_no), "RECREATE");
 
     // Write to output file.
     TString dir;
@@ -273,7 +273,7 @@ int run(char *in_filename, bool use_fmt, int nevn) {
     }
 
     // Write results to file.
-    FILE *t_out = fopen("../data/sf_results", "w");
+    FILE *t_out = fopen(Form("../data/sf_params_%06d.root", run_no), "w");
 
     if (t_out == NULL) return 4;
     for (int ci = 3; ci < 4; ++ci) { // NOTE. Only writing ECAL sf results.
@@ -297,9 +297,10 @@ int main(int argc, char **argv) {
     bool use_fmt      = false;
     int nevn          = -1;
     char *in_filename = NULL;
+    int run_no        = -1;
 
-    if (extractsf_handle_args_err(extractsf_handle_args(argc, argv, &use_fmt, &nevn, &in_filename),
-            &in_filename))
+    if (extractsf_handle_args_err(extractsf_handle_args(argc, argv, &use_fmt, &nevn, &in_filename,
+            &run_no), &in_filename))
         return 1;
-    return extractsf_err(run(in_filename, use_fmt, nevn), &in_filename);
+    return extractsf_err(run(in_filename, use_fmt, nevn, run_no), &in_filename);
 }
