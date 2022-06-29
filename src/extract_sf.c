@@ -49,7 +49,8 @@ int run(char *in_filename, bool use_fmt, int nevn) {
             oss_h << cal << si+1 << ")";
             sf2D_name_arr[ci][si] = (char *) malloc(strlen(oss_h.str().c_str())+1);
             strncpy(sf2D_name_arr[ci][si], oss_h.str().c_str(), strlen(oss_h.str().c_str()));
-            insert_TH2F(&histos, R_PALL, sf2D_name_arr[ci][si], S_P, S_EDIVP, 200, 0, 10, 200, 0, 0.4);
+            insert_TH2F(&histos, R_PALL, sf2D_name_arr[ci][si], S_P, S_EDIVP,
+                        200, 0, 10, 200, 0, 0.4);
             sf_dotgraph_top[ci][si] = new TGraphErrors();
             sf_dotgraph_top[ci][si]->SetMarkerStyle(kFullCircle);
             sf_dotgraph_top[ci][si]->SetMarkerColor(kRed);
@@ -67,8 +68,9 @@ int run(char *in_filename, bool use_fmt, int nevn) {
             strncpy(sf2Dfit_name_arr[ci][si][1], oss_f2.str().c_str(), strlen(oss_f2.str().c_str()));
             for (int i = 0; i < 2; ++i) {
                 sf_polyfit[ci][si][i] = new TF1(sf2Dfit_name_arr[ci][si][i],
-                        "[0]+[1]*x+[2]*x*x+[3]*x*x*x", SF_PMIN+SF_PSTEP, SF_PMAX-SF_PSTEP);
-                sf_polyfit[ci][si][i]->SetParameter(0 /* p0 */, 0);
+                        "[0]*([1]+[2]/x + [3]/(x*x))", SF_PMIN+SF_PSTEP, SF_PMAX-SF_PSTEP);
+                        // "[0]+[1]*x+[2]*x*x+[3]*x*x*x", SF_PMIN+SF_PSTEP, SF_PMAX-SF_PSTEP);
+                sf_polyfit[ci][si][i]->SetParameter(0 /* p0 */, 1);
                 sf_polyfit[ci][si][i]->SetParameter(1 /* p1 */, 0);
                 sf_polyfit[ci][si][i]->SetParameter(2 /* p2 */, 0);
                 sf_polyfit[ci][si][i]->SetParameter(3 /* p3 */, 0);
@@ -248,7 +250,7 @@ int run(char *in_filename, bool use_fmt, int nevn) {
                 sf_dotgraph_top[ci][si]->Fit(sf_polyfit[ci][si][1], "QR", "",
                                              SF_PMIN+SF_PSTEP, SF_PMAX-SF_PSTEP);
 
-            // TODO. Extract and save dotgraph fits parameters to make cuts from them.
+            // Extract and save dotgraph fits parameters to make cuts from them.
             for (int bi = 0; bi < 2; ++bi) {
                 for (int pi = 0; pi < sf_polyfit[ci][si][bi]->GetNpar(); ++pi) {
                     sf_fitresults[ci][si][bi][pi] = sf_polyfit[ci][si][bi]->GetParameter(pi);
@@ -287,6 +289,7 @@ int run(char *in_filename, bool use_fmt, int nevn) {
         }
     }
 
+    // Write results to file.
     FILE *t_out = fopen("../data/sf_results", "w");
 
     if (t_out == NULL) return 4;
@@ -301,6 +304,7 @@ int run(char *in_filename, bool use_fmt, int nevn) {
         }
     }
 
+    fclose(t_out);
     f_in ->Close();
     f_out->Close();
     free(in_filename);
