@@ -43,12 +43,14 @@ int run(char * in_filename, bool use_fmt, bool debug, int nevn, int run_no, doub
     int divcntr     = 0;
     int evnsplitter = 0;
 
+    // Iterate through input file. Each TTree entry is one event.
+    printf("Reading %lld events from %s.\n", nevn == -1 ? t_in->GetEntries() : nevn, in_filename);
+
     // TODO. TEMPORARY CODE.
+    printf("tpid  | apid  | rpid\n");
     int good_pids = 0;
     int bad_pids  = 0;
 
-    // Iterate through input file. Each TTree entry is one event.
-    printf("Reading %lld events from %s.\n", nevn == -1 ? t_in->GetEntries() : nevn, in_filename);
     for (int evn = 0; (evn < t_in->GetEntries()) && (nevn == -1 || evn < nevn); ++evn) {
         if (!debug && evn >= evnsplitter) {
             if (evn != 0) {
@@ -133,13 +135,13 @@ int run(char * in_filename, bool use_fmt, bool debug, int nevn, int run_no, doub
             double ndf  = rtrk.ndf    ->at(pos);
 
             // Assign PID.
-            set_pid(&p, status, tot_E, pcal_E, htcc_nphe, ltcc_nphe);
+            int timing_pid = set_pid(&p, status, tot_E, pcal_E, htcc_nphe, ltcc_nphe);
 
             // TODO. TEMPORARY CODE.
             if (p.pid == rpart.pid->at(pindex)) ++good_pids;
             else {
                 ++bad_pids;
-                printf("pid: %5d : %5d\n", p.pid, rpart.pid->at(pindex));
+                printf("%5d | %5d | %5d\n", timing_pid, p.pid, rpart.pid->at(pindex));
             }
 
             // Fill TNtuples. TODO. This probably should be implemented more elegantly.

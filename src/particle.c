@@ -97,7 +97,8 @@ int set_pid(particle * p, int status, double tot_E, double pcal_E, int htcc_nphe
     // Define mass from PID.
     p->mass = MASS.at(abs(p->pid));
 
-    return 0;
+    return timing_pid;
+    // return 0;
 }
 
 // Check if a particle satisfies all requirements to be considered an electron or positron.
@@ -116,21 +117,20 @@ bool is_electron(double tot_E, double pcal_E, double htcc_nphe) {
 int best_pid_from_timing(int charge, double tot_E, double p, double beta, int pid_list[],
                          int pid_list_size) {
     if (charge == 0) return beta < NEUTRON_MAXBETA ? 2212 : (tot_E > 1e-9 ? 22 : 0);
-    else {
-        // Compare momentum-computed beta with tof-computed beta.
-        int min_pid = 0;
-        double min_diff = DBL_MAX;
-        for (int pi = 0; pi < pid_list_size; ++pi) {
-            double mass = MASS.at(abs(pid_list[pi]));
-            double p_beta = p/(sqrt(mass*mass * SPEEDOFLIGHT*SPEEDOFLIGHT + p*p));
-            double diff = abs(p_beta - beta);
-            if (diff < min_diff) {
-                min_pid  = pid_list[pi];
-                min_diff = diff;
-            }
+    // else, compare momentum-computed beta with tof-computed beta.
+    int min_pid = 0;
+    double min_diff = DBL_MAX;
+    for (int pi = 0; pi < pid_list_size; ++pi) {
+        if (pid_list[pi] == 45 || pid_list[pi] == 0) continue;
+        double mass = MASS.at(abs(pid_list[pi]));
+        double p_beta = p/(sqrt(mass*mass + p*p));
+        double diff = abs(p_beta - beta);
+        if (diff < min_diff) {
+            min_pid  = pid_list[pi];
+            min_diff = diff;
         }
-        return min_pid;
     }
+    return min_pid;
 }
 
 // Match PID hypothesis with available checks.
