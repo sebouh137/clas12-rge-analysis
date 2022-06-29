@@ -96,7 +96,7 @@ int handle_root_filename_simul(char * input_file, int* run_no, double * beam_ene
     int chk = check_root_filename(input_file);
     if (chk) return chk;
 
-    // Get run number and beam energy from filename.
+    // Beam energy of simulation is fixed here!
     *beam_energy = 11.;
     return 0;
 }

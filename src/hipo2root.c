@@ -29,8 +29,7 @@ int main(int argc, char **argv) {
         
     if(use_simul==false){
         // Data process
-        printf("Data type!\n");
-        
+
         out_filename = (char *) malloc(22 * sizeof(char));
         if      (run_no /     10 == 0) sprintf(out_filename, "../root_io/00000%d.root", run_no);
         else if (run_no /    100 == 0) sprintf(out_filename, "../root_io/0000%d.root", run_no);
@@ -40,7 +39,6 @@ int main(int argc, char **argv) {
         else                           sprintf(out_filename, "../root_io/%d.root", run_no);
     } else{
         // Simul process
-        printf("Simul type!\n");
         
         // Creates file in current folder
         out_filename = (char *) malloc(5 + strlen(argv[argc - 1]) + 1);        
