@@ -1,10 +1,11 @@
 #include "../lib/err_handler.h"
 
 int make_ntuples_usage() {
-    fprintf(stderr, "Usage: make_ntuples [-fd] [-n NEVENTS] file\n");
+    fprintf(stderr, "Usage: make_ntuples [-fd] [-n NEVENTS] [-s] file\n");
     fprintf(stderr, " * -f: Use FMT data. If unspecified, program will only use DC data.\n");
     fprintf(stderr, " * -d: Activate debug mode. Only use when programming new features.\n");
     fprintf(stderr, " * -n NEVENTS: Specify number of events to be processed with optarg.\n");
+    fprintf(stderr, " * -s: This option is to specify the use of simulations instead of data.\n");
     fprintf(stderr, " * file: ROOT file to be processed. Expected file format is: `run_no.root`.\n");
     return 1;
 }
