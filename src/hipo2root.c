@@ -27,7 +27,7 @@ int main(int argc, char **argv) {
                                       &in_filename))
             return 1;
         
-    if(use_simul==false){
+    if(!use_simul){
         // Data process
         out_filename = (char *) malloc(22 * sizeof(char));
         if      (run_no /     10 == 0) sprintf(out_filename, "../root_io/00000%d.root", run_no);
