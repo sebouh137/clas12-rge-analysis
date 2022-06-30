@@ -172,19 +172,20 @@ extern const char * DIS_LIST[DIS_LIST_SIZE];
 // #define PHOTONPHI   "virtual photon #phi (lab frame #degree)"
 
 // Sampling fraction constants.
+#define S_EDIVP    "E/Vp"
+#define PCAL_IDX   0   // PCAL idx in Sampling fraction arrays.
+#define ECIN_IDX   1   // ECIN idx in Sampling fraction arrays.
+#define ECOU_IDX   2   // ECOU idx in Sampling fraction arrays.
+#define CALS_IDX   3   // CALs idx in Sampling fraction arrays.
+#define SF_PMIN    1.0 // GeV
+#define SF_PMAX    9.0 // GeV
+#define SF_PSTEP   0.4 // GeV
+#define SF_NPARAMS 4
+#define SF_CHI2CONFORMITY 2 // NOTE. This is a source of systematic error!
 extern const char * CALNAME[4]; // Calorimeters names.
 extern const char * SFARR2D[4]; // Sampling Fraction (SF) 2D arr names.
 extern const char * SFARR1D[4]; // SF 1D arr names.
-extern const double PLIMITSARR[4][2]; // Momentum limits for 1D SF fits.
-#define S_EDIVP   "E/Vp"
-#define PCAL_IDX  0 // PCAL idx in Sampling fraction arrays.
-#define ECIN_IDX  1 // ECIN idx in Sampling fraction arrays.
-#define ECOU_IDX  2 // ECOU idx in Sampling fraction arrays.
-#define CALS_IDX  3 // CALs idx in Sampling fraction arrays.
-#define SF_PMIN   1.0 // GeV
-#define SF_PMAX   9.0 // GeV
-#define SF_PSTEP  0.4 // GeV
-#define SF_CHI2CONFORMITY 2 // NOTE. This is a source of systematic error!
+extern const double PLIMITSARR[SF_NPARAMS][2]; // Momentum limits for 1D SF fits.
 
 // Run constants (TODO. these should be in a map or taken from clas12mon.)
 #define BE11983 10.3894 //  50 nA.
@@ -212,6 +213,7 @@ extern const double PLIMITSARR[4][2]; // Momentum limits for 1D SF fits.
 #define HTCC_NPHE_CUT   2     // # of HTCC photoelectrons required to consider particle passed HTCC.
 #define LTCC_NPHE_CUT   2     // # of LTCC photoelectrons required to consider particle passed LTCC.
 #define MIN_PCAL_ENERGY 0.060 // Min energy deposited in PCAL to assign pid = 11.
+#define E_SF_NSIGMA     5.0   // Max ECAL sampling fraction sigma to assign pid = 11.
 #define NEUTRON_MAXBETA 0.9   // Max beta allowed to assign pid == 2212.
 #define HTCC_PION_THRESHOLD 4.9 // Momentum required to consider particle crossing HTCC as pion.
 #define LTCC_PION_THRESHOLD 3.0 // Momentum required to consider particle crossing LTCC as pion.

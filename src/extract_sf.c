@@ -37,7 +37,7 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no) {
     TGraphErrors *sf_dotgraph[ncals][NSECTORS];
     char *sf2Dfit_name_arr[ncals][NSECTORS];
     TF1 *sf_polyfit[ncals][NSECTORS];
-    double sf_fitresults[ncals][NSECTORS][4][2];
+    double sf_fitresults[ncals][NSECTORS][SF_NPARAMS][2];
 
     int ci = -1;
     for (const char *cal : SFARR2D) {
@@ -277,9 +277,12 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no) {
 
     if (t_out == NULL) return 4;
     for (int ci = 3; ci < 4; ++ci) { // NOTE. Only writing ECAL sf results.
-        for (int si = 0; si < 6; ++si) {
-            for (int pi = 0; pi < 4; ++pi) fprintf(t_out, "%11.8f ", sf_fitresults[ci][si][pi][0]);
-            for (int pi = 0; pi < 4; ++pi) fprintf(t_out, "%11.8f ", sf_fitresults[ci][si][pi][1]);
+        for (int si = 0; si < NSECTORS; ++si) {
+            for (int ppi = 0; ppi < 2; ++ppi) { // sf and sfs.
+                for (int pi = 0; pi < SF_NPARAMS; ++pi) {
+                    fprintf(t_out, "%011.8f ", sf_fitresults[ci][si][pi][0]);
+                }
+            }
             fprintf(t_out, "\n");
         }
     }

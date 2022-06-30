@@ -37,6 +37,10 @@ int make_ntuples_handle_args_err(int errcode, char ** in_filename, int run_no) {
         case 7:
             fprintf(stderr, "Error. No file name provided.\n");
             return make_ntuples_usage();
+        case 8:
+            fprintf(stderr, "Error. No sampling fraction available for input file! Run ");
+            fprintf(stderr, "extract_sf before generating the ntuples.\n");
+            free(* in_filename);
         default:
             fprintf(stderr, "Programmer Error. Error code %d not implemented in ", errcode);
             fprintf(stderr, "make_ntuples_handle_args()! You're on your own.\n");
