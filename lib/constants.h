@@ -185,12 +185,16 @@ extern const double PLIMITSARR[SF_NPARAMS][2]; // Momentum limits for 1D SF fits
 #define BE12439  2.1864 //  15 nA.
 
 // Detector constants.
-#define NSECTORS 6  // # of CLAS12 sectors.
-#define PCAL_LYR 1  // PCAL's layer id.
-#define ECIN_LYR 4  // EC inner layer id.
-#define ECOU_LYR 7  // EC outer layer id.
-#define HTCC_ID  15 // HTCC detector id.
-#define LTCC_ID  16 // LTCC detector id.
+#define NSECTORS    6 // # of CLAS12 sectors.
+#define FTOF_ID    12 // FTOF detector id.
+#define HTCC_ID    15 // HTCC detector id.
+#define LTCC_ID    16 // LTCC detector id.
+#define FTOF1A_LYR  1 // FTOF1A layer id.
+#define FTOF1B_LYR  2 // FTOF1B layer id.
+#define FTOF2_LYR   3 // FTOF2 layer id.
+#define PCAL_LYR    1 // PCAL's layer id.
+#define ECIN_LYR    4 // EC inner layer id.
+#define ECOU_LYR    7 // EC outer layer id.
 
 // General Cuts.
 #define FMTNLYRSCUT   3 // # of FMT layers required to accept track.

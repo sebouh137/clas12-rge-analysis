@@ -99,20 +99,18 @@ int run(char * in_filename, bool use_fmt, bool debug, int nevn, int run_no, doub
                                  : particle_init(&rpart, &rtrk, pos);
             if (!p.is_valid) continue;
 
-            // Get calorimeters data.
+            // Get deposited energy.
             double pcal_E = 0; // PCAL total deposited energy.
             double ecin_E = 0; // EC inner total deposited energy.
             double ecou_E = 0; // EC outer total deposited energy.
             for (UInt_t i = 0; i < rcal.pindex->size(); ++i) {
-                if (rcal.pindex->at(i) == pindex) {
-                    int lyr = (int) rcal.layer->at(i);
-                    // TODO. Add correction via sampling fraction.
+                if (rcal.pindex->at(i) != pindex) continue;
+                int lyr = (int) rcal.layer->at(i);
 
-                    if      (lyr == PCAL_LYR) pcal_E += rcal.energy->at(i);
-                    else if (lyr == ECIN_LYR) ecin_E += rcal.energy->at(i);
-                    else if (lyr == ECOU_LYR) ecou_E += rcal.energy->at(i);
-                    else return 2;
-                }
+                if      (lyr == PCAL_LYR) pcal_E += rcal.energy->at(i);
+                else if (lyr == ECIN_LYR) ecin_E += rcal.energy->at(i);
+                else if (lyr == ECOU_LYR) ecou_E += rcal.energy->at(i);
+                else return 2;
             }
             double tot_E = pcal_E + ecin_E + ecou_E;
 
@@ -128,10 +126,48 @@ int run(char * in_filename, bool use_fmt, bool debug, int nevn, int run_no, doub
                 }
             }
 
-            // Get scintillators data.
-            double tof = INFINITY;
-            for (UInt_t i = 0; i < rsci.pindex->size(); ++i)
-                if (rsci.pindex->at(i) == pindex && rsci.time->at(i) < tof) tof = rsci.time->at(i);
+            // Find most precise TOF.
+            int    most_precise_lyr = 0; // FTOF layers: 2,1,3, ECAL layers: 11, 14, 17.
+            double tof              = INFINITY; // Capture most precise TOF.
+            for (UInt_t i = 0; i < rsci.pindex->size(); ++i) {
+                // Filter out incorrect pindex and hits not from FTOF.
+                if (rsci.pindex->at(i) != pindex || rsci.detector->at(i) != FTOF_ID) continue;
+                if (rsci.layer->at(i) == FTOF1B_LYR) {
+                    most_precise_lyr = FTOF1B_LYR;
+                    tof = rsci.time->at(i);
+                    break; // Things won't get better than this.
+                }
+                else if (rsci.layer->at(i) == FTOF1A_LYR) {
+                    if (most_precise_lyr == FTOF1A_LYR) continue;
+                    most_precise_lyr = FTOF1A_LYR;
+                    tof = rsci.time->at(i);
+                }
+                else if (rsci.layer->at(i) == FTOF2_LYR) {
+                    if (most_precise_lyr != 0) continue; // We already have a similar or better hit.
+                    most_precise_lyr = FTOF2_LYR;
+                    tof = rsci.time->at(i);
+                }
+            }
+            if (most_precise_lyr == 0) { // No hits from FTOF, let's try ECAL.
+                for (UInt_t i = 0; i < rcal.pindex->size(); ++i) {
+                    if (rcal.pindex->at(i) != pindex) continue; // Filter out incorrect pindex.
+                    if (rcal.layer->at(i) == PCAL_LYR) {
+                        most_precise_lyr = 10 + PCAL_LYR;
+                        tof = rcal.time->at(i);
+                        break; // Things won't get better than this.
+                    }
+                    else if (rcal.layer->at(i) == ECIN_LYR) {
+                        if (most_precise_lyr == 10 + ECIN_LYR) continue;
+                        most_precise_lyr = 10 + ECIN_LYR;
+                        tof = rcal.time->at(i);
+                    }
+                    else if (rcal.layer->at(i) == ECOU_LYR) {
+                        if (most_precise_lyr != 0) continue;
+                        most_precise_lyr = 10 + ECOU_LYR;
+                        tof = rcal.time->at(i);
+                    }
+                }
+            }
 
             // Get miscellaneous data.
             int status  = rpart.status->at(pindex);

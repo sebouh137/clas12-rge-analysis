@@ -129,7 +129,7 @@ int best_pid_from_momentum(double p, double beta, int pid_list[], int pid_list_s
     int min_pid = 0;
     double min_diff = DBL_MAX;
     for (int pi = 0; pi < pid_list_size; ++pi) {
-        if (pid_list[pi] == 45 || pid_list[pi] == 0) continue;
+        if (abs(pid_list[pi]) == 45 || pid_list[pi] == 0 || abs(pid_list[pi]) == 11) continue;
         double mass = MASS.at(abs(pid_list[pi]));
         double p_beta = p/(sqrt(mass*mass + p*p));
         double diff = abs(p_beta - beta);
@@ -139,6 +139,37 @@ int best_pid_from_momentum(double p, double beta, int pid_list[], int pid_list_s
         }
     }
     return min_pid;
+}
+
+int best_pid_from_timing(int pid_list[], int pid_list_size) {
+    int min_pid = 0;
+    double min_diff = DBL_MAX;
+    bool chk = false;
+    for (int pi = 0; pi < pid_list_size; ++pi) {
+        if (abs(pid_list[pi]) == 11) continue;
+
+    }
+
+    return min_pid;
+
+    // // recon code:
+    // for (int ii=0; ii<hypotheses.length; ii++) {
+    //     for (Entry<DetectorType,List<Integer>> bd : chargedBetaDetectors.entrySet()) {
+    //         for (Integer layer : bd.getValue()) {
+    //             if (p.hasHit(bd.getKey(),layer)==true) {
+    //                 dt = p.getVertexTime(bd.getKey(),layer,hypotheses[ii])-p.getStartTime();
+    //                 found=true;
+    //                 break;
+    //             }
+    //         }
+    //         if (found) break;
+    //     }
+    //     if ( abs(dt) < minTimeDiff ) {
+    //         minTimeDiff=abs(dt);
+    //         bestPid=hypotheses[ii];
+    //     }
+    // }
+    // return bestPid;
 }
 
 // Match PID hypothesis with available checks.

@@ -173,22 +173,26 @@ REC_Calorimeter::REC_Calorimeter() {
     layer  = {};
     sector = {};
     energy = {};
+    time   = {};
 }
 REC_Calorimeter::REC_Calorimeter(TTree *t) {
     pindex = nullptr; b_pindex = nullptr;
     layer  = nullptr; b_layer  = nullptr;
     sector = nullptr; b_sector = nullptr;
     energy = nullptr; b_energy = nullptr;
+    time   = nullptr; b_time   = nullptr;
     t->SetBranchAddress("REC::Calorimeter::pindex", &pindex, &b_pindex);
     t->SetBranchAddress("REC::Calorimeter::layer",  &layer,  &b_layer);
     t->SetBranchAddress("REC::Calorimeter::sector", &sector, &b_sector);
     t->SetBranchAddress("REC::Calorimeter::energy", &energy, &b_energy);
+    t->SetBranchAddress("REC::Calorimeter::time",   &time,   &b_time);
 }
 int REC_Calorimeter::link_branches(TTree *t) {
     t->Branch("REC::Calorimeter::pindex", &pindex);
     t->Branch("REC::Calorimeter::layer",  &layer);
     t->Branch("REC::Calorimeter::sector", &sector);
     t->Branch("REC::Calorimeter::energy", &energy);
+    t->Branch("REC::Calorimeter::time",   &time);
     return 0;
 }
 int REC_Calorimeter::set_nrows(int in_nrows) {
@@ -197,6 +201,7 @@ int REC_Calorimeter::set_nrows(int in_nrows) {
     layer ->resize(nrows);
     sector->resize(nrows);
     energy->resize(nrows);
+    time  ->resize(nrows);
     return 0;
 }
 int REC_Calorimeter::get_nrows() {return nrows;}
@@ -207,6 +212,7 @@ int REC_Calorimeter::fill(hipo::bank b) {
         layer ->at(row) = (int8_t)  b.getByte ("layer",  row);
         sector->at(row) = (int8_t)  b.getByte ("sector", row);
         energy->at(row) = b.getFloat("energy", row);
+        time  ->at(row) = b.getFloat("time", row);
     }
     return 0;
 }
@@ -215,6 +221,7 @@ int REC_Calorimeter::get_entries(TTree *t, int idx) {
     b_layer ->GetEntry(t->LoadTree(idx));
     b_sector->GetEntry(t->LoadTree(idx));
     b_energy->GetEntry(t->LoadTree(idx));
+    b_time  ->GetEntry(t->LoadTree(idx));
     return 0;
 }
 

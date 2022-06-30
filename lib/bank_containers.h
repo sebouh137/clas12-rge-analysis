@@ -58,6 +58,7 @@ public:
     std::vector<Char_t>  *layer;  TBranch *b_layer;
     std::vector<Char_t>  *sector; TBranch *b_sector;
     std::vector<Float_t> *energy; TBranch *b_energy;
+    std::vector<Float_t> *time;   TBranch *b_time;
     REC_Calorimeter();
     REC_Calorimeter(TTree *t);
     int get_nrows();
