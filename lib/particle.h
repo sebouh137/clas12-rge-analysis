@@ -37,8 +37,10 @@ particle particle_init(REC_Particle * rp, REC_Track * rt, int pos);
 particle particle_init(REC_Particle * rp, REC_Track * rt, FMT_Tracks * ft, int pos);
 particle particle_init(int charge, double beta, int sector,
                        double vx, double vy, double vz, double px, double py, double pz);
-int set_pid(particle * p, int status, double tot_E, double pcal_E, int htcc_nphe, int ltcc_nphe);
-bool is_electron(double tot_E, double pcal_E, double htcc_nphe);
+int set_pid(particle * p, int status, double tot_E, double pcal_E, int htcc_nphe, int ltcc_nphe,
+            double sf_params[SF_NPARAMS][2]);
+bool is_electron(double tot_E, double pcal_E, double htcc_nphe, double p,
+                 double pars[SF_NPARAMS][2]);
 int best_pid_from_timing(int charge, double tot_E, double p, double beta, int pid_list[],
                          int pid_list_size);
 int match_pid(int hyp, int q, bool e, bool tpid, bool htcc_s, bool ltcc_s, bool htcc_p,

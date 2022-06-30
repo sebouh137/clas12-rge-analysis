@@ -60,7 +60,8 @@ particle particle_init(int charge, double beta, int sector,
 }
 
 // Set PID from all available information. This function mimics PIDMatch from the EB engine.
-int set_pid(particle * p, int status, double tot_E, double pcal_E, int htcc_nphe, int ltcc_nphe) {
+int set_pid(particle * p, int status, double tot_E, double pcal_E, int htcc_nphe, int ltcc_nphe,
+            double sf_params[SF_NPARAMS][2]) {
     // Create PID list.
     int pid_list_size;
     if      (p->q >  0) pid_list_size = PID_POSITIVE_SIZE;
@@ -73,7 +74,7 @@ int set_pid(particle * p, int status, double tot_E, double pcal_E, int htcc_nphe
     for (int pi = 0; p->q <  0 && pi < pid_list_size; ++pi) pid_list[pi] = PID_NEGATIVE[pi];
 
     // Perform checks.
-    bool e_check = is_electron(tot_E, pcal_E, htcc_nphe);
+    bool e_check = is_electron(tot_E, pcal_E, htcc_nphe, P(*p), sf_params);
 
     int timing_pid = best_pid_from_timing(p->q, tot_E, P(*p), p->beta, pid_list, pid_list_size);
 
@@ -82,7 +83,7 @@ int set_pid(particle * p, int status, double tot_E, double pcal_E, int htcc_nphe
 
     bool htcc_pion_threshold = P(*p) > HTCC_PION_THRESHOLD;
     bool ltcc_pion_threshold = P(*p) > LTCC_PION_THRESHOLD;
-    // bool ltcc_kaon_threshold = P(*p) > LTCC_KAON_THRESHOLD;
+    // bool ltcc_kaon_threshold = P(*p) > LTCC_KAON_THRESHOLD; // NOTE. Unused in recon...
 
     // Match PID.
     for (int pi = 0; p->pid == 0 && pi < pid_list_size; ++pi) {
@@ -102,14 +103,17 @@ int set_pid(particle * p, int status, double tot_E, double pcal_E, int htcc_nphe
 }
 
 // Check if a particle satisfies all requirements to be considered an electron or positron.
-bool is_electron(double tot_E, double pcal_E, double htcc_nphe) {
-    if (tot_E < 1e-9) return false; // Require ECAL.
-    if (htcc_nphe < HTCC_NPHE_CUT) return false;
-    // TODO. Require ECAL Sampling fraction. Code from CLAS12 reconstruction:
-    // final double sfNSigma = SamplingFractions.getNSigma(11,p,ccdb);
-    // final double nSigmaCut = ccdb.getSectorDouble(EBCCDBEnum.ELEC_SF_nsigma,sector);
-    // if (abs(sfNSigma) > nSigmaCut) return false;
-    if (pcal_E < MIN_PCAL_ENERGY) return false;
+bool is_electron(double tot_E, double pcal_E, double htcc_nphe, double p,
+                 double pars[SF_NPARAMS][2]) {
+    if (tot_E < 1e-9) return false;              // Require ECAL.
+    if (htcc_nphe < HTCC_NPHE_CUT) return false; // Require HTCC photoelectrons.
+    if (pcal_E < MIN_PCAL_ENERGY) return false;  // Require PCAL.
+
+    // Require ECAL sampling fraction.
+    if (p < 1e-9) return false; // Momentum must be greater than 0.
+    double mean  = pars[0][0]*(pars[1][0] + pars[2][0]/tot_E + pars[3][0]/(tot_E*tot_E));
+    double sigma = pars[0][1]*(pars[1][1] + pars[2][1]/tot_E + pars[3][1]/(tot_E*tot_E));
+    if (abs((tot_E/p - mean)/sigma) > E_SF_NSIGMA) return false; // Check sampling fraction n_sigma.
 
     return true;
 }

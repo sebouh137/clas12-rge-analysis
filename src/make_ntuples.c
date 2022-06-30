@@ -17,6 +17,10 @@
 
 // TODO. Make this program write using both dc and fmt data.
 int run(char * in_filename, bool use_fmt, bool debug, int nevn, int run_no, double beam_E) {
+    // Extract sampling fraction parameters.
+    double sf_params[NSECTORS][SF_NPARAMS][2];
+    if (get_sf_params(Form("../data/sf_params_%06d.root", run_no), sf_params)) return 8;
+
     // Access input file. TODO. Make this input file*s*, as in multiple files.
     TFile *f_in  = TFile::Open(in_filename, "READ");
     TFile *f_out = TFile::Open("../root_io/ntuples.root", "RECREATE"); // NOTE. This path sucks.
@@ -135,7 +139,8 @@ int run(char * in_filename, bool use_fmt, bool debug, int nevn, int run_no, doub
             double ndf  = rtrk.ndf    ->at(pos);
 
             // Assign PID.
-            int timing_pid = set_pid(&p, status, tot_E, pcal_E, htcc_nphe, ltcc_nphe);
+            int timing_pid = set_pid(&p, status, tot_E, pcal_E, htcc_nphe, ltcc_nphe,
+                                     sf_params[rtrk.sector->at(pos)]);
 
             // TODO. TEMPORARY CODE.
             if (p.pid == rpart.pid->at(pindex)) ++good_pids;
