@@ -76,7 +76,7 @@ int set_pid(particle * p, int status, double tot_E, double pcal_E, int htcc_nphe
     // Perform checks.
     bool e_check = is_electron(tot_E, pcal_E, htcc_nphe, P(*p), sf_params);
 
-    int timing_pid = best_pid_from_timing(p->q, tot_E, P(*p), p->beta, pid_list, pid_list_size);
+    int timing_pid = best_pid_from_momentum(p->q, tot_E, P(*p), p->beta, pid_list, pid_list_size);
 
     bool htcc_signal_check = htcc_nphe > HTCC_NPHE_CUT;
     bool ltcc_signal_check = ltcc_nphe > LTCC_NPHE_CUT;
@@ -105,21 +105,21 @@ int set_pid(particle * p, int status, double tot_E, double pcal_E, int htcc_nphe
 // Check if a particle satisfies all requirements to be considered an electron or positron.
 bool is_electron(double tot_E, double pcal_E, double htcc_nphe, double p,
                  double pars[SF_NPARAMS][2]) {
-    if (tot_E < 1e-9) return false;              // Require ECAL.
+    if (tot_E < 1e-9)              return false; // Require ECAL.
+    if (p < 1e-9)                  return false; // Momentum must be greater than 0.
     if (htcc_nphe < HTCC_NPHE_CUT) return false; // Require HTCC photoelectrons.
-    if (pcal_E < MIN_PCAL_ENERGY) return false;  // Require PCAL.
+    if (pcal_E < MIN_PCAL_ENERGY)  return false; // Require PCAL.
 
-    // Require ECAL sampling fraction.
-    if (p < 1e-9) return false; // Momentum must be greater than 0.
+    // Require ECAL sampling fraction to be below threshold.
     double mean  = pars[0][0]*(pars[1][0] + pars[2][0]/tot_E + pars[3][0]/(tot_E*tot_E));
     double sigma = pars[0][1]*(pars[1][1] + pars[2][1]/tot_E + pars[3][1]/(tot_E*tot_E));
-    if (abs((tot_E/p - mean)/sigma) > E_SF_NSIGMA) return false; // Check sampling fraction n_sigma.
+    if (abs((tot_E/p - mean)/sigma) > E_SF_NSIGMA) return false;
 
     return true;
 }
 
-int best_pid_from_timing(int charge, double tot_E, double p, double beta, int pid_list[],
-                         int pid_list_size) {
+int best_pid_from_momentum(int charge, double tot_E, double p, double beta, int pid_list[],
+                           int pid_list_size) {
     if (charge == 0) return beta < NEUTRON_MAXBETA ? 2212 : (tot_E > 1e-9 ? 22 : 0);
     // else, compare momentum-computed beta with tof-computed beta.
     int min_pid = 0;

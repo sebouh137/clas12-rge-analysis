@@ -41,8 +41,8 @@ int set_pid(particle * p, int status, double tot_E, double pcal_E, int htcc_nphe
             double sf_params[SF_NPARAMS][2]);
 bool is_electron(double tot_E, double pcal_E, double htcc_nphe, double p,
                  double pars[SF_NPARAMS][2]);
-int best_pid_from_timing(int charge, double tot_E, double p, double beta, int pid_list[],
-                         int pid_list_size);
+int best_pid_from_momentum(int charge, double tot_E, double p, double beta, int pid_list[],
+                           int pid_list_size);
 int match_pid(int hyp, int q, bool e, bool tpid, bool htcc_s, bool ltcc_s, bool htcc_p,
               bool ltcc_p);
 double d_from_beamline(particle p);
