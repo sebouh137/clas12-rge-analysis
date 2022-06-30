@@ -172,11 +172,14 @@ double phi_pq(particle p, particle e, double bE) {
     double gpx = -e.px, gpy = -e.py, gpz = bE-e.pz;
     double ppx = p.px,  ppy = p.py,  ppz = p.pz;
 
-    double phi_z = M_PI - phi_lab(p);
+    // Analyser uses gp isntead of p, i.e., the momentum of virtual photon
+    double phi_z = M_PI - atan2(gpy, gpx);//phi_lab(p);
+
     rotate_z(&gpx, &gpy, phi_z);
     rotate_z(&ppx, &ppy, phi_z);
 
     double phi_y = calc_angle(gpx, gpy, gpz, 0, 0, 1);
+    
     rotate_y(&ppx, &ppz, phi_y);
 
     return atan2(ppy, ppx);
