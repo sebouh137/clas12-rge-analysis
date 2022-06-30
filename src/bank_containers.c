@@ -219,39 +219,53 @@ int REC_Calorimeter::get_entries(TTree *t, int idx) {
 }
 
 REC_Scintillator::REC_Scintillator() {
-    nrows  = 0;
-    pindex = {};
-    time   = {};
+    nrows    = 0;
+    pindex   = {};
+    time     = {};
+    detector = {};
+    layer    = {};
 }
 REC_Scintillator::REC_Scintillator(TTree *t) {
-    pindex = nullptr; b_pindex = nullptr;
-    time   = nullptr; b_time   = nullptr;
-    t->SetBranchAddress("REC::Scintillator::pindex", &pindex, &b_pindex);
-    t->SetBranchAddress("REC::Scintillator::time",   &time,   &b_time);
+    pindex   = nullptr; b_pindex   = nullptr;
+    time     = nullptr; b_time     = nullptr;
+    detector = nullptr; b_detector = nullptr;
+    layer    = nullptr; b_layer    = nullptr;
+    t->SetBranchAddress("REC::Scintillator::pindex",   &pindex,   &b_pindex);
+    t->SetBranchAddress("REC::Scintillator::time",     &time,     &b_time);
+    t->SetBranchAddress("REC::Scintillator::detector", &detector, &b_detector);
+    t->SetBranchAddress("REC::Scintillator::layer",    &layer,    &b_layer);
 }
 int REC_Scintillator::link_branches(TTree *t) {
-    t->Branch("REC::Scintillator::pindex", &pindex);
-    t->Branch("REC::Scintillator::time",   &time);
+    t->Branch("REC::Scintillator::pindex",   &pindex);
+    t->Branch("REC::Scintillator::time",     &time);
+    t->Branch("REC::Scintillator::detector", &detector);
+    t->Branch("REC::Scintillator::layer",    &layer);
     return 0;
 }
 int REC_Scintillator::set_nrows(int in_nrows) {
     nrows = in_nrows;
-    pindex->resize(nrows);
-    time  ->resize(nrows);
+    pindex  ->resize(nrows);
+    time    ->resize(nrows);
+    detector->resize(nrows);
+    layer   ->resize(nrows);
     return 0;
 }
 int REC_Scintillator::get_nrows() {return nrows;}
 int REC_Scintillator::fill(hipo::bank b) {
     set_nrows(b.getRows());
     for (int row = 0; row < nrows; ++row) {
-        pindex->at(row) = (int16_t) b.getShort("pindex", row);
-        time  ->at(row) = b.getFloat("time", row);
+        pindex  ->at(row) = (int16_t) b.getShort("pindex", row);
+        time    ->at(row) = b.getFloat("time", row);
+        detector->at(row) = (int8_t) b.getByte("detector", row);
+        layer   ->at(row) = (int8_t) b.getByte("layer", row);
     }
     return 0;
 }
 int REC_Scintillator::get_entries(TTree *t, int idx) {
-    b_pindex->GetEntry(t->LoadTree(idx));
-    b_time  ->GetEntry(t->LoadTree(idx));
+    b_pindex  ->GetEntry(t->LoadTree(idx));
+    b_time    ->GetEntry(t->LoadTree(idx));
+    b_detector->GetEntry(t->LoadTree(idx));
+    b_layer   ->GetEntry(t->LoadTree(idx));
     return 0;
 }
 
