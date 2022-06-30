@@ -76,7 +76,9 @@ int set_pid(particle * p, int status, double tot_E, double pcal_E, int htcc_nphe
     // Perform checks.
     bool e_check = is_electron(tot_E, pcal_E, htcc_nphe, P(*p), sf_params);
 
-    int timing_pid = best_pid_from_momentum(p->q, tot_E, P(*p), p->beta, pid_list, pid_list_size);
+    int timing_pid = p->q == 0 ?
+            assign_neutral_pid(tot_E, p->beta) :
+            best_pid_from_momentum(P(*p), p->beta, pid_list, pid_list_size);
 
     bool htcc_signal_check = htcc_nphe > HTCC_NPHE_CUT;
     bool ltcc_signal_check = ltcc_nphe > LTCC_NPHE_CUT;
@@ -118,10 +120,12 @@ bool is_electron(double tot_E, double pcal_E, double htcc_nphe, double p,
     return true;
 }
 
-int best_pid_from_momentum(int charge, double tot_E, double p, double beta, int pid_list[],
-                           int pid_list_size) {
-    if (charge == 0) return beta < NEUTRON_MAXBETA ? 2212 : (tot_E > 1e-9 ? 22 : 0);
-    // else, compare momentum-computed beta with tof-computed beta.
+int assign_neutral_pid(double tot_E, double beta) {
+    return beta < NEUTRON_MAXBETA ? 2212 : (tot_E > 1e-9 ? 22 : 0);
+}
+
+// Compare momentum-computed beta with tof-computed beta.
+int best_pid_from_momentum(double p, double beta, int pid_list[], int pid_list_size) {
     int min_pid = 0;
     double min_diff = DBL_MAX;
     for (int pi = 0; pi < pid_list_size; ++pi) {
