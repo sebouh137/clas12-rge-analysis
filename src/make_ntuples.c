@@ -159,7 +159,6 @@ int run(char * in_filename, bool use_fmt, bool debug, int nevn, int run_no, doub
                         (Float_t) phi_lab(p), (Float_t) p.beta,
                 (Float_t) chi2, (Float_t) ndf,
                 (Float_t) pcal_E, (Float_t) ecin_E, (Float_t) ecou_E, (Float_t) tot_E,
-                (Float_t) htcc_nphe, (Float_t) ltcc_nphe,
                 (Float_t) tof,
                 (Float_t) Q2(p, beam_E), (Float_t) nu(p, beam_E), (Float_t) Xb(p, beam_E),
                         (Float_t) W2(p, beam_E)
@@ -182,7 +181,7 @@ int run(char * in_filename, bool use_fmt, bool debug, int nevn, int run_no, doub
     free(in_filename);
 
     // TODO. TEMPORARY CODE.
-    printf("\nGood PIDs : %8d.\nBad PIDs  : %8d.\n\n", good_pids, bad_pids);
+    printf("\nBad PIDs   : %8d.\nTotal PIDs : %8d.\n\n", bad_pids, good_pids+bad_pids);
 
     return 0;
 }
