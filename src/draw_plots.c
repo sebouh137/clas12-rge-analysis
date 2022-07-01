@@ -11,13 +11,8 @@
 #include <TNtuple.h>
 
 #include "../lib/constants.h"
-// #include "../lib/err_handler.h"
-// #include "../lib/file_handler.h"
-// #include "../lib/io_handler.h"
-// #include "../lib/particle.h"
 #include "../lib/utilities.h"
 
-// TODO. Check and fix theoretical curves. -> Ask Raffa.
 // TODO. See why I'm not seeing any neutrals. -> Ask Raffa.
 // TODO. Get simulations from RG-F, understand how they're made to do acceptance correction.
 //           -> Ask Raffa.
@@ -26,8 +21,6 @@
 // TODO. Evaluate **acceptance** in diferent regions.
 // TODO. See simulations with Esteban or get them from RG-F.
 
-// TODO. Add status cut.
-// TODO. Evaluate the most basic cuts and implement the necessary ones.
 // TODO. Check what happens with the acceptance of different particles (like pi+ and pi-) when you
 //       reverse the magnetic fields.
 // TODO. Check if we can run high luminosity with reverse fields.
