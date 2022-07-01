@@ -83,8 +83,8 @@ int run(char * in_filename, bool debug, int nevn, int run_no, double beam_E) {
     // Create TTree and TNTuples.
     TTree   * t_in  = f_in->Get<TTree>("Tree");
     TNtuple * t_out[2];
-    t_out[0] = new TNtuple(S_DCPART,  S_DCPART,  vars);
-    t_out[1] = new TNtuple(S_FMTPART, S_FMTPART, vars);
+    t_out[0] = new TNtuple(S_DC,  S_DC,  vars);
+    t_out[1] = new TNtuple(S_FMT, S_FMT, vars);
 
     // Associate banks to TTree.
     REC_Particle     rpart(t_in);

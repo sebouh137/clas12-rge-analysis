@@ -96,9 +96,8 @@ int find_idx(long dbins, long depth, Float_t var[], long bx[], double rx[][2], d
 }
 
 int run() {
-    // Open IO files.
+    // Open input file.
     TFile * f_in  = TFile::Open("../root_io/ntuples.root", "READ");   // NOTE. This path sucks.
-    TFile * f_out = TFile::Open("../root_io/plots.root", "RECREATE"); // NOTE. This path sucks.
 
     if (!f_in || f_in->IsZombie()) return 1;
 
@@ -107,7 +106,11 @@ int run() {
     // TODO. Prepare corrections (acceptance, radiative, Feynman, etc...).
 
     // === CUT SETUP ===============================================================================
-    // TODO. What particles should be used? All? e-? positive? k+? trigger e-? etc...
+    printf("\nUse DC or FMT data? [");
+    for (int ti = 0; ti < TRK_LIST_SIZE; ++ti) printf("%s, ", TRK_LIST[ti]);
+    printf("\b\b]\n");
+    int trk = catch_string(TRK_LIST, TRK_LIST_SIZE);
+
     printf("\nWhat particle should be plotted? Available cuts:\n[");
     for (int pi = 0; pi < PART_LIST_SIZE; ++pi) printf("%s, ", PART_LIST[pi]);
     printf("\b\b]\n");
@@ -124,6 +127,13 @@ int run() {
         printf("\b\b]\n");
         p_pid = catch_long();
     }
+
+    char * outfilename = p_pid == INT_MAX ?
+            Form("../root_io/plots_%s_%s.root", TRK_LIST[trk], PART_LIST[part]) :
+            Form("../root_io/plots_%s_pid%d.root", TRK_LIST[trk], p_pid);
+
+    // Open output file (NOTE. This path sucks).
+    TFile * f_out = TFile::Open(outfilename, "RECREATE");
 
     bool general_cuts  = false;
     bool geometry_cuts = false;
@@ -223,7 +233,7 @@ int run() {
     }
 
     // === NTUPLES SETUP ===========================================================================
-    TNtuple * t = (TNtuple *) f_in->Get(S_PARTICLE); // TODO. UPDATE!! BROKEN NOW
+    TNtuple * t = (TNtuple *) f_in->Get(trk == 0 ? S_DC : S_FMT);
     Float_t vars[VAR_LIST_SIZE];
     for (int vi = 0; vi < VAR_LIST_SIZE; ++vi) t->SetBranchAddress(S_VAR_LIST[vi], &vars[vi]);
 

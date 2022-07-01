@@ -23,6 +23,14 @@ extern const char * PART_LIST[PART_LIST_SIZE];
 #define R_PPID "pid"     // Filter by PID.
 #define A_PPID 4
 
+// Tracker types.
+#define TRK_LIST_SIZE 2
+extern const char * TRK_LIST[TRK_LIST_SIZE];
+#define S_DC  "dc"
+#define A_DC  0
+#define S_FMT "fmt"
+#define A_FMT 1
+
 // Plot types.
 #define PLOT_LIST_SIZE 2
 extern const char * PLOT_LIST[PLOT_LIST_SIZE];
@@ -47,10 +55,6 @@ extern const double STD_RX[STDPLT_LIST_SIZE][2][2];
 extern const long   STD_BX[STDPLT_LIST_SIZE][2];
 
 // All variables.
-#define S_PARTICLE "particle"
-#define S_DCPART  "particle (DC)"
-#define S_FMTPART "particle (FMT)"
-
 #define VAR_LIST_SIZE 28
 extern const char * R_VAR_LIST[VAR_LIST_SIZE];
 extern const char * S_VAR_LIST[VAR_LIST_SIZE];
