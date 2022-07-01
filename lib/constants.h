@@ -48,6 +48,9 @@ extern const long   STD_BX[STDPLT_LIST_SIZE][2];
 
 // All variables.
 #define S_PARTICLE "particle"
+#define S_DCPART  "particle (DC)"
+#define S_FMTPART "particle (FMT)"
+
 #define VAR_LIST_SIZE 28
 extern const char * R_VAR_LIST[VAR_LIST_SIZE];
 extern const char * S_VAR_LIST[VAR_LIST_SIZE];
