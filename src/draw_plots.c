@@ -96,6 +96,7 @@ int find_idx(long dbins, long depth, Float_t var[], long bx[], double rx[][2], d
 }
 
 int run() {
+    // Open IO files.
     TFile * f_in  = TFile::Open("../root_io/ntuples.root", "READ");   // NOTE. This path sucks.
     TFile * f_out = TFile::Open("../root_io/plots.root", "RECREATE"); // NOTE. This path sucks.
 
@@ -111,11 +112,18 @@ int run() {
     for (int pi = 0; pi < PART_LIST_SIZE; ++pi) printf("%s, ", PART_LIST[pi]);
     printf("\b\b]\n");
     int part = catch_string(PART_LIST, PART_LIST_SIZE);
-    int p_charge;
-    if      (part == A_PPOS || part == A_PPST || part == A_PPIP) p_charge = 1;
-    else if (part == A_PNEU || part == A_PPIN) p_charge = 0;
-    else if (part == A_PNEG || part == A_PTRE || part == A_PELC || part == A_PPIM) p_charge = -1;
-    else p_charge = 2;
+    int p_charge = INT_MAX;
+    int p_pid    = INT_MAX;
+    if      (part == A_PPOS) p_charge =  1;
+    else if (part == A_PNEU) p_charge =  0;
+    else if (part == A_PNEG) p_charge = -1;
+    else if (part == A_PPID) {
+        printf("\nSelect PID from [");
+        for (std::map<int, double>::const_iterator it = MASS.begin(); it != MASS.end(); ++it)
+            printf("%d, ", it->first);
+        printf("\b\b]\n");
+        p_pid = catch_long();
+    }
 
     bool general_cuts  = false;
     bool geometry_cuts = false;
@@ -268,11 +276,15 @@ int run() {
     for (int i = 0; i < t->GetEntries(); ++i) {
         t->GetEntry(i);
 
-        // Apply cuts.
-        if (p_charge ==  1 && !(vars[A_CHARGE] >  0)) continue; // TODO. This one isn't working...?
-        if (p_charge ==  0 && !(vars[A_CHARGE] == 0)) continue;
-        if (p_charge == -1 && !(vars[A_CHARGE] <  0)) continue;
+        // Apply particle cuts.
+        if (p_charge != INT_MAX) {
+            if (p_charge ==  1 && !(vars[A_CHARGE] >  0)) continue;
+            if (p_charge ==  0 && !(vars[A_CHARGE] == 0)) continue;
+            if (p_charge == -1 && !(vars[A_CHARGE] <  0)) continue;
+        }
+        if (p_pid != INT_MAX && vars[A_PID] != p_pid) continue;
 
+        // Apply other cuts.
         if (general_cuts) {
             if (-0.5 < vars[A_PID] && vars[A_PID] < 0.5) continue; // Non-identified particle.
             if (vars[A_CHI2]/vars[A_NDF] >= CHI2NDFCUT)  continue; // Ignore tracks with high chi2.
