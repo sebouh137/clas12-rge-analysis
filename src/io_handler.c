@@ -1,12 +1,11 @@
 #include "../lib/io_handler.h"
 
-int make_ntuples_handle_args(int argc, char ** argv, bool * use_fmt, bool * debug, int * nevents,
+int make_ntuples_handle_args(int argc, char ** argv, bool * debug, int * nevents,
                            char ** input_file, int * run_no, double * beam_energy) {
     // Handle optional arguments.
     int opt;
-    while ((opt = getopt(argc, argv, "fdn:")) != -1) {
+    while ((opt = getopt(argc, argv, "dn:")) != -1) {
         switch (opt) {
-            case 'f': * use_fmt = true;         break;
             case 'd': * debug   = true;         break;
             case 'n': * nevents = atoi(optarg); break;
             default:  return 1; // Bad usage of optional arguments.

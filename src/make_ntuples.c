@@ -63,7 +63,7 @@ double get_tof(REC_Scintillator rsci, REC_Calorimeter  rcal, int pindex) {
 }
 
 // TODO. Make this program write using both dc and fmt data.
-int run(char * in_filename, bool use_fmt, bool debug, int nevn, int run_no, double beam_E) {
+int run(char * in_filename, bool debug, int nevn, int run_no, double beam_E) {
     // Extract sampling fraction parameters.
     double sf_params[NSECTORS][SF_NPARAMS][2];
     if (get_sf_params(Form("../data/sf_params_%06d.root", run_no), sf_params)) return 8;
@@ -219,15 +219,14 @@ int run(char * in_filename, bool use_fmt, bool debug, int nevn, int run_no, doub
 
 // Call program from terminal, C-style.
 int main(int argc, char ** argv) {
-    bool use_fmt       = false;
     bool debug         = false;
     int nevn           = -1;
     int run_no         = -1;
     double beam_E      = -1;
     char * in_filename = NULL;
 
-    if (make_ntuples_handle_args_err(make_ntuples_handle_args(argc, argv, &use_fmt, &debug, &nevn,
+    if (make_ntuples_handle_args_err(make_ntuples_handle_args(argc, argv, &debug, &nevn,
             &in_filename, &run_no, &beam_E), &in_filename, run_no))
         return 1;
-    return make_ntuples_err(run(in_filename, use_fmt, debug, nevn, run_no, beam_E), &in_filename);
+    return make_ntuples_err(run(in_filename, debug, nevn, run_no, beam_E), &in_filename);
 }
