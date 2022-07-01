@@ -26,6 +26,15 @@
 // TODO. Evaluate **acceptance** in diferent regions.
 // TODO. See simulations with Esteban or get them from RG-F.
 
+// TODO. Add status cut.
+// TODO. Evaluate the most basic cuts and implement the necessary ones.
+// TODO. Check what happens with the acceptance of different particles (like pi+ and pi-) when you
+//       reverse the magnetic fields.
+// TODO. Check if we can run high luminosity with reverse fields.
+// TODO. Check if RG-F or RG-M ran with reverse field.
+// TODO. See what happens to low-momentum particles inside CLAS12 through simulation and see if they
+//       are reconstructed.
+
 // Assign name to plots, recursively going through binnings.
 int name_plt(TH1 * plt[], TString * name, int * idx, long dbins, long depth, int px, long bx[],
              double rx[][2], int bvx[], long bbx[], double brx[][2], double b_interval[]) {

@@ -58,6 +58,7 @@ public:
     std::vector<Char_t>  *layer;  TBranch *b_layer;
     std::vector<Char_t>  *sector; TBranch *b_sector;
     std::vector<Float_t> *energy; TBranch *b_energy;
+    std::vector<Float_t> *time;   TBranch *b_time;
     REC_Calorimeter();
     REC_Calorimeter(TTree *t);
     int get_nrows();
@@ -71,8 +72,10 @@ private:
     int nrows;
     int set_nrows(int in_nrows);
 public:
-    std::vector<Short_t> *pindex; TBranch *b_pindex;
-    std::vector<Float_t> *time;   TBranch *b_time;
+    std::vector<Short_t> *pindex;   TBranch *b_pindex;
+    std::vector<Float_t> *time;     TBranch *b_time;
+    std::vector<Byte_t>  *detector; TBranch *b_detector;
+    std::vector<Byte_t>  *layer;    TBranch *b_layer;
     REC_Scintillator();
     REC_Scintillator(TTree *t);
     int get_nrows();

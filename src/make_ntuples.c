@@ -17,6 +17,10 @@
 
 // TODO. Make this program write using both dc and fmt data.
 int run(char * in_filename, bool use_fmt, bool debug, int nevn, int run_no, double beam_E) {
+    // Extract sampling fraction parameters.
+    double sf_params[NSECTORS][SF_NPARAMS][2];
+    if (get_sf_params(Form("../data/sf_params_%06d.root", run_no), sf_params)) return 8;
+
     // Access input file. TODO. Make this input file*s*, as in multiple files.
     TFile *f_in  = TFile::Open(in_filename, "READ");
     TFile *f_out = TFile::Open("../root_io/ntuples.root", "RECREATE"); // NOTE. This path sucks.
@@ -45,6 +49,7 @@ int run(char * in_filename, bool use_fmt, bool debug, int nevn, int run_no, doub
 
     // Iterate through input file. Each TTree entry is one event.
     printf("Reading %lld events from %s.\n", nevn == -1 ? t_in->GetEntries() : nevn, in_filename);
+
     for (int evn = 0; (evn < t_in->GetEntries()) && (nevn == -1 || evn < nevn); ++evn) {
         if (!debug && evn >= evnsplitter) {
             if (evn != 0) {
@@ -89,26 +94,24 @@ int run(char * in_filename, bool use_fmt, bool debug, int nevn, int run_no, doub
                                  : particle_init(&rpart, &rtrk, pos);
             if (!p.is_valid) continue;
 
-            // Get calorimeters data.
+            // Get deposited energy.
             double pcal_E = 0; // PCAL total deposited energy.
             double ecin_E = 0; // EC inner total deposited energy.
             double ecou_E = 0; // EC outer total deposited energy.
             for (UInt_t i = 0; i < rcal.pindex->size(); ++i) {
-                if (rcal.pindex->at(i) == pindex) {
-                    int lyr = (int) rcal.layer->at(i);
-                    // TODO. Add correction via sampling fraction.
+                if (rcal.pindex->at(i) != pindex) continue;
+                int lyr = (int) rcal.layer->at(i);
 
-                    if      (lyr == PCAL_LYR) pcal_E += rcal.energy->at(i);
-                    else if (lyr == ECIN_LYR) ecin_E += rcal.energy->at(i);
-                    else if (lyr == ECOU_LYR) ecou_E += rcal.energy->at(i);
-                    else return 2;
-                }
+                if      (lyr == PCAL_LYR) pcal_E += rcal.energy->at(i);
+                else if (lyr == ECIN_LYR) ecin_E += rcal.energy->at(i);
+                else if (lyr == ECOU_LYR) ecou_E += rcal.energy->at(i);
+                else return 2;
             }
             double tot_E = pcal_E + ecin_E + ecou_E;
 
             // Get Cherenkov counters data.
-            double ltcc_nphe = 0; // Number of photoelectrons deposited in ltcc.
-            double htcc_nphe = 0; // Number of photoelectrons deposited in htcc.
+            int htcc_nphe = 0; // Number of photoelectrons deposited in htcc.
+            int ltcc_nphe = 0; // Number of photoelectrons deposited in ltcc.
             for (UInt_t i = 0; i < rche.pindex->size(); ++i) {
                 if (rche.pindex->at(i) == pindex) {
                     int detector = rche.detector->at(i);
@@ -118,15 +121,57 @@ int run(char * in_filename, bool use_fmt, bool debug, int nevn, int run_no, doub
                 }
             }
 
-            // Get scintillators data.
-            double tof = INFINITY;
-            for (UInt_t i = 0; i < rsci.pindex->size(); ++i)
-                if (rsci.pindex->at(i) == pindex && rsci.time->at(i) < tof) tof = rsci.time->at(i);
+            // Find most precise TOF (Layers precision: FTOF1B, FTOF1A, FTOFB, PCAL, ECIN, ECOU).
+            int    most_precise_lyr = 0;
+            double tof              = INFINITY; // Capture most precise TOF.
+            for (UInt_t i = 0; i < rsci.pindex->size(); ++i) {
+                // Filter out incorrect pindex and hits not from FTOF.
+                if (rsci.pindex->at(i) != pindex || rsci.detector->at(i) != FTOF_ID) continue;
+                if (rsci.layer->at(i) == FTOF1B_LYR) {
+                    most_precise_lyr = FTOF1B_LYR;
+                    tof = rsci.time->at(i);
+                    break; // Things won't get better than this.
+                }
+                else if (rsci.layer->at(i) == FTOF1A_LYR) {
+                    if (most_precise_lyr == FTOF1A_LYR) continue;
+                    most_precise_lyr = FTOF1A_LYR;
+                    tof = rsci.time->at(i);
+                }
+                else if (rsci.layer->at(i) == FTOF2_LYR) {
+                    if (most_precise_lyr != 0) continue; // We already have a similar or better hit.
+                    most_precise_lyr = FTOF2_LYR;
+                    tof = rsci.time->at(i);
+                }
+            }
+            if (most_precise_lyr == 0) { // No hits from FTOF, let's try ECAL.
+                for (UInt_t i = 0; i < rcal.pindex->size(); ++i) {
+                    if (rcal.pindex->at(i) != pindex) continue; // Filter out incorrect pindex.
+                    if (rcal.layer->at(i) == PCAL_LYR) {
+                        most_precise_lyr = 10 + PCAL_LYR;
+                        tof = rcal.time->at(i);
+                        break; // Things won't get better than this.
+                    }
+                    else if (rcal.layer->at(i) == ECIN_LYR) {
+                        if (most_precise_lyr == 10 + ECIN_LYR) continue;
+                        most_precise_lyr = 10 + ECIN_LYR;
+                        tof = rcal.time->at(i);
+                    }
+                    else if (rcal.layer->at(i) == ECOU_LYR) {
+                        if (most_precise_lyr != 0) continue;
+                        most_precise_lyr = 10 + ECOU_LYR;
+                        tof = rcal.time->at(i);
+                    }
+                }
+            }
 
             // Get miscellaneous data.
             int status  = rpart.status->at(pindex);
             double chi2 = rtrk.chi2   ->at(pos);
             double ndf  = rtrk.ndf    ->at(pos);
+
+            // Assign PID.
+            set_pid(&p, rpart.pid->at(pindex), status, tot_E, pcal_E, htcc_nphe, ltcc_nphe,
+                    sf_params[rtrk.sector->at(pos)]);
 
             // Fill TNtuples. TODO. This probably should be implemented more elegantly.
             // NOTE. If adding new variables, check their order in S_VAR_LIST.
@@ -138,7 +183,6 @@ int run(char * in_filename, bool use_fmt, bool debug, int nevn, int run_no, doub
                         (Float_t) phi_lab(p), (Float_t) p.beta,
                 (Float_t) chi2, (Float_t) ndf,
                 (Float_t) pcal_E, (Float_t) ecin_E, (Float_t) ecou_E, (Float_t) tot_E,
-                (Float_t) htcc_nphe, (Float_t) ltcc_nphe,
                 (Float_t) tof,
                 (Float_t) Q2(p, beam_E), (Float_t) nu(p, beam_E), (Float_t) Xb(p, beam_E),
                         (Float_t) W2(p, beam_E)

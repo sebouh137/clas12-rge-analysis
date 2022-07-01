@@ -1,21 +1,13 @@
 #ifndef CONSTANTS
 #define CONSTANTS
 
+#include <map>
+
+// Physics constants.
+#define SPEEDOFLIGHT 29.9792458
+
 // Masses.
-#define EMASS      0.000051 // Electron mass.
-#define PRTMASS    0.938272 // Proton mass.
-#define NTRMASS    0.939565 // Neutron mass.
-#define DMASS      1.875    // Deuterium mass.
-
-#define PIMASS     0.139570 // Charged Pion mass.
-#define KMASS      0.493677 // Charged Kaon mass.
-#define ETAMASS	   0.547853 // Eta mass.
-#define OMEGAMASS  0.782650 // Omega mass.
-#define MUONMASS   0.105658 // Muon mass.
-
-#define PIZEROMASS 0.134977 // Neutral Pion mass.
-#define KZEROMASS  0.497614 // Neutral Kaon mass.
-#define GAMMAMASS  0.       // Photon mass.
+extern const std::map<int, double> MASS;
 
 // Particle cut array.
 #define PART_LIST_SIZE 4
@@ -28,14 +20,18 @@ extern const char * PART_LIST[PART_LIST_SIZE];
 #define A_PNEG 2
 #define R_PNEU "neutral"    // Neutral.
 #define A_PNEU 3
-#define R_PELC "e-"         // Electron.
-#define A_PELC 4
 #define R_PTRE "trigger e-" // Trigger electron.
-#define A_PTRE 5
-#define R_PPIM "pi+"        // Pion +.
-#define A_PPIM 6
-#define R_PPIP "pi-"        // Pion -.
-#define A_PPIP 7
+#define A_PTRE 4
+#define R_PELC "e-"         // Electron.
+#define A_PELC 5
+#define R_PPST "e+"         // Positron.
+#define A_PPST 6
+#define R_PPIM "pi-"        // Pion -.
+#define A_PPIM 7
+#define R_PPIP "pi+"        // Pion +.
+#define A_PPIP 8
+#define R_PPIN "pi0"        // Pion 0.
+#define A_PPIN 9
 
 // Plot types.
 #define PLOT_LIST_SIZE 2
@@ -62,7 +58,7 @@ extern const long   STD_BX[STDPLT_LIST_SIZE][2];
 
 // All variables.
 #define S_PARTICLE "particle"
-#define VAR_LIST_SIZE 30
+#define VAR_LIST_SIZE 28
 extern const char * R_VAR_LIST[VAR_LIST_SIZE];
 extern const char * S_VAR_LIST[VAR_LIST_SIZE];
 
@@ -143,18 +139,10 @@ extern const char * S_VAR_LIST[VAR_LIST_SIZE];
 #define R_TOT_E  "e_total"
 #define A_TOT_E  22
 
-// Cherenkov.
-#define S_HTCC_NPHE "Nphe_{HTCC}"
-#define R_HTCC_NPHE "htcc_nphe"
-#define A_HTCC_NPHE 23
-#define S_LTCC_NPHE "Nphe_{LTCC}"
-#define R_LTCC_NPHE "ltcc_nphe"
-#define A_LTCC_NPHE 24
-
 // Scintillator.
 #define S_DTOF "#DeltaTOF" // ns.
 #define R_DTOF "dtof"
-#define A_DTOF 25
+#define A_DTOF 23
 
 // DIS.
 #define DIS_LIST_SIZE 4
@@ -162,33 +150,34 @@ extern const char * DIS_LIST[DIS_LIST_SIZE];
 
 #define S_Q2 "Q2"          // GeV^2.
 #define R_Q2 "q2"
-#define A_Q2 26
+#define A_Q2 24
 #define S_NU "#nu"         // GeV.
 #define R_NU "nu"
-#define A_NU 27
+#define A_NU 25
 #define S_XB "X_{bjorken}" // adimensional.
 #define R_XB "x_bjorken"
-#define A_XB 28
+#define A_XB 26
 #define S_W2 "W2"          // GeV^2.
 #define R_W2 "w2"
-#define A_W2 29
+#define A_W2 27
 // #define PHOTONTHETA "virtual photon #theta (lab frame #degree)"
 // #define PHOTONPHI   "virtual photon #phi (lab frame #degree)"
 
 // Sampling fraction constants.
+#define S_EDIVP    "E/Vp"
+#define PCAL_IDX   0   // PCAL idx in Sampling fraction arrays.
+#define ECIN_IDX   1   // ECIN idx in Sampling fraction arrays.
+#define ECOU_IDX   2   // ECOU idx in Sampling fraction arrays.
+#define CALS_IDX   3   // CALs idx in Sampling fraction arrays.
+#define SF_PMIN    1.0 // GeV
+#define SF_PMAX    9.0 // GeV
+#define SF_PSTEP   0.4 // GeV
+#define SF_NPARAMS 4
+#define SF_CHI2CONFORMITY 2 // NOTE. This is a source of systematic error!
 extern const char * CALNAME[4]; // Calorimeters names.
 extern const char * SFARR2D[4]; // Sampling Fraction (SF) 2D arr names.
 extern const char * SFARR1D[4]; // SF 1D arr names.
-extern const double PLIMITSARR[4][2]; // Momentum limits for 1D SF fits.
-#define S_EDIVP   "E/Vp"
-#define PCAL_IDX  0 // PCAL idx in Sampling fraction arrays.
-#define ECIN_IDX  1 // ECIN idx in Sampling fraction arrays.
-#define ECOU_IDX  2 // ECOU idx in Sampling fraction arrays.
-#define CALS_IDX  3 // CALs idx in Sampling fraction arrays.
-#define SF_PMIN   1.0 // GeV
-#define SF_PMAX   9.0 // GeV
-#define SF_PSTEP  0.4 // GeV
-#define SF_CHI2CONFORMITY 2 // NOTE. This is a source of systematic error!
+extern const double PLIMITSARR[SF_NPARAMS][2]; // Momentum limits for 1D SF fits.
 
 // Run constants (TODO. these should be in a map or taken from clas12mon.)
 #define BE11983 10.3894 //  50 nA.
@@ -196,14 +185,18 @@ extern const double PLIMITSARR[4][2]; // Momentum limits for 1D SF fits.
 #define BE12439  2.1864 //  15 nA.
 
 // Detector constants.
-#define NSECTORS 6  // # of CLAS12 sectors.
-#define PCAL_LYR 1  // PCAL's layer id.
-#define ECIN_LYR 4  // EC inner layer id.
-#define ECOU_LYR 7  // EC outer layer id.
-#define HTCC_ID  15 // HTCC detector id.
-#define LTCC_ID  16 // LTCC detector id.
+#define NSECTORS    6 // # of CLAS12 sectors.
+#define FTOF_ID    12 // FTOF detector id.
+#define HTCC_ID    15 // HTCC detector id.
+#define LTCC_ID    16 // LTCC detector id.
+#define FTOF1A_LYR  1 // FTOF1A layer id.
+#define FTOF1B_LYR  2 // FTOF1B layer id.
+#define FTOF2_LYR   3 // FTOF2 layer id.
+#define PCAL_LYR    1 // PCAL's layer id.
+#define ECIN_LYR    4 // EC inner layer id.
+#define ECOU_LYR    7 // EC outer layer id.
 
-// Cuts.
+// General Cuts.
 #define FMTNLYRSCUT   3 // # of FMT layers required to accept track.
 #define Q2CUT         1 // Q2 of particle must be over this value.
 #define W2CUT         4 // W2 of particle must be over this value.
@@ -211,5 +204,15 @@ extern const double PLIMITSARR[4][2]; // Momentum limits for 1D SF fits.
 #define VXVYCUT       4 // sqrt(vx^2 + vy^2) must be below this value.
 #define VZLOWCUT    -40 // vz must be above this value.
 #define VZHIGHCUT    40 // vz must be below this.
+
+// PID Cuts. Most numbers come from `/calibration/eb/` from the CCDB.
+#define HTCC_NPHE_CUT   2     // # of HTCC photoelectrons required to consider particle passed HTCC.
+#define LTCC_NPHE_CUT   2     // # of LTCC photoelectrons required to consider particle passed LTCC.
+#define MIN_PCAL_ENERGY 0.060 // Min energy deposited in PCAL to assign pid = 11.
+#define E_SF_NSIGMA     5.0   // Max ECAL sampling fraction sigma to assign pid = 11.
+#define NEUTRON_MAXBETA 0.9   // Max beta allowed to assign pid == 2212.
+#define HTCC_PION_THRESHOLD 4.9 // Momentum required to consider particle crossing HTCC as pion.
+#define LTCC_PION_THRESHOLD 3.0 // Momentum required to consider particle crossing LTCC as pion.
+#define LTCC_KAON_THRESHOLD 5.0 // Momentum required to consider particle crossing LTCC as kaon.
 
 #endif
