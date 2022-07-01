@@ -27,7 +27,6 @@ typedef struct {
     double vx, vy, vz;
     double px, py, pz;
     // Derived vars.
-    double P;
     double mass;
 } particle;
 
