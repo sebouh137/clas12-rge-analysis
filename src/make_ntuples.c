@@ -50,10 +50,6 @@ int run(char * in_filename, bool use_fmt, bool debug, int nevn, int run_no, doub
     // Iterate through input file. Each TTree entry is one event.
     printf("Reading %lld events from %s.\n", nevn == -1 ? t_in->GetEntries() : nevn, in_filename);
 
-    // TODO. TEMPORARY CODE.
-    int good_pids = 0;
-    int bad_pids  = 0;
-
     for (int evn = 0; (evn < t_in->GetEntries()) && (nevn == -1 || evn < nevn); ++evn) {
         if (!debug && evn >= evnsplitter) {
             if (evn != 0) {
@@ -125,8 +121,8 @@ int run(char * in_filename, bool use_fmt, bool debug, int nevn, int run_no, doub
                 }
             }
 
-            // Find most precise TOF.
-            int    most_precise_lyr = 0; // FTOF layers: 2,1,3, ECAL layers: 11, 14, 17.
+            // Find most precise TOF (Layers precision: FTOF1B, FTOF1A, FTOFB, PCAL, ECIN, ECOU).
+            int    most_precise_lyr = 0;
             double tof              = INFINITY; // Capture most precise TOF.
             for (UInt_t i = 0; i < rsci.pindex->size(); ++i) {
                 // Filter out incorrect pindex and hits not from FTOF.
@@ -177,10 +173,6 @@ int run(char * in_filename, bool use_fmt, bool debug, int nevn, int run_no, doub
             set_pid(&p, rpart.pid->at(pindex), status, tot_E, pcal_E, htcc_nphe, ltcc_nphe,
                     sf_params[rtrk.sector->at(pos)]);
 
-            // TODO. TEMPORARY CODE.
-            if (p.pid == rpart.pid->at(pindex)) ++good_pids;
-            else                                ++bad_pids;
-
             // Fill TNtuples. TODO. This probably should be implemented more elegantly.
             // NOTE. If adding new variables, check their order in S_VAR_LIST.
             Float_t v[VAR_LIST_SIZE] = {
@@ -211,9 +203,6 @@ int run(char * in_filename, bool use_fmt, bool debug, int nevn, int run_no, doub
     f_in ->Close();
     f_out->Close();
     free(in_filename);
-
-    // TODO. TEMPORARY CODE.
-    printf("\nBad PIDs   : %8d.\nTotal PIDs : %8d.\n\n", bad_pids, good_pids+bad_pids);
 
     return 0;
 }
