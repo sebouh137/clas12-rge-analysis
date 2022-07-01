@@ -24,7 +24,7 @@
 int run(char *in_filename, bool use_fmt, int nevn, int run_no) {
     gStyle->SetOptFit();
 
-    // Access input file. TODO. Make this input file*s*.
+    // Access input file.
     TFile *f_in = TFile::Open(in_filename, "READ");
     if (!f_in || f_in->IsZombie()) return 1;
 

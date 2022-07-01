@@ -10,28 +10,18 @@
 extern const std::map<int, double> MASS;
 
 // Particle cut array.
-#define PART_LIST_SIZE 4
+#define PART_LIST_SIZE 5
 extern const char * PART_LIST[PART_LIST_SIZE];
-#define R_PALL "all"        // All particles.
+#define R_PALL "all"     // All particles.
 #define A_PALL 0
-#define R_PPOS "+"          // Positive.
+#define R_PPOS "+"       // Positive.
 #define A_PPOS 1
-#define R_PNEG "-"          // Negative.
+#define R_PNEG "-"       // Negative.
 #define A_PNEG 2
-#define R_PNEU "neutral"    // Neutral.
+#define R_PNEU "neutral" // Neutral.
 #define A_PNEU 3
-#define R_PTRE "trigger e-" // Trigger electron.
-#define A_PTRE 4
-#define R_PELC "e-"         // Electron.
-#define A_PELC 5
-#define R_PPST "e+"         // Positron.
-#define A_PPST 6
-#define R_PPIM "pi-"        // Pion -.
-#define A_PPIM 7
-#define R_PPIP "pi+"        // Pion +.
-#define A_PPIP 8
-#define R_PPIN "pi0"        // Pion 0.
-#define A_PPIN 9
+#define R_PPID "pid"     // Filter by PID.
+#define A_PPID 4
 
 // Plot types.
 #define PLOT_LIST_SIZE 2
