@@ -2,7 +2,6 @@
 
 int make_ntuples_usage() {
     fprintf(stderr, "Usage: make_ntuples [-fd] [-n NEVENTS] file\n");
-    fprintf(stderr, " * -f: Use FMT data. If unspecified, program will only use DC data.\n");
     fprintf(stderr, " * -d: Activate debug mode. Only use when programming new features.\n");
     fprintf(stderr, " * -n NEVENTS: Specify number of events to be processed with optarg.\n");
     fprintf(stderr, " * file: ROOT file to be processed. Expected file format is: `run_no.root`.\n");

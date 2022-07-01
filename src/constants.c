@@ -23,6 +23,11 @@ const std::map<int, double> MASS = {
         {         0, -1.}        // unidentified particle.
 };
 
+// Trackers array.
+const char * TRK_LIST[TRK_LIST_SIZE] = {
+    S_DC, S_FMT
+};
+
 // Particle constant array.
 const char * PART_LIST[PART_LIST_SIZE] = {
     R_PALL, R_PPOS, R_PNEG, R_PNEU, R_PPID

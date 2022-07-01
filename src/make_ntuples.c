@@ -15,8 +15,55 @@
 #include "../lib/particle.h"
 #include "../lib/utilities.h"
 
+// Find most precise TOF (Layers precision: FTOF1B, FTOF1A, FTOFB, PCAL, ECIN, ECOU).
+double get_tof(REC_Scintillator rsci, REC_Calorimeter  rcal, int pindex) {
+    int    most_precise_lyr = 0;
+    double tof              = INFINITY;
+    for (UInt_t i = 0; i < rsci.pindex->size(); ++i) {
+        // Filter out incorrect pindex and hits not from FTOF.
+        if (rsci.pindex->at(i) != pindex || rsci.detector->at(i) != FTOF_ID) continue;
+        if (rsci.layer->at(i) == FTOF1B_LYR) {
+            most_precise_lyr = FTOF1B_LYR;
+            tof = rsci.time->at(i);
+            break; // Things won't get better than this.
+        }
+        else if (rsci.layer->at(i) == FTOF1A_LYR) {
+            if (most_precise_lyr == FTOF1A_LYR) continue;
+            most_precise_lyr = FTOF1A_LYR;
+            tof = rsci.time->at(i);
+        }
+        else if (rsci.layer->at(i) == FTOF2_LYR) {
+            if (most_precise_lyr != 0) continue; // We already have a similar or better hit.
+            most_precise_lyr = FTOF2_LYR;
+            tof = rsci.time->at(i);
+        }
+    }
+    if (most_precise_lyr == 0) { // No hits from FTOF, let's try ECAL.
+        for (UInt_t i = 0; i < rcal.pindex->size(); ++i) {
+            if (rcal.pindex->at(i) != pindex) continue; // Filter out incorrect pindex.
+            if (rcal.layer->at(i) == PCAL_LYR) {
+                most_precise_lyr = 10 + PCAL_LYR;
+                tof = rcal.time->at(i);
+                break; // Things won't get better than this.
+            }
+            else if (rcal.layer->at(i) == ECIN_LYR) {
+                if (most_precise_lyr == 10 + ECIN_LYR) continue;
+                most_precise_lyr = 10 + ECIN_LYR;
+                tof = rcal.time->at(i);
+            }
+            else if (rcal.layer->at(i) == ECOU_LYR) {
+                if (most_precise_lyr != 0) continue;
+                most_precise_lyr = 10 + ECOU_LYR;
+                tof = rcal.time->at(i);
+            }
+        }
+    }
+
+    return tof;
+}
+
 // TODO. Make this program write using both dc and fmt data.
-int run(char * in_filename, bool use_fmt, bool debug, int nevn, int run_no, double beam_E) {
+int run(char * in_filename, bool debug, int nevn, int run_no, double beam_E) {
     // Extract sampling fraction parameters.
     double sf_params[NSECTORS][SF_NPARAMS][2];
     if (get_sf_params(Form("../data/sf_params_%06d.root", run_no), sf_params)) return 8;
@@ -35,7 +82,11 @@ int run(char * in_filename, bool use_fmt, bool debug, int nevn, int run_no, doub
 
     // Create TTree and TNTuples.
     TTree   * t_in  = f_in->Get<TTree>("Tree");
-    TNtuple * t_out = new TNtuple(S_PARTICLE, S_PARTICLE, vars);
+    TNtuple * t_out[2];
+    t_out[0] = new TNtuple(S_DC,  S_DC,  vars);
+    t_out[1] = new TNtuple(S_FMT, S_FMT, vars);
+
+    // Associate banks to TTree.
     REC_Particle     rpart(t_in);
     REC_Track        rtrk (t_in);
     REC_Calorimeter  rcal (t_in);
@@ -77,22 +128,14 @@ int run(char * in_filename, bool use_fmt, bool debug, int nevn, int run_no, doub
         // Filter events without the necessary banks.
         if (rpart.vz->size() == 0 || rtrk.pindex->size() == 0) continue;
 
-        // Find trigger electron's TOF.
-        int tre_pindex = rtrk.pindex->at(0);
-        double tre_tof = INFINITY;
-        for (UInt_t i = 0; i < rsci.pindex->size(); ++i) {
-            if (rsci.pindex->at(i) == tre_pindex && rsci.time->at(i) < tre_tof)
-                tre_tof = rsci.time->at(i);
-        }
-
         // Process DIS event.
         for (UInt_t pos = 0; pos < rtrk.index->size(); ++pos) {
             int pindex = rtrk.pindex->at(pos); // pindex is always equal to pos!
 
-            // Get reconstructed particle from either FMT or DC.
-            particle p = use_fmt ? particle_init(&rpart, &rtrk, &ftrk, pos)
-                                 : particle_init(&rpart, &rtrk, pos);
-            if (!p.is_valid) continue;
+            // Get reconstructed particle from DC and from FMT.
+            particle p[2];
+            p[0] = particle_init(&rpart, &rtrk, pos);        // DC.
+            p[1] = particle_init(&rpart, &rtrk, &ftrk, pos); // FMT.
 
             // Get deposited energy.
             double pcal_E = 0; // PCAL total deposited energy.
@@ -121,48 +164,8 @@ int run(char * in_filename, bool use_fmt, bool debug, int nevn, int run_no, doub
                 }
             }
 
-            // Find most precise TOF (Layers precision: FTOF1B, FTOF1A, FTOFB, PCAL, ECIN, ECOU).
-            int    most_precise_lyr = 0;
-            double tof              = INFINITY; // Capture most precise TOF.
-            for (UInt_t i = 0; i < rsci.pindex->size(); ++i) {
-                // Filter out incorrect pindex and hits not from FTOF.
-                if (rsci.pindex->at(i) != pindex || rsci.detector->at(i) != FTOF_ID) continue;
-                if (rsci.layer->at(i) == FTOF1B_LYR) {
-                    most_precise_lyr = FTOF1B_LYR;
-                    tof = rsci.time->at(i);
-                    break; // Things won't get better than this.
-                }
-                else if (rsci.layer->at(i) == FTOF1A_LYR) {
-                    if (most_precise_lyr == FTOF1A_LYR) continue;
-                    most_precise_lyr = FTOF1A_LYR;
-                    tof = rsci.time->at(i);
-                }
-                else if (rsci.layer->at(i) == FTOF2_LYR) {
-                    if (most_precise_lyr != 0) continue; // We already have a similar or better hit.
-                    most_precise_lyr = FTOF2_LYR;
-                    tof = rsci.time->at(i);
-                }
-            }
-            if (most_precise_lyr == 0) { // No hits from FTOF, let's try ECAL.
-                for (UInt_t i = 0; i < rcal.pindex->size(); ++i) {
-                    if (rcal.pindex->at(i) != pindex) continue; // Filter out incorrect pindex.
-                    if (rcal.layer->at(i) == PCAL_LYR) {
-                        most_precise_lyr = 10 + PCAL_LYR;
-                        tof = rcal.time->at(i);
-                        break; // Things won't get better than this.
-                    }
-                    else if (rcal.layer->at(i) == ECIN_LYR) {
-                        if (most_precise_lyr == 10 + ECIN_LYR) continue;
-                        most_precise_lyr = 10 + ECIN_LYR;
-                        tof = rcal.time->at(i);
-                    }
-                    else if (rcal.layer->at(i) == ECOU_LYR) {
-                        if (most_precise_lyr != 0) continue;
-                        most_precise_lyr = 10 + ECOU_LYR;
-                        tof = rcal.time->at(i);
-                    }
-                }
-            }
+            // Get TOF.
+            double tof = get_tof(rsci, rcal, pindex);
 
             // Get miscellaneous data.
             int status  = rpart.status->at(pindex);
@@ -170,24 +173,31 @@ int run(char * in_filename, bool use_fmt, bool debug, int nevn, int run_no, doub
             double ndf  = rtrk.ndf    ->at(pos);
 
             // Assign PID.
-            set_pid(&p, rpart.pid->at(pindex), status, tot_E, pcal_E, htcc_nphe, ltcc_nphe,
-                    sf_params[rtrk.sector->at(pos)]);
+            for (int pi = 0; pi < 2; ++pi) {
+                set_pid(&(p[pi]), rpart.pid->at(pindex), status, tot_E, pcal_E, htcc_nphe,
+                        ltcc_nphe, sf_params[rtrk.sector->at(pos)]);
+            }
 
             // Fill TNtuples. TODO. This probably should be implemented more elegantly.
             // NOTE. If adding new variables, check their order in S_VAR_LIST.
-            Float_t v[VAR_LIST_SIZE] = {
-                (Float_t) run_no, (Float_t) evn, (Float_t) beam_E,
-                (Float_t) p.pid, (Float_t) status, (Float_t) p.q, (Float_t) p.mass, (Float_t) p.vx,
-                        (Float_t) p.vy, (Float_t) p.vz, (Float_t) p.px, (Float_t) p.py,
-                        (Float_t) p.pz, (Float_t) P(p), (Float_t) theta_lab(p),
-                        (Float_t) phi_lab(p), (Float_t) p.beta,
-                (Float_t) chi2, (Float_t) ndf,
-                (Float_t) pcal_E, (Float_t) ecin_E, (Float_t) ecou_E, (Float_t) tot_E,
-                (Float_t) tof,
-                (Float_t) Q2(p, beam_E), (Float_t) nu(p, beam_E), (Float_t) Xb(p, beam_E),
-                        (Float_t) W2(p, beam_E)
-            };
-            t_out->Fill(v);
+            for (int pi = 0; pi < 2; ++pi) {
+                if (!p[pi].is_valid) continue;
+
+                Float_t v[VAR_LIST_SIZE] = {
+                        (Float_t) run_no, (Float_t) evn, (Float_t) beam_E,
+                        (Float_t) p[pi].pid, (Float_t) status, (Float_t) p[pi].q,
+                                (Float_t) p[pi].mass, (Float_t) p[pi].vx, (Float_t) p[pi].vy,
+                                (Float_t) p[pi].vz, (Float_t) p[pi].px, (Float_t) p[pi].py,
+                                (Float_t) p[pi].pz, (Float_t) P(p[pi]), (Float_t) theta_lab(p[pi]),
+                                (Float_t) phi_lab(p[pi]), (Float_t) p[pi].beta,
+                        (Float_t) chi2, (Float_t) ndf,
+                        (Float_t) pcal_E, (Float_t) ecin_E, (Float_t) ecou_E, (Float_t) tot_E,
+                        (Float_t) tof,
+                        (Float_t) Q2(p[pi], beam_E), (Float_t) nu(p[pi], beam_E),
+                                (Float_t) Xb(p[pi], beam_E), (Float_t) W2(p[pi], beam_E)
+                };
+                t_out[pi]->Fill(v);
+            }
         }
     }
     if (!debug) {
@@ -209,15 +219,14 @@ int run(char * in_filename, bool use_fmt, bool debug, int nevn, int run_no, doub
 
 // Call program from terminal, C-style.
 int main(int argc, char ** argv) {
-    bool use_fmt       = false;
     bool debug         = false;
     int nevn           = -1;
     int run_no         = -1;
     double beam_E      = -1;
     char * in_filename = NULL;
 
-    if (make_ntuples_handle_args_err(make_ntuples_handle_args(argc, argv, &use_fmt, &debug, &nevn,
+    if (make_ntuples_handle_args_err(make_ntuples_handle_args(argc, argv, &debug, &nevn,
             &in_filename, &run_no, &beam_E), &in_filename, run_no))
         return 1;
-    return make_ntuples_err(run(in_filename, use_fmt, debug, nevn, run_no, beam_E), &in_filename);
+    return make_ntuples_err(run(in_filename, debug, nevn, run_no, beam_E), &in_filename);
 }
