@@ -15,7 +15,7 @@ const std::map<int, double> MASS = {
         // {       -13,  0.105658}, // negative muon. *not yet implemented*.
         // {       111,  0.134977}, // neutral pion. *not yet implemented*.
         // {       311,  0.497614}, // neutral kaon. *not yet implemented*.
-        // {        22,  0.},       // photon. *not yet implemented*.
+        {        22,  0.},       // photon.
         // {       221,  0.548953}, // eta. *not yet implemented*.
         // {       223,  0.782650}, // omega. *not yet implemented*.
         // {1000010020,  1.875},    // deuterium. *not yet implemented*.
