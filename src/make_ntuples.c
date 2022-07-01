@@ -128,6 +128,9 @@ int run(char * in_filename, bool debug, int nevn, int run_no, double beam_E) {
         // Filter events without the necessary banks.
         if (rpart.vz->size() == 0 || rtrk.pindex->size() == 0) continue;
 
+        // Find trigger electron's TOF.
+        int tre_tof = get_tof(rsci, rcal, rtrk.pindex->at(0));
+
         // Process DIS event.
         for (UInt_t pos = 0; pos < rtrk.index->size(); ++pos) {
             int pindex = rtrk.pindex->at(pos); // pindex is always equal to pos!
@@ -192,7 +195,7 @@ int run(char * in_filename, bool debug, int nevn, int run_no, double beam_E) {
                                 (Float_t) phi_lab(p[pi]), (Float_t) p[pi].beta,
                         (Float_t) chi2, (Float_t) ndf,
                         (Float_t) pcal_E, (Float_t) ecin_E, (Float_t) ecou_E, (Float_t) tot_E,
-                        (Float_t) tof,
+                        (Float_t) (tof - tre_tof),
                         (Float_t) Q2(p[pi], beam_E), (Float_t) nu(p[pi], beam_E),
                                 (Float_t) Xb(p[pi], beam_E), (Float_t) W2(p[pi], beam_E)
                 };
