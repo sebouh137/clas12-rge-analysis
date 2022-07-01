@@ -51,7 +51,6 @@ int run(char * in_filename, bool use_fmt, bool debug, int nevn, int run_no, doub
     printf("Reading %lld events from %s.\n", nevn == -1 ? t_in->GetEntries() : nevn, in_filename);
 
     // TODO. TEMPORARY CODE.
-    printf("tpid  | apid  | rpid\n");
     int good_pids = 0;
     int bad_pids  = 0;
 
@@ -175,15 +174,12 @@ int run(char * in_filename, bool use_fmt, bool debug, int nevn, int run_no, doub
             double ndf  = rtrk.ndf    ->at(pos);
 
             // Assign PID.
-            int timing_pid = set_pid(&p, status, tot_E, pcal_E, htcc_nphe, ltcc_nphe,
-                                     sf_params[rtrk.sector->at(pos)]);
+            set_pid(&p, rpart.pid->at(pindex), status, tot_E, pcal_E, htcc_nphe, ltcc_nphe,
+                    sf_params[rtrk.sector->at(pos)]);
 
             // TODO. TEMPORARY CODE.
             if (p.pid == rpart.pid->at(pindex)) ++good_pids;
-            else {
-                ++bad_pids;
-                printf("%5d | %5d | %5d\n", timing_pid, p.pid, rpart.pid->at(pindex));
-            }
+            else                                ++bad_pids;
 
             // Fill TNtuples. TODO. This probably should be implemented more elegantly.
             // NOTE. If adding new variables, check their order in S_VAR_LIST.

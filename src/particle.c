@@ -60,48 +60,47 @@ particle particle_init(int charge, double beta, int sector,
 }
 
 // Set PID from all available information. This function mimics PIDMatch from the EB engine.
-int set_pid(particle * p, int status, double tot_E, double pcal_E, int htcc_nphe, int ltcc_nphe,
-            double sf_params[SF_NPARAMS][2]) {
-    // Create PID list.
-    int pid_list_size;
-    if      (p->q >  0) pid_list_size = PID_POSITIVE_SIZE;
-    else if (p->q == 0) pid_list_size = PID_NEUTRAL_SIZE;
-    else                pid_list_size = PID_NEGATIVE_SIZE;
+int set_pid(particle * p, int recon_pid, int status, double tot_E, double pcal_E, int htcc_nphe,
+            int ltcc_nphe, double sf_params[SF_NPARAMS][2]) {
+    // Assign PID for neutrals and store PID from reconstruction for charge particles.
+    int rpid = p->q == 0 ? assign_neutral_pid(tot_E, p->beta) : recon_pid;
 
-    int pid_list[pid_list_size];
-    for (int pi = 0; p->q >  0 && pi < pid_list_size; ++pi) pid_list[pi] = PID_POSITIVE[pi];
-    for (int pi = 0; p->q == 0 && pi < pid_list_size; ++pi) pid_list[pi] = PID_NEUTRAL [pi];
-    for (int pi = 0; p->q <  0 && pi < pid_list_size; ++pi) pid_list[pi] = PID_NEGATIVE[pi];
+    // Create PID list.
+    int hypotheses_size;
+    if      (p->q >  0) hypotheses_size = PID_POSITIVE_SIZE;
+    else if (p->q == 0) hypotheses_size = PID_NEUTRAL_SIZE;
+    else                hypotheses_size = PID_NEGATIVE_SIZE;
+
+    int hypotheses[hypotheses_size];
+    for (int pi = 0; p->q >  0 && pi < hypotheses_size; ++pi) hypotheses[pi] = PID_POSITIVE[pi];
+    for (int pi = 0; p->q == 0 && pi < hypotheses_size; ++pi) hypotheses[pi] = PID_NEUTRAL [pi];
+    for (int pi = 0; p->q <  0 && pi < hypotheses_size; ++pi) hypotheses[pi] = PID_NEGATIVE[pi];
 
     // Perform checks.
     bool e_check = is_electron(tot_E, pcal_E, htcc_nphe, P(*p), sf_params);
 
-    int timing_pid = p->q == 0 ?
-            assign_neutral_pid(tot_E, p->beta) :
-            best_pid_from_momentum(P(*p), p->beta, pid_list, pid_list_size);
-
     bool htcc_signal_check = htcc_nphe > HTCC_NPHE_CUT;
-    bool ltcc_signal_check = ltcc_nphe > LTCC_NPHE_CUT;
-
     bool htcc_pion_threshold = P(*p) > HTCC_PION_THRESHOLD;
-    bool ltcc_pion_threshold = P(*p) > LTCC_PION_THRESHOLD;
-    // bool ltcc_kaon_threshold = P(*p) > LTCC_KAON_THRESHOLD; // NOTE. Unused in recon...
+
+    // NOTE. LTCC signals are used in recon to veto back from kaon and proton to pion, but we don't
+    //       do that here since we're using the PID from reconstrution anyway.
+    // bool ltcc_signal_check = ltcc_nphe > LTCC_NPHE_CUT;
+    // bool ltcc_pion_threshold = P(*p) > LTCC_PION_THRESHOLD;
+
+    // NOTE. LTCC kaon threshold is defined in reconstruction, but never actually used.
+    // bool ltcc_kaon_threshold = P(*p) > LTCC_KAON_THRESHOLD;
 
     // Match PID.
-    for (int pi = 0; p->pid == 0 && pi < pid_list_size; ++pi) {
-        bool tpid_check = pid_list[pi] == timing_pid;
-        p->pid = match_pid(pid_list[pi], p->q, e_check, tpid_check, htcc_signal_check,
-                           ltcc_signal_check, htcc_pion_threshold, ltcc_pion_threshold);
+    for (int pi = 0; p->pid == 0 && pi < hypotheses_size; ++pi) {
+        p->pid = match_pid(hypotheses[pi], hypotheses[pi] == rpid, p->q, e_check, htcc_signal_check,
+                           htcc_pion_threshold);
     }
 
-    // Check if particle is trigger electron.
+    // Check if particle is trigger electron and define mass from PID.
     p->is_trigger_electron = (p->pid == 11 && status < 0);
-
-    // Define mass from PID.
     p->mass = MASS.at(abs(p->pid));
 
-    return timing_pid;
-    // return 0;
+    return 0;
 }
 
 // Check if a particle satisfies all requirements to be considered an electron or positron.
@@ -125,84 +124,33 @@ int assign_neutral_pid(double tot_E, double beta) {
 }
 
 // Compare momentum-computed beta with tof-computed beta.
-int best_pid_from_momentum(double p, double beta, int pid_list[], int pid_list_size) {
+int best_pid_from_momentum(double p, double beta, int hypotheses[], int hypotheses_size) {
     int min_pid = 0;
     double min_diff = DBL_MAX;
-    for (int pi = 0; pi < pid_list_size; ++pi) {
-        if (abs(pid_list[pi]) == 45 || pid_list[pi] == 0 || abs(pid_list[pi]) == 11) continue;
-        double mass = MASS.at(abs(pid_list[pi]));
+    for (int pi = 0; pi < hypotheses_size; ++pi) {
+        if (abs(hypotheses[pi]) == 45 || hypotheses[pi] == 0 || abs(hypotheses[pi]) == 11) continue;
+        double mass = MASS.at(abs(hypotheses[pi]));
         double p_beta = p/(sqrt(mass*mass + p*p));
         double diff = abs(p_beta - beta);
         if (diff < min_diff) {
-            min_pid  = pid_list[pi];
+            min_pid  = hypotheses[pi];
             min_diff = diff;
         }
     }
     return min_pid;
 }
 
-int best_pid_from_timing(int pid_list[], int pid_list_size) {
-    int min_pid = 0;
-    double min_diff = DBL_MAX;
-    bool chk = false;
-    for (int pi = 0; pi < pid_list_size; ++pi) {
-        if (abs(pid_list[pi]) == 11) continue;
-
-    }
-
-    return min_pid;
-
-    // // recon code:
-    // for (int ii=0; ii<hypotheses.length; ii++) {
-    //     for (Entry<DetectorType,List<Integer>> bd : chargedBetaDetectors.entrySet()) {
-    //         for (Integer layer : bd.getValue()) {
-    //             if (p.hasHit(bd.getKey(),layer)==true) {
-    //                 dt = p.getVertexTime(bd.getKey(),layer,hypotheses[ii])-p.getStartTime();
-    //                 found=true;
-    //                 break;
-    //             }
-    //         }
-    //         if (found) break;
-    //     }
-    //     if ( abs(dt) < minTimeDiff ) {
-    //         minTimeDiff=abs(dt);
-    //         bestPid=hypotheses[ii];
-    //     }
-    // }
-    // return bestPid;
-}
-
 // Match PID hypothesis with available checks.
-int match_pid(int hyp, int q, bool e, bool tpid, bool htcc_s, bool ltcc_s, bool htcc_p,
-              bool ltcc_p) {
+int match_pid(int hyp, bool r_match, int q, bool e, bool htcc_s, bool htcc_p) {
     switch(abs(hyp)) {
         case 11:
-            if (e) return hyp;
+            if (r_match || e) return hyp;
             break;
         case 211:
-            if (!e && (tpid || (htcc_s && ltcc_p)))
-                return hyp;
+            if (r_match || (!e && (htcc_s && htcc_p))) return hyp;
             break;
-        case 321:
-            if (!e && tpid) {
-                if (ltcc_s && ltcc_p) return q * 211; // veto back to pion.
-                else return hyp;
-            }
-            break;
-        case 2212:
-            if (!e && tpid) {
-                if (ltcc_s && ltcc_p) return q * 211; // veto back to pion.
-                else return hyp;
-            }
-            break;
-        case 45:
-            if (!e && tpid) return hyp;
-            break;
-        case 2112:
-            if (tpid) return hyp;
-            break;
-        case 22:
-            if (tpid) return hyp;
+        case 321: case 2212: case 45: case 2112: case 22:
+            if (r_match) return hyp;
             break;
     }
     return 0;
