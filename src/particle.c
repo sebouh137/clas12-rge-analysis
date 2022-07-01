@@ -158,57 +158,57 @@ int match_pid(int hyp, bool r_match, int q, bool e, bool htcc_s, bool htcc_p) {
 
 // === PARTICLE FUNCTIONS ==========================================================================
 // Get distance from beamline.
-double d_from_beamline(particle p) {
+float d_from_beamline(particle p) {
     return (sqrt(p.vx*p.vx + p.vy+p.vy));
 }
 
 // Calculate theta angle in the lab frame from momentum components of particle.
-double theta_lab(particle p) {
+float theta_lab(particle p) {
     return p.px == 0.0 && p.py == 0.0 && p.pz == 0.0 ? 0.0 : atan2(sqrt(p.px*p.px + p.py*p.py), p.pz);
 }
 
 // Calculate phi angle in the lab frame from momentum components of particle.
-double phi_lab(particle p) {
+float phi_lab(particle p) {
     return atan2(p.py, p.px);
 }
 
 // Calculate momentum magnitude from its components.
-double P(particle p) {
+float P(particle p) {
     return calc_magnitude(p.px, p.py, p.pz);
 }
 
 // Calculate squared mass from momentum and beta.
-double mass2(particle p) {
+float mass2(particle p) {
     return (P(p)*P(p)) / (p.beta*p.beta);
 }
 
 // === SIDIS e- FUNCTIONS ==========================================================================
 // Calculate nu from beam energy and total momentum.
-double nu(particle p, double bE) {
+float nu(particle p, double bE) {
     if (!p.is_trigger_electron) return 0; // TODO. I need an invalid return value, not zero!
     return bE - P(p);
 }
 
 // Calculate Q^2 from beam energy, particle momentum, and theta angle.
-double Q2(particle p, double bE) {
+float Q2(particle p, double bE) {
     if (!p.is_trigger_electron) return 0;
     return 4 * bE * P(p) * pow(sin(theta_lab(p)/2), 2);
 }
 
 // Calculate x_bjorken from beam energy, particle momentum, and theta angle.
-double Xb(particle p, double bE) {
+float Xb(particle p, double bE) {
     if (!p.is_trigger_electron) return 0;
     return Q2(p, bE) / (2*MASS.at(2212)*nu(p, bE));
 }
 
 // Calculate y_bjorken from beam energy and nu.
-double Yb(particle p, double bE) {
+float Yb(particle p, double bE) {
     if (!p.is_trigger_electron) return 0;
     return nu(p, bE) / bE;
 }
 
 // Calculate the invariant mass of the electron-nucleon interaction.
-double W(particle p, double bE) {
+float W(particle p, double bE) {
     if (!p.is_trigger_electron) return 0;
     return sqrt(abs(W2(p, bE)));
 }
@@ -216,7 +216,7 @@ double W(particle p, double bE) {
 // TODO. Read a bit about resonances.
 
 // Calculate the squared invariant mass of the electron-nucleon interaction.
-double W2(particle p, double bE) {
+float W2(particle p, double bE) {
     if (!p.is_trigger_electron) return 0;
     return MASS.at(2212)*MASS.at(2212) + 2*MASS.at(2212)*nu(p, bE) - Q2(p, bE);
 }
@@ -224,13 +224,13 @@ double W2(particle p, double bE) {
 // NOTE. double s(particle p) ?
 
 // Calculate the virtual photon's theta angle in the lab frame.
-double theta_photon_lab(particle p, double bE) {
+float theta_photon_lab(particle p, double bE) {
     if (!p.is_trigger_electron) return 0;
     return acos((bE - P(p)*cos(theta_lab(p))) / (sqrt(Q2(p, bE)+nu(p, bE)*nu(p, bE))));
 }
 
 // Calculate the virtual photon's phi angle in the lab frame.
-double phi_photon_lab(particle p) {
+float phi_photon_lab(particle p) {
     if (!p.is_trigger_electron) return 0;
     return M_PI + phi_lab(p);
 }
@@ -241,13 +241,13 @@ double phi_photon_lab(particle p) {
 
 // Compute the polar angle of a produced particle p with respect to the virtual photon direction.
 // `p` is the produced particle while `e` is the trigger electron.
-double theta_pq(particle p, particle e, double bE) {
+float theta_pq(particle p, particle e, double bE) {
     if (!e.is_trigger_electron || p.is_trigger_electron) return 0;
     return calc_angle(-e.px, -e.py, bE-e.pz, p.px, p.py, p.pz);
 }
 
 // Compute the azimuthal angle of a produced particle p with respect to the virtual photon direction.
-double phi_pq(particle p, particle e, double bE) {
+float phi_pq(particle p, particle e, double bE) {
     if (!e.is_trigger_electron || p.is_trigger_electron) return 0;
 
     double gpx = -e.px, gpy = -e.py, gpz = bE-e.pz;
@@ -264,38 +264,38 @@ double phi_pq(particle p, particle e, double bE) {
 }
 
 // Compute the cosine of the polar angle with respect to the virtual photon direction.
-double cos_theta_pq(particle p, particle e, double bE) {
+float cos_theta_pq(particle p, particle e, double bE) {
     if (!e.is_trigger_electron || p.is_trigger_electron) return 0;
     return (p.pz*(bE-e.pz) - p.px*e.px - p.py*e.py) / (sqrt(nu(e,bE)*nu(e,bE) + Q2(e,bE)) * P(p));
 }
 
 // Return the squared momentum transverse to the virtual photon.
-double Pt2(particle p, particle e, double bE) {
+float Pt2(particle p, particle e, double bE) {
     if (!e.is_trigger_electron || p.is_trigger_electron) return 0;
     return P(p) * P(p) * (1 - cos_theta_pq(p,e,bE)*cos_theta_pq(p,e,bE));
 }
 
 // Return the squared momentum longitudinal to the virtual photon.
-double Pl2(particle p, particle e, double bE) {
+float Pl2(particle p, particle e, double bE) {
     if (!e.is_trigger_electron || p.is_trigger_electron) return 0;
     return P(p) * P(p) * cos_theta_pq(p,e,bE) * cos_theta_pq(p,e,bE);
 }
 
 // Obtain the fraction of the virtual photon energy taken by the produced particle in the lab frame.
-double zh(particle p, particle e, double bE) {
+float zh(particle p, particle e, double bE) {
     if (!e.is_trigger_electron || p.is_trigger_electron) return 0;
     return sqrt(p.mass*p.mass + P(p)*P(p)) / nu(e,bE);
 }
 
 // Return the longitudinal momentum in the center of mass frame.
-double PlCM(particle p, particle e, double bE) {
+float PlCM(particle p, particle e, double bE) {
     if (!e.is_trigger_electron || p.is_trigger_electron) return 0;
     return (nu(e,bE) + MASS.at(2212)) * (sqrt(Pl2(p,e,bE)) - sqrt(Q2(e,bE) + nu(e,bE)*nu(e,bE))
             * zh(p,e,bE)*nu(e,bE) / (nu(e,bE) + MASS.at(2212))) / W(e,bE);
 }
 
 // Obtain the maximum possible value that the momentum could've had in the center of mass frame.
-double PmaxCM(particle p, particle e, double bE) {
+float PmaxCM(particle p, particle e, double bE) {
     if (!e.is_trigger_electron || p.is_trigger_electron) return 0;
     return sqrt(pow(W(e,bE)*W(e,bE) - MASS.at(2112)*MASS.at(2112) + MASS.at(211)*MASS.at(211), 2)
             - 4*MASS.at(211)*MASS.at(211)*W(e,bE)*W(e,bE)) / (2*W(e,bE));
@@ -303,33 +303,33 @@ double PmaxCM(particle p, particle e, double bE) {
 
 // Return the momentum transverse component squared of the produced particle wrt the virtual photon
 //     direction.
-double PTrans2PQ(particle p, particle e, double bE) {
+float PTrans2PQ(particle p, particle e, double bE) {
     if (!e.is_trigger_electron || p.is_trigger_electron) return 0;
     return P(p)*P(p) * (1 - cos_theta_pq(p,e,bE)*cos_theta_pq(p,e,bE));
 }
 
 // Return the momentum longitudinal component squared of the produced particle wrt the virtual
 //     photon direction.
-double PLong2PQ(particle p, particle e, double bE) {
+float PLong2PQ(particle p, particle e, double bE) {
     if (!e.is_trigger_electron || p.is_trigger_electron) return 0;
     return P(p)*P(p) * cos_theta_pq(p,e,bE)*cos_theta_pq(p,e,bE);
 }
 
 // Calculate X_f (X Feynmann).
-double Xf(particle p, particle e, double bE) {
+float Xf(particle p, particle e, double bE) {
     if (!e.is_trigger_electron || p.is_trigger_electron) return 0;
     return PlCM(p,e,bE) / PmaxCM(p,e,bE);
 }
 
 // Compute the missing mass
-double Mx2(particle p, particle e, double bE) {
+float Mx2(particle p, particle e, double bE) {
     if (!e.is_trigger_electron || p.is_trigger_electron) return 0;
     return W(e,bE)*W(e,bE) - 2*nu(e,bE)*zh(p,e,bE) * (nu(e,bE) + MASS.at(2212))
             + MASS.at(211)*MASS.at(211) + 2*sqrt((Q2(e,bE) + nu(e,bE)*nu(e,bE)) * Pl2(p,e,bE));
 }
 
 // Compute Mandelstam t. TODO. Make sure that that is what this is!
-double t_mandelstam(particle p, particle e, double bE) {
+float t_mandelstam(particle p, particle e, double bE) {
     if (!e.is_trigger_electron || p.is_trigger_electron) return 0;
     return 2*sqrt((nu(e,bE)*nu(e,bE) + Q2(e,bE)) * Pl2(p,e,bE)) + MASS.at(211)*MASS.at(211)
             - Q2(e,bE) - 2*nu(e,bE)*nu(e,bE)*zh(p,e,bE);

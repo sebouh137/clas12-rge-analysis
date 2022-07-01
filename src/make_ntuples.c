@@ -129,7 +129,7 @@ int run(char * in_filename, bool debug, int nevn, int run_no, double beam_E) {
         if (rpart.vz->size() == 0 || rtrk.pindex->size() == 0) continue;
 
         // Find trigger electron's TOF.
-        int tre_tof = get_tof(rsci, rcal, rtrk.pindex->at(0));
+        float tre_tof = get_tof(rsci, rcal, rtrk.pindex->at(0));
 
         // Process DIS event.
         for (UInt_t pos = 0; pos < rtrk.index->size(); ++pos) {
@@ -141,9 +141,9 @@ int run(char * in_filename, bool debug, int nevn, int run_no, double beam_E) {
             p[1] = particle_init(&rpart, &rtrk, &ftrk, pos); // FMT.
 
             // Get deposited energy.
-            double pcal_E = 0; // PCAL total deposited energy.
-            double ecin_E = 0; // EC inner total deposited energy.
-            double ecou_E = 0; // EC outer total deposited energy.
+            float pcal_E = 0; // PCAL total deposited energy.
+            float ecin_E = 0; // EC inner total deposited energy.
+            float ecou_E = 0; // EC outer total deposited energy.
             for (UInt_t i = 0; i < rcal.pindex->size(); ++i) {
                 if (rcal.pindex->at(i) != pindex) continue;
                 int lyr = (int) rcal.layer->at(i);
@@ -153,7 +153,7 @@ int run(char * in_filename, bool debug, int nevn, int run_no, double beam_E) {
                 else if (lyr == ECOU_LYR) ecou_E += rcal.energy->at(i);
                 else return 2;
             }
-            double tot_E = pcal_E + ecin_E + ecou_E;
+            float tot_E = pcal_E + ecin_E + ecou_E;
 
             // Get Cherenkov counters data.
             int htcc_nphe = 0; // Number of photoelectrons deposited in htcc.
@@ -168,12 +168,12 @@ int run(char * in_filename, bool debug, int nevn, int run_no, double beam_E) {
             }
 
             // Get TOF.
-            double tof = get_tof(rsci, rcal, pindex);
+            float tof = get_tof(rsci, rcal, pindex);
 
             // Get miscellaneous data.
-            int status  = rpart.status->at(pindex);
-            double chi2 = rtrk.chi2   ->at(pos);
-            double ndf  = rtrk.ndf    ->at(pos);
+            int status = rpart.status->at(pindex);
+            float chi2 = rtrk.chi2   ->at(pos);
+            float ndf  = rtrk.ndf    ->at(pos);
 
             // Assign PID.
             for (int pi = 0; pi < 2; ++pi) {
@@ -188,16 +188,14 @@ int run(char * in_filename, bool debug, int nevn, int run_no, double beam_E) {
 
                 Float_t v[VAR_LIST_SIZE] = {
                         (Float_t) run_no, (Float_t) evn, (Float_t) beam_E,
-                        (Float_t) p[pi].pid, (Float_t) status, (Float_t) p[pi].q,
-                                (Float_t) p[pi].mass, (Float_t) p[pi].vx, (Float_t) p[pi].vy,
-                                (Float_t) p[pi].vz, (Float_t) p[pi].px, (Float_t) p[pi].py,
-                                (Float_t) p[pi].pz, (Float_t) P(p[pi]), (Float_t) theta_lab(p[pi]),
-                                (Float_t) phi_lab(p[pi]), (Float_t) p[pi].beta,
-                        (Float_t) chi2, (Float_t) ndf,
-                        (Float_t) pcal_E, (Float_t) ecin_E, (Float_t) ecou_E, (Float_t) tot_E,
-                        (Float_t) (tof - tre_tof),
-                        (Float_t) Q2(p[pi], beam_E), (Float_t) nu(p[pi], beam_E),
-                                (Float_t) Xb(p[pi], beam_E), (Float_t) W2(p[pi], beam_E)
+                        (Float_t) p[pi].pid, (Float_t) status, (Float_t) p[pi].q, p[pi].mass,
+                                p[pi].vx, p[pi].vy, p[pi].vz, p[pi].px, p[pi].py, p[pi].pz,
+                                P(p[pi]), theta_lab(p[pi]), phi_lab(p[pi]), p[pi].beta,
+                        chi2, ndf,
+                        pcal_E, ecin_E, ecou_E, tot_E,
+                        (tof - tre_tof),
+                        Q2(p[pi], beam_E), nu(p[pi], beam_E),
+                                Xb(p[pi], beam_E), W2(p[pi], beam_E)
                 };
                 t_out[pi]->Fill(v);
             }

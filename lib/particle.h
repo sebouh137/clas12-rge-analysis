@@ -22,12 +22,12 @@ typedef struct {
     int pid;
     int q;
     int sector;
-    double beta;
+    float beta;
     // Tracking vars.
-    double vx, vy, vz;
-    double px, py, pz;
+    float vx, vy, vz;
+    float px, py, pz;
     // Derived vars.
-    double mass;
+    float mass;
 } particle;
 
 // particle functions.
@@ -43,35 +43,35 @@ bool is_electron(double tot_E, double pcal_E, double htcc_nphe, double p,
 int assign_neutral_pid(double tot_E, double beta);
 int best_pid_from_momentum(double p, double beta, int pid_list[], int pid_list_size);
 int match_pid(int hyp, bool r_match, int q, bool e, bool htcc_s, bool htcc_p);
-double d_from_beamline(particle p);
-double theta_lab(particle p);
-double phi_lab(particle p);
-double P(particle p);
-double mass2(particle p);
+float d_from_beamline(particle p);
+float theta_lab(particle p);
+float phi_lab(particle p);
+float P(particle p);
+float mass2(particle p);
 
 // SIDIS e- functions.
-double nu(particle p, double beam_E);
-double Q2(particle p, double beam_E);
-double Xb(particle p, double beam_E);
-double Yb(particle p, double beam_E);
-double theta_photon_lab(particle p, double beam_E);
-double phi_photon_lab(particle p);
-double W(particle p, double beam_E);
-double W2(particle p, double bE);
+float nu(particle p, double beam_E);
+float Q2(particle p, double beam_E);
+float Xb(particle p, double beam_E);
+float Yb(particle p, double beam_E);
+float theta_photon_lab(particle p, double beam_E);
+float phi_photon_lab(particle p);
+float W(particle p, double beam_E);
+float W2(particle p, double bE);
 
 // SIDIS produced particle functions.
-double theta_pq(particle p, particle e, double bE);
-double phi_pq(particle p, particle e, double bE);
-double cos_theta_pq(particle p, particle e, double bE);
-double Pt2(particle p, particle e, double bE);
-double Pl2(particle p, particle e, double bE);
-double zh(particle p, particle e, double bE);
-double PlCM(particle p, particle e, double bE);
-double PmaxCM(particle p, particle e, double bE);
-double PTrans2PQ(particle p, particle e, double bE);
-double PLong2PQ(particle p, particle e, double bE);
-double Xf(particle p, particle e, double bE);
-double Mx2(particle p, particle e, double bE);
-double t_mandelstam(particle p, particle e, double bE);
+float theta_pq(particle p, particle e, double bE);
+float phi_pq(particle p, particle e, double bE);
+float cos_theta_pq(particle p, particle e, double bE);
+float Pt2(particle p, particle e, double bE);
+float Pl2(particle p, particle e, double bE);
+float zh(particle p, particle e, double bE);
+float PlCM(particle p, particle e, double bE);
+float PmaxCM(particle p, particle e, double bE);
+float PTrans2PQ(particle p, particle e, double bE);
+float PLong2PQ(particle p, particle e, double bE);
+float Xf(particle p, particle e, double bE);
+float Mx2(particle p, particle e, double bE);
+float t_mandelstam(particle p, particle e, double bE);
 
 #endif
