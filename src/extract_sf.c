@@ -44,10 +44,9 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no) {
         ci++;
         for (int si = 0; si < NSECTORS; ++si) {
             // Initialize dotgraphs.
-            std::ostringstream oss_h; // TODO. Change this to Form() because I hate c++.
-            oss_h << cal << si+1 << ")";
-            sf2D_name_arr[ci][si] = (char *) malloc(strlen(oss_h.str().c_str())+1);
-            strncpy(sf2D_name_arr[ci][si], oss_h.str().c_str(), strlen(oss_h.str().c_str()));
+            char * tmp_str = Form("%s%d)", cal, si+1);
+            sf2D_name_arr[ci][si] = (char *) malloc(strlen(tmp_str)+1);
+            strncpy(sf2D_name_arr[ci][si], tmp_str, strlen(tmp_str));
             insert_TH2F(&histos, R_PALL, sf2D_name_arr[ci][si], S_P, S_EDIVP,
                         200, 0, 10, 200, 0, 0.4);
             sf_dotgraph[ci][si] = new TGraphErrors();
@@ -55,10 +54,8 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no) {
             sf_dotgraph[ci][si]->SetMarkerColor(kRed);
 
             // Initialize fits.
-            std::ostringstream oss_f;
-            oss_f << cal << si+1 << ")";
-            sf2Dfit_name_arr[ci][si] = (char *) malloc(strlen(oss_f.str().c_str())+1);
-            strncpy(sf2Dfit_name_arr[ci][si], oss_f.str().c_str(), strlen(oss_f.str().c_str()));
+            sf2Dfit_name_arr[ci][si] = (char *) malloc(strlen(tmp_str)+1);
+            strncpy(sf2Dfit_name_arr[ci][si], tmp_str, strlen(tmp_str));
             sf_polyfit[ci][si] = new TF1(sf2Dfit_name_arr[ci][si],
                     "[0]*([1]+[2]/x + [3]/(x*x))", SF_PMIN+SF_PSTEP, SF_PMAX-SF_PSTEP);
                     // "[0]+[1]*x+[2]*x*x+[3]*x*x*x", SF_PMIN+SF_PSTEP, SF_PMAX-SF_PSTEP);
@@ -76,10 +73,9 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no) {
             int pi = -1;
             for (double p = SF_PMIN; p < SF_PMAX; p += SF_PSTEP) {
                 pi++;
-                std::ostringstream oss; // TODO. Change this to Form() because I hate c++.
-                oss << cal << si+1 << " (" << p << " < P_{tot} < " << p+SF_PSTEP << ")";
-                sf1D_name_arr[ci][si][pi] = (char *) malloc(strlen(oss.str().c_str())+1);
-                strncpy(sf1D_name_arr[ci][si][pi], oss.str().c_str(), strlen(oss.str().c_str()));
+                char * tmp_str = Form("%s%d (%5.2f < P_{tot} < %5.2f)", cal, si+1, p, p+SF_PSTEP);
+                sf1D_name_arr[ci][si][pi] = (char *) malloc(strlen(tmp_str)+1);
+                strncpy(sf1D_name_arr[ci][si][pi], tmp_str, strlen(tmp_str));
                 insert_TH1F(&histos, R_PALL, sf1D_name_arr[ci][si][pi], S_EDIVP, 200, 0, 0.4);
             }
         }
@@ -204,11 +200,10 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no) {
                 TH1 *EdivP = histos[sf1D_name_arr[ci][si][pi]];
 
                 // Form fit string name.
-                std::ostringstream oss; // TODO. Change this to Form() because I hate c++.
-                oss << cal << si+1 << " (" << p << " < P_{tot} < " << p+SF_PSTEP << ") fit";
+                char * tmp_str = Form("%s%d (%5.2f < P_{tot} < %5.2f) fit", cal, si+1, p, p+SF_PSTEP);
 
                 // Fit.
-                TF1 *sf_gaus = new TF1(oss.str().c_str(),
+                TF1 *sf_gaus = new TF1(tmp_str,
                                        "[0]*TMath::Gaus(x,[1],[2]) + [3]*x*x + [4]*x + [5]",
                                        PLIMITSARR[ci][0], PLIMITSARR[ci][1]);
                 sf_gaus->SetParameter(0 /* amp   */, EdivP->GetBinContent(EdivP->GetMaximumBin()));

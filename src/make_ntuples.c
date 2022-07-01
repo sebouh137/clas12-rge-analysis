@@ -62,7 +62,6 @@ double get_tof(REC_Scintillator rsci, REC_Calorimeter  rcal, int pindex) {
     return tof;
 }
 
-// TODO. Make this program write using both dc and fmt data.
 int run(char * in_filename, bool debug, int nevn, int run_no, double beam_E) {
     // Extract sampling fraction parameters.
     double sf_params[NSECTORS][SF_NPARAMS][2];
