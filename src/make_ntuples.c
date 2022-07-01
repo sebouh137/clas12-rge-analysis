@@ -15,6 +15,53 @@
 #include "../lib/particle.h"
 #include "../lib/utilities.h"
 
+double get_tof(REC_Scintillator rsci, REC_Calorimeter  rcal, int pindex) {
+    // Find most precise TOF (Layers precision: FTOF1B, FTOF1A, FTOFB, PCAL, ECIN, ECOU).
+    int    most_precise_lyr = 0;
+    double tof              = INFINITY; // Capture most precise TOF.
+    for (UInt_t i = 0; i < rsci.pindex->size(); ++i) {
+        // Filter out incorrect pindex and hits not from FTOF.
+        if (rsci.pindex->at(i) != pindex || rsci.detector->at(i) != FTOF_ID) continue;
+        if (rsci.layer->at(i) == FTOF1B_LYR) {
+            most_precise_lyr = FTOF1B_LYR;
+            tof = rsci.time->at(i);
+            break; // Things won't get better than this.
+        }
+        else if (rsci.layer->at(i) == FTOF1A_LYR) {
+            if (most_precise_lyr == FTOF1A_LYR) continue;
+            most_precise_lyr = FTOF1A_LYR;
+            tof = rsci.time->at(i);
+        }
+        else if (rsci.layer->at(i) == FTOF2_LYR) {
+            if (most_precise_lyr != 0) continue; // We already have a similar or better hit.
+            most_precise_lyr = FTOF2_LYR;
+            tof = rsci.time->at(i);
+        }
+    }
+    if (most_precise_lyr == 0) { // No hits from FTOF, let's try ECAL.
+        for (UInt_t i = 0; i < rcal.pindex->size(); ++i) {
+            if (rcal.pindex->at(i) != pindex) continue; // Filter out incorrect pindex.
+            if (rcal.layer->at(i) == PCAL_LYR) {
+                most_precise_lyr = 10 + PCAL_LYR;
+                tof = rcal.time->at(i);
+                break; // Things won't get better than this.
+            }
+            else if (rcal.layer->at(i) == ECIN_LYR) {
+                if (most_precise_lyr == 10 + ECIN_LYR) continue;
+                most_precise_lyr = 10 + ECIN_LYR;
+                tof = rcal.time->at(i);
+            }
+            else if (rcal.layer->at(i) == ECOU_LYR) {
+                if (most_precise_lyr != 0) continue;
+                most_precise_lyr = 10 + ECOU_LYR;
+                tof = rcal.time->at(i);
+            }
+        }
+    }
+
+    return tof;
+}
+
 // TODO. Make this program write using both dc and fmt data.
 int run(char * in_filename, bool use_fmt, bool debug, int nevn, int run_no, double beam_E) {
     // Extract sampling fraction parameters.
@@ -77,14 +124,6 @@ int run(char * in_filename, bool use_fmt, bool debug, int nevn, int run_no, doub
         // Filter events without the necessary banks.
         if (rpart.vz->size() == 0 || rtrk.pindex->size() == 0) continue;
 
-        // Find trigger electron's TOF.
-        int tre_pindex = rtrk.pindex->at(0);
-        double tre_tof = INFINITY;
-        for (UInt_t i = 0; i < rsci.pindex->size(); ++i) {
-            if (rsci.pindex->at(i) == tre_pindex && rsci.time->at(i) < tre_tof)
-                tre_tof = rsci.time->at(i);
-        }
-
         // Process DIS event.
         for (UInt_t pos = 0; pos < rtrk.index->size(); ++pos) {
             int pindex = rtrk.pindex->at(pos); // pindex is always equal to pos!
@@ -121,48 +160,8 @@ int run(char * in_filename, bool use_fmt, bool debug, int nevn, int run_no, doub
                 }
             }
 
-            // Find most precise TOF (Layers precision: FTOF1B, FTOF1A, FTOFB, PCAL, ECIN, ECOU).
-            int    most_precise_lyr = 0;
-            double tof              = INFINITY; // Capture most precise TOF.
-            for (UInt_t i = 0; i < rsci.pindex->size(); ++i) {
-                // Filter out incorrect pindex and hits not from FTOF.
-                if (rsci.pindex->at(i) != pindex || rsci.detector->at(i) != FTOF_ID) continue;
-                if (rsci.layer->at(i) == FTOF1B_LYR) {
-                    most_precise_lyr = FTOF1B_LYR;
-                    tof = rsci.time->at(i);
-                    break; // Things won't get better than this.
-                }
-                else if (rsci.layer->at(i) == FTOF1A_LYR) {
-                    if (most_precise_lyr == FTOF1A_LYR) continue;
-                    most_precise_lyr = FTOF1A_LYR;
-                    tof = rsci.time->at(i);
-                }
-                else if (rsci.layer->at(i) == FTOF2_LYR) {
-                    if (most_precise_lyr != 0) continue; // We already have a similar or better hit.
-                    most_precise_lyr = FTOF2_LYR;
-                    tof = rsci.time->at(i);
-                }
-            }
-            if (most_precise_lyr == 0) { // No hits from FTOF, let's try ECAL.
-                for (UInt_t i = 0; i < rcal.pindex->size(); ++i) {
-                    if (rcal.pindex->at(i) != pindex) continue; // Filter out incorrect pindex.
-                    if (rcal.layer->at(i) == PCAL_LYR) {
-                        most_precise_lyr = 10 + PCAL_LYR;
-                        tof = rcal.time->at(i);
-                        break; // Things won't get better than this.
-                    }
-                    else if (rcal.layer->at(i) == ECIN_LYR) {
-                        if (most_precise_lyr == 10 + ECIN_LYR) continue;
-                        most_precise_lyr = 10 + ECIN_LYR;
-                        tof = rcal.time->at(i);
-                    }
-                    else if (rcal.layer->at(i) == ECOU_LYR) {
-                        if (most_precise_lyr != 0) continue;
-                        most_precise_lyr = 10 + ECOU_LYR;
-                        tof = rcal.time->at(i);
-                    }
-                }
-            }
+            // Get TOF.
+            double tof = get_tof(rsci, rcal, pindex);
 
             // Get miscellaneous data.
             int status  = rpart.status->at(pindex);
