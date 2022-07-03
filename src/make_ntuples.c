@@ -89,7 +89,7 @@ int run(char * in_filename, char * out_filename, bool use_simul, bool use_fmt, b
             p_el = use_fmt ? particle_init(&rpart, &rtrk, &ftrk, pos)
                            : particle_init(&rpart, &rtrk, pos);
             if(p_el.is_trigger_electron) break;
-        }
+        }// FIIIIIX
         // Guarding statement
         if(!p_el.is_trigger_electron) continue;
 

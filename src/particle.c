@@ -18,9 +18,7 @@ particle particle_init(int pid, int charge, double beta, int status, int sector,
     p.is_valid = true;
     p.is_trigger_electron = (pid == 11 && status < 0);
     p.is_hadron = false;
-    if(!p.is_trigger_electron){
-        for(int i = 0 ; i < NHADRONS ; i++){if(HPID_ARRAY[i] == (int)pid) {p.is_hadron = true; break;}}
-    }
+    for(int i = 0 ; i < NHADRONS ; i++){if(HPID_ARRAY[i] == (int)pid) {p.is_hadron = true; break;}}
     p.pid    = pid;
     p.q      = charge;
     p.beta   = beta;
@@ -173,8 +171,8 @@ double phi_pq(particle p, particle e, double bE) {
     double ppx = p.px,  ppy = p.py,  ppz = p.pz;
 
     // Analyser uses gp isntead of p, i.e., the momentum of virtual photon
-    double phi_z = M_PI - atan2(gpy, gpx);//phi_lab(p);
-
+    double phi_z = M_PI - atan2(gpy, gpx);
+    
     rotate_z(&gpx, &gpy, phi_z);
     rotate_z(&ppx, &ppy, phi_z);
 
