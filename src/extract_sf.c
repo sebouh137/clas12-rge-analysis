@@ -21,19 +21,10 @@
 #include "../lib/io_handler.h"
 #include "../lib/utilities.h"
 
-// TODO. Add status cut.
-// TODO. Evaluate the most basic cuts and implement the necessary ones.
-// TODO. Check what happens with the acceptance of different particles (like pi+ and pi-) when you
-//       reverse the magnetic fields.
-// TODO. Check if we can run high luminosity with reverse fields.
-// TODO. Check if RG-F or RG-M ran with reverse field.
-// TODO. See what happens to low-momentum particles inside CLAS12 through simulation and see if they
-//       are reconstructed.
-
-int run(char *in_filename, bool use_fmt, int nevn) {
+int run(char *in_filename, bool use_fmt, int nevn, int run_no) {
     gStyle->SetOptFit();
 
-    // Access input file. TODO. Make this input file*s*.
+    // Access input file.
     TFile *f_in = TFile::Open(in_filename, "READ");
     if (!f_in || f_in->IsZombie()) return 1;
 
@@ -43,45 +34,35 @@ int run(char *in_filename, bool use_fmt, int nevn) {
     const int ncals = sizeof(CALNAME)/sizeof(CALNAME[0]);
     char *sf1D_name_arr[ncals][NSECTORS][(int) ((SF_PMAX - SF_PMIN)/SF_PSTEP)];
     char *sf2D_name_arr[ncals][NSECTORS];
-    TGraphErrors *sf_dotgraph_top[ncals][NSECTORS];
-    TGraphErrors *sf_dotgraph_bot[ncals][NSECTORS];
-    char *sf2Dfit_name_arr[ncals][NSECTORS][2];
-    TF1 *sf_polyfit[ncals][NSECTORS][2];
-    double sf_fitresults[ncals][NSECTORS][2][4];
+    TGraphErrors *sf_dotgraph[ncals][NSECTORS];
+    char *sf2Dfit_name_arr[ncals][NSECTORS];
+    TF1 *sf_polyfit[ncals][NSECTORS];
+    double sf_fitresults[ncals][NSECTORS][SF_NPARAMS][2];
 
     int ci = -1;
     for (const char *cal : SFARR2D) {
         ci++;
         for (int si = 0; si < NSECTORS; ++si) {
             // Initialize dotgraphs.
-            std::ostringstream oss_h; // TODO. Change this to Form() because I hate c++.
-            oss_h << cal << si+1 << ")";
-            sf2D_name_arr[ci][si] = (char *) malloc(strlen(oss_h.str().c_str())+1);
-            strncpy(sf2D_name_arr[ci][si], oss_h.str().c_str(), strlen(oss_h.str().c_str()));
-            insert_TH2F(&histos, R_PALL, sf2D_name_arr[ci][si], S_P, S_EDIVP, 200, 0, 10, 200, 0, 0.4);
-            sf_dotgraph_top[ci][si] = new TGraphErrors();
-            sf_dotgraph_top[ci][si]->SetMarkerStyle(kFullCircle);
-            sf_dotgraph_top[ci][si]->SetMarkerColor(kRed);
-            sf_dotgraph_bot[ci][si] = new TGraphErrors();
-            sf_dotgraph_bot[ci][si]->SetMarkerStyle(kFullCircle);
-            sf_dotgraph_bot[ci][si]->SetMarkerColor(kRed);
+            char * tmp_str = Form("%s%d)", cal, si+1);
+            sf2D_name_arr[ci][si] = (char *) malloc(strlen(tmp_str)+1);
+            strncpy(sf2D_name_arr[ci][si], tmp_str, strlen(tmp_str));
+            insert_TH2F(&histos, R_PALL, sf2D_name_arr[ci][si], S_P, S_EDIVP,
+                        200, 0, 10, 200, 0, 0.4);
+            sf_dotgraph[ci][si] = new TGraphErrors();
+            sf_dotgraph[ci][si]->SetMarkerStyle(kFullCircle);
+            sf_dotgraph[ci][si]->SetMarkerColor(kRed);
 
             // Initialize fits.
-            std::ostringstream oss_f1, oss_f2;
-            oss_f1 << cal << si+1 << ") bottom fit";
-            oss_f2 << cal << si+1 << ") top fit";
-            sf2Dfit_name_arr[ci][si][0] = (char *) malloc(strlen(oss_f1.str().c_str())+1);
-            sf2Dfit_name_arr[ci][si][1] = (char *) malloc(strlen(oss_f2.str().c_str())+1);
-            strncpy(sf2Dfit_name_arr[ci][si][0], oss_f1.str().c_str(), strlen(oss_f1.str().c_str()));
-            strncpy(sf2Dfit_name_arr[ci][si][1], oss_f2.str().c_str(), strlen(oss_f2.str().c_str()));
-            for (int i = 0; i < 2; ++i) {
-                sf_polyfit[ci][si][i] = new TF1(sf2Dfit_name_arr[ci][si][i],
-                        "[0]+[1]*x+[2]*x*x+[3]*x*x*x", SF_PMIN+SF_PSTEP, SF_PMAX-SF_PSTEP);
-                sf_polyfit[ci][si][i]->SetParameter(0 /* p0 */, 0);
-                sf_polyfit[ci][si][i]->SetParameter(1 /* p1 */, 0);
-                sf_polyfit[ci][si][i]->SetParameter(2 /* p2 */, 0);
-                sf_polyfit[ci][si][i]->SetParameter(3 /* p3 */, 0);
-            }
+            sf2Dfit_name_arr[ci][si] = (char *) malloc(strlen(tmp_str)+1);
+            strncpy(sf2Dfit_name_arr[ci][si], tmp_str, strlen(tmp_str));
+            sf_polyfit[ci][si] = new TF1(sf2Dfit_name_arr[ci][si],
+                    "[0]*([1]+[2]/x + [3]/(x*x))", SF_PMIN+SF_PSTEP, SF_PMAX-SF_PSTEP);
+                    // "[0]+[1]*x+[2]*x*x+[3]*x*x*x", SF_PMIN+SF_PSTEP, SF_PMAX-SF_PSTEP);
+            sf_polyfit[ci][si]->SetParameter(0 /* p0 */, 0.25);
+            sf_polyfit[ci][si]->SetParameter(1 /* p1 */, 1);
+            sf_polyfit[ci][si]->SetParameter(2 /* p2 */, 0);
+            sf_polyfit[ci][si]->SetParameter(3 /* p3 */, 0);
         }
     }
 
@@ -92,10 +73,9 @@ int run(char *in_filename, bool use_fmt, int nevn) {
             int pi = -1;
             for (double p = SF_PMIN; p < SF_PMAX; p += SF_PSTEP) {
                 pi++;
-                std::ostringstream oss; // TODO. Change this to Form() because I hate c++.
-                oss << cal << si+1 << " (" << p << " < P_{tot} < " << p+SF_PSTEP << ")";
-                sf1D_name_arr[ci][si][pi] = (char *) malloc(strlen(oss.str().c_str())+1);
-                strncpy(sf1D_name_arr[ci][si][pi], oss.str().c_str(), strlen(oss.str().c_str()));
+                char * tmp_str = Form("%s%d (%5.2f < P_{tot} < %5.2f)", cal, si+1, p, p+SF_PSTEP);
+                sf1D_name_arr[ci][si][pi] = (char *) malloc(strlen(tmp_str)+1);
+                strncpy(sf1D_name_arr[ci][si][pi], tmp_str, strlen(tmp_str));
                 insert_TH1F(&histos, R_PALL, sf1D_name_arr[ci][si][pi], S_EDIVP, 200, 0, 0.4);
             }
         }
@@ -220,11 +200,10 @@ int run(char *in_filename, bool use_fmt, int nevn) {
                 TH1 *EdivP = histos[sf1D_name_arr[ci][si][pi]];
 
                 // Form fit string name.
-                std::ostringstream oss; // TODO. Change this to Form() because I hate c++.
-                oss << cal << si+1 << " (" << p << " < P_{tot} < " << p+SF_PSTEP << ") fit";
+                char * tmp_str = Form("%s%d (%5.2f < P_{tot} < %5.2f) fit", cal, si+1, p, p+SF_PSTEP);
 
                 // Fit.
-                TF1 *sf_gaus = new TF1(oss.str().c_str(),
+                TF1 *sf_gaus = new TF1(tmp_str,
                                        "[0]*TMath::Gaus(x,[1],[2]) + [3]*x*x + [4]*x + [5]",
                                        PLIMITSARR[ci][0], PLIMITSARR[ci][1]);
                 sf_gaus->SetParameter(0 /* amp   */, EdivP->GetBinContent(EdivP->GetMaximumBin()));
@@ -243,31 +222,25 @@ int run(char *in_filename, bool use_fmt, int nevn) {
 
                 // Only add points within PLIMITSARR borders and with an acceptable chi2.
                 if ((mean - 2*sigma > PLIMITSARR[ci][0] && mean + 2*sigma < PLIMITSARR[ci][1]) &&
-                    (sf_gaus->GetChisquare() / sf_gaus->GetNDF() < SF_CHI2CONFORMITY)) {
-                    sf_dotgraph_top[ci][si]->AddPoint(p + SF_PSTEP/2, mean + 2*sigma);
-                    sf_dotgraph_bot[ci][si]->AddPoint(p + SF_PSTEP/2, mean - 2*sigma);
+                        (sf_gaus->GetChisquare() / sf_gaus->GetNDF() < SF_CHI2CONFORMITY))
+                    sf_dotgraph[ci][si]->AddPoint(p + SF_PSTEP/2, mean);
                 }
-            }
 
             // Fit dotgraphs.
-            if (sf_dotgraph_bot[ci][si]->GetN() > 0)
-                sf_dotgraph_bot[ci][si]->Fit(sf_polyfit[ci][si][0], "QR", "",
-                                             SF_PMIN+SF_PSTEP, SF_PMAX-SF_PSTEP);
-            if (sf_dotgraph_top[ci][si]->GetN() > 0)
-                sf_dotgraph_top[ci][si]->Fit(sf_polyfit[ci][si][1], "QR", "",
-                                             SF_PMIN+SF_PSTEP, SF_PMAX-SF_PSTEP);
+            if (sf_dotgraph[ci][si]->GetN() > 0)
+                sf_dotgraph[ci][si]->Fit(sf_polyfit[ci][si], "QR", "",
+                                         SF_PMIN+SF_PSTEP, SF_PMAX-SF_PSTEP);
 
-            // TODO. Extract and save dotgraph fits parameters to make cuts from them.
-            for (int bi = 0; bi < 2; ++bi) {
-                for (int pi = 0; pi < sf_polyfit[ci][si][bi]->GetNpar(); ++pi) {
-                    sf_fitresults[ci][si][bi][pi] = sf_polyfit[ci][si][bi]->GetParameter(pi);
-                }
+            // Extract and save dotgraph fits parameters to make cuts from them.
+            for (int pi = 0; pi < sf_polyfit[ci][si]->GetNpar(); ++pi) {
+                sf_fitresults[ci][si][pi][0] = sf_polyfit[ci][si]->GetParameter(pi); // sf.
+                sf_fitresults[ci][si][pi][1] = sf_polyfit[ci][si]->GetParError(pi);  // sfs.
             }
         }
     }
 
     // Create output file.
-    TFile *f_out = TFile::Open("../root_io/sf_study.root", "RECREATE");
+    TFile *f_out = TFile::Open(Form("../root_io/sf_study_%06d.root", run_no), "RECREATE");
 
     // Write to output file.
     TString dir;
@@ -282,34 +255,34 @@ int run(char *in_filename, bool use_fmt, int nevn) {
             f_out->cd(dir);
 
             histos[sf2D_name_arr[ci][si]]->Draw("colz");
-            sf_dotgraph_top[ci][si]->Draw("Psame");
-            sf_dotgraph_bot[ci][si]->Draw("Psame");
-            sf_polyfit[ci][si][0]->Draw("same");
-            sf_polyfit[ci][si][1]->Draw("same");
+            sf_dotgraph[ci][si]->Draw("Psame");
+            sf_polyfit[ci][si]->Draw("same");
             gcvs->Write(sf2D_name_arr[ci][si]);
             free(sf2D_name_arr[ci][si]);
             for (int pi = 0; pi < ((int) ((SF_PMAX - SF_PMIN)/SF_PSTEP)); ++pi) {
                 histos[sf1D_name_arr[ci][si][pi]]->Write();
                 free(sf1D_name_arr[ci][si][pi]);
             }
-            for (int i = 0; i < 2; ++i) free(sf2Dfit_name_arr[ci][si][i]);
+            free(sf2Dfit_name_arr[ci][si]);
         }
     }
 
-    FILE *t_out = fopen("../data/sf_results", "w");
+    // Write results to file.
+    FILE *t_out = fopen(Form("../data/sf_params_%06d.root", run_no), "w");
 
     if (t_out == NULL) return 4;
-    for (int ci = 0; ci < 4; ++ci) {
-        for (int si = 0; si < 6; ++si) {
-            for (int bi = 0; bi < 2; ++bi) {
-                for (int pi = 0; pi < 4; ++pi) {
-                    fprintf(t_out, "%11.8f ", sf_fitresults[ci][si][bi][pi]);
+    for (int ci = 3; ci < 4; ++ci) { // NOTE. Only writing ECAL sf results.
+        for (int si = 0; si < NSECTORS; ++si) {
+            for (int ppi = 0; ppi < 2; ++ppi) { // sf and sfs.
+                for (int pi = 0; pi < SF_NPARAMS; ++pi) {
+                    fprintf(t_out, "%011.8f ", sf_fitresults[ci][si][pi][0]);
                 }
-                fprintf(t_out, "\n");
             }
+            fprintf(t_out, "\n");
         }
     }
 
+    fclose(t_out);
     f_in ->Close();
     f_out->Close();
     free(in_filename);
@@ -322,9 +295,10 @@ int main(int argc, char **argv) {
     bool use_fmt      = false;
     int nevn          = -1;
     char *in_filename = NULL;
+    int run_no        = -1;
 
-    if (extractsf_handle_args_err(extractsf_handle_args(argc, argv, &use_fmt, &nevn, &in_filename),
-            &in_filename))
+    if (extractsf_handle_args_err(extractsf_handle_args(argc, argv, &use_fmt, &nevn, &in_filename,
+            &run_no), &in_filename))
         return 1;
-    return extractsf_err(run(in_filename, use_fmt, nevn), &in_filename);
+    return extractsf_err(run(in_filename, use_fmt, nevn, run_no), &in_filename);
 }
