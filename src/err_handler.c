@@ -1,8 +1,7 @@
 #include "../lib/err_handler.h"
 
 int make_ntuples_usage() {
-    fprintf(stderr, "Usage: make_ntuples [-fd] [-n NEVENTS] [-s] file\n");
-    fprintf(stderr, " * -f: Use FMT data. If unspecified, program will only use DC data.\n");
+    fprintf(stderr, "Usage: make_ntuples [-fd] [-n NEVENTS] file\n");
     fprintf(stderr, " * -d: Activate debug mode. Only use when programming new features.\n");
     fprintf(stderr, " * -n NEVENTS: Specify number of events to be processed with optarg.\n");
     fprintf(stderr, " * -s: This option is to specify the use of simulations instead of data.\n");
@@ -38,6 +37,10 @@ int make_ntuples_handle_args_err(int errcode, char ** in_filename, int run_no) {
         case 7:
             fprintf(stderr, "Error. No file name provided.\n");
             return make_ntuples_usage();
+        case 8:
+            fprintf(stderr, "Error. No sampling fraction available for input file! Run ");
+            fprintf(stderr, "extract_sf before generating the ntuples.\n");
+            free(* in_filename);
         default:
             fprintf(stderr, "Programmer Error. Error code %d not implemented in ", errcode);
             fprintf(stderr, "make_ntuples_handle_args()! You're on your own.\n");
