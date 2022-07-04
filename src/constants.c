@@ -59,10 +59,13 @@ const char * S_VAR_LIST[VAR_LIST_SIZE] = {
         S_CHI2, S_NDF,
         S_PCAL_E, S_ECIN_E, S_ECOU_E, S_TOT_E,
         S_DTOF,
-        S_Q2, S_NU, S_XB, S_W2
+        S_Q2, S_NU, S_XB, S_W2, S_ZH, S_PT2, S_PL2, S_PHIPQ, S_THETAPQ
 };
 const char * DIS_LIST[DIS_LIST_SIZE] = {
         R_Q2, R_NU, R_XB, R_W2
+};
+const char * SIDIS_LIST[SIDIS_LIST_SIZE] = {
+        R_ZH, R_PT2, R_PL2, R_PHIPQ, R_THETAPQ
 };
 
 // Standard plots constant arrays.

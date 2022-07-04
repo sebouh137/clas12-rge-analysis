@@ -68,8 +68,10 @@ int run(char * in_filename, bool debug, int nevn, int run_no, double beam_E) {
     if (get_sf_params(Form("../data/sf_params_%06d.root", run_no), sf_params)) return 8;
 
     // Access input file. TODO. Make this input file*s*, as in multiple files.
+
     TFile *f_in  = TFile::Open(in_filename, "READ");
-    TFile *f_out = TFile::Open("../root_io/ntuples.root", "RECREATE"); // NOTE. This path sucks.
+    TFile *f_out = TFile::Open(out_filename, "RECREATE"); // NOTE. This path sucks. // EM: yes, it does
+
     if (!f_in || f_in->IsZombie()) return 1;
 
     // Generate lists of variables.
@@ -131,6 +133,17 @@ int run(char * in_filename, bool debug, int nevn, int run_no, double beam_E) {
         float tre_tof = get_tof(rsci, rcal, rtrk.pindex->at(0));
 
         // Process DIS event.
+        // Checking existence of trigger electron in event
+        particle p_el = particle_init();
+        for (UInt_t pos = 0; pos < rtrk.index->size(); ++pos) {
+            p_el = use_fmt ? particle_init(&rpart, &rtrk, &ftrk, pos)
+                           : particle_init(&rpart, &rtrk, pos);
+            if(p_el.is_trigger_electron) break;
+        }
+        // Guarding statement
+        if(!p_el.is_trigger_electron) continue;
+
+        // Processing particles
         for (UInt_t pos = 0; pos < rtrk.index->size(); ++pos) {
             int pindex = rtrk.pindex->at(pos); // pindex is always equal to pos!
 

@@ -1,5 +1,10 @@
 #include <cstdlib>
 #include <iostream>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+
 
 #include "reader.h"
 #include "utils.h"
@@ -12,16 +17,18 @@
 #include "../lib/bank_containers.h"
 
 int main(int argc, char **argv) {
-    char *in_filename = NULL;
-    int  run_no = -1;
-
-    if (hipo2root_handle_args_err(hipo2root_handle_args(argc, argv, &in_filename, &run_no),
-                                  &in_filename))
-        return 1;
-
+    char *in_filename  = NULL;
+    char *out_filename = NULL;
+    int  run_no    = -1;
+    bool use_simul = false;
+    
     char *out_filename = (char *) malloc(128 * sizeof(char));
     sprintf(out_filename, "../root_io/banks_%06d.root", run_no);
 
+    if (hipo2root_handle_args_err(hipo2root_handle_args(argc, argv, &in_filename, &run_no, &use_simul),
+                                      &in_filename))
+            return 1;
+    
     TFile *f = TFile::Open(out_filename, "RECREATE");
     f->SetCompressionAlgorithm(ROOT::kLZ4);
 
@@ -72,6 +79,7 @@ int main(int argc, char **argv) {
     printf("Read %8d events... Done!\n", c);
 
     // Clean up.
+    tree->Write();
     f->Close();
     free(in_filename);
     free(out_filename);
