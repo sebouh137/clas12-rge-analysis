@@ -85,11 +85,6 @@ const long STD_BX[STDPLT_LIST_SIZE][2] = {
         {200,200}, {200,100}, {200,200}, { 22, -1}, { 22, -1}, { 20, -1}, {200, -1}, {200,200}
 };
 
-<<<<<<< HEAD
-// Pid arrays
-const int HPID_ARRAY[NHADRONS] = {
-        211, -211, 2212, 2112, 321, -321, 221, 223, 111, 311
-=======
 // Sampling fraction constant arrays.
 const char * CALNAME[4] = {
         "PCAL", "ECIN", "ECOU", "ALL"
@@ -111,5 +106,4 @@ const double PLIMITSARR[4][2] = {
         {0.015, 0.120},
         {0.000, 0.400},
         {0.150, 0.300}
->>>>>>> master
 };

@@ -21,7 +21,7 @@
 #include "../lib/io_handler.h"
 #include "../lib/utilities.h"
 
-int run(char *in_filename, bool use_fmt, int nevn, int run_no) {
+int run(char *in_filename, bool use_simul, bool use_fmt, int nevn, int run_no) {
     gStyle->SetOptFit();
 
     // Access input file.
@@ -192,6 +192,7 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no) {
         ci++;
         for (int si = 0; si < NSECTORS; ++si) {
             int pi = -1;
+            int point_index = 0;
             // Fit 1D plots for each momentum bin to fill dotgraphs.
             for (double p = SF_PMIN; p < SF_PMAX; p += SF_PSTEP) {
                 pi++;
@@ -222,8 +223,10 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no) {
 
                 // Only add points within PLIMITSARR borders and with an acceptable chi2.
                 if ((mean - 2*sigma > PLIMITSARR[ci][0] && mean + 2*sigma < PLIMITSARR[ci][1]) &&
-                        (sf_gaus->GetChisquare() / sf_gaus->GetNDF() < SF_CHI2CONFORMITY))
-                    sf_dotgraph[ci][si]->AddPoint(p + SF_PSTEP/2, mean);
+                    (sf_gaus->GetChisquare() / sf_gaus->GetNDF() < SF_CHI2CONFORMITY)){
+                        // Older root compatibility fix
+                        sf_dotgraph[ci][si]->SetPoint(point_index, p + SF_PSTEP/2, mean); point_index++;
+                    }
                 }
 
             // Fit dotgraphs.
@@ -240,7 +243,14 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no) {
     }
 
     // Create output file.
-    TFile *f_out = TFile::Open(Form("../root_io/sf_study_%06d.root", run_no), "RECREATE");
+    char*  out_filename = (char *) malloc(128 * sizeof(char));
+    if(!use_simul){
+        sprintf(out_filename, "../root_io/sf_study_banks_%06d.root", run_no);
+    } else{
+        sprintf(out_filename, "sf_study_%s.root", in_filename);
+    }
+    
+    TFile *f_out = TFile::Open(out_filename, "RECREATE");
 
     // Write to output file.
     TString dir;
@@ -268,7 +278,7 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no) {
     }
 
     // Write results to file.
-    FILE *t_out = fopen(Form("../data/sf_params_%06d.root", run_no), "w");
+    FILE *t_out = fopen(Form("../root_io/sf_params_%06d.root", run_no), "w");
 
     if (t_out == NULL) return 4;
     for (int ci = 3; ci < 4; ++ci) { // NOTE. Only writing ECAL sf results.
@@ -286,6 +296,7 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no) {
     f_in ->Close();
     f_out->Close();
     free(in_filename);
+    free(out_filename);
 
     return 0;
 }
@@ -293,12 +304,14 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no) {
 // Call program from terminal, C-style.
 int main(int argc, char **argv) {
     bool use_fmt      = false;
+    bool use_simul    = false;
     int nevn          = -1;
     char *in_filename = NULL;
     int run_no        = -1;
 
     if (extractsf_handle_args_err(extractsf_handle_args(argc, argv, &use_fmt, &nevn, &in_filename,
-            &run_no), &in_filename))
+            &run_no, &use_simul), &in_filename))
         return 1;
-    return extractsf_err(run(in_filename, use_fmt, nevn, run_no), &in_filename);
+
+    return extractsf_err(run(in_filename, use_simul, use_fmt, nevn, run_no), &in_filename);
 }

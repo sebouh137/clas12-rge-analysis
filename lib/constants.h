@@ -203,6 +203,7 @@ extern const double PLIMITSARR[SF_NPARAMS][2]; // Momentum limits for 1D SF fits
 #define BE11983 10.3894 //  50 nA.
 #define BE12016 10.3894 // 250 nA.
 #define BE12439  2.1864 //  15 nA.
+#define BESIMUL 11.
 
 // Detector constants.
 #define NSECTORS    6 // # of CLAS12 sectors.

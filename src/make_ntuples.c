@@ -62,13 +62,19 @@ double get_tof(REC_Scintillator rsci, REC_Calorimeter  rcal, int pindex) {
     return tof;
 }
 
-int run(char * in_filename, bool debug, int nevn, int run_no, double beam_E) {
-    // Extract sampling fraction parameters.
+int run(char * in_filename, bool use_simul,bool debug, int nevn, int run_no, double beam_E) {
     double sf_params[NSECTORS][SF_NPARAMS][2];
-    if (get_sf_params(Form("../data/sf_params_%06d.root", run_no), sf_params)) return 8;
-
+    char*  out_filename = (char *) malloc(128 * sizeof(char));
+    if(!use_simul){
+        // Extract sampling fraction parameters.
+        if (get_sf_params(Form("../data/sf_params_%06d.root", run_no), sf_params)) return 8;
+        sprintf(out_filename, "../root_io/banks_%06d.root", run_no);
+    } else{
+        if (get_sf_params(Form("sf_study_%s.root",in_filename), sf_params)) return 8;
+        sprintf(out_filename, "%s.root", in_filename);
+    }
+    
     // Access input file. TODO. Make this input file*s*, as in multiple files.
-
     TFile *f_in  = TFile::Open(in_filename, "READ");
     TFile *f_out = TFile::Open(out_filename, "RECREATE"); // NOTE. This path sucks. // EM: yes, it does
 
@@ -133,16 +139,6 @@ int run(char * in_filename, bool debug, int nevn, int run_no, double beam_E) {
         float tre_tof = get_tof(rsci, rcal, rtrk.pindex->at(0));
 
         // Process DIS event.
-        // Checking existence of trigger electron in event
-        particle p_el = particle_init();
-        for (UInt_t pos = 0; pos < rtrk.index->size(); ++pos) {
-            p_el = use_fmt ? particle_init(&rpart, &rtrk, &ftrk, pos)
-                           : particle_init(&rpart, &rtrk, pos);
-            if(p_el.is_trigger_electron) break;
-        }// FIIIIIX
-        // Guarding statement
-        if(!p_el.is_trigger_electron) continue;
-
         // Processing particles
         for (UInt_t pos = 0; pos < rtrk.index->size(); ++pos) {
             int pindex = rtrk.pindex->at(pos); // pindex is always equal to pos!
@@ -233,13 +229,14 @@ int run(char * in_filename, bool debug, int nevn, int run_no, double beam_E) {
 // Call program from terminal, C-style.
 int main(int argc, char ** argv) {
     bool debug         = false;
+    bool use_simul     = false;
     int nevn           = -1;
     int run_no         = -1;
     double beam_E      = -1;
     char * in_filename = NULL;
 
     if (make_ntuples_handle_args_err(make_ntuples_handle_args(argc, argv, &debug, &nevn,
-            &in_filename, &run_no, &beam_E), &in_filename, run_no))
+            &use_simul, &in_filename, &run_no, &beam_E), &in_filename, run_no))
         return 1;
-    return make_ntuples_err(run(in_filename, debug, nevn, run_no, beam_E), &in_filename);
+    return make_ntuples_err(run(in_filename, use_simul, debug, nevn, run_no, beam_E), &in_filename);
 }
