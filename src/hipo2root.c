@@ -19,30 +19,16 @@
 int main(int argc, char **argv) {
     char *in_filename  = NULL;
     char *out_filename = NULL;
-
     int  run_no    = -1;
     bool use_simul = false;
     
+    char *out_filename = (char *) malloc(128 * sizeof(char));
+    sprintf(out_filename, "../root_io/banks_%06d.root", run_no);
+
     if (hipo2root_handle_args_err(hipo2root_handle_args(argc, argv, &in_filename, &run_no, &use_simul),
                                       &in_filename))
             return 1;
-        
-    if(!use_simul){
-        // Data process
-        out_filename = (char *) malloc(22 * sizeof(char));
-        if      (run_no /     10 == 0) sprintf(out_filename, "../root_io/00000%d.root", run_no);
-        else if (run_no /    100 == 0) sprintf(out_filename, "../root_io/0000%d.root", run_no);
-        else if (run_no /   1000 == 0) sprintf(out_filename, "../root_io/000%d.root", run_no);
-        else if (run_no /  10000 == 0) sprintf(out_filename, "../root_io/00%d.root", run_no);
-        else if (run_no / 100000 == 0) sprintf(out_filename, "../root_io/0%d.root", run_no);
-        else                           sprintf(out_filename, "../root_io/%d.root", run_no);
-    } else{
-        // Simul process
-        // Creates file in current folder
-        out_filename = (char *) malloc(5 + strlen(argv[argc - 1]) + 1);        
-        sprintf(out_filename, "%s.root", argv[argc - 1]);
-    }
-
+    
     TFile *f = TFile::Open(out_filename, "RECREATE");
     f->SetCompressionAlgorithm(ROOT::kLZ4);
 
