@@ -63,17 +63,21 @@ double get_tof(REC_Scintillator rsci, REC_Calorimeter  rcal, int pindex) {
 }
 
 int run(char * in_filename, bool use_simul,bool debug, int nevn, int run_no, double beam_E) {
-    double sf_params[NSECTORS][SF_NPARAMS][2];
+    double sf_params[NSECTORS][SF_NPARAMS][2] = {{{0.246,0.0140},{0.985,1.},{0.083,0.},{-0.031,0.}},
+                                                 {{0.255,0.0150},{0.985,1.},{0.043,0.},{-0.024,0.}},
+                                                 {{0.245,0.0130},{0.985,1.},{0.067,0.},{-0.025,0.}},
+                                                 {{0.245,0.0140},{0.985,1.},{0.048,0.},{-0.016,0.}},
+                                                 {{0.252,0.0130},{0.985,1.},{0.007,0.},{-0.007,0.}},
+                                                 {{0.242,0.0140},{0.985,1.},{0.095,0.},{-0.038,0.}}};
     char*  out_filename = (char *) malloc(128 * sizeof(char));
     if(!use_simul){
         // Extract sampling fraction parameters.
         if (get_sf_params(Form("../data/sf_params_%06d.root", run_no), sf_params)) return 8;
         sprintf(out_filename, "../root_io/banks_%06d.root", run_no);
     } else{
-        if (get_sf_params(Form("sf_study_%s.root",in_filename), sf_params)) return 8;
-        sprintf(out_filename, "%s.root", in_filename);
+        sprintf(out_filename, "ntuple_%s.root", in_filename);
     }
-    
+
     // Access input file. TODO. Make this input file*s*, as in multiple files.
     TFile *f_in  = TFile::Open(in_filename, "READ");
     TFile *f_out = TFile::Open(out_filename, "RECREATE"); // NOTE. This path sucks. // EM: yes, it does
@@ -89,6 +93,7 @@ int run(char * in_filename, bool use_simul,bool debug, int nevn, int run_no, dou
 
     // Create TTree and TNTuples.
     TTree   * t_in  = f_in->Get<TTree>("Tree");
+    if(t_in==NULL) return 1;
     TNtuple * t_out[2];
     t_out[0] = new TNtuple(S_DC,  S_DC,  vars);
     t_out[1] = new TNtuple(S_FMT, S_FMT, vars);
@@ -189,7 +194,9 @@ int run(char * in_filename, bool use_simul,bool debug, int nevn, int run_no, dou
                         ltcc_nphe, sf_params[rtrk.sector->at(pos)]);
             }
 
-            // Fill TNtuples. TODO. This probably should be implemented more elegantly.
+            // Fill TNtuples. 
+            // TODO. This probably should be implemented more elegantly.
+            // TODO. Add p of hadronic particle
             // NOTE. If adding new variables, check their order in S_VAR_LIST.
             for (int pi = 0; pi < 2; ++pi) {
                 if (!p[pi].is_valid) continue;
@@ -197,13 +204,13 @@ int run(char * in_filename, bool use_simul,bool debug, int nevn, int run_no, dou
                 Float_t v[VAR_LIST_SIZE] = {
                         (Float_t) run_no, (Float_t) evn, (Float_t) beam_E,
                         (Float_t) p[pi].pid, (Float_t) status, (Float_t) p[pi].q, p[pi].mass,
-                                p[pi].vx, p[pi].vy, p[pi].vz, p[pi].px, p[pi].py, p[pi].pz,
-                                P(p[pi]), theta_lab(p[pi]), phi_lab(p[pi]), p[pi].beta,
+                        p[pi].vx, p[pi].vy, p[pi].vz, p[pi].px, p[pi].py, p[pi].pz,
+                        P(p[pi]), theta_lab(p[pi]), phi_lab(p[pi]), p[pi].beta,
                         chi2, ndf,
                         pcal_E, ecin_E, ecou_E, tot_E,
                         (tof - tre_tof),
                         Q2(p[pi], beam_E), nu(p[pi], beam_E),
-                                Xb(p[pi], beam_E), W2(p[pi], beam_E)
+                        Xb(p[pi], beam_E), W2(p[pi], beam_E)
                 };
                 t_out[pi]->Fill(v);
             }
@@ -238,5 +245,6 @@ int main(int argc, char ** argv) {
     if (make_ntuples_handle_args_err(make_ntuples_handle_args(argc, argv, &debug, &nevn,
             &use_simul, &in_filename, &run_no, &beam_E), &in_filename, run_no))
         return 1;
+
     return make_ntuples_err(run(in_filename, use_simul, debug, nevn, run_no, beam_E), &in_filename);
 }

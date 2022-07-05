@@ -23,8 +23,8 @@ int main(int argc, char **argv) {
     bool use_simul     = false;
     
     if (hipo2root_handle_args_err(hipo2root_handle_args(argc, argv, &in_filename, &run_no, &use_simul),
-                                      &in_filename))
-            return 1;
+                                  &in_filename))
+        return 1;
     
     out_filename = (char *) malloc(128 * sizeof(char));
     if(!use_simul){

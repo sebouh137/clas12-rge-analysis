@@ -4,7 +4,7 @@ int make_ntuples_handle_args(int argc, char ** argv, bool * debug, int * nevents
                              bool * use_simul, char ** input_file, int * run_no, double * beam_energy) {
     // Handle optional arguments.
     int opt;
-    while ((opt = getopt(argc, argv, "dn:s")) != -1) {
+    while ((opt = getopt(argc, argv, "-dn:s")) != -1) {
         switch (opt) {
             case 'd': * debug     = true;         break;
             case 'n': * nevents   = atoi(optarg); break;
@@ -22,7 +22,7 @@ int make_ntuples_handle_args(int argc, char ** argv, bool * debug, int * nevents
     // Handle positional argument.
     if (argc < 2) return 7;
 
-    return handle_root_filename(* input_file, run_no, beam_energy);
+    return handle_root_filename(* input_file, run_no, beam_energy, use_simul);
 }
 
 int extractsf_handle_args(int argc, char ** argv, bool * use_fmt, int * nevents,
@@ -67,7 +67,7 @@ int hipo2root_handle_args(int argc, char ** argv, char ** input_file, int * run_
     if (argc < 2) return 1;
     if (argc > 3) return 2;
 
-    return handle_hipo_filename(* input_file, use_simul, run_no);
+    return handle_hipo_filename(* input_file, run_no, use_simul);
 }
 
 int check_root_filename(char * input_file) {
@@ -79,17 +79,6 @@ int check_root_filename(char * input_file) {
 int handle_root_filename(char * input_file, int * run_no, bool * use_simul) {
     double dump = 0.;
     return handle_root_filename(input_file, run_no, &dump, use_simul);
-}
-
-int handle_root_filename(char * input_file, int * run_no, double * beam_energy) {
-    int chk = check_root_filename(input_file);
-    if (chk) return chk;
-
-    // Get run number and beam energy from filename.
-    if (!get_run_no(input_file, run_no))        return 5;
-    if (get_beam_energy(* run_no, beam_energy)) return 6;
-
-    return 0;
 }
 
 int handle_root_filename(char * input_file, int * run_no, double * beam_energy, bool * use_simul) {
@@ -108,7 +97,7 @@ int check_hipo_filename(char * input_file) {
     return 0;
 }
 
-int handle_hipo_filename(char * input_file, bool * use_simul, int * run_no) {
+int handle_hipo_filename(char * input_file, int * run_no, bool * use_simul) {
     int chk = check_hipo_filename(input_file);
     if (chk) return chk;
 
