@@ -44,7 +44,7 @@ $(BLD)/bank_containers.o: $(SRC)/bank_containers.c $(LIB)/bank_containers.h
 	$(HIPOCFLAGS) $(ROOTLDFLAGS) $(HIPOLIBS) $(ROOTLIBS)
 
 $(BLD)/constants.o: $(SRC)/constants.c $(LIB)/constants.h
-	$(CXX) $(CFLAGS) -c $(SRC)/constants.c -o $(BLD)/constants.o
+	$(CXX) $(CFLAGS) -std=c++11 -c $(SRC)/constants.c -o $(BLD)/constants.o
 
 $(BLD)/err_handler.o: $(SRC)/err_handler.c $(LIB)/err_handler.h
 	$(CXX) $(CFLAGS) -c $(SRC)/err_handler.c -o $(BLD)/err_handler.o
