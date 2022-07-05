@@ -145,8 +145,9 @@ int run(char * in_filename, bool use_simul,bool debug, int nevn, int run_no, dou
 
         // Process DIS event.
         // Finding electron checking reconstruction PID.
-        bool el_trigger_exist = false;
-        int el_trigger_index  = 0;
+        bool   el_trigger_exist   = false;
+        int    el_trigger_pindex  = 0;
+        UInt_t el_trigger_pos     = 0;
         for (UInt_t pos = 0; pos < rtrk.index->size(); ++pos) {
             int pindex = rtrk.pindex->at(pos); // pindex is always equal to pos!
             int status = rpart.status->at(pindex);
