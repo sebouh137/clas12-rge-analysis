@@ -293,8 +293,8 @@ int run(char * in_filename, bool use_simul,bool debug, int nevn, int run_no, dou
                         chi2, ndf,
                         pcal_E, ecin_E, ecou_E, tot_E,
                         (tof - tre_tof),
-                        Q2(p_el[pi], beam_E), nu(p_el[pi], beam_E),
-                        Xb(p_el[pi], beam_E), W2(p_el[pi], beam_E),
+                        Q2(p[pi], beam_E), nu(p[pi], beam_E),
+                        Xb(p[pi], beam_E), W2(p[pi], beam_E),
                         zh(p[pi],p_el[pi], beam_E), Pt2(p[pi],p_el[pi], beam_E), Pl2(p[pi],p_el[pi], beam_E),
                         phi_pq(p[pi],p_el[pi], beam_E), theta_pq(p[pi],p_el[pi], beam_E)
                 };
