@@ -75,7 +75,7 @@ int run(char * in_filename, bool use_simul,bool debug, int nevn, int run_no, dou
         if (get_sf_params(Form("../data/sf_params_%06d.root", run_no), sf_params)) return 8;
         sprintf(out_filename, "../root_io/banks_%06d.root", run_no);
     } else{
-        sprintf(out_filename, "ntuple_%s.root", in_filename);
+        sprintf(out_filename, "ntuple_%s", in_filename);
     }
 
     // Access input file. TODO. Make this input file*s*, as in multiple files.
