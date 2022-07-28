@@ -223,11 +223,11 @@ int run(char *in_filename, bool use_simul, bool use_fmt, int nevn, int run_no) {
 
                 // Only add points within PLIMITSARR borders and with an acceptable chi2.
                 if ((mean - 2*sigma > PLIMITSARR[ci][0] && mean + 2*sigma < PLIMITSARR[ci][1]) &&
-                    (sf_gaus->GetChisquare() / sf_gaus->GetNDF() < SF_CHI2CONFORMITY)){
+                    (sf_gaus->GetChisquare() / sf_gaus->GetNDF() < SF_CHI2CONFORMITY)) {
                         // Older root compatibility fix
                         sf_dotgraph[ci][si]->SetPoint(point_index, p + SF_PSTEP/2, mean); point_index++;
-                    }
                 }
+            }
 
             // Fit dotgraphs.
             if (sf_dotgraph[ci][si]->GetN() > 0)
