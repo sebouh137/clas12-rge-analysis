@@ -63,18 +63,14 @@ double get_tof(REC_Scintillator rsci, REC_Calorimeter  rcal, int pindex) {
 }
 
 int run(char * in_filename, bool use_simul,bool debug, int nevn, int run_no, double beam_E) {
-    double sf_params[NSECTORS][SF_NPARAMS][2] = {{{0.246,0.0140},{0.985,1.},{0.083,0.},{-0.031,0.}},
-                                                 {{0.255,0.0150},{0.985,1.},{0.043,0.},{-0.024,0.}},
-                                                 {{0.245,0.0130},{0.985,1.},{0.067,0.},{-0.025,0.}},
-                                                 {{0.245,0.0140},{0.985,1.},{0.048,0.},{-0.016,0.}},
-                                                 {{0.252,0.0130},{0.985,1.},{0.007,0.},{-0.007,0.}},
-                                                 {{0.242,0.0140},{0.985,1.},{0.095,0.},{-0.038,0.}}};
+    double sf_params[NSECTORS][SF_NPARAMS][2];
     char*  out_filename = (char *) malloc(128 * sizeof(char));
     if(!use_simul){
         // Extract sampling fraction parameters.
         if (get_sf_params(Form("../data/sf_params_%06d.root", run_no), sf_params)) return 8;
         sprintf(out_filename, "../root_io/banks_%06d.root", run_no);
     } else{
+        get_sf_params(sf_params);
         sprintf(out_filename, "ntuple_%s", in_filename);
     }
 

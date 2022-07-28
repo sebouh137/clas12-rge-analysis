@@ -217,6 +217,9 @@ extern const double PLIMITSARR[SF_NPARAMS][2]; // Momentum limits for 1D SF fits
 #define ECIN_LYR    4 // EC inner layer id.
 #define ECOU_LYR    7 // EC outer layer id.
 
+// Sampling fraction constants that depends on detector
+extern const double SIMUL_SF_PARAMS[NSECTORS][SF_NPARAMS][2]; // SF params for simulations. Obtained from CCDB.
+
 // General Cuts.
 #define FMTNLYRSCUT   3 // # of FMT layers required to accept track.
 #define Q2CUT         1 // Q2 of particle must be over this value.
