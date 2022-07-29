@@ -245,9 +245,9 @@ int run(char *in_filename, bool use_simul, bool use_fmt, int nevn, int run_no) {
     // Create output file.
     char*  out_filename = (char *) malloc(128 * sizeof(char));
     if(!use_simul){
-        sprintf(out_filename, "../root_io/sf_study_banks_%06d.root", run_no);
+        sprintf(out_filename, "../root_io/sf_study_%06d.root", run_no);
     } else{
-        sprintf(out_filename, "sf_study_%s", in_filename);
+        sprintf(out_filename, "sf_study_%s.root", in_filename);
     }
     
     TFile *f_out = TFile::Open(out_filename, "RECREATE");
@@ -278,7 +278,7 @@ int run(char *in_filename, bool use_simul, bool use_fmt, int nevn, int run_no) {
     }
 
     // Write results to file.
-    FILE *t_out = fopen(Form("../root_io/sf_params_%06d.root", run_no), "w");
+    FILE *t_out = fopen(Form("../data/sf_params_%06d.root", run_no), "w");
 
     if (t_out == NULL) return 4;
     for (int ci = 3; ci < 4; ++ci) { // NOTE. Only writing ECAL sf results.

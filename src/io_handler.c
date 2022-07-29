@@ -33,7 +33,7 @@ int extractsf_handle_args(int argc, char ** argv, bool * use_fmt, int * nevents,
         switch (opt) {
             case 'f': * use_fmt = true;         break;
             case 'n': * nevents = atoi(optarg); break;
-            case 's': * use_simul = true;         break;
+            case 's': * use_simul = true;       break;
             case  1 :{
                 * input_file = (char *) malloc(strlen(optarg) + 1);
                 strcpy(* input_file, optarg);
