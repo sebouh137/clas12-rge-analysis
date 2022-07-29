@@ -13,7 +13,7 @@ int get_run_no(char *input_file, int *run_no_int) {
 }
 
 int get_run_no(char *input_file, int *run_no_int, bool * use_simul) {
-    if(use_simul){
+    if(*use_simul){
         *run_no_int = 1;
     } else{
         // TODO. This is a very brute way to find the run number and **should** be changed.   
@@ -54,17 +54,5 @@ int get_sf_params(char *fname, double sf[NSECTORS][SF_NPARAMS][2]) {
     }
 
     fclose(t_in);
-    return 0;
-}
-
-int get_sf_params(double sf[NSECTORS][SF_NPARAMS][2]) {
-    for (int si = 0; si < NSECTORS; ++si) {
-        for (int ppi = 0; ppi < 2; ++ppi) {
-            for (int pi = 0; pi < SF_NPARAMS; ++pi) {
-                sf[si][pi][ppi] = SIMUL_SF_PARAMS[si][pi][ppi];
-            }
-        }
-    }
-
     return 0;
 }

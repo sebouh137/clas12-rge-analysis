@@ -70,7 +70,7 @@ int run(char * in_filename, bool use_simul,bool debug, int nevn, int run_no, dou
         if (get_sf_params(Form("../data/sf_params_%06d.root", run_no), sf_params)) return 8;
         sprintf(out_filename, "../root_io/banks_%06d.root", run_no);
     } else{
-        get_sf_params(sf_params);
+        if (get_sf_params("../data/sf_params_simul.root", sf_params)) return 8;
         sprintf(out_filename, "ntuple_%s", in_filename);
     }
 
