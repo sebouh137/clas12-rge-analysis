@@ -26,14 +26,13 @@ int make_ntuples_handle_args(int argc, char ** argv, bool * debug, int * nevents
 }
 
 int extractsf_handle_args(int argc, char ** argv, bool * use_fmt, int * nevents,
-                          char ** input_file, int * run_no, bool * use_simul) {
+                          char ** input_file, int * run_no) {
     // Handle optional arguments.
     int opt;
-    while ((opt = getopt(argc, argv, "-fn:s")) != -1) {
+    while ((opt = getopt(argc, argv, "-fn:")) != -1) {
         switch (opt) {
             case 'f': * use_fmt = true;         break;
             case 'n': * nevents = atoi(optarg); break;
-            case 's': * use_simul = true;       break;
             case  1 :{
                 * input_file = (char *) malloc(strlen(optarg) + 1);
                 strcpy(* input_file, optarg);
@@ -45,7 +44,9 @@ int extractsf_handle_args(int argc, char ** argv, bool * use_fmt, int * nevents,
     if (* nevents == 0) return 2;
     if (argc < 2) return 5;
 
-    return handle_root_filename(* input_file, run_no, use_simul);
+    // Considering simuls will use a predetermined sf parameters
+    bool use_simul = false;
+    return handle_root_filename(* input_file, run_no, &use_simul);
 }
 
 int hipo2root_handle_args(int argc, char ** argv, char ** input_file, int * run_no, bool * use_simul) {

@@ -21,7 +21,7 @@
 #include "../lib/io_handler.h"
 #include "../lib/utilities.h"
 
-int run(char *in_filename, bool use_simul, bool use_fmt, int nevn, int run_no) {
+int run(char *in_filename, bool use_fmt, int nevn, int run_no) {
     gStyle->SetOptFit();
 
     // Access input file.
@@ -244,11 +244,7 @@ int run(char *in_filename, bool use_simul, bool use_fmt, int nevn, int run_no) {
 
     // Create output file.
     char*  out_filename = (char *) malloc(128 * sizeof(char));
-    if(!use_simul){
-        sprintf(out_filename, "../root_io/sf_study_%06d.root", run_no);
-    } else{
-        sprintf(out_filename, "sf_study_%s.root", in_filename);
-    }
+    sprintf(out_filename, "../root_io/sf_study_%06d.root", run_no);
     
     TFile *f_out = TFile::Open(out_filename, "RECREATE");
 
@@ -304,14 +300,13 @@ int run(char *in_filename, bool use_simul, bool use_fmt, int nevn, int run_no) {
 // Call program from terminal, C-style.
 int main(int argc, char **argv) {
     bool use_fmt      = false;
-    bool use_simul    = false;
     int nevn          = -1;
     char *in_filename = NULL;
     int run_no        = -1;
 
     if (extractsf_handle_args_err(extractsf_handle_args(argc, argv, &use_fmt, &nevn, &in_filename,
-            &run_no, &use_simul), &in_filename))
+        &run_no), &in_filename))
         return 1;
 
-    return extractsf_err(run(in_filename, use_simul, use_fmt, nevn, run_no), &in_filename);
+    return extractsf_err(run(in_filename, use_fmt, nevn, run_no), &in_filename);
 }
