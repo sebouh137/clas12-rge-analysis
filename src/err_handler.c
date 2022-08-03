@@ -1,10 +1,9 @@
 #include "../lib/err_handler.h"
 
 int make_ntuples_usage() {
-    fprintf(stderr, "Usage: make_ntuples [-fds] [-n NEVENTS] file\n");
+    fprintf(stderr, "Usage: make_ntuples [-fd] [-n NEVENTS] file\n");
     fprintf(stderr, " * -d: Activate debug mode. Only use when programming new features.\n");
     fprintf(stderr, " * -n NEVENTS: Specify number of events to be processed with optarg.\n");
-    fprintf(stderr, " * -s: This option is to specify the use of simulations instead of data.\n");
     fprintf(stderr, " * file: ROOT file to be processed. Expected file format is: `run_no.root`.\n");
     return 1;
 }
@@ -131,8 +130,7 @@ int extractsf_handle_args_err(int errcode, char ** in_filename) {
 }
 
 int hipo2root_usage() {
-    fprintf(stderr, "Usage: hipo2root [-s] filename\n");
-    fprintf(stderr, " * -s: This option is to specify the use of simulations instead of data.\n");
+    fprintf(stderr, "Usage: hipo2root filename\n");
     return 1;
 }
 

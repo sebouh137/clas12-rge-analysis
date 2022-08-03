@@ -20,18 +20,13 @@ int main(int argc, char **argv) {
     char *in_filename  = NULL;
     char *out_filename = NULL;
     int  run_no        = -1;
-    bool use_simul     = false;
     
-    if (hipo2root_handle_args_err(hipo2root_handle_args(argc, argv, &in_filename, &run_no, &use_simul),
+    if (hipo2root_handle_args_err(hipo2root_handle_args(argc, argv, &in_filename, &run_no),
                                   &in_filename))
         return 1;
     
     out_filename = (char *) malloc(128 * sizeof(char));
-    if(!use_simul){
-        sprintf(out_filename, "../root_io/banks_%06d.root", run_no);
-    } else{
-        sprintf(out_filename, "%s.root", in_filename);
-    }
+    sprintf(out_filename, "../root_io/banks_%06d.root", run_no);
         
     TFile *f = TFile::Open(out_filename, "RECREATE");
     f->SetCompressionAlgorithm(ROOT::kLZ4);

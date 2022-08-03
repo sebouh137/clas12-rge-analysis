@@ -62,18 +62,12 @@ double get_tof(REC_Scintillator rsci, REC_Calorimeter  rcal, int pindex) {
     return tof;
 }
 
-int run(char * in_filename, bool use_simul,bool debug, int nevn, int run_no, double beam_E) {
+int run(char * in_filename, bool debug, int nevn, int run_no, double beam_E) {
     double sf_params[NSECTORS][SF_NPARAMS][2];
-    char*  out_filename = (char *) malloc(128 * sizeof(char));
-    if(!use_simul){
-        // Extract sampling fraction parameters.
-        if (get_sf_params(Form("../data/sf_params_%06d.root", run_no), sf_params)) return 8;
-        sprintf(out_filename, "../root_io/ntuples.root");
-    } else{
-        if (get_sf_params((char *)"../data/sf_params_simul.txt", sf_params)) return 8;
-        sprintf(out_filename, "ntuple_%s", in_filename);
-    }
+    if (get_sf_params(Form("../data/sf_params_%06d.txt", run_no), sf_params)) return 8;
 
+    char*  out_filename = (char *) malloc(128 * sizeof(char));
+    sprintf(out_filename, "../root_io/ntuples_%06d.root", run_no);
     // Access input file. TODO. Make this input file*s*, as in multiple files.
     TFile *f_in  = TFile::Open(in_filename, "READ");
     TFile *f_out = TFile::Open(out_filename, "RECREATE"); // NOTE. This path sucks. // EM: yes, it does
@@ -318,15 +312,14 @@ int run(char * in_filename, bool use_simul,bool debug, int nevn, int run_no, dou
 // Call program from terminal, C-style.
 int main(int argc, char ** argv) {
     bool debug         = false;
-    bool use_simul     = false;
     int nevn           = -1;
     int run_no         = -1;
     double beam_E      = -1;
     char * in_filename = NULL;
 
     if (make_ntuples_handle_args_err(make_ntuples_handle_args(argc, argv, &debug, &nevn,
-            &use_simul, &in_filename, &run_no, &beam_E), &in_filename, run_no))
+            &in_filename, &run_no, &beam_E), &in_filename, run_no))
         return 1;
 
-    return make_ntuples_err(run(in_filename, use_simul, debug, nevn, run_no, beam_E), &in_filename);
+    return make_ntuples_err(run(in_filename, debug, nevn, run_no, beam_E), &in_filename);
 }
