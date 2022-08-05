@@ -20,3 +20,5 @@ Where *X* is the number obtained after the energy used in the simulation is mult
 - 999110
 - 999120
 
+## License
+This program is licensed under the GNU LGPLv3 license. Please check the LICENSE file for details.
