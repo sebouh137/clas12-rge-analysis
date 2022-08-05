@@ -19,8 +19,9 @@
 // Physics constants.
 #define SPEEDOFLIGHT 29.9792458
 
-// Masses.
+// PID arrays.
 extern const std::map<int, double> MASS;
+extern const std::map<int, int> PID_QA;
 
 // Particle cut array.
 #define PART_LIST_SIZE 5
@@ -216,6 +217,7 @@ extern const double PLIMITSARR[SF_NPARAMS][2]; // Momentum limits for 1D SF fits
 #define VZHIGHCUT    40 // vz must be below this.
 
 // PID Cuts. Most numbers come from `/calibration/eb/` from the CCDB.
+#define NPIDS           6     // # of (signless) PIDs program is capable of identifying.
 #define HTCC_NPHE_CUT   2     // # of HTCC photoelectrons required to consider particle passed HTCC.
 #define LTCC_NPHE_CUT   2     // # of LTCC photoelectrons required to consider particle passed LTCC.
 #define MIN_PCAL_ENERGY 0.060 // Min energy deposited in PCAL to assign pid = 11.

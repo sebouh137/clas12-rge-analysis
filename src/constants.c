@@ -36,6 +36,11 @@ const std::map<int, double> MASS = {
         {         0, -1.}        // unidentified particle.
 };
 
+// PID qa map.
+const std::map<int, int> PID_QA = {
+    {11, 0}, {211, 1}, {321, 2}, {2212, 3}, {2112, 4}, {22, 5}
+};
+
 // Trackers array.
 const char * TRK_LIST[TRK_LIST_SIZE] = {
     S_DC, S_FMT
