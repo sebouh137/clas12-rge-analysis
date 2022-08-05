@@ -67,7 +67,7 @@ int run(char * in_filename, bool debug, int nevn, int run_no, double beam_E) {
     if (get_sf_params(Form("../data/sf_params_%06d.txt", run_no), sf_params)) return 8;
 
     char*  out_filename = (char *) malloc(128 * sizeof(char));
-    sprintf(out_filename, "../root_io/ntuples_%06d.root", run_no);
+    sprintf(out_filename, "../root_io/ntuples.root");
     // Access input file. TODO. Make this input file*s*, as in multiple files.
     TFile *f_in  = TFile::Open(in_filename, "READ");
     TFile *f_out = TFile::Open(out_filename, "RECREATE"); // NOTE. This path sucks. // EM: yes, it does
