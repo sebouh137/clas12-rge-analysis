@@ -174,7 +174,7 @@ extern const char * DIS_LIST[DIS_LIST_SIZE];
 // #define PHOTONPHI   "virtual photon #phi (lab frame #degree)"
 
 // Sampling fraction constants.
-#define S_EDIVP    "E/Vp"
+#define S_EDIVP    "E/p"
 #define PCAL_IDX   0   // PCAL idx in Sampling fraction arrays.
 #define ECIN_IDX   1   // ECIN idx in Sampling fraction arrays.
 #define ECOU_IDX   2   // ECOU idx in Sampling fraction arrays.
