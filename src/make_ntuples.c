@@ -147,12 +147,12 @@ int run(char * in_filename, bool debug, int nevn, int run_no, double beam_E) {
             if (pid==11 && status<0){el_trigger_exist = true; el_trigger_pindex = pindex; el_trigger_pos = pos; break;}
         }
 
-        // Guarding statement.
-        if (!el_trigger_exist) continue;
-        
-        // Process the trigger electron.
+        // Conditional to process existence of trigger electron.
         particle p_el[2];
-        {
+        if(!el_trigger_exist){
+            p_el[0] = particle_init();
+            p_el[1] = particle_init();
+        } else {
             // Get reconstructed particle from DC and from FMT.
             p_el[0] = particle_init(&rpart, &rtrk, el_trigger_pos);        // DC.
             p_el[1] = particle_init(&rpart, &rtrk, &ftrk, el_trigger_pos); // FMT.
@@ -219,9 +219,10 @@ int run(char * in_filename, bool debug, int nevn, int run_no, double beam_E) {
                 t_out[pi]->Fill(v);
             }
         }
+
         // Processing particles.
         for (UInt_t pos = 0; pos < rtrk.index->size(); ++pos) {
-            if (pos == el_trigger_pos) continue; // trigger electron was already processed.
+            if (el_trigger_exist && pos == el_trigger_pos) continue; // trigger electron was already processed.
             int pindex = rtrk.pindex->at(pos); // pindex is always equal to pos!
 
             // Get reconstructed particle from DC and from FMT.
