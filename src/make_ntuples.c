@@ -339,20 +339,7 @@ int run(char * in_filename, bool debug, int nevn, int run_no, double beam_E) {
         printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
         printf("[==================================================] 100%% \n");
     }
-    printf("-------------------------------------------------------------------------------------------\n");
-    printf("There are %i trigger electrons id in rec\n",rec_pid_e);
-    printf("-------------------------------------------------------------------------------------------\n");
-    printf("DC : There are %i trigger electrons id in cuts\n",cuts_pid_e_dc);
-    printf("FMT: There are %i trigger electrons id in cuts\n",cuts_pid_e_fmt);
-    printf("-------------------------------------------------------------------------------------------\n");
-    printf("DC : Trigger, %i pi- were changed to e-\n",nchanged_pimin_e_dc);  
-    printf("DC : Trigger, %i e- were changed to pi-\n",nchanged_e_pimin_dc);
-    printf("FMT : Trigger, %i pi- were changed to e-\n",nchanged_pimin_e_fmt);  
-    printf("FMT : Trigger, %i e- were changed to pi-\n",nchanged_e_pimin_fmt);
-    printf("-------------------------------------------------------------------------------------------\n");
-    printf("DC : %i rec trigger e- were changed to other particle.\n",nchanged_trigger_el_dc);
-    printf("FMT: %i rec trigger e- were changed to other particle.\n",nchanged_trigger_el_fmt);
-    printf("-------------------------------------------------------------------------------------------\n");
+    
     // Write to output file.
     f_out->Write();
 
