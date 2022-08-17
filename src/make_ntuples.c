@@ -116,6 +116,16 @@ int run(char * in_filename, bool debug, int nevn, int run_no, double beam_E) {
     // Iterate through input file. Each TTree entry is one event.
     printf("Reading %lld events from %s.\n", nevn == -1 ? t_in->GetEntries() : nevn, in_filename);
 
+    // test of electrons
+    int rec_pid_e  = 0;
+    int cuts_pid_e_dc  = 0;   
+    int cuts_pid_e_fmt = 0;
+    int nchanged_pimin_e_dc = 0;
+    int nchanged_e_pimin_dc = 0;
+    int nchanged_pimin_e_fmt = 0;
+    int nchanged_e_pimin_fmt = 0;
+    int nchanged_trigger_el_dc  = 0;
+    int nchanged_trigger_el_fmt = 0;
     for (int evn = 0; (evn < t_in->GetEntries()) && (nevn == -1 || evn < nevn); ++evn) {
         if (!debug && evn >= evnsplitter) {
             if (evn != 0) {
@@ -149,15 +159,15 @@ int run(char * in_filename, bool debug, int nevn, int run_no, double beam_E) {
         // Process DIS event.
         // Finding electron via reconstruction PID.
         bool   el_trigger_exist   = false;
-        int    el_trigger_pindex  = 0;
-        UInt_t el_trigger_pos     = 0;
+        int    el_trigger_pindex  = -1;
+        UInt_t el_trigger_pos     = -1;
 
         for (UInt_t pos = 0; pos < rtrk.index->size(); ++pos) {
             int pindex = rtrk.pindex->at(pos); // pindex is always equal to pos!
             int status = rpart.status->at(pindex);
             int pid    = rpart.pid->at(pindex);
             
-            if (pid==11 && status<0){el_trigger_exist = true; el_trigger_pindex = pindex; el_trigger_pos = pos; break;}
+            if (pid==11 && status<0){el_trigger_exist = true; el_trigger_pindex = pindex; el_trigger_pos = pos; rec_pid_e++; break;}
         }
 
         // Conditional to process existence of trigger electron.
@@ -205,11 +215,18 @@ int run(char * in_filename, bool debug, int nevn, int run_no, double beam_E) {
             float chi2 = rtrk.chi2   ->at(el_trigger_pos);
             float ndf  = rtrk.ndf    ->at(el_trigger_pos);
 
+            int el_trigger_rec_dc  = p_el[0].pid;
+            int el_trigger_rec_fmt = p_el[1].pid;
             // Assign PID.
             for (int pi = 0; pi < 2; ++pi) {
                 set_pid(&(p_el[pi]), rpart.pid->at(el_trigger_pindex), status, tot_E, pcal_E, htcc_nphe,
                         ltcc_nphe, sf_params[rtrk.sector->at(el_trigger_pos)]);
             }
+            int el_trigger_cuts_dc  = p_el[0].pid;
+            int el_trigger_cuts_fmt = p_el[1].pid;
+
+            if(el_trigger_cuts_dc!=el_trigger_rec_dc) nchanged_trigger_el_dc++;
+            if(el_trigger_cuts_fmt!=el_trigger_rec_fmt) nchanged_trigger_el_fmt++;
 
             // Fill TNtuples. 
             // TODO. This probably should be implemented more elegantly.
@@ -235,7 +252,6 @@ int run(char * in_filename, bool debug, int nevn, int run_no, double beam_E) {
 
         // Processing particles.
         for (UInt_t pos = 0; pos < rtrk.index->size(); ++pos) {
-            if (el_trigger_exist && pos == el_trigger_pos) continue; // trigger electron was already processed.
             int pindex = rtrk.pindex->at(pos); // pindex is always equal to pos!
 
             // Get reconstructed particle from DC and from FMT.
@@ -277,6 +293,8 @@ int run(char * in_filename, bool debug, int nevn, int run_no, double beam_E) {
             int status = rpart.status->at(pindex);
             float chi2 = rtrk.chi2   ->at(pos);
             float ndf  = rtrk.ndf    ->at(pos);
+            
+            int rec_pid_check = rpart.pid->at(pindex);
 
             // Assign PID.
             for (int pi = 0; pi < 2; ++pi) {
@@ -284,11 +302,21 @@ int run(char * in_filename, bool debug, int nevn, int run_no, double beam_E) {
                         ltcc_nphe, sf_params[rtrk.sector->at(pos)]);
             }
 
+            int cuts_pid_check_dc  = p[0].pid;
+            int cuts_pid_check_fmt = p[1].pid;
+
+
+            if(rec_pid_check==-211&&cuts_pid_check_dc==11&&status<0){nchanged_pimin_e_dc++;}
+            if(rec_pid_check==11&&cuts_pid_check_dc==-211&&status<0){nchanged_e_pimin_dc++;}
+            if(rec_pid_check==-211&&cuts_pid_check_fmt==11&&status<0){nchanged_pimin_e_fmt++;}
+            if(rec_pid_check==11&&cuts_pid_check_fmt==-211&&status<0){nchanged_e_pimin_fmt++;}
+
             // Fill TNtuples. 
             // TODO. This probably should be implemented more elegantly.
             for (int pi = 0; pi < 2; ++pi) {
                 if (!p[pi].is_valid) continue;
-
+                if(p[pi].pid == 11 && status<0 && pi==0)cuts_pid_e_dc++;
+                if(p[pi].pid == 11 && status<0 && pi==1)cuts_pid_e_fmt++;
                 Float_t v[VAR_LIST_SIZE] = {
                         (Float_t) run_no, (Float_t) evn, (Float_t) beam_E,
                         (Float_t) p[pi].pid, (Float_t) status, (Float_t) p[pi].q, p[pi].mass,
@@ -311,7 +339,20 @@ int run(char * in_filename, bool debug, int nevn, int run_no, double beam_E) {
         printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
         printf("[==================================================] 100%% \n");
     }
-
+    printf("-------------------------------------------------------------------------------------------\n");
+    printf("There are %i trigger electrons id in rec\n",rec_pid_e);
+    printf("-------------------------------------------------------------------------------------------\n");
+    printf("DC : There are %i trigger electrons id in cuts\n",cuts_pid_e_dc);
+    printf("FMT: There are %i trigger electrons id in cuts\n",cuts_pid_e_fmt);
+    printf("-------------------------------------------------------------------------------------------\n");
+    printf("DC : Trigger, %i pi- were changed to e-\n",nchanged_pimin_e_dc);  
+    printf("DC : Trigger, %i e- were changed to pi-\n",nchanged_e_pimin_dc);
+    printf("FMT : Trigger, %i pi- were changed to e-\n",nchanged_pimin_e_fmt);  
+    printf("FMT : Trigger, %i e- were changed to pi-\n",nchanged_e_pimin_fmt);
+    printf("-------------------------------------------------------------------------------------------\n");
+    printf("DC : %i rec trigger e- were changed to other particle.\n",nchanged_trigger_el_dc);
+    printf("FMT: %i rec trigger e- were changed to other particle.\n",nchanged_trigger_el_fmt);
+    printf("-------------------------------------------------------------------------------------------\n");
     // Write to output file.
     f_out->Write();
 

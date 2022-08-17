@@ -15,6 +15,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <climits>
 
 #include <TCanvas.h>
 #include <TFile.h>

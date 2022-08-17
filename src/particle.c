@@ -22,8 +22,10 @@ const int PID_NEUTRAL [PID_NEUTRAL_SIZE]  = { 22, 2112};
 // Initialize an empty particle.
 particle particle_init() {
     particle p;
-    p.is_valid = false;
+    p.is_valid            = false;
+    p.is_hadron           = false;
     p.is_trigger_electron = false;
+
     return p;
 }
 
