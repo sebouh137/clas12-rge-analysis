@@ -19,6 +19,7 @@
 #include <TFile.h>
 #include <TNtuple.h>
 #include <TTree.h>
+#include <TROOT.h>
 
 #include "../lib/bank_containers.h"
 #include "../lib/constants.h"
@@ -85,6 +86,9 @@ int run(char * in_filename, bool debug, int nevn, int run_no, double beam_E) {
     TFile *f_in  = TFile::Open(in_filename, "READ");
     TFile *f_out = TFile::Open(out_filename, "RECREATE"); // NOTE. This path sucks. // EM: yes, it does
 
+    // Return to top directory.
+    gROOT->cd();
+
     if (!f_in || f_in->IsZombie()) return 1;
 
     // Generate lists of variables.
@@ -116,16 +120,28 @@ int run(char * in_filename, bool debug, int nevn, int run_no, double beam_E) {
     // Iterate through input file. Each TTree entry is one event.
     printf("Reading %lld events from %s.\n", nevn == -1 ? t_in->GetEntries() : nevn, in_filename);
 
+    int total_el_dc = 0;
+    int total_trigger_el_dc = 0;
+    int total_el_fmt = 0;
+    int total_trigger_el_fmt = 0;
+
+    int neg_nu_dc  = 0;
+    int neg_nu_fmt = 0;
+    int neg_nu_pimin_toel_dc  = 0;
+    int neg_nu_pimin_toel_fmt = 0;
+    int neg_nu_undet_toel_dc  = 0;
+    int neg_nu_undet_toel_fmt = 0;
+    int nchanged_dc  = 0;
+    int nchanged_fmt = 0;
+    int nchanged_dc_toel = 0;
+    int nchanged_fmt_toel = 0;
+    int nchanged_dc_pimin_toel = 0;
+    int nchanged_fmt_pimin_toel = 0;
+
+    int hadrons_kins_null = 0;
+    int hadrons_kins_null_el_not_trigger = 0;
+
     // test of electrons
-    int rec_pid_e  = 0;
-    int cuts_pid_e_dc  = 0;   
-    int cuts_pid_e_fmt = 0;
-    int nchanged_pimin_e_dc = 0;
-    int nchanged_e_pimin_dc = 0;
-    int nchanged_pimin_e_fmt = 0;
-    int nchanged_e_pimin_fmt = 0;
-    int nchanged_trigger_el_dc  = 0;
-    int nchanged_trigger_el_fmt = 0;
     for (int evn = 0; (evn < t_in->GetEntries()) && (nevn == -1 || evn < nevn); ++evn) {
         if (!debug && evn >= evnsplitter) {
             if (evn != 0) {
@@ -156,36 +172,24 @@ int run(char * in_filename, bool debug, int nevn, int run_no, double beam_E) {
         // Find trigger electron's TOF.
         float tre_tof = get_tof(rsci, rcal, rtrk.pindex->at(0));
 
-        // Process DIS event.
-        // Finding electron via reconstruction PID.
-        bool   el_trigger_exist   = false;
-        int    el_trigger_pindex  = -1;
-        UInt_t el_trigger_pos     = -1;
-
-        for (UInt_t pos = 0; pos < rtrk.index->size(); ++pos) {
-            int pindex = rtrk.pindex->at(pos); // pindex is always equal to pos!
-            int status = rpart.status->at(pindex);
-            int pid    = rpart.pid->at(pindex);
-            
-            if (pid==11 && status<0){el_trigger_exist = true; el_trigger_pindex = pindex; el_trigger_pos = pos; rec_pid_e++; break;}
-        }
-
-        // Conditional to process existence of trigger electron.
+        // Check existence of trigger electron
         particle p_el[2];
-        if(!el_trigger_exist){
-            p_el[0] = particle_init();
-            p_el[1] = particle_init();
-        } else {
+        bool    trigger_exist  = false;
+        UInt_t  trigger_pos    = -1;
+        int     trigger_pindex = -1;
+        for (UInt_t pos = 0; pos < rtrk.index->size(); ++pos) { 
+            int pindex = rtrk.pindex->at(pos); // pindex is always equal to pos!
+
             // Get reconstructed particle from DC and from FMT.
-            p_el[0] = particle_init(&rpart, &rtrk, el_trigger_pos);        // DC.
-            p_el[1] = particle_init(&rpart, &rtrk, &ftrk, el_trigger_pos); // FMT.
+            p_el[0] = particle_init(&rpart, &rtrk, pos);        // DC.
+            p_el[1] = particle_init(&rpart, &rtrk, &ftrk, pos); // FMT.
 
             // Get deposited energy.
             float pcal_E = 0; // PCAL total deposited energy.
             float ecin_E = 0; // EC inner total deposited energy.
             float ecou_E = 0; // EC outer total deposited energy.
             for (UInt_t i = 0; i < rcal.pindex->size(); ++i) {
-                if (rcal.pindex->at(i) != el_trigger_pindex) continue;
+                if (rcal.pindex->at(i) != pindex) continue;
                 int lyr = (int) rcal.layer->at(i);
 
                 if      (lyr == PCAL_LYR) pcal_E += rcal.energy->at(i);
@@ -199,7 +203,7 @@ int run(char * in_filename, bool debug, int nevn, int run_no, double beam_E) {
             int htcc_nphe = 0; // Number of photoelectrons deposited in htcc.
             int ltcc_nphe = 0; // Number of photoelectrons deposited in ltcc.
             for (UInt_t i = 0; i < rche.pindex->size(); ++i) {
-                if (rche.pindex->at(i) == el_trigger_pindex) {
+                if (rche.pindex->at(i) == pindex) {
                     int detector = rche.detector->at(i);
                     if      (detector == HTCC_ID) htcc_nphe += rche.nphe->at(i);
                     else if (detector == LTCC_ID) ltcc_nphe += rche.nphe->at(i);
@@ -208,31 +212,33 @@ int run(char * in_filename, bool debug, int nevn, int run_no, double beam_E) {
             }
 
             // Get TOF.
-            float tof = get_tof(rsci, rcal, el_trigger_pindex);
+            float tof = get_tof(rsci, rcal, pindex);
 
             // Get miscellaneous data.
-            int status = rpart.status->at(el_trigger_pindex);
-            float chi2 = rtrk.chi2   ->at(el_trigger_pos);
-            float ndf  = rtrk.ndf    ->at(el_trigger_pos);
-
-            int el_trigger_rec_dc  = p_el[0].pid;
-            int el_trigger_rec_fmt = p_el[1].pid;
+            int status = rpart.status->at(pindex);
+            float chi2 = rtrk.chi2   ->at(pos);
+            float ndf  = rtrk.ndf    ->at(pos);
+            
+            int rec_pid     = rpart.pid->at(pindex);
+            int rec_pid_fmt = rpart.pid->at(pindex);
             // Assign PID.
             for (int pi = 0; pi < 2; ++pi) {
-                set_pid(&(p_el[pi]), rpart.pid->at(el_trigger_pindex), status, tot_E, pcal_E, htcc_nphe,
-                        ltcc_nphe, sf_params[rtrk.sector->at(el_trigger_pos)]);
+                set_pid(&(p_el[pi]), rpart.pid->at(pindex), status, tot_E, pcal_E, htcc_nphe,
+                        ltcc_nphe, sf_params[rtrk.sector->at(pos)]);
             }
-            int el_trigger_cuts_dc  = p_el[0].pid;
-            int el_trigger_cuts_fmt = p_el[1].pid;
+            if(p_el[0].pid!=rec_pid&&status<0) nchanged_dc++;
+            if(p_el[1].pid!=rec_pid_fmt&&status<0) nchanged_fmt++;
 
-            if(el_trigger_cuts_dc!=el_trigger_rec_dc) nchanged_trigger_el_dc++;
-            if(el_trigger_cuts_fmt!=el_trigger_rec_fmt) nchanged_trigger_el_fmt++;
+            if(p_el[0].pid!=rec_pid&&status<0&&p_el[0].pid==11) nchanged_dc_toel++;
+            if(p_el[1].pid!=rec_pid_fmt&&status<0&&p_el[1].pid==11) nchanged_fmt_toel++;
 
-            // Fill TNtuples. 
-            // TODO. This probably should be implemented more elegantly.
+            if(p_el[0].pid!=rec_pid&&status<0&&rec_pid==-211&&p_el[0].pid==11) nchanged_dc_pimin_toel++;
+            if(p_el[1].pid!=rec_pid_fmt&&status<0&&rec_pid_fmt==-211&&p_el[1].pid==11) nchanged_fmt_pimin_toel++;
+
+            // Fill TNtuples with trigger electron info
             for (int pi = 0; pi < 2; ++pi) {
-                if (!p_el[pi].is_valid) continue;
-
+                if (!(p_el[pi].is_valid&&p_el[pi].is_trigger_electron)) continue;
+                trigger_exist = true;
                 Float_t v[VAR_LIST_SIZE] = {
                         (Float_t) run_no, (Float_t) evn, (Float_t) beam_E,
                         (Float_t) p_el[pi].pid, (Float_t) status, (Float_t) p_el[pi].q, p_el[pi].mass,
@@ -246,13 +252,35 @@ int run(char * in_filename, bool debug, int nevn, int run_no, double beam_E) {
                         0, 0, 0,
                         0, 0
                 };
+                if(nu(p_el[pi], beam_E)<0&&pi==0) neg_nu_dc++;
+                if(nu(p_el[pi], beam_E)<0&&pi==1) neg_nu_fmt++;
+                if(nu(p_el[pi], beam_E)<0&&pi==0&&rec_pid==-211&&p_el[pi].pid==11) neg_nu_pimin_toel_dc++;
+                if(nu(p_el[pi], beam_E)<0&&pi==1&&rec_pid_fmt==-211&&p_el[pi].pid==11) neg_nu_pimin_toel_fmt++;
+                if(nu(p_el[pi], beam_E)<0&&pi==0&&rec_pid==0&&p_el[pi].pid==11) neg_nu_undet_toel_dc++;
+                if(nu(p_el[pi], beam_E)<0&&pi==1&&rec_pid_fmt==0&&p_el[pi].pid==11) neg_nu_undet_toel_fmt++;
+                if(pi==0){total_el_dc++;total_trigger_el_dc++;}
+                if(pi==1){total_el_fmt++;total_trigger_el_fmt++;}
                 t_out[pi]->Fill(v);
+            }
+            if (trigger_exist){
+                trigger_pindex = pindex;
+                trigger_pos    = pos;
+                break;
             }
         }
 
+        // In case no trigger electron was found, initiate p_el as dummy particles.
+        if(!trigger_exist){
+            p_el[0] = particle_init();
+            p_el[1] = particle_init();
+        }
+
         // Processing particles.
-        for (UInt_t pos = 0; pos < rtrk.index->size(); ++pos) {
+        for (UInt_t pos = 0; pos < rtrk.index->size(); ++pos) { 
             int pindex = rtrk.pindex->at(pos); // pindex is always equal to pos!
+            
+            // Conditional to avoid trigger electron double counting.
+            if(trigger_pindex==pindex&&trigger_pos==pos) continue;
 
             // Get reconstructed particle from DC and from FMT.
             particle p[2];
@@ -294,29 +322,17 @@ int run(char * in_filename, bool debug, int nevn, int run_no, double beam_E) {
             float chi2 = rtrk.chi2   ->at(pos);
             float ndf  = rtrk.ndf    ->at(pos);
             
-            int rec_pid_check = rpart.pid->at(pindex);
-
             // Assign PID.
             for (int pi = 0; pi < 2; ++pi) {
                 set_pid(&(p[pi]), rpart.pid->at(pindex), status, tot_E, pcal_E, htcc_nphe,
                         ltcc_nphe, sf_params[rtrk.sector->at(pos)]);
             }
 
-            int cuts_pid_check_dc  = p[0].pid;
-            int cuts_pid_check_fmt = p[1].pid;
-
-
-            if(rec_pid_check==-211&&cuts_pid_check_dc==11&&status<0){nchanged_pimin_e_dc++;}
-            if(rec_pid_check==11&&cuts_pid_check_dc==-211&&status<0){nchanged_e_pimin_dc++;}
-            if(rec_pid_check==-211&&cuts_pid_check_fmt==11&&status<0){nchanged_pimin_e_fmt++;}
-            if(rec_pid_check==11&&cuts_pid_check_fmt==-211&&status<0){nchanged_e_pimin_fmt++;}
 
             // Fill TNtuples. 
             // TODO. This probably should be implemented more elegantly.
             for (int pi = 0; pi < 2; ++pi) {
                 if (!p[pi].is_valid) continue;
-                if(p[pi].pid == 11 && status<0 && pi==0)cuts_pid_e_dc++;
-                if(p[pi].pid == 11 && status<0 && pi==1)cuts_pid_e_fmt++;
                 Float_t v[VAR_LIST_SIZE] = {
                         (Float_t) run_no, (Float_t) evn, (Float_t) beam_E,
                         (Float_t) p[pi].pid, (Float_t) status, (Float_t) p[pi].q, p[pi].mass,
@@ -330,6 +346,13 @@ int run(char * in_filename, bool debug, int nevn, int run_no, double beam_E) {
                         zh(p[pi],p_el[pi], beam_E), Pt2(p[pi],p_el[pi], beam_E), Pl2(p[pi],p_el[pi], beam_E),
                         phi_pq(p[pi],p_el[pi], beam_E), theta_pq(p[pi],p_el[pi], beam_E)
                 };
+                if(zh(p[pi],p_el[pi], beam_E)==0&&p[pi].is_hadron){
+                    hadrons_kins_null++;
+                    if(p_el[pi].is_trigger_electron) hadrons_kins_null_el_not_trigger++;
+                }
+
+                if(pi==0&&p[pi].pid==11){total_el_dc++;}
+                if(pi==1&&p[pi].pid==11){total_el_fmt++;}
                 t_out[pi]->Fill(v);
             }
         }
@@ -339,22 +362,32 @@ int run(char * in_filename, bool debug, int nevn, int run_no, double beam_E) {
         printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
         printf("[==================================================] 100%% \n");
     }
-    printf("-------------------------------------------------------------------------------------------\n");
-    printf("There are %i trigger electrons id in rec\n",rec_pid_e);
-    printf("-------------------------------------------------------------------------------------------\n");
-    printf("DC : There are %i trigger electrons id in cuts\n",cuts_pid_e_dc);
-    printf("FMT: There are %i trigger electrons id in cuts\n",cuts_pid_e_fmt);
-    printf("-------------------------------------------------------------------------------------------\n");
-    printf("DC : Trigger, %i pi- were changed to e-\n",nchanged_pimin_e_dc);  
-    printf("DC : Trigger, %i e- were changed to pi-\n",nchanged_e_pimin_dc);
-    printf("FMT : Trigger, %i pi- were changed to e-\n",nchanged_pimin_e_fmt);  
-    printf("FMT : Trigger, %i e- were changed to pi-\n",nchanged_e_pimin_fmt);
-    printf("-------------------------------------------------------------------------------------------\n");
-    printf("DC : %i rec trigger e- were changed to other particle.\n",nchanged_trigger_el_dc);
-    printf("FMT: %i rec trigger e- were changed to other particle.\n",nchanged_trigger_el_fmt);
-    printf("-------------------------------------------------------------------------------------------\n");
+    printf("-------------------------------------------------------------------------------------------------------\n");
+    printf("DC  : Number of electrons                                  = %i\n",total_el_dc);
+    printf("DC  : Number of trigger electrons                          = %i\n",total_trigger_el_dc);
+    printf("DC  : Number of trigger particles that changed PID         = %i\n",nchanged_dc);
+    printf("DC  : Number of trigger particles that changed to electron = %i\n",nchanged_dc_toel);  
+    printf("DC  : Number of trigger pi minus that changed to electrons = %i\n",nchanged_dc_pimin_toel);
+    printf("DC  : Number of trigger electrons with negative Nu         = %i\n",neg_nu_dc);
+    printf("DC  : Number of pimin turned to e- with negative Nu        = %i\n",neg_nu_pimin_toel_dc);
+    printf("DC  : Number of undet turned to e- with negative Nu        = %i\n",neg_nu_undet_toel_dc);
+    printf("-------------------------------------------------------------------------------------------------------\n");
+    printf("FMT : Number of electrons                                  = %i\n",total_el_fmt);
+    printf("FMT : Number of trigger electrons                          = %i\n",total_trigger_el_fmt);
+    printf("FMT : Number of trigger particles that changed PID         = %i\n",nchanged_fmt);
+    printf("FMT : Number of trigger particles that changed to electron = %i\n",nchanged_fmt_toel);
+    printf("FMT : Number of trigger pi minus that changed to electrons = %i\n",nchanged_fmt_pimin_toel);
+    printf("FMT : Number of trigger electrons with negative Nu         = %i\n",neg_nu_fmt);
+    printf("FMT : Number of pimin turned to e- with negative Nu        = %i\n",neg_nu_pimin_toel_fmt);
+    printf("FMT : Number of undet turned to e- with negative Nu        = %i\n",neg_nu_undet_toel_fmt);
+    printf("-------------------------------------------------------------------------------------------------------\n");
+    printf("Hadrons with null kins = %i\n",hadrons_kins_null);
+    printf("Hadrons with null kins and not trigger elec = %i\n",hadrons_kins_null_el_not_trigger);
+    printf("-------------------------------------------------------------------------------------------------------\n");
     // Write to output file.
-    f_out->Write();
+    f_out->cd();
+    t_out[0]->Write();
+    t_out[1]->Write();
 
     // Clean up after ourselves.
     f_in ->Close();
