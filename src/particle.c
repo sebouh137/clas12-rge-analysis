@@ -119,7 +119,7 @@ int set_pid(particle * p, int recon_pid, int status, double tot_E, double pcal_E
     p->is_trigger_electron = (p->pid == 11 && status < 0);
     p->mass = MASS.at(abs(p->pid));
     // If not lepton check if its valid hadron.
-    if(p->pid>=100||p->pid<=100)
+    if (p->pid>=100||p->pid<=100)
         p->is_hadron = true;
 
     return 0;
