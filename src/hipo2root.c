@@ -32,16 +32,15 @@
 int main(int argc, char **argv) {
     char *in_filename  = NULL;
     char *out_filename = NULL;
-    int  run_no    = -1;
-    bool use_simul = false;
+    int  run_no        = -1;
     
-    char *out_filename = (char *) malloc(128 * sizeof(char));
+    if (hipo2root_handle_args_err(hipo2root_handle_args(argc, argv, &in_filename, &run_no),
+                                  &in_filename))
+        return 1;
+    
+    out_filename = (char *) malloc(128 * sizeof(char));
     sprintf(out_filename, "../root_io/banks_%06d.root", run_no);
-
-    if (hipo2root_handle_args_err(hipo2root_handle_args(argc, argv, &in_filename, &run_no, &use_simul),
-                                      &in_filename))
-            return 1;
-    
+        
     TFile *f = TFile::Open(out_filename, "RECREATE");
     f->SetCompressionAlgorithm(ROOT::kLZ4);
 
