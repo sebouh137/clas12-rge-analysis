@@ -1,3 +1,16 @@
+// CLAS12 RG-E Analyser.
+// Copyright (C) 2022 Bruno Benkel
+//
+// This program is free software: you can redistribute it and/or modify it under the terms of the
+// GNU Lesser General Public License as published by the Free Software Foundation, either version 3
+// of the License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+// even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+// Lesser General Public License for more details.
+//
+// You can see a copy of the GNU Lesser Public License under the LICENSE file.
+
 #include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -29,14 +42,16 @@
 //       are reconstructed.
 
 // Assign name to plots, recursively going through binnings.
-int name_plt(TH1 * plt[], TString * name, int * idx, long dbins, long depth, int px, long bx[],
-             double rx[][2], int bvx[], long bbx[], double brx[][2], double b_interval[]) {
+int name_plt(TH1 * plt[], TString * name, const char * nx, const char * ny, int * idx, long dbins,
+             long depth, int px, long bx[], double rx[][2], int bvx[], long bbx[], double brx[][2],
+             double b_interval[]) {
     if (depth == dbins) {
         // Create plot and increase index.
         if (px == 0) plt[* idx] =
-                new TH1F(* name, * name, bx[0], rx[0][0], rx[0][1]);
+                new TH1F(* name, Form("%s;%s", name->Data(), nx), bx[0], rx[0][0], rx[0][1]);
         if (px == 1) plt[* idx] =
-                new TH2F(* name, * name, bx[0], rx[0][0], rx[0][1], bx[1], rx[1][0], rx[1][1]);
+                new TH2F(* name, Form("%s;%s;%s", name->Data(), nx, ny), bx[0], rx[0][0], rx[0][1],
+                         bx[1], rx[1][0], rx[1][1]);
         ++(* idx);
         return 0;
     }
@@ -51,7 +66,7 @@ int name_plt(TH1 * plt[], TString * name, int * idx, long dbins, long depth, int
         name_cpy.Append(Form(" (%s: %6.2f, %6.2f)", S_VAR_LIST[bvx[depth]], b_low, b_high));
 
         // Continue down the line.
-        name_plt(plt, &name_cpy, idx, dbins, depth+1, px, bx, rx, bvx, bbx, brx, b_interval);
+        name_plt(plt, &name_cpy, nx, ny, idx, dbins, depth+1, px, bx, rx, bvx, bbx, brx, b_interval);
     }
 
     return 0;
@@ -97,7 +112,7 @@ int find_idx(long dbins, long depth, Float_t var[], long bx[], double rx[][2], d
 
 int run() {
     // Open input file.
-    TFile * f_in  = TFile::Open("../root_io/ntuples.root", "READ");   // NOTE. This path sucks.
+    TFile * f_in  = TFile::Open("../root_io/ntuples.root", "READ"); // NOTE. This path sucks.
 
     if (!f_in || f_in->IsZombie()) return 1;
 
@@ -137,7 +152,7 @@ int run() {
 
     bool general_cuts  = false;
     bool geometry_cuts = false;
-    bool sidis_cuts    = false;
+    bool dis_cuts      = false;
     printf("\nApply all default cuts (general, geometry, DIS)? [y/n]\n");
     if (!catch_yn()) {
         printf("\nApply general cuts? [y/n]\n");
@@ -145,12 +160,12 @@ int run() {
         printf("\nApply geometry cuts? [y/n]\n");
         geometry_cuts = catch_yn();
         printf("\nApply DIS cuts? [y/n]\n");
-        sidis_cuts = catch_yn();
+        dis_cuts = catch_yn();
     }
     else {
         general_cuts  = true;
         geometry_cuts = true;
-        sidis_cuts    = true;
+        dis_cuts      = true;
     }
 
     // TODO.
@@ -277,9 +292,16 @@ int run() {
     for (int pi = 0; pi < pn; ++pi) {
         TString name;
         int idx = 0;
-        if (px[pi] == 0) name = Form("%s", S_VAR_LIST[vx[pi][0]]);
-        if (px[pi] == 1) name = Form("%s vs %s", S_VAR_LIST[vx[pi][0]], S_VAR_LIST[vx[pi][1]]);
-        name_plt(plt[pi], &name, &idx, dbins, 0, px[pi], bx[pi], rx[pi], bvx, bbx, brx, b_interval);
+        if (px[pi] == 0) {
+            name = Form("%s", S_VAR_LIST[vx[pi][0]]);
+            name_plt(plt[pi], &name, S_VAR_LIST[vx[pi][0]], "", &idx,
+                     dbins, 0, px[pi], bx[pi], rx[pi], bvx, bbx, brx, b_interval);
+        }
+        if (px[pi] == 1) {
+            name = Form("%s vs %s", S_VAR_LIST[vx[pi][0]], S_VAR_LIST[vx[pi][1]]);
+            name_plt(plt[pi], &name, S_VAR_LIST[vx[pi][0]], S_VAR_LIST[vx[pi][1]], &idx, dbins, 0,
+                     px[pi], bx[pi], rx[pi], bvx, bbx, brx, b_interval);
+        }
     }
 
     // Run through events.
@@ -296,8 +318,9 @@ int run() {
 
         // Apply other cuts.
         if (general_cuts) {
-            if (-0.5 < vars[A_PID] && vars[A_PID] < 0.5) continue; // Non-identified particle.
-            if (vars[A_CHI2]/vars[A_NDF] >= CHI2NDFCUT)  continue; // Ignore tracks with high chi2.
+            if (-0.5 < vars[A_PID] && vars[A_PID] <  0.5) continue; // Non-identified particle.
+            if (44.5 < vars[A_PID] && vars[A_PID] < 45.5) continue; // Non-identified particle.
+            if (vars[A_CHI2]/vars[A_NDF] >= CHI2NDFCUT)   continue; // Ignore tracks with high chi2.
         }
 
         if (geometry_cuts) {
@@ -305,7 +328,7 @@ int run() {
             if (VZLOWCUT > vars[A_VZ] || vars[A_VZ] > VZHIGHCUT) continue;
         }
 
-        if (sidis_cuts && !valid_event[(int) (vars[A_EVENTNO]+0.5)]) continue;
+        if (dis_cuts && !valid_event[(int) (vars[A_EVENTNO]+0.5)]) continue;
 
         // Prepare binning vars.
         Float_t b_vars[dbins];

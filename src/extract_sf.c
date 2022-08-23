@@ -1,3 +1,16 @@
+// CLAS12 RG-E Analyser.
+// Copyright (C) 2022 Bruno Benkel
+//
+// This program is free software: you can redistribute it and/or modify it under the terms of the
+// GNU Lesser General Public License as published by the Free Software Foundation, either version 3
+// of the License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+// even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+// Lesser General Public License for more details.
+//
+// You can see a copy of the GNU Lesser Public License under the LICENSE file.
+
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -73,7 +86,7 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no) {
             int pi = -1;
             for (double p = SF_PMIN; p < SF_PMAX; p += SF_PSTEP) {
                 pi++;
-                char * tmp_str = Form("%s%d (%5.2f < P_{tot} < %5.2f)", cal, si+1, p, p+SF_PSTEP);
+                char * tmp_str = Form("%s%d (%5.2f < p < %5.2f)", cal, si+1, p, p+SF_PSTEP);
                 sf1D_name_arr[ci][si][pi] = (char *) malloc(strlen(tmp_str)+1);
                 strncpy(sf1D_name_arr[ci][si][pi], tmp_str, strlen(tmp_str));
                 insert_TH1F(&histos, R_PALL, sf1D_name_arr[ci][si][pi], S_EDIVP, 200, 0, 0.4);
@@ -200,7 +213,7 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no) {
                 TH1 *EdivP = histos[sf1D_name_arr[ci][si][pi]];
 
                 // Form fit string name.
-                char * tmp_str = Form("%s%d (%5.2f < P_{tot} < %5.2f) fit", cal, si+1, p, p+SF_PSTEP);
+                char * tmp_str = Form("%s%d (%5.2f < p < %5.2f) fit", cal, si+1, p, p+SF_PSTEP);
 
                 // Fit.
                 TF1 *sf_gaus = new TF1(tmp_str,

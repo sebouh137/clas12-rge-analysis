@@ -1,3 +1,16 @@
+// CLAS12 RG-E Analyser.
+// Copyright (C) 2022 Bruno Benkel
+//
+// This program is free software: you can redistribute it and/or modify it under the terms of the
+// GNU Lesser General Public License as published by the Free Software Foundation, either version 3
+// of the License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+// even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+// Lesser General Public License for more details.
+//
+// You can see a copy of the GNU Lesser Public License under the LICENSE file.
+
 #include "../lib/constants.h"
 
 // Mass map in GeV.
@@ -21,6 +34,11 @@ const std::map<int, double> MASS = {
         // {1000010020,  1.875},    // deuterium. *not yet implemented*.
         {        45, -1.},       // unidentified particle.
         {         0, -1.}        // unidentified particle.
+};
+
+// PID qa map.
+const std::map<int, int> PID_QA = {
+    {11, 0}, {211, 1}, {321, 2}, {2212, 3}, {2112, 4}, {22, 5}
 };
 
 // Trackers array.

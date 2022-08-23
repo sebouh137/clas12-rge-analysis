@@ -1,3 +1,16 @@
+// CLAS12 RG-E Analyser.
+// Copyright (C) 2022 Bruno Benkel
+//
+// This program is free software: you can redistribute it and/or modify it under the terms of the
+// GNU Lesser General Public License as published by the Free Software Foundation, either version 3
+// of the License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+// even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+// Lesser General Public License for more details.
+//
+// You can see a copy of the GNU Lesser Public License under the LICENSE file.
+
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,7 +28,7 @@
 #include "../lib/particle.h"
 #include "../lib/utilities.h"
 
-// Find most precise TOF (Layers precision: FTOF1B, FTOF1A, FTOFB, PCAL, ECIN, ECOU).
+// Find most precise TOF (Layers precision: FTOF1B, FTOF1A, FTOF2, PCAL, ECIN, ECOU).
 double get_tof(REC_Scintillator rsci, REC_Calorimeter  rcal, int pindex) {
     int    most_precise_lyr = 0;
     double tof              = INFINITY;
@@ -98,6 +111,14 @@ int run(char * in_filename, bool debug, int nevn, int run_no, double beam_E) {
     // Counters for fancy progress bar.
     int divcntr     = 0;
     int evnsplitter = 0;
+
+    // Counters for PID assignment quality assessment.
+    int pid_n[NPIDS];
+    int pid_qa[NPIDS][NPIDS];
+    if (debug) {
+        for (int i = 0; i < NPIDS; ++i) pid_n[i] = 0;
+        for (int i = 0; i < NPIDS; ++i) for (int j = 0; j < NPIDS; ++j) pid_qa[i][j] = 0;
+    }
 
     // Iterate through input file. Each TTree entry is one event.
     printf("Reading %lld events from %s.\n", nevn == -1 ? t_in->GetEntries() : nevn, in_filename);
@@ -193,6 +214,14 @@ int run(char * in_filename, bool debug, int nevn, int run_no, double beam_E) {
                         ltcc_nphe, sf_params[rtrk.sector->at(pos)]);
             }
 
+            // Test PID assignment precision.
+            if (debug
+                    && PID_QA.find(abs(rpart.pid->at(pindex))) != PID_QA.end()
+                    && PID_QA.find(abs(p[0].pid)) != PID_QA.end()) {
+                pid_n[PID_QA.at(abs(rpart.pid->at(pindex)))]++;
+                pid_qa[PID_QA.at(abs(rpart.pid->at(pindex)))][PID_QA.at(abs(p[0].pid))]++;
+            }
+
             // Fill TNtuples. TODO. This probably should be implemented more elegantly.
             // NOTE. If adding new variables, check their order in S_VAR_LIST.
             for (int pi = 0; pi < 2; ++pi) {
@@ -217,6 +246,23 @@ int run(char * in_filename, bool debug, int nevn, int run_no, double beam_E) {
         printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
         printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
         printf("[==================================================] 100%% \n");
+    }
+
+    if (debug) {
+        printf("\nparticle identification matrix:\n        e     pi    K     p     n     gamma\n");
+        for (int i = 0; i < NPIDS; ++i) {
+            if (i == 0) printf("    e  ");
+            if (i == 1) printf("   pi  ");
+            if (i == 2) printf("    K  ");
+            if (i == 3) printf("    p  ");
+            if (i == 4) printf("    n  ");
+            if (i == 5) printf("gamma  ");
+            for (int j = 0; j < NPIDS; ++j) {
+                printf("%5.2f ", ((double) pid_qa[j][i])/((double) pid_n[j]));
+            }
+            printf("\n");
+        }
+        printf("\n");
     }
 
     // Write to output file.

@@ -1,3 +1,16 @@
+// CLAS12 RG-E Analyser.
+// Copyright (C) 2022 Bruno Benkel
+//
+// This program is free software: you can redistribute it and/or modify it under the terms of the
+// GNU Lesser General Public License as published by the Free Software Foundation, either version 3
+// of the License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+// even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+// Lesser General Public License for more details.
+//
+// You can see a copy of the GNU Lesser Public License under the LICENSE file.
+
 #ifndef CONSTANTS
 #define CONSTANTS
 
@@ -6,8 +19,9 @@
 // Physics constants.
 #define SPEEDOFLIGHT 29.9792458
 
-// Masses.
+// PID arrays.
 extern const std::map<int, double> MASS;
+extern const std::map<int, int> PID_QA;
 
 // Particle cut array.
 #define PART_LIST_SIZE 5
@@ -184,7 +198,7 @@ extern const char * SIDIS_LIST[SIDIS_LIST_SIZE];
 // #define PHOTONPHI   "virtual photon #phi (lab frame #degree)"
 
 // Sampling fraction constants.
-#define S_EDIVP    "E/Vp"
+#define S_EDIVP    "E/p"
 #define PCAL_IDX   0   // PCAL idx in Sampling fraction arrays.
 #define ECIN_IDX   1   // ECIN idx in Sampling fraction arrays.
 #define ECOU_IDX   2   // ECOU idx in Sampling fraction arrays.
@@ -226,6 +240,7 @@ extern const double PLIMITSARR[SF_NPARAMS][2]; // Momentum limits for 1D SF fits
 #define VZHIGHCUT    40 // vz must be below this.
 
 // PID Cuts. Most numbers come from `/calibration/eb/` from the CCDB.
+#define NPIDS           6     // # of (signless) PIDs program is capable of identifying.
 #define HTCC_NPHE_CUT   2     // # of HTCC photoelectrons required to consider particle passed HTCC.
 #define LTCC_NPHE_CUT   2     // # of LTCC photoelectrons required to consider particle passed LTCC.
 #define MIN_PCAL_ENERGY 0.060 // Min energy deposited in PCAL to assign pid = 11.

@@ -1,3 +1,16 @@
+# CLAS12 RG-E Analyser.
+# Copyright (C) 2022 Bruno Benkel
+#
+# This program is free software: you can redistribute it and/or modify it under the terms of the
+# GNU Lesser General Public License as published by the Free Software Foundation, either version 3
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+# even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# Lesser General Public License for more details.
+#
+# You can see a copy of the GNU Lesser Public License under the LICENSE file.
+
 BIN         := ./bin
 BLD         := ./build
 SRC         := ./src
@@ -44,7 +57,7 @@ $(BLD)/bank_containers.o: $(SRC)/bank_containers.c $(LIB)/bank_containers.h
 	$(HIPOCFLAGS) $(ROOTLDFLAGS) $(HIPOLIBS) $(ROOTLIBS)
 
 $(BLD)/constants.o: $(SRC)/constants.c $(LIB)/constants.h
-	$(CXX) $(CFLAGS) -c $(SRC)/constants.c -o $(BLD)/constants.o
+	$(CXX) $(CFLAGS) -std=c++11 -c $(SRC)/constants.c -o $(BLD)/constants.o
 
 $(BLD)/err_handler.o: $(SRC)/err_handler.c $(LIB)/err_handler.h
 	$(CXX) $(CFLAGS) -c $(SRC)/err_handler.c -o $(BLD)/err_handler.o

@@ -10,3 +10,6 @@ To run with valgrind, ROOT requires some flags:
 
 Not sure if I'm using ROOT and hipo wrong or if they have a ton of memory leaks.
 Gotta check this issue at some point.
+
+## License
+This program is licensed under the GNU LGPLv3 license. Please check the LICENSE file for details.
