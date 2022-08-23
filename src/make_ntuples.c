@@ -206,8 +206,6 @@ int run(char * in_filename, bool debug, int nevn, int run_no, double beam_E) {
             float chi2 = rtrk.chi2   ->at(pos);
             float ndf  = rtrk.ndf    ->at(pos);
             
-            int rec_pid     = rpart.pid->at(pindex);
-            int rec_pid_fmt = rpart.pid->at(pindex);
             // Assign PID.
             for (int pi = 0; pi < 2; ++pi) {
                 set_pid(&(p_el[pi]), rpart.pid->at(pindex), status, tot_E, pcal_E, htcc_nphe,
