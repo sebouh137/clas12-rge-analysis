@@ -22,7 +22,10 @@ const int PID_NEUTRAL [PID_NEUTRAL_SIZE]  = { 22, 2112};
 // Initialize an empty particle.
 particle particle_init() {
     particle p;
-    p.is_valid = false;
+    p.is_valid            = false;
+    p.is_hadron           = false;
+    p.is_trigger_electron = false;
+
     return p;
 }
 
@@ -54,8 +57,11 @@ particle particle_init(int charge, double beta, int sector,
     particle p;
 
     // Inherent vars.
-    p.is_valid = true;
-    p.pid    = 0; // If particle identification later fails, PID will be 0.
+    p.is_valid            = true;
+    p.is_trigger_electron = false;
+    p.is_hadron           = false;
+
+    p.pid    = 0; 
     p.q      = charge;
     p.beta   = beta;
     p.sector = sector;
@@ -77,7 +83,7 @@ int set_pid(particle * p, int recon_pid, int status, double tot_E, double pcal_E
             int ltcc_nphe, double sf_params[SF_NPARAMS][2]) {
     // Assign PID for neutrals and store PID from reconstruction for charge particles.
     int rpid = p->q == 0 ? assign_neutral_pid(tot_E, p->beta) : recon_pid;
-
+    
     // Create PID list.
     int hypotheses_size;
     if      (p->q >  0) hypotheses_size = PID_POSITIVE_SIZE;
@@ -112,6 +118,9 @@ int set_pid(particle * p, int recon_pid, int status, double tot_E, double pcal_E
     // Check if particle is trigger electron and define mass from PID.
     p->is_trigger_electron = (p->pid == 11 && status < 0);
     p->mass = MASS.at(abs(p->pid));
+    // If not lepton check if its valid hadron.
+    if (p->pid>=100||p->pid<=100)
+        p->is_hadron = true;
 
     return 0;
 }
@@ -195,7 +204,7 @@ float mass2(particle p) {
     return (P(p)*P(p)) / (p.beta*p.beta);
 }
 
-// === SIDIS e- FUNCTIONS ==========================================================================
+// === DIS e- FUNCTIONS ==========================================================================
 // Calculate nu from beam energy and total momentum.
 float nu(particle p, double bE) {
     if (!p.is_trigger_electron) return 0; // TODO. I need an invalid return value, not zero!
@@ -254,23 +263,27 @@ float phi_photon_lab(particle p) {
 
 // Compute the polar angle of a produced particle p with respect to the virtual photon direction.
 // `p` is the produced particle while `e` is the trigger electron.
+
 float theta_pq(particle p, particle e, double bE) {
-    if (!e.is_trigger_electron || p.is_trigger_electron) return 0;
+    if (!(p.is_hadron&&e.is_trigger_electron)) return 0;
     return calc_angle(-e.px, -e.py, bE-e.pz, p.px, p.py, p.pz);
 }
 
 // Compute the azimuthal angle of a produced particle p with respect to the virtual photon direction.
 float phi_pq(particle p, particle e, double bE) {
-    if (!e.is_trigger_electron || p.is_trigger_electron) return 0;
+    if (!(p.is_hadron&&e.is_trigger_electron)) return 0;
 
     double gpx = -e.px, gpy = -e.py, gpz = bE-e.pz;
     double ppx = p.px,  ppy = p.py,  ppz = p.pz;
 
-    double phi_z = M_PI - phi_lab(p);
+    // Analyser uses gp isntead of p, i.e., the momentum of virtual photon
+    double phi_z = M_PI - atan2(gpy, gpx);
+    
     rotate_z(&gpx, &gpy, phi_z);
     rotate_z(&ppx, &ppy, phi_z);
 
     double phi_y = calc_angle(gpx, gpy, gpz, 0, 0, 1);
+    
     rotate_y(&ppx, &ppz, phi_y);
 
     return atan2(ppy, ppx);
@@ -278,38 +291,38 @@ float phi_pq(particle p, particle e, double bE) {
 
 // Compute the cosine of the polar angle with respect to the virtual photon direction.
 float cos_theta_pq(particle p, particle e, double bE) {
-    if (!e.is_trigger_electron || p.is_trigger_electron) return 0;
+    if (!(p.is_hadron&&e.is_trigger_electron)) return 0;
     return (p.pz*(bE-e.pz) - p.px*e.px - p.py*e.py) / (sqrt(nu(e,bE)*nu(e,bE) + Q2(e,bE)) * P(p));
 }
 
 // Return the squared momentum transverse to the virtual photon.
 float Pt2(particle p, particle e, double bE) {
-    if (!e.is_trigger_electron || p.is_trigger_electron) return 0;
+    if (!(p.is_hadron&&e.is_trigger_electron)) return 0;
     return P(p) * P(p) * (1 - cos_theta_pq(p,e,bE)*cos_theta_pq(p,e,bE));
 }
 
 // Return the squared momentum longitudinal to the virtual photon.
 float Pl2(particle p, particle e, double bE) {
-    if (!e.is_trigger_electron || p.is_trigger_electron) return 0;
+    if (!(p.is_hadron&&e.is_trigger_electron)) return 0;
     return P(p) * P(p) * cos_theta_pq(p,e,bE) * cos_theta_pq(p,e,bE);
 }
 
 // Obtain the fraction of the virtual photon energy taken by the produced particle in the lab frame.
 float zh(particle p, particle e, double bE) {
-    if (!e.is_trigger_electron || p.is_trigger_electron) return 0;
+    if (!(p.is_hadron&&e.is_trigger_electron)) return 0;
     return sqrt(p.mass*p.mass + P(p)*P(p)) / nu(e,bE);
 }
 
 // Return the longitudinal momentum in the center of mass frame.
 float PlCM(particle p, particle e, double bE) {
-    if (!e.is_trigger_electron || p.is_trigger_electron) return 0;
+    if (!(p.is_hadron&&e.is_trigger_electron)) return 0;
     return (nu(e,bE) + MASS.at(2212)) * (sqrt(Pl2(p,e,bE)) - sqrt(Q2(e,bE) + nu(e,bE)*nu(e,bE))
             * zh(p,e,bE)*nu(e,bE) / (nu(e,bE) + MASS.at(2212))) / W(e,bE);
 }
 
 // Obtain the maximum possible value that the momentum could've had in the center of mass frame.
 float PmaxCM(particle p, particle e, double bE) {
-    if (!e.is_trigger_electron || p.is_trigger_electron) return 0;
+    if (!(p.is_hadron&&e.is_trigger_electron)) return 0;
     return sqrt(pow(W(e,bE)*W(e,bE) - MASS.at(2112)*MASS.at(2112) + MASS.at(211)*MASS.at(211), 2)
             - 4*MASS.at(211)*MASS.at(211)*W(e,bE)*W(e,bE)) / (2*W(e,bE));
 }
@@ -317,33 +330,33 @@ float PmaxCM(particle p, particle e, double bE) {
 // Return the momentum transverse component squared of the produced particle wrt the virtual photon
 //     direction.
 float PTrans2PQ(particle p, particle e, double bE) {
-    if (!e.is_trigger_electron || p.is_trigger_electron) return 0;
+    if (!(p.is_hadron&&e.is_trigger_electron)) return 0;
     return P(p)*P(p) * (1 - cos_theta_pq(p,e,bE)*cos_theta_pq(p,e,bE));
 }
 
 // Return the momentum longitudinal component squared of the produced particle wrt the virtual
 //     photon direction.
 float PLong2PQ(particle p, particle e, double bE) {
-    if (!e.is_trigger_electron || p.is_trigger_electron) return 0;
+    if (!(p.is_hadron&&e.is_trigger_electron)) return 0;
     return P(p)*P(p) * cos_theta_pq(p,e,bE)*cos_theta_pq(p,e,bE);
 }
 
 // Calculate X_f (X Feynmann).
 float Xf(particle p, particle e, double bE) {
-    if (!e.is_trigger_electron || p.is_trigger_electron) return 0;
+    if (!(p.is_hadron&&e.is_trigger_electron)) return 0;
     return PlCM(p,e,bE) / PmaxCM(p,e,bE);
 }
 
 // Compute the missing mass
 float Mx2(particle p, particle e, double bE) {
-    if (!e.is_trigger_electron || p.is_trigger_electron) return 0;
-    return W(e,bE)*W(e,bE) - 2*nu(e,bE)*zh(p,e,bE) * (nu(e,bE) + MASS.at(2212))
-            + MASS.at(211)*MASS.at(211) + 2*sqrt((Q2(e,bE) + nu(e,bE)*nu(e,bE)) * Pl2(p,e,bE));
+    if (!(p.is_hadron&&e.is_trigger_electron)) return 0;
+    return W(e,bE)*W(e,bE) - 2*nu(e,bE)*zh(p,e,bE) * (nu(e,bE) + MASS.at(2212)) + MASS.at(211)*MASS.at(211)
+            + 2*sqrt((Q2(e,bE) + nu(e,bE)*nu(e,bE)) * Pl2(p,e,bE));
 }
 
 // Compute Mandelstam t. TODO. Make sure that that is what this is!
 float t_mandelstam(particle p, particle e, double bE) {
-    if (!e.is_trigger_electron || p.is_trigger_electron) return 0;
-    return 2*sqrt((nu(e,bE)*nu(e,bE) + Q2(e,bE)) * Pl2(p,e,bE)) + MASS.at(211)*MASS.at(211)
-            - Q2(e,bE) - 2*nu(e,bE)*nu(e,bE)*zh(p,e,bE);
+    if (!(p.is_hadron&&e.is_trigger_electron)) return 0;
+    return 2*sqrt((nu(e,bE)*nu(e,bE) + Q2(e,bE)) * Pl2(p,e,bE)) + MASS.at(211)*MASS.at(211) - Q2(e,bE)
+            - 2*nu(e,bE)*nu(e,bE)*zh(p,e,bE);
 }

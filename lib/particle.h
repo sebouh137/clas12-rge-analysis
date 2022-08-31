@@ -31,6 +31,7 @@ extern const int PID_NEUTRAL[PID_NEUTRAL_SIZE];
 typedef struct {
     bool is_valid;
     bool is_trigger_electron;
+    bool is_hadron;
     // EB vars.
     int pid;
     int q;
