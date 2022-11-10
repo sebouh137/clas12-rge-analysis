@@ -164,7 +164,7 @@ int run(char * in_filename, bool debug, int nevn, int run_no, double beam_E) {
         bool    trigger_exist  = false;
         UInt_t  trigger_pos    = -1;
         int     trigger_pindex = -1;
-        for (UInt_t pos = 0; pos < rtrk.index->size(); ++pos) { 
+        for (UInt_t pos = 0; pos < rtrk.index->size(); ++pos) {
             int pindex = rtrk.pindex->at(pos); // pindex is always equal to pos!
 
             // Get reconstructed particle from DC and from FMT.
@@ -205,13 +205,13 @@ int run(char * in_filename, bool debug, int nevn, int run_no, double beam_E) {
             int status = rpart.status->at(pindex);
             float chi2 = rtrk.chi2   ->at(pos);
             float ndf  = rtrk.ndf    ->at(pos);
-            
+
             // Assign PID.
             for (int pi = 0; pi < 2; ++pi) {
                 set_pid(&(p_el[pi]), rpart.pid->at(pindex), status, tot_E, pcal_E, htcc_nphe,
                         ltcc_nphe, sf_params[rtrk.sector->at(pos)]);
             }
-            
+
             // Fill TNtuples with trigger electron info
             for (int pi = 0; pi < 2; ++pi) {
                 if (!(p_el[pi].is_valid&&p_el[pi].is_trigger_electron)) continue;
@@ -245,9 +245,9 @@ int run(char * in_filename, bool debug, int nevn, int run_no, double beam_E) {
         }
 
         // Processing particles.
-        for (UInt_t pos = 0; pos < rtrk.index->size(); ++pos) { 
+        for (UInt_t pos = 0; pos < rtrk.index->size(); ++pos) {
             int pindex = rtrk.pindex->at(pos); // pindex is always equal to pos!
-            
+
             // Conditional to avoid trigger electron double counting.
             if (trigger_pindex==pindex&&trigger_pos==pos) continue;
 
@@ -290,7 +290,7 @@ int run(char * in_filename, bool debug, int nevn, int run_no, double beam_E) {
             int status = rpart.status->at(pindex);
             float chi2 = rtrk.chi2   ->at(pos);
             float ndf  = rtrk.ndf    ->at(pos);
-            
+
             // Assign PID.
             for (int pi = 0; pi < 2; ++pi) {
                 set_pid(&(p[pi]), rpart.pid->at(pindex), status, tot_E, pcal_E, htcc_nphe,
@@ -322,7 +322,7 @@ int run(char * in_filename, bool debug, int nevn, int run_no, double beam_E) {
                         zh(p[pi],p_el[pi], beam_E), Pt2(p[pi],p_el[pi], beam_E), Pl2(p[pi],p_el[pi], beam_E),
                         phi_pq(p[pi],p_el[pi], beam_E), theta_pq(p[pi],p_el[pi], beam_E)
                 };
-                
+
                 t_out[pi]->Fill(v);
             }
         }

@@ -22,7 +22,7 @@
 
 #include "file_handler.h"
 
-int make_ntuples_handle_args(int argc, char ** argv, bool * debug, int * nevents, 
+int make_ntuples_handle_args(int argc, char ** argv, bool * debug, int * nevents,
                              char ** input_file, int * run_no, double * beam_energy);
 int extractsf_handle_args(int argc, char ** argv, bool * use_fmt, int * nevents,
                           char ** input_file, int * run_no);

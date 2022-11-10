@@ -86,7 +86,7 @@ int handle_root_filename(char * input_file, int * run_no, double * beam_energy) 
     // Get run number and beam energy from filename.
     if (!get_run_no(input_file, run_no))  return 5;
     if (get_beam_energy(* run_no, beam_energy))      return 6;
-    
+
     return 0;
 }
 

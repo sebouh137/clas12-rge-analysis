@@ -61,7 +61,7 @@ particle particle_init(int charge, double beta, int sector,
     p.is_trigger_electron = false;
     p.is_hadron           = false;
 
-    p.pid    = 0; 
+    p.pid    = 0;
     p.q      = charge;
     p.beta   = beta;
     p.sector = sector;
@@ -83,7 +83,7 @@ int set_pid(particle * p, int recon_pid, int status, double tot_E, double pcal_E
             int ltcc_nphe, double sf_params[SF_NPARAMS][2]) {
     // Assign PID for neutrals and store PID from reconstruction for charge particles.
     int rpid = p->q == 0 ? assign_neutral_pid(tot_E, p->beta) : recon_pid;
-    
+
     // Create PID list.
     int hypotheses_size;
     if      (p->q >  0) hypotheses_size = PID_POSITIVE_SIZE;
@@ -278,12 +278,12 @@ float phi_pq(particle p, particle e, double bE) {
 
     // Analyser uses gp isntead of p, i.e., the momentum of virtual photon
     double phi_z = M_PI - atan2(gpy, gpx);
-    
+
     rotate_z(&gpx, &gpy, phi_z);
     rotate_z(&ppx, &ppy, phi_z);
 
     double phi_y = calc_angle(gpx, gpy, gpz, 0, 0, 1);
-    
+
     rotate_y(&ppx, &ppz, phi_y);
 
     return atan2(ppy, ppx);

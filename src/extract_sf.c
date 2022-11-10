@@ -258,7 +258,7 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no) {
     // Create output file.
     char*  out_filename = (char *) malloc(128 * sizeof(char));
     sprintf(out_filename, "../root_io/sf_study_%06d.root", run_no);
-    
+
     TFile *f_out = TFile::Open(out_filename, "RECREATE");
     // Write to output file.
     TString dir;
