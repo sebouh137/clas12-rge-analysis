@@ -162,7 +162,7 @@ extern const char * S_VAR_LIST[VAR_LIST_SIZE];
 #define DIS_LIST_SIZE 4
 extern const char * DIS_LIST[DIS_LIST_SIZE];
 
-#define S_Q2 "Q2"       // GeV^2.
+#define S_Q2 "Q2"          // GeV^2.
 #define R_Q2 "q2"
 #define A_Q2 24
 #define S_NU "#nu"         // GeV.
@@ -171,7 +171,7 @@ extern const char * DIS_LIST[DIS_LIST_SIZE];
 #define S_XB "x_{bjorken}" // adimensional.
 #define R_XB "x_bjorken"
 #define A_XB 26
-#define S_W2 "W2"       // GeV^2.
+#define S_W2 "W2"          // GeV^2.
 #define R_W2 "w2"
 #define A_W2 27
 
@@ -180,7 +180,7 @@ extern const char * DIS_LIST[DIS_LIST_SIZE];
 #define SIDIS_LIST_SIZE 5
 extern const char * SIDIS_LIST[SIDIS_LIST_SIZE];
 
-#define S_ZH      "z_{h}"          // adimensional.
+#define S_ZH      "z_{h}"       // adimensional.
 #define R_ZH      "zh"
 #define A_ZH       28
 #define S_PT2     "Pt2"         // GeV^2.
@@ -189,10 +189,10 @@ extern const char * SIDIS_LIST[SIDIS_LIST_SIZE];
 #define S_PL2     "Pl2"         // GeV^2.
 #define R_PL2     "pl2"
 #define A_PL2      30
-#define S_PHIPQ   "#phi_{PQ}"       // Rad.
+#define S_PHIPQ   "#phi_{PQ}"   // Rad.
 #define R_PHIPQ   "phipq"
 #define A_PHIPQ    31
-#define S_THETAPQ "#theta_{PQ}"     // Rad.
+#define S_THETAPQ "#theta_{PQ}" // Rad.
 #define R_THETAPQ "thetapq"
 #define A_THETAPQ  32
 
@@ -213,7 +213,7 @@ extern const char * SIDIS_LIST[SIDIS_LIST_SIZE];
 extern const char * CALNAME[4]; // Calorimeters names.
 extern const char * SFARR2D[4]; // Sampling Fraction (SF) 2D arr names.
 extern const char * SFARR1D[4]; // SF 1D arr names.
-extern const double PLIMITSARR[SF_NPARAMS][2]; // Momentum limits for 1D SF fits.
+extern const double PLIMITSARR[SF_NPARAMS][2]; // Momentum limits for 1D SF fit.
 
 // Run constants (TODO. these should be in a map or taken from clas12mon.)
 #define BE11983 10.3894 //  50 nA.
@@ -245,14 +245,21 @@ extern const double PLIMITSARR[SF_NPARAMS][2]; // Momentum limits for 1D SF fits
 #define VZHIGHCUT    40 // vz must be below this.
 
 // PID Cuts. Most numbers come from `/calibration/eb/` from the CCDB.
-#define NPIDS           6     // # of (signless) PIDs program is capable of identifying.
-#define HTCC_NPHE_CUT   2     // # of HTCC photoelectrons required to consider particle passed HTCC.
-#define LTCC_NPHE_CUT   2     // # of LTCC photoelectrons required to consider particle passed LTCC.
+#define NPIDS           6     // # of (signless) PIDs program is capable of
+                              //         identifying.
+#define HTCC_NPHE_CUT   2     // # of HTCC photoelectrons required to consider
+                              //         particle passed HTCC.
+#define LTCC_NPHE_CUT   2     // # of LTCC photoelectrons required to consider
+                              //         particle passed LTCC.
 #define MIN_PCAL_ENERGY 0.060 // Min energy deposited in PCAL to assign pid = 11.
-#define E_SF_NSIGMA     5.0   // Max ECAL sampling fraction sigma to assign pid = 11.
+#define E_SF_NSIGMA     5.0   // Max ECAL sampling fraction sigma to assign
+                              //         pid = 11.
 #define NEUTRON_MAXBETA 0.9   // Max beta allowed to assign pid == 2212.
-#define HTCC_PION_THRESHOLD 4.9 // Momentum required to consider particle crossing HTCC as pion.
-#define LTCC_PION_THRESHOLD 3.0 // Momentum required to consider particle crossing LTCC as pion.
-#define LTCC_KAON_THRESHOLD 5.0 // Momentum required to consider particle crossing LTCC as kaon.
+#define HTCC_PION_THRESHOLD 4.9 // Momentum required to consider particle
+                                //         crossing HTCC as pion.
+#define LTCC_PION_THRESHOLD 3.0 // Momentum required to consider particle
+                                //         crossing LTCC as pion.
+#define LTCC_KAON_THRESHOLD 5.0 // Momentum required to consider particle
+                                //         crossing LTCC as kaon.
 
 #endif

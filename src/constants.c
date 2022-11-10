@@ -70,7 +70,8 @@ const char * R_VAR_LIST[VAR_LIST_SIZE] = {
         R_CHI2, R_NDF,
         R_PCAL_E, R_ECIN_E, R_ECOU_E, R_TOT_E,
         R_DTOF,
-        R_Q2, R_NU, R_XB, R_W2
+        R_Q2, R_NU, R_XB, R_W2,
+        R_ZH, R_PT2, R_PL2, R_PHIPQ, R_THETAPQ
 };
 const char * S_VAR_LIST[VAR_LIST_SIZE] = {
         S_RUNNO, S_EVENTNO, S_BEAME,
@@ -79,7 +80,8 @@ const char * S_VAR_LIST[VAR_LIST_SIZE] = {
         S_CHI2, S_NDF,
         S_PCAL_E, S_ECIN_E, S_ECOU_E, S_TOT_E,
         S_DTOF,
-        S_Q2, S_NU, S_XB, S_W2, S_ZH, S_PT2, S_PL2, S_PHIPQ, S_THETAPQ
+        S_Q2, S_NU, S_XB, S_W2,
+        S_ZH, S_PT2, S_PL2, S_PHIPQ, S_THETAPQ
 };
 const char * DIS_LIST[DIS_LIST_SIZE] = {
         R_Q2, R_NU, R_XB, R_W2

@@ -13,7 +13,6 @@
 //
 // You can see a copy of the GNU Lesser Public License under the LICENSE file.
 
-
 #include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
