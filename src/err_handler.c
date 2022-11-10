@@ -51,11 +51,6 @@ int make_ntuples_handle_args_err(int errcode, char ** in_filename, int run_no) {
         case 7:
             fprintf(stderr, "Error. No file name provided.\n");
             return make_ntuples_usage();
-        case 8:
-            fprintf(stderr, "Error. No sampling fraction available for input file! Run ");
-            fprintf(stderr, "extract_sf before generating the ntuples.\n");
-            free(* in_filename);
-            return 1;
         default:
             fprintf(stderr, "Programmer Error. Error code %d not implemented in ", errcode);
             fprintf(stderr, "make_ntuples_handle_args()! You're on your own.\n");
@@ -76,6 +71,11 @@ int make_ntuples_err(int errcode, char ** in_filename) {
         case 3:
             fprintf(stderr, "Error. Invalid Cherenkov Counter ID. Check bank integrity.\n");
             break;
+        case 4:
+            fprintf(stderr, "Error. No sampling fraction available for input file! Run ");
+            fprintf(stderr, "extract_sf before generating the ntuples.\n");
+            free(* in_filename);
+            return 1;
         default:
             fprintf(stderr, "Programmer Error. Error code %d not implemented in \n", errcode);
             fprintf(stderr, "make_ntuples_err()! You're on your own.\n");

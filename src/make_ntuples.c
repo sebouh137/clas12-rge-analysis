@@ -80,7 +80,8 @@ double get_tof(REC_Scintillator rsci, REC_Calorimeter  rcal, int pindex) {
 
 int run(char * in_filename, bool debug, int nevn, int run_no, double beam_E) {
     double sf_params[NSECTORS][SF_NPARAMS][2];
-    if (get_sf_params(Form("../data/sf_params_%06d.txt", run_no), sf_params)) return 8;
+    if (get_sf_params(Form("../data/sf_params_%06d.txt", run_no), sf_params))
+        return 4;
 
     char*  out_filename = (char *) malloc(128 * sizeof(char));
     sprintf(out_filename, "../root_io/ntuples.root");
