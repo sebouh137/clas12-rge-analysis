@@ -1,15 +1,18 @@
 // CLAS12 RG-E Analyser.
 // Copyright (C) 2022 Bruno Benkel
 //
-// This program is free software: you can redistribute it and/or modify it under the terms of the
-// GNU Lesser General Public License as published by the Free Software Foundation, either version 3
-// of the License, or (at your option) any later version.
+// This program is free software: you can redistribute it and/or modify it under
+// the terms of the GNU Lesser General Public License as published by the Free
+// Software Foundation, either version 3 of the License, or (at your option) any
+// later version.
 //
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
-// even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-// Lesser General Public License for more details.
+// This program is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+// details.
 //
 // You can see a copy of the GNU Lesser Public License under the LICENSE file.
+
 
 #include <math.h>
 #include <stdbool.h>
@@ -27,32 +30,33 @@
 #include "../lib/constants.h"
 #include "../lib/utilities.h"
 
-// TODO. See why I'm not seeing any neutrals. -> Ask Raffa.
-// TODO. Get simulations from RG-F, understand how they're made to do acceptance correction.
-//           -> Ask Raffa.
+// TODO. See why I'm not seeing any neutrals.
+// TODO. Learn how to do acceptance correction.
 
 // TODO. Separate in z bins and see what happens.
 // TODO. Evaluate **acceptance** in diferent regions.
 // TODO. See simulations with Esteban or get them from RG-F.
 
-// TODO. Check what happens with the acceptance of different particles (like pi+ and pi-) when you
-//       reverse the magnetic fields.
+// TODO. Check what happens with the acceptance of different particles (like pi+
+//       and pi-) when you reverse the magnetic fields.
 // TODO. Check if we can run high luminosity with reverse fields.
 // TODO. Check if RG-F or RG-M ran with reverse field.
-// TODO. See what happens to low-momentum particles inside CLAS12 through simulation and see if they
-//       are reconstructed.
+// TODO. See what happens to low-momentum particles inside CLAS12 through
+//       simulation and see if they are reconstructed.
 
 // Assign name to plots, recursively going through binnings.
-int name_plt(TH1 * plt[], TString * name, const char * nx, const char * ny, int * idx, long dbins,
-             long depth, int px, long bx[], double rx[][2], int bvx[], long bbx[], double brx[][2],
+int name_plt(TH1 * plt[], TString * name, const char * nx, const char * ny,
+             int * idx, long dbins, long depth, int px, long bx[],
+             double rx[][2], int bvx[], long bbx[], double brx[][2],
              double b_interval[]) {
     if (depth == dbins) {
         // Create plot and increase index.
         if (px == 0) plt[* idx] =
-                new TH1F(* name, Form("%s;%s", name->Data(), nx), bx[0], rx[0][0], rx[0][1]);
+                new TH1F(* name, Form("%s;%s", name->Data(), nx), bx[0],
+                         rx[0][0], rx[0][1]);
         if (px == 1) plt[* idx] =
-                new TH2F(* name, Form("%s;%s;%s", name->Data(), nx, ny), bx[0], rx[0][0], rx[0][1],
-                         bx[1], rx[1][0], rx[1][1]);
+                new TH2F(* name, Form("%s;%s;%s", name->Data(), nx, ny), bx[0],
+                         rx[0][0], rx[0][1], bx[1], rx[1][0], rx[1][1]);
         ++(* idx);
         return 0;
     }
@@ -64,17 +68,20 @@ int name_plt(TH1 * plt[], TString * name, const char * nx, const char * ny, int 
 
         // Append bin limits to name.
         TString name_cpy = name->Copy();
-        name_cpy.Append(Form(" (%s: %6.2f, %6.2f)", S_VAR_LIST[bvx[depth]], b_low, b_high));
+        name_cpy.Append(Form(" (%s: %6.2f, %6.2f)", S_VAR_LIST[bvx[depth]],
+                             b_low, b_high));
 
         // Continue down the line.
-        name_plt(plt, &name_cpy, nx, ny, idx, dbins, depth+1, px, bx, rx, bvx, bbx, brx, b_interval);
+        name_plt(plt, &name_cpy, nx, ny, idx, dbins, depth+1, px, bx, rx, bvx,
+                 bbx, brx, b_interval);
     }
 
     return 0;
 }
 
-int find_bin(TString * name, int plt_size, int idx, long dbins, long depth, int prev_dim_factor,
-             int vx[], long bx[], double rx[][2], double interval[]) {
+int find_bin(TString * name, int plt_size, int idx, long dbins, long depth,
+             int prev_dim_factor, int vx[], long bx[], double rx[][2],
+             double interval[]) {
     if (depth == dbins) return 0;
 
     // Find index in array (for this dimension).
@@ -89,11 +96,13 @@ int find_bin(TString * name, int plt_size, int idx, long dbins, long depth, int 
     // Append dir to name.
     name->Append(Form("%s (%6.2f, %6.2f)/", S_VAR_LIST[vx[depth]], low, high));
 
-    return find_bin(name, plt_size, idx, dbins, depth+1, dim_factor, vx, bx, rx, interval);
+    return find_bin(name, plt_size, idx, dbins, depth+1, dim_factor, vx, bx, rx,
+                    interval);
 }
 
 // Find index of plot in array, recursively going through binnings.
-int find_idx(long dbins, long depth, Float_t var[], long bx[], double rx[][2], double interval[]) {
+int find_idx(long dbins, long depth, Float_t var[], long bx[], double rx[][2],
+             double interval[]) {
     if (depth == dbins) return 0;
     for (int bi = 0; bi < bx[depth]; ++bi) {
         // Define bin limits.
@@ -104,7 +113,8 @@ int find_idx(long dbins, long depth, Float_t var[], long bx[], double rx[][2], d
         if (low < var[depth] && var[depth] < high) {
             int dim_factor = 1;
             for (int di = depth+1; di < dbins; ++di) dim_factor *= bx[di];
-            return bi*dim_factor + find_idx(dbins, depth+1, var, bx, rx, interval);
+            return bi*dim_factor +
+                    find_idx(dbins, depth+1, var, bx, rx, interval);
         }
     }
 
@@ -112,16 +122,16 @@ int find_idx(long dbins, long depth, Float_t var[], long bx[], double rx[][2], d
 }
 
 int run() {
-    // Open input file.
-    TFile * f_in  = TFile::Open("../root_io/ntuples.root", "READ"); // NOTE. This path sucks.
+    // Open input file. TODO. Change paths so that they are no longer relative!
+    TFile * f_in  = TFile::Open("../root_io/ntuples.root", "READ");
 
     if (!f_in || f_in->IsZombie()) return 1;
 
-    // NOTE. This function could receive a few arguments to speed IO up. Pre-configured cuts,
-    //       binnings, and corrections would be nice.
+    // NOTE. This function could receive a few arguments to speed IO up.
+    //       Pre-configured cuts, binnings, and corrections would be nice.
     // TODO. Prepare corrections (acceptance, radiative, Feynman, etc...).
 
-    // === CUT SETUP ===============================================================================
+    // === CUT SETUP ===========================================================
     printf("\nUse DC or FMT data? [");
     for (int ti = 0; ti < TRK_LIST_SIZE; ++ti) printf("%s, ", TRK_LIST[ti]);
     printf("\b\b]\n");
@@ -138,14 +148,15 @@ int run() {
     else if (part == A_PNEG) p_charge = -1;
     else if (part == A_PPID) {
         printf("\nSelect PID from [");
-        for (std::map<int, double>::const_iterator it = MASS.begin(); it != MASS.end(); ++it)
+        for (std::map<int, double>::const_iterator it = MASS.begin();
+                it != MASS.end(); ++it)
             printf("%d, ", it->first);
         printf("\b\b]\n");
         p_pid = catch_long();
     }
 
     char * outfilename = p_pid == INT_MAX ?
-            Form("../root_io/plots_%s_%s.root", TRK_LIST[trk], PART_LIST[part]) :
+            Form("../root_io/plots_%s_%s.root", TRK_LIST[trk], PART_LIST[part]):
             Form("../root_io/plots_%s_pid%d.root", TRK_LIST[trk], p_pid);
 
     // Open output file (NOTE. This path sucks).
@@ -173,7 +184,7 @@ int run() {
     // printf("\nApply any custom cut? [y/n]\n");
     // bool custom_cuts = catch_yn();
 
-    // === BINNING SETUP ===========================================================================
+    // === BINNING SETUP =======================================================
     printf("\nNumber of dimensions for binning?\n");
     long   dbins = catch_long();
     int    bvx[dbins];
@@ -183,13 +194,15 @@ int run() {
     for (long bdi = 0; bdi < dbins; ++bdi) {
         // variable.
         printf("\nDefine var for bin in dimension %ld. Available vars:\n[", bdi);
-        for (int vi = 0; vi < VAR_LIST_SIZE; ++vi) printf("%s, ", R_VAR_LIST[vi]);
+        for (int vi = 0; vi < VAR_LIST_SIZE; ++vi)
+            printf("%s, ", R_VAR_LIST[vi]);
         printf("\b\b]\n");
         bvx[bdi] = catch_string(R_VAR_LIST, VAR_LIST_SIZE);
 
         // range.
         for (int ri = 0; ri < 2; ++ri) {
-            printf("\nDefine %s limit for bin in dimension %ld:\n", RAN_LIST[ri], bdi);
+            printf("\nDefine %s limit for bin in dimension %ld:\n",
+                    RAN_LIST[ri], bdi);
             brx[bdi][ri] = catch_double();
         }
 
@@ -201,9 +214,9 @@ int run() {
         b_interval[bdi] = (brx[bdi][1] - brx[bdi][0])/bbx[bdi];
     }
 
-    // === PLOT SETUP ==============================================================================
+    // === PLOT SETUP ==========================================================
     // Number of plots.
-    printf("\nDefine number of plots (Set to 0 to just draw standard plots).\n");
+    printf("\nDefine number of plots (Set to 0 to draw standard plots).\n");
     long pn = catch_long();
 
     bool stdplt = false;
@@ -219,20 +232,24 @@ int run() {
     for (long pi = 0; pi < pn && !stdplt; ++pi) {
         // Check if we are to make a 1D or 2D plot.
         printf("\nPlot %ld type? [", pi);
-        for (int vi = 0; vi < PLOT_LIST_SIZE; ++vi) printf("%s, ", PLOT_LIST[vi]);
+        for (int vi = 0; vi < PLOT_LIST_SIZE; ++vi)
+            printf("%s, ", PLOT_LIST[vi]);
         printf("\b\b]:\n");
         px[pi] = catch_string(PLOT_LIST, PLOT_LIST_SIZE);
 
         for (int di = 0; di < px[pi]+1; ++di) {
             // Check variable(s) to be plotted.
-            printf("\nDefine var to be plotted on the %s axis. Available vars:\n[", DIM_LIST[di]);
-            for (int vi = 0; vi < VAR_LIST_SIZE; ++vi) printf("%s, ", R_VAR_LIST[vi]);
+            printf("\nDefine var to be plotted on the %s axis. Available vars:\n[",
+                    DIM_LIST[di]);
+            for (int vi = 0; vi < VAR_LIST_SIZE; ++vi)
+                printf("%s, ", R_VAR_LIST[vi]);
             printf("\b\b]\n");
             vx[pi][di] = catch_string(R_VAR_LIST, VAR_LIST_SIZE);
 
             // Define ranges.
             for (int ri = 0; ri < 2; ++ri) {
-                printf("\nDefine %s limit for %s axis:\n", RAN_LIST[ri], DIM_LIST[di]);
+                printf("\nDefine %s limit for %s axis:\n",
+                        RAN_LIST[ri], DIM_LIST[di]);
                 rx[pi][di][ri] = catch_double();
             }
 
@@ -248,12 +265,13 @@ int run() {
         memcpy(bx, STD_BX, sizeof bx);
     }
 
-    // === NTUPLES SETUP ===========================================================================
+    // === NTUPLES SETUP =======================================================
     TNtuple * t = (TNtuple *) f_in->Get(trk == 0 ? S_DC : S_FMT);
     Float_t vars[VAR_LIST_SIZE];
-    for (int vi = 0; vi < VAR_LIST_SIZE; ++vi) t->SetBranchAddress(S_VAR_LIST[vi], &vars[vi]);
+    for (int vi = 0; vi < VAR_LIST_SIZE; ++vi)
+        t->SetBranchAddress(S_VAR_LIST[vi], &vars[vi]);
 
-    // === APPLY CUTS ==============================================================================
+    // === APPLY CUTS ==========================================================
     // Apply SIDIS cuts, checking which event numbers should be skipped.
     // int nruns   =  1; // TODO.
     int nevents = -1;
@@ -281,10 +299,11 @@ int run() {
         Q2_pass = vars[A_Q2] >= Q2CUT;
         W2_pass = vars[A_W2] >= W2CUT;
 
-        valid_event[(int) (vars[A_EVENTNO]+0.5)] = no_tre_pass && Q2_pass && W2_pass;
+        valid_event[(int) (vars[A_EVENTNO]+0.5)] =
+                no_tre_pass && Q2_pass && W2_pass;
     }
 
-    // === PLOT ====================================================================================
+    // === PLOT ================================================================
     // Create plots, separated by n-dimensional binning.
     long plt_size = 1;
     for (int bdi = 0; bdi < dbins; ++bdi) plt_size *= bbx[bdi];
@@ -295,13 +314,14 @@ int run() {
         int idx = 0;
         if (px[pi] == 0) {
             name = Form("%s", S_VAR_LIST[vx[pi][0]]);
-            name_plt(plt[pi], &name, S_VAR_LIST[vx[pi][0]], "", &idx,
-                     dbins, 0, px[pi], bx[pi], rx[pi], bvx, bbx, brx, b_interval);
+            name_plt(plt[pi], &name, S_VAR_LIST[vx[pi][0]], "", &idx, dbins, 0,
+                     px[pi], bx[pi], rx[pi], bvx, bbx, brx, b_interval);
         }
         if (px[pi] == 1) {
             name = Form("%s vs %s", S_VAR_LIST[vx[pi][0]], S_VAR_LIST[vx[pi][1]]);
-            name_plt(plt[pi], &name, S_VAR_LIST[vx[pi][0]], S_VAR_LIST[vx[pi][1]], &idx, dbins, 0,
-                     px[pi], bx[pi], rx[pi], bvx, bbx, brx, b_interval);
+            name_plt(plt[pi], &name, S_VAR_LIST[vx[pi][0]], S_VAR_LIST[vx[pi][1]],
+                     &idx, dbins, 0, px[pi], bx[pi], rx[pi], bvx, bbx, brx,
+                     b_interval);
         }
     }
 
@@ -319,14 +339,17 @@ int run() {
 
         // Apply other cuts.
         if (general_cuts) {
-            if (-0.5 < vars[A_PID] && vars[A_PID] <  0.5) continue; // Non-identified particle.
-            if (44.5 < vars[A_PID] && vars[A_PID] < 45.5) continue; // Non-identified particle.
-            if (vars[A_CHI2]/vars[A_NDF] >= CHI2NDFCUT)   continue; // Ignore tracks with high chi2.
+            // Non-identified particle.
+            if (-0.5 < vars[A_PID] && vars[A_PID] <  0.5) continue;
+            // Non-identified particle.
+            if (44.5 < vars[A_PID] && vars[A_PID] < 45.5) continue;
+            // Ignore tracks with high chi2.
+            if (vars[A_CHI2]/vars[A_NDF] >= CHI2NDFCUT)   continue;
         }
 
         if (geometry_cuts) {
             if (calc_magnitude(vars[A_VX], vars[A_VY]) > VXVYCUT) continue;
-            if (VZLOWCUT > vars[A_VZ] || vars[A_VZ] > VZHIGHCUT) continue;
+            if (VZLOWCUT > vars[A_VZ] || vars[A_VZ] > VZHIGHCUT)  continue;
         }
 
         if (dis_cuts && !valid_event[(int) (vars[A_EVENTNO]+0.5)]) continue;
@@ -340,7 +363,8 @@ int run() {
             bool sidis_pass = true;
             for (int di = 0; di < px[pi]+1; ++di) {
                 for (int li = 0; li < DIS_LIST_SIZE; ++li) {
-                    if (!strcmp(R_VAR_LIST[vx[pi][di]], DIS_LIST[li]) && vars[vx[pi][di]] < 1e-9)
+                    if (!strcmp(R_VAR_LIST[vx[pi][di]], DIS_LIST[li])
+                        && vars[vx[pi][di]] < 1e-9)
                         sidis_pass = false;
                 }
             }
@@ -359,7 +383,8 @@ int run() {
     for (int plti = 0; plti < plt_size; ++plti) {
         // Find dir.
         TString dir;
-        find_bin(&dir, plt_size, plti, dbins, 0, INT_MAX, bvx, bbx, brx, b_interval);
+        find_bin(&dir, plt_size, plti, dbins, 0, INT_MAX, bvx, bbx, brx,
+                 b_interval);
         f_out->mkdir(dir);
         f_out->cd(dir);
 
@@ -367,7 +392,7 @@ int run() {
         for (int pi = 0; pi < pn; ++pi) plt[pi][plti]->Write();
     }
 
-    // === CLEAN-UP ================================================================================
+    // === CLEAN-UP ============================================================
     f_in ->Close();
     f_out->Close();
 

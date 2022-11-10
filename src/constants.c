@@ -1,13 +1,15 @@
 // CLAS12 RG-E Analyser.
 // Copyright (C) 2022 Bruno Benkel
 //
-// This program is free software: you can redistribute it and/or modify it under the terms of the
-// GNU Lesser General Public License as published by the Free Software Foundation, either version 3
-// of the License, or (at your option) any later version.
+// This program is free software: you can redistribute it and/or modify it under
+// the terms of the GNU Lesser General Public License as published by the Free
+// Software Foundation, either version 3 of the License, or (at your option) any
+// later version.
 //
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
-// even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-// Lesser General Public License for more details.
+// This program is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+// details.
 //
 // You can see a copy of the GNU Lesser Public License under the LICENSE file.
 
@@ -63,8 +65,8 @@ const char * RAN_LIST[2] = {
 };
 const char * R_VAR_LIST[VAR_LIST_SIZE] = {
         R_RUNNO, R_EVENTNO, R_BEAME,
-        R_PID, R_STATUS, R_CHARGE, R_MASS, R_VX, R_VY, R_VZ, R_PX, R_PY, R_PZ, R_P, R_THETA, R_PHI,
-                R_BETA,
+        R_PID, R_STATUS, R_CHARGE, R_MASS, R_VX, R_VY, R_VZ, R_PX, R_PY, R_PZ,
+                R_P, R_THETA, R_PHI, R_BETA,
         R_CHI2, R_NDF,
         R_PCAL_E, R_ECIN_E, R_ECOU_E, R_TOT_E,
         R_DTOF,
@@ -72,8 +74,8 @@ const char * R_VAR_LIST[VAR_LIST_SIZE] = {
 };
 const char * S_VAR_LIST[VAR_LIST_SIZE] = {
         S_RUNNO, S_EVENTNO, S_BEAME,
-        S_PID, S_STATUS, S_CHARGE, S_MASS, S_VX, S_VY, S_VZ, S_PX, S_PY, S_PZ, S_P, S_THETA, S_PHI,
-                S_BETA,
+        S_PID, S_STATUS, S_CHARGE, S_MASS, S_VX, S_VY, S_VZ, S_PX, S_PY, S_PZ,
+                S_P, S_THETA, S_PHI, S_BETA,
         S_CHI2, S_NDF,
         S_PCAL_E, S_ECIN_E, S_ECOU_E, S_TOT_E,
         S_DTOF,
@@ -88,19 +90,22 @@ const char * SIDIS_LIST[SIDIS_LIST_SIZE] = {
 
 // Standard plots constant arrays.
 const int STD_PX[STDPLT_LIST_SIZE] = {
-        1, /* p vs beta */ 1, /* p vs dTOF */ 1, /* p vs E    */ 0, /* Q^2       */
-        0, /* nu        */ 0, /* x_bjorken */ 0, /* W^2       */ 1  /* Q2 vs nu  */
+        1, /* p vs beta */ 1, /* p vs dTOF */ 1, /* p vs E    */
+        0, /* Q^2       */ 0, /* nu        */ 0, /* x_bjorken */
+        0, /* W^2       */ 1  /* Q2 vs nu  */
 };
 const int STD_VX[STDPLT_LIST_SIZE][2] = {
-        {A_P,A_BETA}, {A_P,A_DTOF}, {A_P,A_TOT_E}, {A_Q2,-1}, {A_NU,-1}, {A_XB,-1}, {A_W2,-1},
-        {A_Q2,A_NU}
+        {A_P,A_BETA}, {A_P,A_DTOF}, {A_P,A_TOT_E}, {A_Q2,-1}, {A_NU,-1},
+        {A_XB,-1}, {A_W2,-1}, {A_Q2,A_NU}
 };
 const double STD_RX[STDPLT_LIST_SIZE][2][2] = {
-        {{ 0,10},{ 0, 1}}, {{ 0,10},{ 0,20}}, {{ 0,10},{ 0, 3}}, {{ 0,12},{-1,-1}},
-        {{ 0,12},{-1,-1}}, {{ 0, 2},{-1,-1}}, {{ 0,20},{-1,-1}}, {{ 0,12},{ 0,12}}
+        {{ 0,10},{ 0, 1}}, {{ 0,10},{ 0,20}}, {{ 0,10},{ 0, 3}},
+        {{ 0,12},{-1,-1}}, {{ 0,12},{-1,-1}}, {{ 0, 2},{-1,-1}},
+        {{ 0,20},{-1,-1}}, {{ 0,12},{ 0,12}}
 };
 const long STD_BX[STDPLT_LIST_SIZE][2] = {
-        {200,200}, {200,100}, {200,200}, { 22, -1}, { 22, -1}, { 20, -1}, {200, -1}, {200,200}
+        {200,200}, {200,100}, {200,200}, { 22, -1}, { 22, -1}, { 20, -1},
+        {200, -1}, {200,200}
 };
 
 // Sampling fraction constant arrays.
