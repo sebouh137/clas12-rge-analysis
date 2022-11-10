@@ -31,13 +31,15 @@
 #include "../lib/particle.h"
 #include "../lib/utilities.h"
 
-// Find most precise TOF (Layers precision: FTOF1B, FTOF1A, FTOF2, PCAL, ECIN, ECOU).
+// Find most precise TOF.
+// Layers precision order: FTOF1B, FTOF1A, FTOF2, PCAL, ECIN, ECOU.
 double get_tof(REC_Scintillator rsci, REC_Calorimeter  rcal, int pindex) {
     int    most_precise_lyr = 0;
     double tof              = INFINITY;
     for (UInt_t i = 0; i < rsci.pindex->size(); ++i) {
         // Filter out incorrect pindex and hits not from FTOF.
-        if (rsci.pindex->at(i) != pindex || rsci.detector->at(i) != FTOF_ID) continue;
+        if (rsci.pindex->at(i) != pindex || rsci.detector->at(i) != FTOF_ID)
+            continue;
         if (rsci.layer->at(i) == FTOF1B_LYR) {
             most_precise_lyr = FTOF1B_LYR;
             tof = rsci.time->at(i);
@@ -49,14 +51,16 @@ double get_tof(REC_Scintillator rsci, REC_Calorimeter  rcal, int pindex) {
             tof = rsci.time->at(i);
         }
         else if (rsci.layer->at(i) == FTOF2_LYR) {
-            if (most_precise_lyr != 0) continue; // We already have a similar or better hit.
+            // We already have a similar or better hit.
+            if (most_precise_lyr != 0) continue;
             most_precise_lyr = FTOF2_LYR;
             tof = rsci.time->at(i);
         }
     }
     if (most_precise_lyr == 0) { // No hits from FTOF, let's try ECAL.
         for (UInt_t i = 0; i < rcal.pindex->size(); ++i) {
-            if (rcal.pindex->at(i) != pindex) continue; // Filter out incorrect pindex.
+            // Filter out incorrect pindex.
+            if (rcal.pindex->at(i) != pindex) continue;
             if (rcal.layer->at(i) == PCAL_LYR) {
                 most_precise_lyr = 10 + PCAL_LYR;
                 tof = rcal.time->at(i);
@@ -87,7 +91,7 @@ int run(char * in_filename, bool debug, int nevn, int run_no, double beam_E) {
     sprintf(out_filename, "../root_io/ntuples.root");
     // Access input file. TODO. Make this input file*s*, as in multiple files.
     TFile *f_in  = TFile::Open(in_filename, "READ");
-    TFile *f_out = TFile::Open(out_filename, "RECREATE"); // NOTE. This path sucks. // EM: yes, it does
+    TFile *f_out = TFile::Open(out_filename, "RECREATE");
 
     // Return to top directory.
     gROOT->cd();
@@ -125,19 +129,19 @@ int run(char * in_filename, bool debug, int nevn, int run_no, double beam_E) {
     int pid_qa[NPIDS][NPIDS];
     if (debug) {
         for (int i = 0; i < NPIDS; ++i) pid_n[i] = 0;
-        for (int i = 0; i < NPIDS; ++i) for (int j = 0; j < NPIDS; ++j) pid_qa[i][j] = 0;
+        for (int i = 0; i < NPIDS; ++i)
+            for (int j = 0; j < NPIDS; ++j) pid_qa[i][j] = 0;
     }
 
     // Iterate through input file. Each TTree entry is one event.
-    printf("Reading %lld events from %s.\n", nevn == -1 ? t_in->GetEntries() : nevn, in_filename);
+    printf("Reading %lld events from %s.\n", nevn == -1 ? t_in->GetEntries() :
+            nevn, in_filename);
 
     // test of electrons
-    for (int evn = 0; (evn < t_in->GetEntries()) && (nevn == -1 || evn < nevn); ++evn) {
+    for (int evn = 0; (evn < t_in->GetEntries()) &&
+            (nevn == -1 || evn < nevn); ++evn) {
         if (!debug && evn >= evnsplitter) {
-            if (evn != 0) {
-                printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
-                printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
-            }
+            if (evn != 0) printf("\33[2K\r");
             printf("[");
             for (int i = 0; i <= 50; ++i) {
                 if (i <= divcntr/2) printf("=");
@@ -146,7 +150,8 @@ int run(char * in_filename, bool debug, int nevn, int run_no, double beam_E) {
             printf("] %2d%%", divcntr);
             fflush(stdout);
             divcntr++;
-            evnsplitter = nevn == -1 ? (t_in->GetEntries() / 100) * divcntr : (nevn/100) * divcntr;
+            evnsplitter = nevn == -1 ? (t_in->GetEntries() / 100) * divcntr :
+                    (nevn/100) * divcntr;
         }
 
         rpart.get_entries(t_in, evn);
@@ -211,8 +216,9 @@ int run(char * in_filename, bool debug, int nevn, int run_no, double beam_E) {
 
             // Assign PID.
             for (int pi = 0; pi < 2; ++pi) {
-                set_pid(&(p_el[pi]), rpart.pid->at(pindex), status, tot_E, pcal_E, htcc_nphe,
-                        ltcc_nphe, sf_params[rtrk.sector->at(pos)]);
+                set_pid(&(p_el[pi]), rpart.pid->at(pindex), status, tot_E,
+                        pcal_E, htcc_nphe, ltcc_nphe,
+                        sf_params[rtrk.sector->at(pos)]);
             }
 
             // Fill TNtuples with trigger electron info
@@ -221,16 +227,15 @@ int run(char * in_filename, bool debug, int nevn, int run_no, double beam_E) {
                 trigger_exist = true;
                 Float_t v[VAR_LIST_SIZE] = {
                         (Float_t) run_no, (Float_t) evn, (Float_t) beam_E,
-                        (Float_t) p_el[pi].pid, (Float_t) status, (Float_t) p_el[pi].q, p_el[pi].mass,
-                        p_el[pi].vx, p_el[pi].vy, p_el[pi].vz, p_el[pi].px, p_el[pi].py, p_el[pi].pz,
-                        P(p_el[pi]), theta_lab(p_el[pi]), phi_lab(p_el[pi]), p_el[pi].beta,
-                        chi2, ndf,
-                        pcal_E, ecin_E, ecou_E, tot_E,
-                        (tof - tre_tof),
+                        (Float_t) p_el[pi].pid, (Float_t) status,
+                        (Float_t) p_el[pi].q, p_el[pi].mass, p_el[pi].vx,
+                        p_el[pi].vy, p_el[pi].vz, p_el[pi].px, p_el[pi].py,
+                        p_el[pi].pz, P(p_el[pi]), theta_lab(p_el[pi]),
+                        phi_lab(p_el[pi]), p_el[pi].beta, chi2, ndf, pcal_E,
+                        ecin_E, ecou_E, tot_E, (tof - tre_tof),
                         Q2(p_el[pi], beam_E), nu(p_el[pi], beam_E),
                         Xb(p_el[pi], beam_E), W2(p_el[pi], beam_E),
-                        0, 0, 0,
-                        0, 0
+                        0, 0, 0, 0, 0
                 };
                 t_out[pi]->Fill(v);
             }
@@ -241,7 +246,7 @@ int run(char * in_filename, bool debug, int nevn, int run_no, double beam_E) {
             }
         }
 
-        // In case no trigger electron was found, initiate p_el as dummy particles.
+        // In case no trigger e was found, initiate p_el as dummy particles.
         if (!trigger_exist){
             p_el[0] = particle_init();
             p_el[1] = particle_init();
@@ -296,8 +301,8 @@ int run(char * in_filename, bool debug, int nevn, int run_no, double beam_E) {
 
             // Assign PID.
             for (int pi = 0; pi < 2; ++pi) {
-                set_pid(&(p[pi]), rpart.pid->at(pindex), status, tot_E, pcal_E, htcc_nphe,
-                        ltcc_nphe, sf_params[rtrk.sector->at(pos)]);
+                set_pid(&(p[pi]), rpart.pid->at(pindex), status, tot_E, pcal_E,
+                        htcc_nphe, ltcc_nphe, sf_params[rtrk.sector->at(pos)]);
             }
 
             // Test PID assignment precision.
@@ -305,25 +310,28 @@ int run(char * in_filename, bool debug, int nevn, int run_no, double beam_E) {
                     && PID_QA.find(abs(rpart.pid->at(pindex))) != PID_QA.end()
                     && PID_QA.find(abs(p[0].pid)) != PID_QA.end()) {
                 pid_n[PID_QA.at(abs(rpart.pid->at(pindex)))]++;
-                pid_qa[PID_QA.at(abs(rpart.pid->at(pindex)))][PID_QA.at(abs(p[0].pid))]++;
+                pid_qa[PID_QA.at(abs(rpart.pid->at(pindex)))]
+                        [PID_QA.at(abs(p[0].pid))]++;
             }
 
-            // Fill TNtuples. TODO. This probably should be implemented more elegantly.
+            // Fill TNtuples.
+            // TODO. This probably should be implemented more elegantly.
             // NOTE. If adding new variables, check their order in S_VAR_LIST.
             for (int pi = 0; pi < 2; ++pi) {
                 if (!p[pi].is_valid) continue;
                 Float_t v[VAR_LIST_SIZE] = {
                         (Float_t) run_no, (Float_t) evn, (Float_t) beam_E,
-                        (Float_t) p[pi].pid, (Float_t) status, (Float_t) p[pi].q, p[pi].mass,
-                        p[pi].vx, p[pi].vy, p[pi].vz, p[pi].px, p[pi].py, p[pi].pz,
-                        P(p[pi]), theta_lab(p[pi]), phi_lab(p[pi]), p[pi].beta,
-                        chi2, ndf,
-                        pcal_E, ecin_E, ecou_E, tot_E,
-                        (tof - tre_tof),
+                        (Float_t) p[pi].pid, (Float_t) status, (Float_t) p[pi].q,
+                        p[pi].mass, p[pi].vx, p[pi].vy, p[pi].vz, p[pi].px,
+                        p[pi].py, p[pi].pz, P(p[pi]), theta_lab(p[pi]),
+                        phi_lab(p[pi]), p[pi].beta, chi2, ndf, pcal_E, ecin_E,
+                        ecou_E, tot_E, (tof - tre_tof),
                         Q2(p[pi], beam_E), nu(p[pi], beam_E),
                         Xb(p[pi], beam_E), W2(p[pi], beam_E),
-                        zh(p[pi],p_el[pi], beam_E), Pt2(p[pi],p_el[pi], beam_E), Pl2(p[pi],p_el[pi], beam_E),
-                        phi_pq(p[pi],p_el[pi], beam_E), theta_pq(p[pi],p_el[pi], beam_E)
+                        zh(p[pi],p_el[pi], beam_E), Pt2(p[pi],p_el[pi], beam_E),
+                        Pl2(p[pi],p_el[pi], beam_E),
+                        phi_pq(p[pi],p_el[pi], beam_E),
+                        theta_pq(p[pi],p_el[pi], beam_E)
                 };
 
                 t_out[pi]->Fill(v);
@@ -331,13 +339,13 @@ int run(char * in_filename, bool debug, int nevn, int run_no, double beam_E) {
         }
     }
     if (!debug) {
-        printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
-        printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
+        printf("\33[2K\r");
         printf("[==================================================] 100%% \n");
     }
 
     if (debug) {
-        printf("\nparticle identification matrix:\n        e     pi    K     p     n     gamma\n");
+        printf("\nparticle identification matrix:\n        e     pi    K     ");
+        printf("p     n     gamma\n");
         for (int i = 0; i < NPIDS; ++i) {
             if (i == 0) printf("    e  ");
             if (i == 1) printf("   pi  ");
@@ -374,9 +382,10 @@ int main(int argc, char ** argv) {
     double beam_E      = -1;
     char * in_filename = NULL;
 
-    if (make_ntuples_handle_args_err(make_ntuples_handle_args(argc, argv, &debug, &nevn,
-            &in_filename, &run_no, &beam_E), &in_filename, run_no))
+    if (make_ntuples_handle_args_err(make_ntuples_handle_args(argc, argv, &debug,
+            &nevn, &in_filename, &run_no, &beam_E), &in_filename, run_no))
         return 1;
 
-    return make_ntuples_err(run(in_filename, debug, nevn, run_no, beam_E), &in_filename);
+    return make_ntuples_err(run(in_filename, debug, nevn, run_no, beam_E),
+            &in_filename);
 }
