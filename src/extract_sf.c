@@ -72,8 +72,8 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no) {
             sf2Dfit_name_arr[ci][si] = (char *) malloc(strlen(tmp_str)+1);
             strncpy(sf2Dfit_name_arr[ci][si], tmp_str, strlen(tmp_str));
             sf_polyfit[ci][si] = new TF1(sf2Dfit_name_arr[ci][si],
-                    "[0]*([1]+[2]/x + [3]/(x*x))", SF_PMIN+SF_PSTEP, SF_PMAX-SF_PSTEP);
-                    // "[0]+[1]*x+[2]*x*x+[3]*x*x*x", SF_PMIN+SF_PSTEP, SF_PMAX-SF_PSTEP);
+                    "[0]*([1]+[2]/x + [3]/(x*x))", SF_PMIN+SF_PSTEP,
+                    SF_PMAX-SF_PSTEP);
             sf_polyfit[ci][si]->SetParameter(0 /* p0 */, 0.25);
             sf_polyfit[ci][si]->SetParameter(1 /* p1 */, 1);
             sf_polyfit[ci][si]->SetParameter(2 /* p2 */, 0);
@@ -88,10 +88,12 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no) {
             int pi = -1;
             for (double p = SF_PMIN; p < SF_PMAX; p += SF_PSTEP) {
                 pi++;
-                char * tmp_str = Form("%s%d (%5.2f < p < %5.2f)", cal, si+1, p, p+SF_PSTEP);
+                char * tmp_str = Form("%s%d (%5.2f < p < %5.2f)", cal, si+1, p,
+                        p+SF_PSTEP);
                 sf1D_name_arr[ci][si][pi] = (char *) malloc(strlen(tmp_str)+1);
                 strncpy(sf1D_name_arr[ci][si][pi], tmp_str, strlen(tmp_str));
-                insert_TH1F(&histos, R_PALL, sf1D_name_arr[ci][si][pi], S_EDIVP, 200, 0, 0.4);
+                insert_TH1F(&histos, R_PALL, sf1D_name_arr[ci][si][pi], S_EDIVP,
+                        200, 0, 0.4);
             }
         }
     }
@@ -107,13 +109,11 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no) {
     int evn;
     int divcntr = 0;
     int evnsplitter = 0;
-    printf("Reading %lld events from %s.\n", nevn == -1 ? t->GetEntries() : nevn, in_filename);
+    printf("Reading %lld events from %s.\n", nevn == -1 ? t->GetEntries() :
+            nevn, in_filename);
     for (evn = 0; (evn < t->GetEntries()) && (nevn == -1 || evn < nevn); ++evn) {
         if (evn >= evnsplitter) {
-            if (evn != 0) {
-                printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
-                printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
-            }
+            if (evn != 0) printf("\33[2K\r");
             printf("[");
             for (int i = 0; i <= 50; ++i) {
                 if (i <= divcntr/2) printf("=");
@@ -122,7 +122,8 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no) {
             printf("] %2d%%", divcntr);
             fflush(stdout);
             divcntr++;
-            evnsplitter = nevn == -1 ? (t->GetEntries() / 100) * divcntr : (nevn/100) * divcntr;
+            evnsplitter = nevn == -1 ? (t->GetEntries() / 100) * divcntr :
+                    (nevn/100) * divcntr;
         }
 
         rp.get_entries(t, evn);
@@ -131,7 +132,8 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no) {
         ft.get_entries(t, evn);
 
         // Filter events without the necessary banks.
-        if (rp.vz->size() == 0 || rt.pindex->size() == 0 || rc.pindex->size() == 0) continue;
+        if (rp.vz->size() == 0 || rt.pindex->size() == 0 ||
+                rc.pindex->size() == 0) continue;
 
         for (UInt_t pos = 0; pos < rt.index->size(); ++pos) {
             // Get basic data from track and particle banks.
@@ -142,13 +144,19 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no) {
             double px, py, pz;
             if (use_fmt) {
                 // Apply FMT cuts.
-                if (ft.pz->size() < 1)      continue; // Track reconstructed by FMT.
-                if (ft.ndf->at(index) != 3) continue; // Track crossed 3 FMT layers.
+                // Track reconstructed by FMT.
+                if (ft.pz->size() < 1)      continue;
+                // Track crossed 3 FMT layers.
+                if (ft.ndf->at(index) != 3) continue;
 
-                px = ft.px->at(index); py = ft.py->at(index); pz = ft.pz->at(index);
+                px = ft.px->at(index);
+                py = ft.py->at(index);
+                pz = ft.pz->at(index);
             }
             else {
-                px = rp.px->at(pindex); py = rp.py->at(pindex); pz = rp.pz->at(pindex);
+                px = rp.px->at(pindex);
+                py = rp.py->at(pindex);
+                pz = rp.pz->at(pindex);
             }
             double tot_P = calc_magnitude(px, py, pz);
 
@@ -176,7 +184,8 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no) {
             }
 
             for (int ci = 0; ci < ncals-1; ++ci) {
-                for (int si = 0; si < NSECTORS; ++si) sf_E[CALS_IDX][si] += sf_E[ci][si];
+                for (int si = 0; si < NSECTORS; ++si)
+                    sf_E[CALS_IDX][si] += sf_E[ci][si];
             }
 
             // Get momentum bin.
@@ -216,31 +225,39 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no) {
                 TH1 *EdivP = histos[sf1D_name_arr[ci][si][pi]];
 
                 // Form fit string name.
-                char * tmp_str = Form("%s%d (%5.2f < p < %5.2f) fit", cal, si+1, p, p+SF_PSTEP);
+                char * tmp_str = Form("%s%d (%5.2f < p < %5.2f) fit", cal, si+1,
+                        p, p+SF_PSTEP);
 
                 // Fit.
                 TF1 *sf_gaus = new TF1(tmp_str,
-                                       "[0]*TMath::Gaus(x,[1],[2]) + [3]*x*x + [4]*x + [5]",
-                                       PLIMITSARR[ci][0], PLIMITSARR[ci][1]);
-                sf_gaus->SetParameter(0 /* amp   */, EdivP->GetBinContent(EdivP->GetMaximumBin()));
+                        "[0]*TMath::Gaus(x,[1],[2]) + [3]*x*x + [4]*x + [5]",
+                        PLIMITSARR[ci][0], PLIMITSARR[ci][1]);
+                sf_gaus->SetParameter(0 /* amp   */,
+                        EdivP->GetBinContent(EdivP->GetMaximumBin()));
                 sf_gaus->SetParLimits(1, PLIMITSARR[ci][0], PLIMITSARR[ci][1]);
-                sf_gaus->SetParameter(1 /* mean  */, (PLIMITSARR[ci][1] + PLIMITSARR[ci][0])/2);
+                sf_gaus->SetParameter(1 /* mean  */,
+                        (PLIMITSARR[ci][1] + PLIMITSARR[ci][0])/2);
                 sf_gaus->SetParLimits(2, 0., 0.1);
                 sf_gaus->SetParameter(2 /* sigma */, 0.05);
                 sf_gaus->SetParameter(3 /* p0 */,    0);
                 sf_gaus->SetParameter(4 /* p1 */,    0);
                 sf_gaus->SetParameter(5 /* p2 */,    0);
-                EdivP->Fit(sf_gaus, "QR", "", PLIMITSARR[ci][0], PLIMITSARR[ci][1]);
+                EdivP->Fit(sf_gaus, "QR", "",
+                        PLIMITSARR[ci][0], PLIMITSARR[ci][1]);
 
                 // Extract mean and sigma from fit and add it to 2D plots.
                 double mean  = sf_gaus->GetParameter(1);
                 double sigma = sf_gaus->GetParameter(2);
 
                 // Only add points within PLIMITSARR borders and with an acceptable chi2.
-                if ((mean - 2*sigma > PLIMITSARR[ci][0] && mean + 2*sigma < PLIMITSARR[ci][1]) &&
-                    (sf_gaus->GetChisquare() / sf_gaus->GetNDF() < SF_CHI2CONFORMITY)) {
+                if ((mean - 2*sigma > PLIMITSARR[ci][0] &&
+                        mean + 2*sigma < PLIMITSARR[ci][1]) &&
+                        (sf_gaus->GetChisquare() / sf_gaus->GetNDF() <
+                        SF_CHI2CONFORMITY)) {
                         // Older root compatibility fix
-                        sf_dotgraph[ci][si]->SetPoint(point_index, p + SF_PSTEP/2, mean); point_index++;
+                        sf_dotgraph[ci][si]->SetPoint(point_index,
+                                p + SF_PSTEP/2, mean);
+                        point_index++;
                 }
             }
 
@@ -251,8 +268,10 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no) {
 
             // Extract and save dotgraph fits parameters to make cuts from them.
             for (int pi = 0; pi < sf_polyfit[ci][si]->GetNpar(); ++pi) {
-                sf_fitresults[ci][si][pi][0] = sf_polyfit[ci][si]->GetParameter(pi); // sf.
-                sf_fitresults[ci][si][pi][1] = sf_polyfit[ci][si]->GetParError(pi);  // sfs.
+                // sf.
+                sf_fitresults[ci][si][pi][0] = sf_polyfit[ci][si]->GetParameter(pi);
+                // sfs.
+                sf_fitresults[ci][si][pi][1] = sf_polyfit[ci][si]->GetParError(pi);
             }
         }
     }
@@ -318,8 +337,8 @@ int main(int argc, char **argv) {
     char *in_filename = NULL;
     int run_no        = -1;
 
-    if (extractsf_handle_args_err(extractsf_handle_args(argc, argv, &use_fmt, &nevn, &in_filename,
-        &run_no), &in_filename))
+    if (extractsf_handle_args_err(extractsf_handle_args(argc, argv, &use_fmt,
+            &nevn, &in_filename, &run_no), &in_filename))
         return 1;
 
     return extractsf_err(run(in_filename, use_fmt, nevn, run_no), &in_filename);
