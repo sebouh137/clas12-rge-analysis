@@ -33,11 +33,12 @@ int main(int argc, char **argv) {
     char *out_filename = NULL;
     int  run_no        = -1;
 
-    if (hipo2root_handle_args_err(hipo2root_handle_args(argc, argv, &in_filename, &run_no),
-                                  &in_filename))
+    if (hipo2root_handle_args_err(hipo2root_handle_args(
+            argc, argv, &in_filename, &run_no), &in_filename))
         return 1;
 
     out_filename = (char *) malloc(128 * sizeof(char));
+    // TODO. I should fix these paths ASAP.
     sprintf(out_filename, "../root_io/banks_%06d.root", run_no);
 
     TFile *f = TFile::Open(out_filename, "RECREATE");
@@ -70,7 +71,7 @@ int main(int argc, char **argv) {
     while (reader.next()) {
         c++;
         if (c % 10000 == 0) {
-            if (c != 10000) printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
+            if (c != 10000) printf("\33[2K\r");
             printf("Read %8d events...", c);
             fflush(stdout);
         }
