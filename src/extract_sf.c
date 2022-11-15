@@ -59,7 +59,7 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no) {
         ci++;
         for (int si = 0; si < NSECTORS; ++si) {
             // Initialize dotgraphs.
-            char * tmp_str = Form("%s%d)", cal, si+1);
+            char *tmp_str = Form("%s%d)", cal, si+1);
             sf2D_name_arr[ci][si] = (char *) malloc(strlen(tmp_str)+1);
             strncpy(sf2D_name_arr[ci][si], tmp_str, strlen(tmp_str));
             insert_TH2F(&histos, R_PALL, sf2D_name_arr[ci][si], S_P, S_EDIVP,
@@ -200,14 +200,15 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no) {
             for (int ci = 0; ci < ncals; ++ci) {
                 for (int si = 0; si < NSECTORS; ++si) {
                     if (sf_E[ci][si] <= 0) continue;
-                    histos[sf2D_name_arr[ci][si]]->Fill(tot_P, sf_E[ci][si]/tot_P);
+                    histos[sf2D_name_arr[ci][si]]->Fill(
+                            tot_P, sf_E[ci][si]/tot_P);
                     histos[sf1D_name_arr[ci][si][pi]]->Fill(sf_E[ci][si]/tot_P);
                 }
             }
         }
     }
-    printf("\33[2K\r");
-    printf("[==================================================] 100%%\n");
+    printf("\33[2K\r[==================================================] 100%%"
+           "\n");
 
     // Fit histograms.
     ci = -1;
@@ -269,15 +270,17 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no) {
             // Extract and save dotgraph fits parameters to make cuts from them.
             for (int pi = 0; pi < sf_polyfit[ci][si]->GetNpar(); ++pi) {
                 // sf.
-                sf_fitresults[ci][si][pi][0] = sf_polyfit[ci][si]->GetParameter(pi);
+                sf_fitresults[ci][si][pi][0] =
+                        sf_polyfit[ci][si]->GetParameter(pi);
                 // sfs.
-                sf_fitresults[ci][si][pi][1] = sf_polyfit[ci][si]->GetParError(pi);
+                sf_fitresults[ci][si][pi][1] =
+                        sf_polyfit[ci][si]->GetParError(pi);
             }
         }
     }
 
     // Create output file.
-    char*  out_filename = (char *) malloc(128 * sizeof(char));
+    char *out_filename = (char *) malloc(128 * sizeof(char));
     sprintf(out_filename, "../root_io/sf_study_%06d.root", run_no);
 
     TFile *f_out = TFile::Open(out_filename, "RECREATE");
