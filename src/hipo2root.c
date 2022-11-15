@@ -101,7 +101,7 @@ int usage() {
     return 1;
 }
 
-int handle_errs(int errcode, char **in_filename) {
+int handle_err(int errcode, char **in_filename) {
     switch (errcode) {
         case 0:
             return 0;
@@ -139,7 +139,6 @@ int main(int argc, char **argv) {
     int  run_no       = -1;
 
     int errcode = handle_args(argc, argv, &in_filename, &run_no);
-    if (handle_errs(errcode, &in_filename)) return 1;
-
-    return handle_errs(run(in_filename, run_no), &in_filename);
+    if (errcode == 0) errcode = run(in_filename, run_no);
+    return handle_err(errcode, &in_filename);
 }

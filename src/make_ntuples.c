@@ -377,9 +377,9 @@ int run(char *in_filename, bool debug, int nevn, int run_no, double beam_E) {
 
 int usage() {
     fprintf(stderr,
-            "Usage: make_ntuples [-fd] [-n NEVENTS] file\n"
+            "Usage: make_ntuples [-fd] [-n nevents] file\n"
             " * -d: Activate debug mode.\n"
-            " * -n NEVENTS: number of events.\n"
+            " * -n nevents: number of events.\n"
             " * file: ROOT file. Expected file format: <text>run_no.root`.\n\n"
             "    Generate ntuples relevant to SIDIS analysis based on the "
             "reconstructed\n    variables from CLAS12 data.\n\n"
@@ -474,7 +474,6 @@ int main(int argc, char **argv) {
     char *file    = NULL;
 
     int errcode = handle_args(argc, argv, &dbg, &nevn, &file, &run_no, &beam_E);
-    if (handle_err(errcode, &file)) return 1;
-
-    return handle_err(run(file, dbg, nevn, run_no, beam_E), &file);
+    if (errcode == 0) errcode = run(file, dbg, nevn, run_no, beam_E)
+    return handle_err(errcode, &file);
 }
