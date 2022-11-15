@@ -20,12 +20,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <getopt.h>
 
 #include "file_handler.h"
-
-int extractsf_handle_args(int argc, char ** argv, bool * use_fmt, int * nevents,
-        char ** input_file, int * run_no);
 
 int check_root_filename(char * input_file);
 int handle_root_filename(char * input_file, int * run_no);

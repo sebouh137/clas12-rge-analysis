@@ -26,7 +26,6 @@
 #include "TTree.h"
 #include "Compression.h"
 
-#include "../lib/err_handler.h"
 #include "../lib/io_handler.h"
 #include "../lib/bank_containers.h"
 

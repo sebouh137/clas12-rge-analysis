@@ -31,7 +31,7 @@ HIPOLIBS    := -L$(HIPO)/lib -lhipo4
 LZ4LIBS     := -L$(HIPO)/lz4/lib -llz4
 LZ4INCLUDES := -I$(HIPO)/lz4/lib
 
-OBJS        := $(BLD)/bank_containers.o $(BLD)/constants.o $(BLD)/err_handler.o \
+OBJS        := $(BLD)/bank_containers.o $(BLD)/constants.o \
 			   $(BLD)/file_handler.o $(BLD)/io_handler.o $(BLD)/particle.o $(BLD)/utilities.o
 
 all: $(BIN)/hipo2root $(BIN)/extract_sf $(BIN)/make_ntuples $(BIN)/draw_plots
@@ -58,9 +58,6 @@ $(BLD)/bank_containers.o: $(SRC)/bank_containers.c $(LIB)/bank_containers.h
 
 $(BLD)/constants.o: $(SRC)/constants.c $(LIB)/constants.h
 	$(CXX) $(CFLAGS) -std=c++11 -c $(SRC)/constants.c -o $(BLD)/constants.o
-
-$(BLD)/err_handler.o: $(SRC)/err_handler.c $(LIB)/err_handler.h
-	$(CXX) $(CFLAGS) -c $(SRC)/err_handler.c -o $(BLD)/err_handler.o
 
 $(BLD)/file_handler.o: $(SRC)/file_handler.c $(LIB)/file_handler.h
 	$(CXX) $(CFLAGS) -c $(SRC)/file_handler.c -o $(BLD)/file_handler.o

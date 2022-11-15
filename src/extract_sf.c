@@ -13,6 +13,7 @@
 //
 // You can see a copy of the GNU Lesser Public License under the LICENSE file.
 
+#include <getopt.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -31,7 +32,6 @@
 
 #include "../lib/bank_containers.h"
 #include "../lib/constants.h"
-#include "../lib/err_handler.h"
 #include "../lib/file_handler.h"
 #include "../lib/io_handler.h"
 #include "../lib/utilities.h"
@@ -41,7 +41,7 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no) {
 
     // Access input file.
     TFile *f_in = TFile::Open(in_filename, "READ");
-    if (!f_in || f_in->IsZombie()) return 1;
+    if (!f_in || f_in->IsZombie()) return 6;
 
     // Create and organize histos and name arrays.
     std::map<const char *, TH1 *> histos;
@@ -172,14 +172,14 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no) {
                 // Get sector.
                 int si = rc.sector->at(i) - 1;
                 if      (si == -1)                   continue;
-                else if (si < -1 || si > NSECTORS-1) return 3;
+                else if (si < -1 || si > NSECTORS-1) return 8;
 
                 // Get detector.
                 switch(rc.layer->at(i)) {
                     case PCAL_LYR: sf_E[PCAL_IDX][si] += rc.energy->at(i); break;
                     case ECIN_LYR: sf_E[ECIN_IDX][si] += rc.energy->at(i); break;
                     case ECOU_LYR: sf_E[ECOU_IDX][si] += rc.energy->at(i); break;
-                    default:       return 2;
+                    default:       return 7;
                 }
             }
 
@@ -312,7 +312,7 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no) {
     // Write results to file.
     FILE *t_out = fopen(Form("../data/sf_params_%06d.txt", run_no), "w");
 
-    if (t_out == NULL) return 4;
+    if (t_out == NULL) return 9;
     for (int ci = 3; ci < 4; ++ci) { // NOTE. Only writing ECAL sf results.
         for (int si = 0; si < NSECTORS; ++si) {
             for (int ppi = 0; ppi < 2; ++ppi) { // sf and sfs.
@@ -333,16 +333,90 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no) {
     return 0;
 }
 
+// Usage
+int usage() {
+    fprintf(stderr,
+            "Usage: extract_sf [-f] [-n nevents] file\n"
+            " * -f: Use FMT data. If unspecified, program will use DC data.\n"
+            " * -n nevents: Number of events\n"
+            " * file: ROOT file to be processed.\n\n"
+            "    Obtain the EC sampling fraction from an input file.\n\n"
+    );
+    return 1;
+}
+
+// Handle errs
+int handle_err(int errcode, char **file) {
+    switch (errcode) {
+        case 0:
+            return 0;
+        case 1:
+            break;
+        case 2:
+            fprintf(stderr, "Error. nevents should greater than 0.\n");
+            break;
+        case 3:
+            fprintf(stderr, "Error. input file should be in root format.\n");
+            break;
+        case 4:
+            fprintf(stderr, "Error. input file does not exist!\n");
+            break;
+        case 5:
+            fprintf(stderr, "Error. No file name provided.\n");
+            break;
+        case 6:
+            fprintf(stderr, "Error. input is not a valid ROOT file.\n");
+            break;
+        case 7:
+            fprintf(stderr, "Error. Invalid EC layer. Check bank integrity.\n");
+            break;
+        case 8:
+            fprintf(stderr, "Error. A particle is in an invalid sector. Check "
+                            "bank integrity.\n");
+            break;
+        case 9:
+            fprintf(stderr, "Error. Could not create sf_results file.\n");
+            break;
+        default:
+            fprintf(stderr, "Error code %d not implemented!\n", errcode);
+            return 1;
+    }
+
+    if (errcode > 2) free(*file);
+    return usage();
+}
+
+// Handle args
+int handle_args(int argc, char **argv, bool *use_fmt, int *nevents,
+        char **input_file, int *run_no) {
+    // Handle optional arguments.
+    int opt;
+    while ((opt = getopt(argc, argv, "-fn:")) != -1) {
+        switch (opt) {
+            case 'f': *use_fmt = true;         break;
+            case 'n': *nevents = atoi(optarg); break;
+            case  1 :
+                * input_file = (char *) malloc(strlen(optarg) + 1);
+                strcpy(*input_file, optarg);
+                break;
+            default:  return 1;
+        }
+    }
+    if (*nevents == 0) return 2;
+    if (argc < 2) return 5;
+
+    return handle_root_filename(*input_file, run_no);
+}
+
 // Call program from terminal, C-style.
 int main(int argc, char **argv) {
-    bool use_fmt      = false;
-    int nevn          = -1;
-    char *in_filename = NULL;
-    int run_no        = -1;
+    bool use_fmt = false;
+    int nevn     = -1;
+    char *file   = NULL;
+    int run_no   = -1;
 
-    if (extractsf_handle_args_err(extractsf_handle_args(argc, argv, &use_fmt,
-            &nevn, &in_filename, &run_no), &in_filename))
-        return 1;
+    int errcode = handle_args(argc, argv, &use_fmt, &nevn, &file, &run_no);
+    if (handle_err(errcode, &file)) return 1;
 
-    return extractsf_err(run(in_filename, use_fmt, nevn, run_no), &in_filename);
+    return handle_err(run(file, use_fmt, nevn, run_no), &file);
 }

@@ -13,6 +13,7 @@
 //
 // You can see a copy of the GNU Lesser Public License under the LICENSE file.
 
+#include <getopt.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -25,7 +26,6 @@
 
 #include "../lib/bank_containers.h"
 #include "../lib/constants.h"
-#include "../lib/err_handler.h"
 #include "../lib/file_handler.h"
 #include "../lib/io_handler.h"
 #include "../lib/particle.h"
@@ -474,6 +474,6 @@ int main(int argc, char **argv) {
     char *file    = NULL;
 
     int errcode = handle_args(argc, argv, &dbg, &nevn, &file, &run_no, &beam_E);
-    if (errcode == 0) errcode = run(file, dbg, nevn, run_no, beam_E)
+    if (errcode == 0) errcode = run(file, dbg, nevn, run_no, beam_E);
     return handle_err(errcode, &file);
 }
