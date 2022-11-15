@@ -82,21 +82,22 @@ double get_tof(REC_Scintillator rsci, REC_Calorimeter  rcal, int pindex) {
     return tof;
 }
 
-int run(char * in_filename, bool debug, int nevn, int run_no, double beam_E) {
+int run(char *in_filename, bool debug, int nevn, int run_no, double beam_E) {
     double sf_params[NSECTORS][SF_NPARAMS][2];
     if (get_sf_params(Form("../data/sf_params_%06d.txt", run_no), sf_params))
-        return 4;
+        return 11;
 
-    char*  out_filename = (char *) malloc(128 * sizeof(char));
+    char *out_filename = (char *) malloc(128 * sizeof(char));
     sprintf(out_filename, "../root_io/ntuples.root");
-    // Access input file. TODO. Make this input file*s*, as in multiple files.
+
+    // Access input file.
     TFile *f_in  = TFile::Open(in_filename, "READ");
     TFile *f_out = TFile::Open(out_filename, "RECREATE");
 
     // Return to top directory.
     gROOT->cd();
 
-    if (!f_in || f_in->IsZombie()) return 1;
+    if (!f_in || f_in->IsZombie()) return 8;
 
     // Generate lists of variables.
     TString vars("");
@@ -106,9 +107,9 @@ int run(char * in_filename, bool debug, int nevn, int run_no, double beam_E) {
     }
 
     // Create TTree and TNTuples.
-    TTree   * t_in  = f_in->Get<TTree>("Tree");
-    if (t_in==NULL) return 1;
-    TNtuple * t_out[2];
+    TTree   *t_in = f_in->Get<TTree>("Tree");
+    if (t_in == NULL) return 8;
+    TNtuple *t_out[2];
     t_out[0] = new TNtuple(S_DC,  S_DC,  vars);
     t_out[1] = new TNtuple(S_FMT, S_FMT, vars);
 
@@ -190,7 +191,7 @@ int run(char * in_filename, bool debug, int nevn, int run_no, double beam_E) {
                 if      (lyr == PCAL_LYR) pcal_E += rcal.energy->at(i);
                 else if (lyr == ECIN_LYR) ecin_E += rcal.energy->at(i);
                 else if (lyr == ECOU_LYR) ecou_E += rcal.energy->at(i);
-                else return 2;
+                else return 9;
             }
             float tot_E = pcal_E + ecin_E + ecou_E;
 
@@ -202,7 +203,7 @@ int run(char * in_filename, bool debug, int nevn, int run_no, double beam_E) {
                     int detector = rche.detector->at(i);
                     if      (detector == HTCC_ID) htcc_nphe += rche.nphe->at(i);
                     else if (detector == LTCC_ID) ltcc_nphe += rche.nphe->at(i);
-                    else return 3;
+                    else return 10;
                 }
             }
 
@@ -275,7 +276,7 @@ int run(char * in_filename, bool debug, int nevn, int run_no, double beam_E) {
                 if      (lyr == PCAL_LYR) pcal_E += rcal.energy->at(i);
                 else if (lyr == ECIN_LYR) ecin_E += rcal.energy->at(i);
                 else if (lyr == ECOU_LYR) ecou_E += rcal.energy->at(i);
-                else return 2;
+                else return 9;
             }
             float tot_E = pcal_E + ecin_E + ecou_E;
 
@@ -287,7 +288,7 @@ int run(char * in_filename, bool debug, int nevn, int run_no, double beam_E) {
                     int detector = rche.detector->at(i);
                     if      (detector == HTCC_ID) htcc_nphe += rche.nphe->at(i);
                     else if (detector == LTCC_ID) ltcc_nphe += rche.nphe->at(i);
-                    else return 3;
+                    else return 10;
                 }
             }
 
@@ -344,8 +345,8 @@ int run(char * in_filename, bool debug, int nevn, int run_no, double beam_E) {
     }
 
     if (debug) {
-        printf("\nparticle identification matrix:\n        e     pi    K     ");
-        printf("p     n     gamma\n");
+        printf("\nparticle identification matrix:\n        e     pi    K     "
+               "p     n     gamma\n");
         for (int i = 0; i < NPIDS; ++i) {
             if (i == 0) printf("    e  ");
             if (i == 1) printf("   pi  ");
@@ -374,18 +375,106 @@ int run(char * in_filename, bool debug, int nevn, int run_no, double beam_E) {
     return 0;
 }
 
-// Call program from terminal, C-style.
-int main(int argc, char ** argv) {
-    bool debug         = false;
-    int nevn           = -1;
-    int run_no         = -1;
-    double beam_E      = -1;
-    char * in_filename = NULL;
+int usage() {
+    fprintf(stderr,
+            "Usage: make_ntuples [-fd] [-n NEVENTS] file\n"
+            " * -d: Activate debug mode.\n"
+            " * -n NEVENTS: number of events.\n"
+            " * file: ROOT file. Expected file format: <text>run_no.root`.\n\n"
+            "    Generate ntuples relevant to SIDIS analysis based on the "
+            "reconstructed\n    variables from CLAS12 data.\n\n"
+    );
 
-    if (make_ntuples_handle_args_err(make_ntuples_handle_args(argc, argv, &debug,
-            &nevn, &in_filename, &run_no, &beam_E), &in_filename, run_no))
-        return 1;
+    return 1;
+}
 
-    return make_ntuples_err(run(in_filename, debug, nevn, run_no, beam_E),
-            &in_filename);
+int handle_err(int errcode, char **file) {
+    switch (errcode) {
+        case 0:
+            return 0;
+        case 1:
+            fprintf(stderr, "Error. Bad usage of optional arguments.\n");
+            break;
+        case 2:
+            fprintf(stderr, "Error. nevents should be a number greater than"
+                            " 0.\n");
+            break;
+        case 3:
+            fprintf(stderr, "Error. input file should be in root format.\n");
+            break;
+        case 4:
+            fprintf(stderr, "Error. file does not exist!\n");
+            break;
+        case 5:
+            fprintf(stderr, "Error. Run number could not be extracted from "
+                            "filename.\n");
+            break;
+        case 6:
+            fprintf(stderr, "Error. Run number not in database. Add from "
+                            "RCDB.\n");
+            break;
+        case 7:
+            fprintf(stderr, "Error. No file name provided.\n");
+            break;
+        case 8:
+            fprintf(stderr, "Error. %s is not a valid ROOT file.\n", *file);
+            break;
+        case 9:
+            fprintf(stderr, "Error. Invalid EC layer. Check bank integrity.\n");
+            break;
+        case 10:
+            fprintf(stderr, "Error. Invalid Cherenkov Counter ID. Check bank "
+                            "integrity.\n");
+            break;
+        case 11:
+            // NOTE. In this scenario, a smoother behavior would be that the
+            //       program calls extract_sf itself!
+            fprintf(stderr, "Error. No sampling fraction available for input "
+                            "file! Run extract_sf before generating the ntuples"
+                            ".\n");
+            break;
+        default:
+            fprintf(stderr, "Error code %d not implemented!\n", errcode);
+            return 1;
+    }
+
+    if (errcode > 2) free(*file);
+    return usage();
+}
+
+int handle_args(int argc, char **argv, bool *debug, int *nevents, char **file,
+        int *run_no, double *beam_energy) {
+    // Handle optional arguments.
+    int opt;
+    while ((opt = getopt(argc, argv, "-dn:")) != -1) {
+        switch (opt) {
+            case 'd': *debug   = true;         break;
+            case 'n': *nevents = atoi(optarg); break;
+            case  1 :
+                *file = (char *) malloc(strlen(optarg) + 1);
+                strcpy(*file, optarg);
+                break;
+            default: return 1; // Bad usage of optional arguments.
+        }
+    }
+    // Check that nevents is valid and that atoi performed correctly.
+    if (*nevents == 0) return 2;
+
+    // Handle positional argument.
+    if (argc < 2) return 7;
+
+    return handle_root_filename(*file, run_no, beam_energy);
+}
+
+int main(int argc, char **argv) {
+    bool dbg      = false;
+    int nevn      = -1;
+    int run_no    = -1;
+    double beam_E = -1;
+    char *file    = NULL;
+
+    int errcode = handle_args(argc, argv, &dbg, &nevn, &file, &run_no, &beam_E);
+    if (handle_err(errcode, &file)) return 1;
+
+    return handle_err(run(file, dbg, nevn, run_no, beam_E), &file);
 }

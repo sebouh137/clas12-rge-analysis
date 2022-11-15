@@ -93,9 +93,10 @@ int run(char *in_filename, int run_no) {
 }
 
 int usage() {
-    fprintf(stderr, "\nUsage: hipo2root filename\n\n");
-    fprintf(stderr, "    hipo2root converts a file from the hipo format to the "
-                    "root format.\n\n");
+    fprintf(stderr,
+            "\nUsage: hipo2root filename\n\n"
+            "    Convert a file from the hipo format to the root format.\n\n"
+    );
 
     return 1;
 }
@@ -112,16 +113,15 @@ int handle_errs(int errcode, char **in_filename) {
             break;
         case 3:
             fprintf(stderr, "Error. input file should be in hipo format.\n");
-            free(*in_filename);
             break;
         case 4:
             fprintf(stderr, "Error. file does not exist!\n");
-            free(*in_filename);
             break;
         default:
             fprintf(stderr, "Error code %d not implemented!\n", errcode);
             return 1;
     }
+    if (errcode > 2) free(*in_filename);
     return usage();
 }
 

@@ -15,32 +15,6 @@
 
 #include "../lib/io_handler.h"
 
-int make_ntuples_handle_args(int argc, char ** argv, bool * debug, int * nevents,
-                             char ** input_file, int * run_no,
-                             double * beam_energy) {
-    // Handle optional arguments.
-    int opt;
-    while ((opt = getopt(argc, argv, "-dn:")) != -1) {
-        switch (opt) {
-            case 'd': * debug     = true;         break;
-            case 'n': * nevents   = atoi(optarg); break;
-            case  1 :{
-                * input_file = (char *) malloc(strlen(optarg) + 1);
-                strcpy(* input_file, optarg);
-                break;
-            }
-            default:  return 1; // Bad usage of optional arguments.
-        }
-    }
-    // Check that nevents is valid and atoi performed correctly.
-    if (* nevents == 0) return 2;
-
-    // Handle positional argument.
-    if (argc < 2) return 7;
-
-    return handle_root_filename(* input_file, run_no, beam_energy);
-}
-
 int extractsf_handle_args(int argc, char ** argv, bool * use_fmt, int * nevents,
                           char ** input_file, int * run_no) {
     // Handle optional arguments.
