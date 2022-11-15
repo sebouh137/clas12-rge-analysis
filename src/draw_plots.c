@@ -43,6 +43,8 @@
 // TODO. See what happens to low-momentum particles inside CLAS12 through
 //       simulation and see if they are reconstructed.
 
+// TODO. Separate in vz bins. Start from -40 to 40 cm, 4-cm bins.
+
 // Assign name to plots, recursively going through binnings.
 int name_plt(TH1 * plt[], TString * name, const char * nx, const char * ny,
              int * idx, long dbins, long depth, int px, long bx[],

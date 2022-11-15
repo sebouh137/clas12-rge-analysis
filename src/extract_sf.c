@@ -206,8 +206,7 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no) {
             }
         }
     }
-    printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
-    printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
+    printf("\33[2K\r");
     printf("[==================================================] 100%%\n");
 
     // Fit histograms.
@@ -249,7 +248,8 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no) {
                 double mean  = sf_gaus->GetParameter(1);
                 double sigma = sf_gaus->GetParameter(2);
 
-                // Only add points within PLIMITSARR borders and with an acceptable chi2.
+                // Only add points within PLIMITSARR borders and with an
+                // acceptable chi2.
                 if ((mean - 2*sigma > PLIMITSARR[ci][0] &&
                         mean + 2*sigma < PLIMITSARR[ci][1]) &&
                         (sf_gaus->GetChisquare() / sf_gaus->GetNDF() <

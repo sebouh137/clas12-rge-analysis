@@ -70,7 +70,7 @@ int main(int argc, char **argv) {
     hipo::event event;
 
     int c = 0;
-    while (reader.next()) {
+    while (reader.next() && c <= 80000) {
         c++;
         if (c % 10000 == 0) {
             if (c != 10000) printf("\33[2K\r");
@@ -89,8 +89,7 @@ int main(int argc, char **argv) {
                 + rche.get_nrows()  + rsci.get_nrows() + ftrk.get_nrows() > 0)
             tree->Fill();
     }
-    printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
-    printf("Read %8d events... Done!\n", c);
+    printf("\33[2K\rRead %8d events... Done!\n", c);
 
     // Clean up.
     tree->Write();
