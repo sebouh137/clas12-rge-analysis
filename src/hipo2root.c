@@ -63,7 +63,7 @@ int run(char *in_filename, int run_no) {
     hipo::event event;
 
     int c = 0;
-    while (reader.next()) {
+    while (reader.next() && c < 840000) {
         c++;
         if (c % 10000 == 0) {
             if (c != 10000) printf("\33[2K\r");
@@ -93,8 +93,10 @@ int run(char *in_filename, int run_no) {
 }
 
 int usage() {
-    fprintf(stderr, "\nUsage: hipo2root filename\n");
-    fprintf(stderr, "    TODO. DESCRIPTION PENDING.\n");
+    fprintf(stderr, "\nUsage: hipo2root filename\n\n");
+    fprintf(stderr, "    hipo2root converts a file from the hipo format to the "
+                    "root format.\n\n");
+
     return 1;
 }
 
