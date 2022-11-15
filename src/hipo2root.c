@@ -30,16 +30,9 @@
 #include "../lib/io_handler.h"
 #include "../lib/bank_containers.h"
 
-int main(int argc, char **argv) {
-    char *in_filename  = NULL;
-    char *out_filename = NULL;
-    int  run_no        = -1;
+int run(char *in_filename, int run_no) {
+    char *out_filename = (char *) malloc(128 * sizeof(char));
 
-    if (hipo2root_handle_args_err(hipo2root_handle_args(
-            argc, argv, &in_filename, &run_no), &in_filename))
-        return 1;
-
-    out_filename = (char *) malloc(128 * sizeof(char));
     // TODO. I should fix these paths ASAP.
     sprintf(out_filename, "../root_io/banks_%06d.root", run_no);
 
@@ -70,7 +63,7 @@ int main(int argc, char **argv) {
     hipo::event event;
 
     int c = 0;
-    while (reader.next() && c <= 80000) {
+    while (reader.next()) {
         c++;
         if (c % 10000 == 0) {
             if (c != 10000) printf("\33[2K\r");
@@ -85,8 +78,8 @@ int main(int argc, char **argv) {
         event.getStructure(rche_b);  rche .fill(rche_b);
         event.getStructure(rsci_b);  rsci .fill(rsci_b);
         event.getStructure(ftrk_b);  ftrk .fill(ftrk_b);
-        if (rpart.get_nrows() + rtrk.get_nrows() + rcal.get_nrows()
-                + rche.get_nrows()  + rsci.get_nrows() + ftrk.get_nrows() > 0)
+        if (rpart.get_nrows() + rtrk.get_nrows() + rcal.get_nrows() +
+                rche.get_nrows()  + rsci.get_nrows() + ftrk.get_nrows() > 0)
             tree->Fill();
     }
     printf("\33[2K\rRead %8d events... Done!\n", c);
@@ -97,4 +90,54 @@ int main(int argc, char **argv) {
     free(in_filename);
     free(out_filename);
     return 0;
+}
+
+int usage() {
+    fprintf(stderr, "\nUsage: hipo2root filename\n");
+    fprintf(stderr, "    TODO. DESCRIPTION PENDING.\n");
+    return 1;
+}
+
+int handle_errs(int errcode, char **in_filename) {
+    switch (errcode) {
+        case 0:
+            return 0;
+        case 1:
+            fprintf(stderr, "Error. No file name provided.\n");
+            break;
+        case 2:
+            fprintf(stderr, "Error. Too many arguments.\n");
+            break;
+        case 3:
+            fprintf(stderr, "Error. input file should be in hipo format.\n");
+            free(*in_filename);
+            break;
+        case 4:
+            fprintf(stderr, "Error. file does not exist!\n");
+            free(*in_filename);
+            break;
+        default:
+            fprintf(stderr, "Error code %d not implemented!\n", errcode);
+            return 1;
+    }
+    return usage();
+}
+
+int handle_args(int argc, char **argv, char **input_file, int *run_no) {
+    if (argc < 2) return 1;
+    if (argc > 2) return 2;
+
+    *input_file = (char *) malloc(strlen(argv[1]) + 1);
+    strcpy(*input_file, argv[1]);
+    return handle_hipo_filename(*input_file, run_no);
+}
+
+int main(int argc, char **argv) {
+    char *in_filename = NULL;
+    int  run_no       = -1;
+
+    int errcode = handle_args(argc, argv, &in_filename, &run_no);
+    if (handle_errs(errcode, &in_filename)) return 1;
+
+    return handle_errs(run(in_filename, run_no), &in_filename);
 }

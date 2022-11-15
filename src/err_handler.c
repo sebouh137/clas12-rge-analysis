@@ -144,33 +144,3 @@ int extractsf_handle_args_err(int errcode, char ** in_filename) {
             return 1;
     }
 }
-
-int hipo2root_usage() {
-    fprintf(stderr, "Usage: hipo2root filename\n");
-    return 1;
-}
-
-int hipo2root_handle_args_err(int errcode, char ** in_filename) {
-    switch (errcode) {
-        case 0:
-            return 0;
-        case 1:
-            fprintf(stderr, "Error. No file name provided.\n");
-            return hipo2root_usage();
-        case 2:
-            fprintf(stderr, "Error. Too many arguments, only a file name is needed.\n");
-            return hipo2root_usage();
-        case 3:
-            fprintf(stderr, "Error. input file (%s) should be a hipo file.\n", * in_filename);
-            free(* in_filename);
-            return 1;
-        case 4:
-            fprintf(stderr, "Error. %s does not exist!\n", * in_filename);
-            free(* in_filename);
-            return 1;
-        default:
-            fprintf(stderr, "Programmer Error. Error code %d not implemented in \n", errcode);
-            fprintf(stderr, "hipo2root_handle_args()! You're on your own.\n");
-            return 1;
-    }
-}

@@ -63,17 +63,6 @@ int extractsf_handle_args(int argc, char ** argv, bool * use_fmt, int * nevents,
     return handle_root_filename(* input_file, run_no);
 }
 
-int hipo2root_handle_args(int argc, char ** argv, char ** input_file,
-                          int * run_no) {
-    // Handle positional arguments
-    if (argc < 2) return 1;
-    if (argc > 3) return 2;
-
-    * input_file = (char *) malloc(strlen(argv[1]) + 1);
-    strcpy(* input_file, argv[1]);
-    return handle_hipo_filename(* input_file, run_no);
-}
-
 int check_root_filename(char * input_file) {
     if (!strstr(input_file, ".root"))     return 3; // Check that file is valid.
     if (!(access(input_file, F_OK) == 0)) return 4; // Check that file exists.
