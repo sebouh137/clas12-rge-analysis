@@ -15,17 +15,8 @@
 
 #include <cstdlib>
 #include <iostream>
-#include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-
-#include "reader.h"
-#include "utils.h"
 #include "TFile.h"
 #include "TTree.h"
-#include "Compression.h"
-
 #include "../lib/io_handler.h"
 #include "../lib/bank_containers.h"
 

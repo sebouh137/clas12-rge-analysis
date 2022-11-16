@@ -16,14 +16,7 @@
 #ifndef UTILS
 #define UTILS
 
-#include <map>
-#include <math.h>
-#include <stdbool.h>
-
-#include <TH1.h>
-#include <TH1F.h>
 #include <TH2F.h>
-
 #include "constants.h"
 
 double to_deg(double radians);

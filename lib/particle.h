@@ -16,11 +16,7 @@
 #ifndef PARTICLE
 #define PARTICLE
 
-#include <math.h>
-#include <stdbool.h>
-
 #include "bank_containers.h"
-#include "constants.h"
 #include "utilities.h"
 
 #define PID_POSITIVE_SIZE 5

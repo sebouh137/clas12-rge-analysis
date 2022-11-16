@@ -13,26 +13,12 @@
 //
 // You can see a copy of the GNU Lesser Public License under the LICENSE file.
 
-#include <getopt.h>
-#include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <map>
-#include <math.h>
-
 #include <TCanvas.h>
 #include <TFile.h>
 #include <TF1.h>
 #include <TGraphErrors.h>
-#include <TH1.h>
-#include <TH1F.h>
-#include <TH2F.h>
 #include <TStyle.h>
-#include <TTree.h>
-
 #include "../lib/bank_containers.h"
-#include "../lib/constants.h"
-#include "../lib/file_handler.h"
 #include "../lib/io_handler.h"
 #include "../lib/utilities.h"
 

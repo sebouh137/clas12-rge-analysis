@@ -13,27 +13,15 @@
 //
 // You can see a copy of the GNU Lesser Public License under the LICENSE file.
 
-#include <getopt.h>
-#include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-
 #include <TFile.h>
 #include <TNtuple.h>
-#include <TTree.h>
 #include <TROOT.h>
-
-#include "../lib/bank_containers.h"
-#include "../lib/constants.h"
-#include "../lib/file_handler.h"
 #include "../lib/io_handler.h"
 #include "../lib/particle.h"
-#include "../lib/utilities.h"
 
-// Find most precise TOF.
-// Layers precision order: FTOF1B, FTOF1A, FTOF2, PCAL, ECIN, ECOU.
-double get_tof(REC_Scintillator rsci, REC_Calorimeter  rcal, int pindex) {
+// Find most precise TOF. In order of decreasing precision, the detectors are
+//     FTOF1B > FTOF1A > FTOF2 > PCAL > ECIN > ECOU.
+double get_tof(REC_Scintillator rsci, REC_Calorimeter rcal, int pindex) {
     int    most_precise_lyr = 0;
     double tof              = INFINITY;
     for (UInt_t i = 0; i < rsci.pindex->size(); ++i) {

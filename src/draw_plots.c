@@ -13,19 +13,9 @@
 //
 // You can see a copy of the GNU Lesser Public License under the LICENSE file.
 
-#include <math.h>
-#include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <climits>
-
-#include <TCanvas.h>
 #include <TFile.h>
-#include <TH1.h>
-#include <TH1F.h>
-#include <TH2F.h>
 #include <TNtuple.h>
-
 #include "../lib/constants.h"
 #include "../lib/io_handler.h"
 #include "../lib/utilities.h"

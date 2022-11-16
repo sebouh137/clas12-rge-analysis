@@ -16,11 +16,6 @@
 #ifndef IO_HANDLER
 #define IO_HANDLER
 
-#include <stdbool.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-
 #include "file_handler.h"
 
 int check_root_filename(char * input_file);
