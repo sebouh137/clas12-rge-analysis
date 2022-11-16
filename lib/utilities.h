@@ -33,10 +33,6 @@ double calc_angle(double x1, double y1, double z1, double x2, double y2,
         double z2);
 void rotate_y(double *x, double *z, double th);
 void rotate_z(double *x, double *y, double th);
-bool catch_yn();
-int catch_string(const char * list[], int size);
-double catch_double();
-long catch_long();
 int insert_TH1F(std::map<const char *, TH1 *> *map, const char *k, const char *n,
         const char *xn, int bins, double min, double max);
 int insert_TH2F(std::map<const char *, TH1 *> *map, const char *k, const char *n,

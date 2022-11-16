@@ -51,3 +51,63 @@ int handle_hipo_filename(char *input_file, int *run_no) {
 
     return 0;
 }
+
+// Catch a y or n input.
+bool catch_yn() {
+    // TODO. Figure out how to catch no input so that this can be [Y/n].
+    while (true) {
+        char str[32];
+        printf(">>> ");
+        scanf("%31s", str);
+
+        if (!strcmp(str, "y") || !strcmp(str, "Y")) return true;
+        if (!strcmp(str, "n") || !strcmp(str, "N")) return false;
+    }
+}
+
+// Catch a string within a list.
+int catch_string(const char * list[], int size) {
+    double x;
+    while (true) {
+        char str[32];
+        printf(">>> ");
+        scanf("%31s", str);
+
+        for (int i = 0; i < size; ++i) if (!strcmp(str, list[i])) x = i;
+        if (x != -1) break;
+    }
+
+    return x;
+}
+
+// Catch a long value from stdin.
+long catch_long() {
+    long r;
+    while (true) {
+        char str[32];
+        char * endptr;
+        printf(">>> ");
+        scanf("%31s", str);
+        r = strtol(str, &endptr, 10);
+
+        if (endptr != str) break;
+    }
+
+    return r;
+}
+
+// Catch a double value from stdin.
+double catch_double() {
+    double r;
+    while (true) {
+        char str[32];
+        char * endptr;
+        printf(">>> ");
+        scanf("%31s", str);
+        r = strtod(str, &endptr);
+
+        if (endptr != str) break;
+    }
+
+    return r;
+}

@@ -30,4 +30,9 @@ int handle_root_filename(char * input_file, int * run_no, double * beam_energy);
 int check_hipo_filename(char * input_file);
 int handle_hipo_filename(char * input_file, int * run_no);
 
+bool catch_yn();
+int catch_string(const char * list[], int size);
+double catch_double();
+long catch_long();
+
 #endif
