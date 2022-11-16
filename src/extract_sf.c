@@ -1,36 +1,24 @@
 // CLAS12 RG-E Analyser.
 // Copyright (C) 2022 Bruno Benkel
 //
-// This program is free software: you can redistribute it and/or modify it under the terms of the
-// GNU Lesser General Public License as published by the Free Software Foundation, either version 3
-// of the License, or (at your option) any later version.
+// This program is free software: you can redistribute it and/or modify it under
+// the terms of the GNU Lesser General Public License as published by the Free
+// Software Foundation, either version 3 of the License, or (at your option) any
+// later version.
 //
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
-// even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-// Lesser General Public License for more details.
+// This program is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+// details.
 //
 // You can see a copy of the GNU Lesser Public License under the LICENSE file.
-
-#include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <map>
-#include <math.h>
 
 #include <TCanvas.h>
 #include <TFile.h>
 #include <TF1.h>
 #include <TGraphErrors.h>
-#include <TH1.h>
-#include <TH1F.h>
-#include <TH2F.h>
 #include <TStyle.h>
-#include <TTree.h>
-
 #include "../lib/bank_containers.h"
-#include "../lib/constants.h"
-#include "../lib/err_handler.h"
-#include "../lib/file_handler.h"
 #include "../lib/io_handler.h"
 #include "../lib/utilities.h"
 
@@ -39,7 +27,7 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no) {
 
     // Access input file.
     TFile *f_in = TFile::Open(in_filename, "READ");
-    if (!f_in || f_in->IsZombie()) return 1;
+    if (!f_in || f_in->IsZombie()) return 6;
 
     // Create and organize histos and name arrays.
     std::map<const char *, TH1 *> histos;
@@ -57,7 +45,7 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no) {
         ci++;
         for (int si = 0; si < NSECTORS; ++si) {
             // Initialize dotgraphs.
-            char * tmp_str = Form("%s%d)", cal, si+1);
+            char *tmp_str = Form("%s%d)", cal, si+1);
             sf2D_name_arr[ci][si] = (char *) malloc(strlen(tmp_str)+1);
             strncpy(sf2D_name_arr[ci][si], tmp_str, strlen(tmp_str));
             insert_TH2F(&histos, R_PALL, sf2D_name_arr[ci][si], S_P, S_EDIVP,
@@ -70,8 +58,8 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no) {
             sf2Dfit_name_arr[ci][si] = (char *) malloc(strlen(tmp_str)+1);
             strncpy(sf2Dfit_name_arr[ci][si], tmp_str, strlen(tmp_str));
             sf_polyfit[ci][si] = new TF1(sf2Dfit_name_arr[ci][si],
-                    "[0]*([1]+[2]/x + [3]/(x*x))", SF_PMIN+SF_PSTEP, SF_PMAX-SF_PSTEP);
-                    // "[0]+[1]*x+[2]*x*x+[3]*x*x*x", SF_PMIN+SF_PSTEP, SF_PMAX-SF_PSTEP);
+                    "[0]*([1]+[2]/x + [3]/(x*x))", SF_PMIN+SF_PSTEP,
+                    SF_PMAX-SF_PSTEP);
             sf_polyfit[ci][si]->SetParameter(0 /* p0 */, 0.25);
             sf_polyfit[ci][si]->SetParameter(1 /* p1 */, 1);
             sf_polyfit[ci][si]->SetParameter(2 /* p2 */, 0);
@@ -86,10 +74,12 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no) {
             int pi = -1;
             for (double p = SF_PMIN; p < SF_PMAX; p += SF_PSTEP) {
                 pi++;
-                char * tmp_str = Form("%s%d (%5.2f < p < %5.2f)", cal, si+1, p, p+SF_PSTEP);
+                char * tmp_str = Form("%s%d (%5.2f < p < %5.2f)", cal, si+1, p,
+                        p+SF_PSTEP);
                 sf1D_name_arr[ci][si][pi] = (char *) malloc(strlen(tmp_str)+1);
                 strncpy(sf1D_name_arr[ci][si][pi], tmp_str, strlen(tmp_str));
-                insert_TH1F(&histos, R_PALL, sf1D_name_arr[ci][si][pi], S_EDIVP, 200, 0, 0.4);
+                insert_TH1F(&histos, R_PALL, sf1D_name_arr[ci][si][pi], S_EDIVP,
+                        200, 0, 0.4);
             }
         }
     }
@@ -105,13 +95,11 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no) {
     int evn;
     int divcntr = 0;
     int evnsplitter = 0;
-    printf("Reading %lld events from %s.\n", nevn == -1 ? t->GetEntries() : nevn, in_filename);
+    printf("Reading %lld events from %s.\n", nevn == -1 ? t->GetEntries() :
+            nevn, in_filename);
     for (evn = 0; (evn < t->GetEntries()) && (nevn == -1 || evn < nevn); ++evn) {
         if (evn >= evnsplitter) {
-            if (evn != 0) {
-                printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
-                printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
-            }
+            if (evn != 0) printf("\33[2K\r");
             printf("[");
             for (int i = 0; i <= 50; ++i) {
                 if (i <= divcntr/2) printf("=");
@@ -120,7 +108,8 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no) {
             printf("] %2d%%", divcntr);
             fflush(stdout);
             divcntr++;
-            evnsplitter = nevn == -1 ? (t->GetEntries() / 100) * divcntr : (nevn/100) * divcntr;
+            evnsplitter = nevn == -1 ? (t->GetEntries() / 100) * divcntr :
+                    (nevn/100) * divcntr;
         }
 
         rp.get_entries(t, evn);
@@ -129,7 +118,8 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no) {
         ft.get_entries(t, evn);
 
         // Filter events without the necessary banks.
-        if (rp.vz->size() == 0 || rt.pindex->size() == 0 || rc.pindex->size() == 0) continue;
+        if (rp.vz->size() == 0 || rt.pindex->size() == 0 ||
+                rc.pindex->size() == 0) continue;
 
         for (UInt_t pos = 0; pos < rt.index->size(); ++pos) {
             // Get basic data from track and particle banks.
@@ -140,13 +130,19 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no) {
             double px, py, pz;
             if (use_fmt) {
                 // Apply FMT cuts.
-                if (ft.pz->size() < 1)      continue; // Track reconstructed by FMT.
-                if (ft.ndf->at(index) != 3) continue; // Track crossed 3 FMT layers.
+                // Track reconstructed by FMT.
+                if (ft.pz->size() < 1)      continue;
+                // Track crossed 3 FMT layers.
+                if (ft.ndf->at(index) != 3) continue;
 
-                px = ft.px->at(index); py = ft.py->at(index); pz = ft.pz->at(index);
+                px = ft.px->at(index);
+                py = ft.py->at(index);
+                pz = ft.pz->at(index);
             }
             else {
-                px = rp.px->at(pindex); py = rp.py->at(pindex); pz = rp.pz->at(pindex);
+                px = rp.px->at(pindex);
+                py = rp.py->at(pindex);
+                pz = rp.pz->at(pindex);
             }
             double tot_P = calc_magnitude(px, py, pz);
 
@@ -162,19 +158,20 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no) {
                 // Get sector.
                 int si = rc.sector->at(i) - 1;
                 if      (si == -1)                   continue;
-                else if (si < -1 || si > NSECTORS-1) return 3;
+                else if (si < -1 || si > NSECTORS-1) return 8;
 
                 // Get detector.
                 switch(rc.layer->at(i)) {
                     case PCAL_LYR: sf_E[PCAL_IDX][si] += rc.energy->at(i); break;
                     case ECIN_LYR: sf_E[ECIN_IDX][si] += rc.energy->at(i); break;
                     case ECOU_LYR: sf_E[ECOU_IDX][si] += rc.energy->at(i); break;
-                    default:       return 2;
+                    default:       return 7;
                 }
             }
 
             for (int ci = 0; ci < ncals-1; ++ci) {
-                for (int si = 0; si < NSECTORS; ++si) sf_E[CALS_IDX][si] += sf_E[ci][si];
+                for (int si = 0; si < NSECTORS; ++si)
+                    sf_E[CALS_IDX][si] += sf_E[ci][si];
             }
 
             // Get momentum bin.
@@ -189,15 +186,15 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no) {
             for (int ci = 0; ci < ncals; ++ci) {
                 for (int si = 0; si < NSECTORS; ++si) {
                     if (sf_E[ci][si] <= 0) continue;
-                    histos[sf2D_name_arr[ci][si]]->Fill(tot_P, sf_E[ci][si]/tot_P);
+                    histos[sf2D_name_arr[ci][si]]->Fill(
+                            tot_P, sf_E[ci][si]/tot_P);
                     histos[sf1D_name_arr[ci][si][pi]]->Fill(sf_E[ci][si]/tot_P);
                 }
             }
         }
     }
-    printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
-    printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
-    printf("[==================================================] 100%%\n");
+    printf("\33[2K\r[==================================================] 100%%"
+           "\n");
 
     // Fit histograms.
     ci = -1;
@@ -214,31 +211,40 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no) {
                 TH1 *EdivP = histos[sf1D_name_arr[ci][si][pi]];
 
                 // Form fit string name.
-                char * tmp_str = Form("%s%d (%5.2f < p < %5.2f) fit", cal, si+1, p, p+SF_PSTEP);
+                char * tmp_str = Form("%s%d (%5.2f < p < %5.2f) fit", cal, si+1,
+                        p, p+SF_PSTEP);
 
                 // Fit.
                 TF1 *sf_gaus = new TF1(tmp_str,
-                                       "[0]*TMath::Gaus(x,[1],[2]) + [3]*x*x + [4]*x + [5]",
-                                       PLIMITSARR[ci][0], PLIMITSARR[ci][1]);
-                sf_gaus->SetParameter(0 /* amp   */, EdivP->GetBinContent(EdivP->GetMaximumBin()));
+                        "[0]*TMath::Gaus(x,[1],[2]) + [3]*x*x + [4]*x + [5]",
+                        PLIMITSARR[ci][0], PLIMITSARR[ci][1]);
+                sf_gaus->SetParameter(0 /* amp   */,
+                        EdivP->GetBinContent(EdivP->GetMaximumBin()));
                 sf_gaus->SetParLimits(1, PLIMITSARR[ci][0], PLIMITSARR[ci][1]);
-                sf_gaus->SetParameter(1 /* mean  */, (PLIMITSARR[ci][1] + PLIMITSARR[ci][0])/2);
+                sf_gaus->SetParameter(1 /* mean  */,
+                        (PLIMITSARR[ci][1] + PLIMITSARR[ci][0])/2);
                 sf_gaus->SetParLimits(2, 0., 0.1);
                 sf_gaus->SetParameter(2 /* sigma */, 0.05);
                 sf_gaus->SetParameter(3 /* p0 */,    0);
                 sf_gaus->SetParameter(4 /* p1 */,    0);
                 sf_gaus->SetParameter(5 /* p2 */,    0);
-                EdivP->Fit(sf_gaus, "QR", "", PLIMITSARR[ci][0], PLIMITSARR[ci][1]);
+                EdivP->Fit(sf_gaus, "QR", "",
+                        PLIMITSARR[ci][0], PLIMITSARR[ci][1]);
 
                 // Extract mean and sigma from fit and add it to 2D plots.
                 double mean  = sf_gaus->GetParameter(1);
                 double sigma = sf_gaus->GetParameter(2);
 
-                // Only add points within PLIMITSARR borders and with an acceptable chi2.
-                if ((mean - 2*sigma > PLIMITSARR[ci][0] && mean + 2*sigma < PLIMITSARR[ci][1]) &&
-                    (sf_gaus->GetChisquare() / sf_gaus->GetNDF() < SF_CHI2CONFORMITY)) {
+                // Only add points within PLIMITSARR borders and with an
+                // acceptable chi2.
+                if ((mean - 2*sigma > PLIMITSARR[ci][0] &&
+                        mean + 2*sigma < PLIMITSARR[ci][1]) &&
+                        (sf_gaus->GetChisquare() / sf_gaus->GetNDF() <
+                        SF_CHI2CONFORMITY)) {
                         // Older root compatibility fix
-                        sf_dotgraph[ci][si]->SetPoint(point_index, p + SF_PSTEP/2, mean); point_index++;
+                        sf_dotgraph[ci][si]->SetPoint(point_index,
+                                p + SF_PSTEP/2, mean);
+                        point_index++;
                 }
             }
 
@@ -249,16 +255,20 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no) {
 
             // Extract and save dotgraph fits parameters to make cuts from them.
             for (int pi = 0; pi < sf_polyfit[ci][si]->GetNpar(); ++pi) {
-                sf_fitresults[ci][si][pi][0] = sf_polyfit[ci][si]->GetParameter(pi); // sf.
-                sf_fitresults[ci][si][pi][1] = sf_polyfit[ci][si]->GetParError(pi);  // sfs.
+                // sf.
+                sf_fitresults[ci][si][pi][0] =
+                        sf_polyfit[ci][si]->GetParameter(pi);
+                // sfs.
+                sf_fitresults[ci][si][pi][1] =
+                        sf_polyfit[ci][si]->GetParError(pi);
             }
         }
     }
 
     // Create output file.
-    char*  out_filename = (char *) malloc(128 * sizeof(char));
+    char *out_filename = (char *) malloc(128 * sizeof(char));
     sprintf(out_filename, "../root_io/sf_study_%06d.root", run_no);
-    
+
     TFile *f_out = TFile::Open(out_filename, "RECREATE");
     // Write to output file.
     TString dir;
@@ -288,7 +298,7 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no) {
     // Write results to file.
     FILE *t_out = fopen(Form("../data/sf_params_%06d.txt", run_no), "w");
 
-    if (t_out == NULL) return 4;
+    if (t_out == NULL) return 9;
     for (int ci = 3; ci < 4; ++ci) { // NOTE. Only writing ECAL sf results.
         for (int si = 0; si < NSECTORS; ++si) {
             for (int ppi = 0; ppi < 2; ++ppi) { // sf and sfs.
@@ -309,16 +319,90 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no) {
     return 0;
 }
 
+// Usage
+int usage() {
+    fprintf(stderr,
+            "Usage: extract_sf [-f] [-n nevents] file\n"
+            " * -f: Use FMT data. If unspecified, program will use DC data.\n"
+            " * -n nevents: Number of events\n"
+            " * file: ROOT file to be processed.\n\n"
+            "    Obtain the EC sampling fraction from an input file.\n\n"
+    );
+    return 1;
+}
+
+// Handle errs
+int handle_err(int errcode, char **file) {
+    switch (errcode) {
+        case 0:
+            return 0;
+        case 1:
+            break;
+        case 2:
+            fprintf(stderr, "Error. nevents should greater than 0.\n");
+            break;
+        case 3:
+            fprintf(stderr, "Error. input file should be in root format.\n");
+            break;
+        case 4:
+            fprintf(stderr, "Error. input file does not exist!\n");
+            break;
+        case 5:
+            fprintf(stderr, "Error. No file name provided.\n");
+            break;
+        case 6:
+            fprintf(stderr, "Error. input is not a valid ROOT file.\n");
+            break;
+        case 7:
+            fprintf(stderr, "Error. Invalid EC layer. Check bank integrity.\n");
+            break;
+        case 8:
+            fprintf(stderr, "Error. A particle is in an invalid sector. Check "
+                            "bank integrity.\n");
+            break;
+        case 9:
+            fprintf(stderr, "Error. Could not create sf_results file.\n");
+            break;
+        default:
+            fprintf(stderr, "Error code %d not implemented!\n", errcode);
+            return 1;
+    }
+
+    if (errcode > 2) free(*file);
+    return usage();
+}
+
+// Handle args
+int handle_args(int argc, char **argv, bool *use_fmt, int *nevents,
+        char **input_file, int *run_no) {
+    // Handle optional arguments.
+    int opt;
+    while ((opt = getopt(argc, argv, "-fn:")) != -1) {
+        switch (opt) {
+            case 'f': *use_fmt = true;         break;
+            case 'n': *nevents = atoi(optarg); break;
+            case  1 :
+                * input_file = (char *) malloc(strlen(optarg) + 1);
+                strcpy(*input_file, optarg);
+                break;
+            default:  return 1;
+        }
+    }
+    if (*nevents == 0) return 2;
+    if (argc < 2) return 5;
+
+    return handle_root_filename(*input_file, run_no);
+}
+
 // Call program from terminal, C-style.
 int main(int argc, char **argv) {
-    bool use_fmt      = false;
-    int nevn          = -1;
-    char *in_filename = NULL;
-    int run_no        = -1;
+    bool use_fmt = false;
+    int nevn     = -1;
+    char *file   = NULL;
+    int run_no   = -1;
 
-    if (extractsf_handle_args_err(extractsf_handle_args(argc, argv, &use_fmt, &nevn, &in_filename,
-        &run_no), &in_filename))
-        return 1;
+    int errcode = handle_args(argc, argv, &use_fmt, &nevn, &file, &run_no);
+    if (handle_err(errcode, &file)) return 1;
 
-    return extractsf_err(run(in_filename, use_fmt, nevn, run_no), &in_filename);
+    return handle_err(run(file, use_fmt, nevn, run_no), &file);
 }
