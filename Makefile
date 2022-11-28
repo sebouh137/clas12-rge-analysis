@@ -41,6 +41,7 @@ OBJS_HIPO2ROOT   := $(BLD)/bank_containers.o $(BLD)/file_handler.o \
 				    $(BLD)/io_handler.o
 OBJS_EXTRACTSF   := $(BLD)/bank_containers.o $(BLD)/constants.o \
 				    $(BLD)/file_handler.o $(BLD)/io_handler.o $(BLD)/utilities.o
+OBJS_ACCCORR     := $(BLD)/file_handler.o $(BLD)/io_handler.o
 OBJS_MAKENTUPLES := $(BLD)/bank_containers.o $(BLD)/constants.o \
 			        $(BLD)/file_handler.o $(BLD)/io_handler.o \
 					$(BLD)/particle.o $(BLD)/utilities.o
@@ -56,8 +57,8 @@ $(BIN)/hipo2root: $(OBJS_HIPO2ROOT) $(SRC)/hipo2root.c
 $(BIN)/extract_sf: $(OBJS_EXTRACTSF) $(SRC)/extract_sf.c
 	$(HXX) $(OBJS_EXTRACTSF) $(SRC)/extract_sf.c -o $(BIN)/extract_sf $(HIPOLIBS)
 
-$(BIN)/acc_corr: $(SRC)/acc_corr.c
-	$(CXX) $(SRC)/acc_corr.c -o $(BIN)/acc_corr
+$(BIN)/acc_corr: $(OBJS_ACCCORR) $(SRC)/acc_corr.c
+	$(CXX) $(OBJS_ACCCORR) $(SRC)/acc_corr.c -o $(BIN)/acc_corr
 
 $(BIN)/make_ntuples: $(OBJS_MAKENTUPLES) $(SRC)/make_ntuples.c
 	$(HXX) $(OBJS_MAKENTUPLES) $(SRC)/make_ntuples.c -o $(BIN)/make_ntuples \

@@ -18,6 +18,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <vector>
+#include "../lib/io_handler.h"
 
 int run() {
     return 0;
@@ -25,14 +26,14 @@ int run() {
 
 int usage() {
     fprintf(stderr,
-            "Usage: acc_corr [q:n:z:p:f:g:s:]\n"
-            " * -q ...     : Q2 bins.\n"
-            " * -n ...     : nu bins.\n"
-            " * -z ...     : z_h bins.\n"
-            " * -p ...     : Pt2 bins.\n"
-            " * -f ...     : phi_PQ bins.\n"
-            " * -g genfile : generated events ROOT file.\n"
-            " * -s simfile : simulated events ROOT file.\n\n"
+            "Usage: acc_corr [q:n:z:p:f:] genfile simfile\n"
+            " * -q ...  : Q2 bins.\n"
+            " * -n ...  : nu bins.\n"
+            " * -z ...  : z_h bins.\n"
+            " * -p ...  : Pt2 bins.\n"
+            " * -f ...  : phi_PQ bins.\n"
+            " * genfile : generated events ROOT file.\n"
+            " * simfile : simulated events ROOT file.\n\n"
             "    Get the 5-dimensional acceptance correction factors for Q2, nu"
             ", z_h, Pt2, and\n    phi_PQ. For each optional argument, an array "
             "of doubles is expected. The first\n    double will be the lower "
@@ -69,8 +70,33 @@ int handle_err(int errcode) {
     switch (errcode) {
         case 0:
             return 0;
-        case 1:
+        case 2:
+            fprintf(stderr, "Error. All binnings should have *at least* two "
+                            "values -- a minimum and a\n maximum.\n\n");
             break;
+        case 3:
+            fprintf(stderr, "Error. Generated file should be in root "
+                            "format.\n\n");
+            break;
+        case 4:
+            fprintf(stderr, "Error. Generated file does not exist!\n\n");
+            break;
+        case 5:
+            fprintf(stderr, "Error. Simulated file should be in root "
+                            "format.\n\n");
+            break;
+        case 6:
+            fprintf(stderr, "Error. Simulated file does not exist!\n\n");
+            break;
+        case 7:
+            fprintf(stderr, "Error. Please specify a generated file.\n\n");
+            break;
+        case 8:
+            fprintf(stderr, "Error. Please specify a simulated file.\n\n");
+            break;
+        default:
+            fprintf(stderr, "Error code %d not implemented!\n\n", errcode);
+            return 1;
     }
     return usage();
 }
@@ -80,8 +106,9 @@ int handle_args(int argc, char **argv, char **gen_file, char **sim_file,
         std::vector<double> &b_zh, std::vector<double> &b_Pt2,
         std::vector<double> &b_phiPQ)
 {
+    // Handle optional arguments.
     int opt;
-    while ((opt = getopt(argc, argv, "-q:n:z:p:f:g:s:")) != -1) {
+    while ((opt = getopt(argc, argv, "q:n:z:p:f:g:s:")) != -1) {
         switch (opt) {
             case 'q': grab_multiarg(argc, argv, &optind, b_Q2);    break;
             case 'n': grab_multiarg(argc, argv, &optind, b_nu);    break;
@@ -90,15 +117,30 @@ int handle_args(int argc, char **argv, char **gen_file, char **sim_file,
             case 'f': grab_multiarg(argc, argv, &optind, b_phiPQ); break;
             case 'g': grab_filename(optarg, gen_file);             break;
             case 's': grab_filename(optarg, sim_file);             break;
-            default: return 1;
+            default: break;
         }
     }
+
+    // Check that all vectors have *at least* two values.
+    if (b_Q2.size() < 2 || b_nu.size() < 2 || b_zh.size() < 2 ||
+            b_Pt2.size() < 2 || b_phiPQ.size() < 2) {
+        return 2;
+    }
+
+    // Check input file existence and validity.
+    if (!(*gen_file)) return 7;
+    int errcode = check_root_filename(*gen_file);
+    if (errcode) return errcode;
+    if (!(*sim_file)) return 8;
+    errcode     = check_root_filename(*sim_file);
+    if (errcode) return errcode + 2;
+
     return 0;
 }
 
 int main(int argc, char **argv) {
-    char *gen_file  = NULL;
-    char *sim_file  = NULL;
+    char *gen_file = NULL;
+    char *sim_file = NULL;
     std::vector<double> b_Q2;
     std::vector<double> b_nu;
     std::vector<double> b_zh;
