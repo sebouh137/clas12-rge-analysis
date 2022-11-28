@@ -391,7 +391,6 @@ int run() {
     return 0;
 }
 
-// Call program from terminal, C-style.
 int main(int argc, char ** argv) {
     return run();
 }

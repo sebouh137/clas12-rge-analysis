@@ -366,9 +366,10 @@ int run(char *in_filename, bool debug, int nevn, int run_no, double beam_E) {
 int usage() {
     fprintf(stderr,
             "Usage: make_ntuples [-fd] [-n nevents] file\n"
-            " * -d: Activate debug mode.\n"
-            " * -n nevents: number of events.\n"
-            " * file: ROOT file. Expected file format: <text>run_no.root`.\n\n"
+            " * -d         : Activate debug mode.\n"
+            " * -n nevents : number of events.\n"
+            " * file       : ROOT file. Expected file format: "
+            "<text>run_no.root`.\n\n"
             "    Generate ntuples relevant to SIDIS analysis based on the "
             "reconstructed\n    variables from CLAS12 data.\n\n"
     );

@@ -323,15 +323,14 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no) {
 int usage() {
     fprintf(stderr,
             "Usage: extract_sf [-f] [-n nevents] file\n"
-            " * -f: Use FMT data. If unspecified, program will use DC data.\n"
-            " * -n nevents: Number of events\n"
-            " * file: ROOT file to be processed.\n\n"
-            "    Obtain the EC sampling fraction from an input file.\n\n"
+            " * -f         : Use FMT data. If unspecified, will use DC data.\n"
+            " * -n nevents : Number of events\n"
+            " * file       : ROOT file to be processed.\n\n"
+            "Obtain the EC sampling fraction from an input file.\n\n"
     );
     return 1;
 }
 
-// Handle errs
 int handle_err(int errcode, char **file) {
     switch (errcode) {
         case 0:
@@ -372,7 +371,6 @@ int handle_err(int errcode, char **file) {
     return usage();
 }
 
-// Handle args
 int handle_args(int argc, char **argv, bool *use_fmt, int *nevents,
         char **input_file, int *run_no) {
     // Handle optional arguments.
@@ -382,10 +380,10 @@ int handle_args(int argc, char **argv, bool *use_fmt, int *nevents,
             case 'f': *use_fmt = true;         break;
             case 'n': *nevents = atoi(optarg); break;
             case  1 :
-                * input_file = (char *) malloc(strlen(optarg) + 1);
+                *input_file = (char *) malloc(strlen(optarg) + 1);
                 strcpy(*input_file, optarg);
                 break;
-            default:  return 1;
+            default: return 1;
         }
     }
     if (*nevents == 0) return 2;
@@ -394,7 +392,6 @@ int handle_args(int argc, char **argv, bool *use_fmt, int *nevents,
     return handle_root_filename(*input_file, run_no);
 }
 
-// Call program from terminal, C-style.
 int main(int argc, char **argv) {
     bool use_fmt = false;
     int nevn     = -1;
