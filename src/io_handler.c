@@ -52,6 +52,29 @@ int handle_hipo_filename(char *input_file, int *run_no) {
     return 0;
 }
 
+// Grab multiple arguments and fill a vector of doubles with it.
+int grab_multiarg(int argc, char **argv, int *optind, std::vector<double> &v) {
+    // Initialize and fill array.
+    int idx = *optind - 1;
+    char *next;
+    while (idx < argc) {
+        next = strdup(argv[idx++]);
+        if (next[0] >= '0' && next[0] <= '9') v.push_back(atof(next));
+        else                                  break;
+    }
+
+    // Continue with getopts.
+    *optind = idx - 1;
+    return 0;
+}
+
+// Grab filename from optarg.
+int grab_filename(char *optarg, char **file) {
+    *file = (char *) malloc(strlen(optarg) + 1);
+    strcpy(*file, optarg);
+    return 0;
+}
+
 // Catch a y or n input.
 bool catch_yn() {
     // TODO. Figure out how to catch no input so that this can be [Y/n].

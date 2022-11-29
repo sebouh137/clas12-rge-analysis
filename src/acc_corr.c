@@ -20,7 +20,27 @@
 #include <vector>
 #include "../lib/io_handler.h"
 
-int run() {
+int run(char *gen_file, char *sim_file, std::vector<double> &b_Q2,
+        std::vector<double> &b_nu,  std::vector<double> &b_zh,
+        std::vector<double> &b_Pt2, std::vector<double> &b_phiPQ)
+{
+    printf("\n --- INPUT: ---\n");
+    printf("b_Q2    = [");
+    for (const double &i : b_Q2) printf("%5.2f, ", i);
+    printf("]\nb_nu    = [");
+    for (const double &i : b_nu) printf("%5.2f, ", i);
+    printf("]\nb_zh    = [");
+    for (const double &i : b_zh) printf("%5.2f, ", i);
+    printf("]\nb_Pt2   = [");
+    for (const double &i : b_Pt2) printf("%5.2f, ", i);
+    printf("]\nb_phiPQ = [");
+    for (const double &i : b_phiPQ) printf("%5.2f, ", i);
+    printf("]\ngen_file = %s\n", gen_file);
+    printf("sim_file = %s\n", sim_file);
+    printf(" --- ------ ---\n\n");
+
+    
+
     return 0;
 }
 
@@ -42,28 +62,6 @@ int usage() {
             "\n    separators between each bin.\n\n"
     );
     return 1;
-}
-
-// Grab multiple arguments and fill a vector of doubles with it.
-int grab_multiarg(int argc, char **argv, int *optind, std::vector<double> &b) {
-    // Initialize and fill array.
-    int idx = *optind - 1;
-    char *next;
-    while (idx < argc) {
-        next = strdup(argv[idx++]);
-        if (next[0] >= '0' && next[0] <= '9') b.push_back(atof(next));
-        else                                  break;
-    }
-
-    // Continue with getopts.
-    *optind = idx - 1;
-    return 0;
-}
-
-int grab_filename(char *optarg, char **file) {
-    *file = (char *) malloc(strlen(optarg) + 1);
-    strcpy(*file, optarg);
-    return 0;
 }
 
 int handle_err(int errcode) {
@@ -149,23 +147,8 @@ int main(int argc, char **argv) {
 
     int errcode = handle_args(argc, argv, &gen_file, &sim_file, b_Q2, b_nu,
             b_zh, b_Pt2, b_phiPQ);
-
-    printf("b_Q2    = [");
-    for (const double &i : b_Q2) printf("%5.2f, ", i);
-    printf("]\nb_nu    = [");
-    for (const double &i : b_nu) printf("%5.2f, ", i);
-    printf("]\nb_zh    = [");
-    for (const double &i : b_zh) printf("%5.2f, ", i);
-    printf("]\nb_Pt2   = [");
-    for (const double &i : b_Pt2) printf("%5.2f, ", i);
-    printf("]\nb_phiPQ = [");
-    for (const double &i : b_phiPQ) printf("%5.2f, ", i);
-    printf("]\ngen_file = %s\n", gen_file);
-    printf("sim_file = %s\n", sim_file);
-    printf("errcode = %d\n\n", errcode);
-
     if (handle_err(errcode)) return 1;
 
-    // return handle_err(run(file, b_Q2, b_nu, b_zh, b_Pt2, b_phiPQ), &file);
-    return 0;
+    return handle_err(run(gen_file, sim_file, b_Q2, b_nu, b_zh, b_Pt2,
+            b_phiPQ));
 }

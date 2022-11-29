@@ -16,6 +16,7 @@
 #ifndef IO_HANDLER
 #define IO_HANDLER
 
+#include <vector>
 #include "file_handler.h"
 
 int check_root_filename(char *input_file);
@@ -24,6 +25,9 @@ int handle_root_filename(char *input_file, int *run_no, double *beam_energy);
 
 int check_hipo_filename(char *input_file);
 int handle_hipo_filename(char *input_file, int *run_no);
+
+int grab_multiarg(int argc, char **argv, int *optind, std::vector<double> &v);
+int grab_filename(char *optarg, char **file);
 
 bool catch_yn();
 int catch_string(const char *list[], int size);
