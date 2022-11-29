@@ -27,7 +27,7 @@ extern const std::map<int, int> PID_QA;
 
 // Particle cut array.
 #define PART_LIST_SIZE 5
-extern const char * PART_LIST[PART_LIST_SIZE];
+extern const char *PART_LIST[PART_LIST_SIZE];
 #define R_PALL "all"     // All particles.
 #define A_PALL 0
 #define R_PPOS "+"       // Positive.
@@ -41,7 +41,7 @@ extern const char * PART_LIST[PART_LIST_SIZE];
 
 // Tracker types.
 #define TRK_LIST_SIZE 2
-extern const char * TRK_LIST[TRK_LIST_SIZE];
+extern const char *TRK_LIST[TRK_LIST_SIZE];
 #define S_DC  "dc"
 #define A_DC  0
 #define S_FMT "fmt"
@@ -49,17 +49,17 @@ extern const char * TRK_LIST[TRK_LIST_SIZE];
 
 // Plot types.
 #define PLOT_LIST_SIZE 2
-extern const char * PLOT_LIST[PLOT_LIST_SIZE];
+extern const char *PLOT_LIST[PLOT_LIST_SIZE];
 #define R_PLOT1D   "1d"
 #define R_PLOT2D   "2d"
 
 #define DIM_LIST_SIZE 2
-extern const char * DIM_LIST[DIM_LIST_SIZE];
+extern const char *DIM_LIST[DIM_LIST_SIZE];
 #define S_DIM1   "x"
 #define S_DIM2   "y"
 
 // Miscellaneous.
-extern const char * RAN_LIST[2];
+extern const char *RAN_LIST[2];
 #define S_LOWER "lower"
 #define S_UPPER "upper"
 
@@ -73,8 +73,8 @@ extern const long   STD_BX[STDPLT_LIST_SIZE][2];
 // All variables.
 #define S_PARTICLE "particle"
 #define VAR_LIST_SIZE 33
-extern const char * R_VAR_LIST[VAR_LIST_SIZE];
-extern const char * S_VAR_LIST[VAR_LIST_SIZE];
+extern const char *R_VAR_LIST[VAR_LIST_SIZE];
+extern const char *S_VAR_LIST[VAR_LIST_SIZE];
 
 // Metadata.
 #define S_RUNNO   "N_{run}"
@@ -160,7 +160,7 @@ extern const char * S_VAR_LIST[VAR_LIST_SIZE];
 
 // DIS.
 #define DIS_LIST_SIZE 4
-extern const char * DIS_LIST[DIS_LIST_SIZE];
+extern const char *DIS_LIST[DIS_LIST_SIZE];
 
 #define S_Q2 "Q2"          // GeV^2.
 #define R_Q2 "q2"
@@ -178,7 +178,7 @@ extern const char * DIS_LIST[DIS_LIST_SIZE];
 // SIDIS.
 // using usual name convention...
 #define SIDIS_LIST_SIZE 5
-extern const char * SIDIS_LIST[SIDIS_LIST_SIZE];
+extern const char *SIDIS_LIST[SIDIS_LIST_SIZE];
 
 #define S_ZH      "z_{h}"       // adimensional.
 #define R_ZH      "zh"
@@ -210,9 +210,9 @@ extern const char * SIDIS_LIST[SIDIS_LIST_SIZE];
 #define SF_PSTEP   0.4 // GeV
 #define SF_NPARAMS 4
 #define SF_CHI2CONFORMITY 2 // NOTE. This is a source of systematic error!
-extern const char * CALNAME[4]; // Calorimeters names.
-extern const char * SFARR2D[4]; // Sampling Fraction (SF) 2D arr names.
-extern const char * SFARR1D[4]; // SF 1D arr names.
+extern const char *CALNAME[4]; // Calorimeters names.
+extern const char *SFARR2D[4]; // Sampling Fraction (SF) 2D arr names.
+extern const char *SFARR1D[4]; // SF 1D arr names.
 extern const double PLIMITSARR[SF_NPARAMS][2]; // Momentum limits for 1D SF fit.
 
 // Run constants (TODO. these should be in a map or taken from clas12mon.)
