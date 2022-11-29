@@ -18,6 +18,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <vector>
+#include <TFile.h>
 #include "../lib/io_handler.h"
 
 int run(char *gen_file, char *sim_file, std::vector<double> &b_Q2,
@@ -39,7 +40,39 @@ int run(char *gen_file, char *sim_file, std::vector<double> &b_Q2,
     printf("sim_file = %s\n", sim_file);
     printf(" --- ------ ---\n\n");
 
-    
+    // Open input files and load TTrees.
+    TFile *g_in = TFile::Open(gen_file, "READ");
+    if (!g_in || g_in->IsZombie()) return 9;
+    TFile *s_in = TFile::Open(sim_file, "READ");
+    if (!s_in || s_in->IsZombie()) return 10;
+
+    // Open output file.
+    const char *out_file = "../data/acc_corr.txt";
+    if (!access(out_file, F_OK)) return 11;
+    FILE *t_out = fopen("../data/acc_corr.txt", "w");
+
+    // TODO. Compute acceptance correction.
+    // NOTE. A recursive solution would be much more elegant.
+    // for (const double &i_Q2 : b_Q2) {
+    //     for (const double &i_nu : b_nu) {
+    //         for (const double &i_zh : b_zh) {
+    //             for (const double &i_Pt2 : b_Pt2) {
+    //                 for (const double &i_phiPQ : b_phiPQ) {
+    //                     // TODO. Compute and store ratio to output file.
+    //                 }
+    //             }
+    //         }
+    //     }
+    // }
+
+    // Close input and output files.
+    g_in->Close();
+    s_in->Close();
+    fclose(t_out);
+
+    // Free up memory.
+    free(gen_file);
+    free(sim_file);
 
     return 0;
 }
@@ -91,6 +124,17 @@ int handle_err(int errcode) {
             break;
         case 8:
             fprintf(stderr, "Error. Please specify a simulated file.\n\n");
+            break;
+        case 9:
+            fprintf(stderr, "Error. Generated file is not a valid ROOT file."
+                            "\n\n");
+            break;
+        case 10:
+            fprintf(stderr, "Error. Simulated file is not a valid ROOT file."
+                            "\n\n");
+            break;
+        case 11:
+            fprintf(stderr, "Error. Output file already exists.\n\n");
             break;
         default:
             fprintf(stderr, "Error code %d not implemented!\n\n", errcode);

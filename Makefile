@@ -58,7 +58,7 @@ $(BIN)/extract_sf: $(OBJS_EXTRACTSF) $(SRC)/extract_sf.c
 	$(HXX) $(OBJS_EXTRACTSF) $(SRC)/extract_sf.c -o $(BIN)/extract_sf $(HIPOLIBS)
 
 $(BIN)/acc_corr: $(OBJS_ACCCORR) $(SRC)/acc_corr.c
-	$(CXX) $(OBJS_ACCCORR) $(SRC)/acc_corr.c -o $(BIN)/acc_corr
+	$(RXX) $(OBJS_ACCCORR) $(SRC)/acc_corr.c -o $(BIN)/acc_corr $(ROOTLIBS)
 
 $(BIN)/make_ntuples: $(OBJS_MAKENTUPLES) $(SRC)/make_ntuples.c
 	$(HXX) $(OBJS_MAKENTUPLES) $(SRC)/make_ntuples.c -o $(BIN)/make_ntuples \
