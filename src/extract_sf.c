@@ -97,7 +97,8 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no) {
     int evnsplitter = 0;
     printf("Reading %lld events from %s.\n", nevn == -1 ? t->GetEntries() :
             nevn, in_filename);
-    for (evn = 0; (evn < t->GetEntries()) && (nevn == -1 || evn < nevn); ++evn) {
+    for (evn = 0; (evn < t->GetEntries()) &&
+            (nevn == -1 || evn < nevn); ++evn) {
         if (evn >= evnsplitter) {
             if (evn != 0) printf("\33[2K\r");
             printf("[");
@@ -162,10 +163,17 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no) {
 
                 // Get detector.
                 switch(rc.layer->at(i)) {
-                    case PCAL_LYR: sf_E[PCAL_IDX][si] += rc.energy->at(i); break;
-                    case ECIN_LYR: sf_E[ECIN_IDX][si] += rc.energy->at(i); break;
-                    case ECOU_LYR: sf_E[ECOU_IDX][si] += rc.energy->at(i); break;
-                    default:       return 7;
+                    case PCAL_LYR:
+                        sf_E[PCAL_IDX][si] += rc.energy->at(i);
+                        break;
+                    case ECIN_LYR:
+                        sf_E[ECIN_IDX][si] += rc.energy->at(i);
+                        break;
+                    case ECOU_LYR:
+                        sf_E[ECOU_IDX][si] += rc.energy->at(i);
+                        break;
+                    default:
+                        return 7;
                 }
             }
 
@@ -287,7 +295,8 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no) {
             sf_polyfit[ci][si]->Draw("same");
             gcvs->Write(sf2D_name_arr[ci][si]);
             free(sf2D_name_arr[ci][si]);
-            for (int pi = 0; pi < ((int) ((SF_PMAX - SF_PMIN)/SF_PSTEP)); ++pi) {
+            for (int pi = 0; pi < ((int) ((SF_PMAX - SF_PMIN)/SF_PSTEP)); ++pi)
+            {
                 histos[sf1D_name_arr[ci][si][pi]]->Write();
                 free(sf1D_name_arr[ci][si][pi]);
             }
