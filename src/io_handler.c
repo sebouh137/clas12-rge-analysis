@@ -53,6 +53,7 @@ int handle_hipo_filename(char *input_file, int *run_no) {
 }
 
 // Grab multiple arguments and fill a vector of doubles with it.
+// TODO. This doesn't accept negative numbers!
 int grab_multiarg(int argc, char **argv, int *optind, std::vector<double> &v) {
     // Initialize and fill array.
     int idx = *optind - 1;
