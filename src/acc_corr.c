@@ -19,11 +19,12 @@
 #include <string.h>
 #include <vector>
 #include <TFile.h>
+#include <TNtuple.h>
 #include "../lib/io_handler.h"
 
 int run(char *gen_file, char *sim_file, std::vector<double> &b_Q2,
         std::vector<double> &b_nu,  std::vector<double> &b_zh,
-        std::vector<double> &b_Pt2, std::vector<double> &b_phiPQ)
+        std::vector<double> &b_Pt2, std::vector<double> &b_phiPQ, bool use_fmt)
 {
     printf("\n --- INPUT: ---\n");
     printf("b_Q2    = [");
@@ -51,14 +52,42 @@ int run(char *gen_file, char *sim_file, std::vector<double> &b_Q2,
     if (!access(out_file, F_OK)) return 11;
     FILE *t_out = fopen("../data/acc_corr.txt", "w");
 
+    // Open TTrees.
+    TNtuple *thrown   = g_in->Get<TNtuple>("ntuple_thrown");
+    if (thrown == NULL) return 12;
+    Float_t g_Q2, g_nu, g_zh, g_Pt2, g_phiPQ;
+    thrown->SetBranchAddress(S_Q2,    &g_Q2);
+    thrown->SetBranchAddress(S_NU,    &g_nu);
+    thrown->SetBranchAddress(S_ZH,    &g_zh);
+    thrown->SetBranchAddress(S_PT2,   &g_Pt2);
+    thrown->SetBranchAddress(S_PHIPQ, &g_phiPQ);
+
+    TTree *simul = s_in->Get<TTree>("dc");
+    if (simul == NULL) return 13;
+    Float_t s_Q2, s_nu, s_zh, s_Pt2, s_phiPQ;
+    simul->SetBranchAddress(S_Q2,    &s_Q2);
+    simul->SetBranchAddress(S_NU,    &s_nu);
+    simul->SetBranchAddress(S_ZH,    &s_zh);
+    simul->SetBranchAddress(S_PT2,   &s_Pt2);
+    simul->SetBranchAddress(S_PHIPQ, &s_phiPQ);
+
     // TODO. Compute acceptance correction.
     // NOTE. A recursive solution would be much more elegant.
-    // for (const double &i_Q2 : b_Q2) {
-    //     for (const double &i_nu : b_nu) {
-    //         for (const double &i_zh : b_zh) {
-    //             for (const double &i_Pt2 : b_Pt2) {
-    //                 for (const double &i_phiPQ : b_phiPQ) {
-    //                     // TODO. Compute and store ratio to output file.
+    // for (int i_Q2 = 0; i_Q2 < b_Q2.size()-1; ++i_Q2) {
+    //     for (int i_nu = 0; i_nu < b_nu.size()-1; ++i_nu {
+    //         for (int i_zh = 0; i_zh < b_zh.size()-1; ++i_zh) {
+    //             for (int i_Pt2 = 0; i_Pt2 < b_Pt2.size()-1; ++i_Pt2) {
+    //                 for (int i_phiPQ = 0; i_phiPQ < b_phiPQ.size()-1; ++i_phiPQ) {
+    //                     // TODO. Compute # of generated events in bin.
+    //                     int g_events = 0;
+    //                     for (int evn = 0; evn < thrown->GetEntries(); ++evn) {
+    //                         thrown->GetEntry(evn);
+    //                         if ()
+    //                     }
+    //                     // TODO. Compute # of simulated events in bin.
+    //                     // TODO. Calculate acceptance ratio.
+    //                     // TODO. Save ratio to output file.
+    //
     //                 }
     //             }
     //         }
@@ -80,13 +109,15 @@ int run(char *gen_file, char *sim_file, std::vector<double> &b_Q2,
 int usage() {
     fprintf(stderr,
             "Usage: acc_corr [q:n:z:p:f:] genfile simfile\n"
-            " * -q ...  : Q2 bins.\n"
-            " * -n ...  : nu bins.\n"
-            " * -z ...  : z_h bins.\n"
-            " * -p ...  : Pt2 bins.\n"
-            " * -f ...  : phi_PQ bins.\n"
-            " * genfile : generated events ROOT file.\n"
-            " * simfile : simulated events ROOT file.\n\n"
+            " * -q ...     : Q2 bins.\n"
+            " * -n ...     : nu bins.\n"
+            " * -z ...     : z_h bins.\n"
+            " * -p ...     : Pt2 bins.\n"
+            " * -f ...     : phi_PQ bins.\n"
+            " * -g genfile : generated events ROOT file.\n"
+            " * -s simfile : simulated events ROOT file.\n"
+            " * -F         : flag to tell program to use FMT data instead of DC"
+            " data from\n                the simulation file.\n\n"
             "    Get the 5-dimensional acceptance correction factors for Q2, nu"
             ", z_h, Pt2, and\n    phi_PQ. For each optional argument, an array "
             "of doubles is expected. The first\n    double will be the lower "
@@ -136,6 +167,12 @@ int handle_err(int errcode) {
         case 11:
             fprintf(stderr, "Error. Output file already exists.\n\n");
             break;
+        case 12:
+            fprintf(stderr, "Error. Generated file is badly formatted.\n\n");
+            break;
+        case 13:
+            fprintf(stderr, "Error. Simualted file is badly formatted.\n\n");
+            break;
         default:
             fprintf(stderr, "Error code %d not implemented!\n\n", errcode);
             return 1;
@@ -146,11 +183,11 @@ int handle_err(int errcode) {
 int handle_args(int argc, char **argv, char **gen_file, char **sim_file,
         std::vector<double> &b_Q2, std::vector<double> &b_nu,
         std::vector<double> &b_zh, std::vector<double> &b_Pt2,
-        std::vector<double> &b_phiPQ)
+        std::vector<double> &b_phiPQ, bool *use_fmt)
 {
     // Handle optional arguments.
     int opt;
-    while ((opt = getopt(argc, argv, "q:n:z:p:f:g:s:")) != -1) {
+    while ((opt = getopt(argc, argv, "q:n:z:p:f:g:s:F")) != -1) {
         switch (opt) {
             case 'q': grab_multiarg(argc, argv, &optind, b_Q2);    break;
             case 'n': grab_multiarg(argc, argv, &optind, b_nu);    break;
@@ -159,6 +196,7 @@ int handle_args(int argc, char **argv, char **gen_file, char **sim_file,
             case 'f': grab_multiarg(argc, argv, &optind, b_phiPQ); break;
             case 'g': grab_filename(optarg, gen_file);             break;
             case 's': grab_filename(optarg, sim_file);             break;
+            case 'F': *use_fmt = true;                             break;
             default: break;
         }
     }
@@ -181,6 +219,7 @@ int handle_args(int argc, char **argv, char **gen_file, char **sim_file,
 }
 
 int main(int argc, char **argv) {
+    bool use_fmt   = false;
     char *gen_file = NULL;
     char *sim_file = NULL;
     std::vector<double> b_Q2;
@@ -190,9 +229,9 @@ int main(int argc, char **argv) {
     std::vector<double> b_phiPQ;
 
     int errcode = handle_args(argc, argv, &gen_file, &sim_file, b_Q2, b_nu,
-            b_zh, b_Pt2, b_phiPQ);
+            b_zh, b_Pt2, b_phiPQ, &use_fmt);
     if (handle_err(errcode)) return 1;
 
     return handle_err(run(gen_file, sim_file, b_Q2, b_nu, b_zh, b_Pt2,
-            b_phiPQ));
+            b_phiPQ, use_fmt));
 }
