@@ -13,11 +13,6 @@
 //
 // You can see a copy of the GNU Lesser Public License under the LICENSE file.
 
-#include <getopt.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <vector>
 #include <TFile.h>
 #include <TNtuple.h>
 #include "../lib/io_handler.h"
@@ -42,10 +37,10 @@ int count_events(int *evn_cnt, TTree *tree, int *sizes,
     tree->SetBranchAddress(S_PT2,   &s_Pt2);
     tree->SetBranchAddress(S_PHIPQ, &s_pPQ);
     for (int evn = 0; evn < tree->GetEntries(); ++evn) {
-        int i0, i1, i2, i3, i4;
         tree->GetEntry(evn);
 
         // Find position of event.
+        int i0, i1, i2, i3, i4;
         i0 = find_pos(s_Q2,  b_Q2,  sizes[0]);
         i1 = find_pos(s_nu,  b_nu,  sizes[1]);
         i2 = find_pos(s_zh,  b_zh,  sizes[2]);
