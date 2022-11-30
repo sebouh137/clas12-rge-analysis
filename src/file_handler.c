@@ -15,6 +15,7 @@
 
 #include "../lib/file_handler.h"
 
+// Get run number from input filename.
 int get_run_no(char *input_file, int *run_no_int) {
     // TODO. This is a very brute way to find the run number and **should** be
     //       changed.
@@ -28,6 +29,7 @@ int get_run_no(char *input_file, int *run_no_int) {
     return *run_no_int;
 }
 
+// Match run number to beam energy from constants.
 int get_beam_energy(int run_no, double *beam_energy) {
     // NOTE. This should be a map in constants or taken directly from clas12mon.
     switch (run_no) {
@@ -43,8 +45,7 @@ int get_beam_energy(int run_no, double *beam_energy) {
     return 0;
 }
 
-// NOTE. Maybe this function could call extract_sf for the user if they have not
-//       done so already?
+// Get sampling fraction parameters from file.
 int get_sf_params(char *fname, double sf[NSECTORS][SF_NPARAMS][2]) {
     if (access(fname, F_OK) != 0) return 1;
     FILE *t_in = fopen(fname, "r");
