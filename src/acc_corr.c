@@ -13,6 +13,7 @@
 //
 // You can see a copy of the GNU Lesser Public License under the LICENSE file.
 
+#include <algorithm>
 #include <TFile.h>
 #include <TNtuple.h>
 #include "../lib/io_handler.h"
@@ -23,14 +24,15 @@ int find_pos(double val, std::vector<double> vec, int size) {
     return -1;
 }
 
-int count_events(int *evn_cnt, TTree *tree, int *sizes,
+int count_events(int *evn_cnt, TTree *tree, int pid, int *sizes,
         std::vector<double> &b_Q2, std::vector<double> &b_nu,
         std::vector<double> &b_zh, std::vector<double> &b_Pt2,
         std::vector<double> &b_pPQ)
 {
     for (int i = 0; i < sizes[5]; ++i) evn_cnt[i] = 0;
 
-    Float_t s_Q2, s_nu, s_zh, s_Pt2, s_pPQ;
+    Float_t s_pid, s_Q2, s_nu, s_zh, s_Pt2, s_pPQ;
+    tree->SetBranchAddress(S_PID,   &s_pid);
     tree->SetBranchAddress(S_Q2,    &s_Q2);
     tree->SetBranchAddress(S_NU,    &s_nu);
     tree->SetBranchAddress(S_ZH,    &s_zh);
@@ -38,6 +40,7 @@ int count_events(int *evn_cnt, TTree *tree, int *sizes,
     tree->SetBranchAddress(S_PHIPQ, &s_pPQ);
     for (int evn = 0; evn < tree->GetEntries(); ++evn) {
         tree->GetEntry(evn);
+        if (pid-0.5 < s_pid && s_pid < pid+0.5) continue;
 
         // Find position of event.
         int i0, i1, i2, i3, i4;
@@ -86,8 +89,17 @@ int run(char *gen_file, char *sim_file, std::vector<double> &b_Q2,
     else          simul = s_in->Get<TTree>("fmt");
     if (simul == NULL) return 13;
 
+    // Get list of PIDs.
+    Float_t s_pid;
+    std::vector<double> pid_list;
+    thrown->SetBranchAddress(S_PID, &s_pid);
+    for (int evn = 0; evn < thrown->GetEntries(); ++evn) {
+        thrown->GetEntry(evn);
+        if (std::find(pid_list.begin(), pid_list.end(), s_pid) == pid_list.end())
+            pid_list.push_back(s_pid);
+    }
+
     // Count # of thrown and simulated events in each bin.
-    // Helper variables.
     int sizes[6];
     sizes[0] = b_Q2.size()-1;
     sizes[1] = b_nu.size()-1;
@@ -96,16 +108,22 @@ int run(char *gen_file, char *sim_file, std::vector<double> &b_Q2,
     sizes[4] = b_pPQ.size()-1;
     sizes[5] = sizes[0]*sizes[1]*sizes[2]*sizes[3]*sizes[4];
 
-    int t_evn[sizes[5]];
-    int s_evn[sizes[5]];
-    count_events(t_evn, thrown, sizes, b_Q2, b_nu, b_zh, b_Pt2, b_pPQ);
-    count_events(s_evn, simul,  sizes, b_Q2, b_nu, b_zh, b_Pt2, b_pPQ);
+    for (double pid_tmp : pid_list) {
+        int pid = (int) pid_tmp;
 
-    // Compute and save acceptance ratios.
-    for (int i = 0; i < sizes[5]; ++i) {
-        double acc = (double)s_evn[i] / (double)t_evn[i];
-        if (std::fpclassify(acc) != FP_NORMAL || acc > 1) acc = 0;
-        fprintf(t_out, "%.12f\n", acc);
+        int t_evn[sizes[5]];
+        int s_evn[sizes[5]];
+        count_events(t_evn, thrown, pid, sizes, b_Q2, b_nu, b_zh, b_Pt2, b_pPQ);
+        count_events(s_evn, simul,  pid, sizes, b_Q2, b_nu, b_zh, b_Pt2, b_pPQ);
+
+        fprintf(t_out, "%d ", pid);
+        // Compute and save acceptance ratios.
+        for (int i = 0; i < sizes[5]; ++i) {
+            double acc = (double)s_evn[i] / (double)t_evn[i];
+            if (std::fpclassify(acc) != FP_NORMAL || acc > 1) acc = 0;
+            fprintf(t_out, "%.12f ", acc);
+        }
+        fprintf(t_out, "\n");
     }
 
     // Clean up after ourselves.
