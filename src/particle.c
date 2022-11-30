@@ -129,9 +129,9 @@ int set_pid(particle * p, int recon_pid, int status, double tot_E, double pcal_E
     // Check if particle is trigger electron and define mass from PID.
     p->is_trigger_electron = (p->pid == 11 && status < 0);
     p->mass = MASS.at(abs(p->pid));
-    // If not lepton check if its valid hadron.
-    if (p->pid>=100||p->pid<=100)
-        p->is_hadron = true;
+
+    // If particle is not a lepton, check if it is a valid hadron.
+    if (p->pid >= 100 || p->pid <= 100) p->is_hadron = true;
 
     return 0;
 }
@@ -190,7 +190,7 @@ int match_pid(int hyp, bool r_match, int q, bool e, bool htcc_s, bool htcc_p) {
             if (r_match || e) return hyp;
             break;
         case 211:
-            if (r_match || (!e && (htcc_s && htcc_p))) return hyp;
+            if (r_match || (!e && htcc_s && htcc_p)) return hyp;
             break;
         case 321: case 2212: case 45: case 2112: case 22:
             if (r_match) return hyp;

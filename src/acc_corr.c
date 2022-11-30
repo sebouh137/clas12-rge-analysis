@@ -32,24 +32,10 @@ int run(char *gen_file, char *sim_file, std::vector<double> &b_Q2,
         std::vector<double> &b_nu,  std::vector<double> &b_zh,
         std::vector<double> &b_Pt2, std::vector<double> &b_pPQ, bool use_fmt)
 {
-    printf("\n --- INPUT: ---\n");
-    printf("b_Q2    = [");
-    for (const double &i : b_Q2) printf("%5.2f, ", i);
-    printf("]\nb_nu    = [");
-    for (const double &i : b_nu) printf("%5.2f, ", i);
-    printf("]\nb_zh    = [");
-    for (const double &i : b_zh) printf("%5.2f, ", i);
-    printf("]\nb_Pt2   = [");
-    for (const double &i : b_Pt2) printf("%5.2f, ", i);
-    printf("]\nb_phiPQ = [");
-    for (const double &i : b_pPQ) printf("%5.2f, ", i);
-    printf("]\ngen_file = %s\n", gen_file);
-    printf("sim_file = %s\n", sim_file);
-    printf(" --- ------ ---\n\n");
-
     // Open input files and load TTrees.
-    TFile *g_in = TFile::Open(gen_file, "READ");
-    if (!g_in || g_in->IsZombie()) return 9;
+    TFile *t_in = TFile::Open(gen_file, "READ");
+    if (!t_in || t_in->IsZombie()) return 9;
+
     TFile *s_in = TFile::Open(sim_file, "READ");
     if (!s_in || s_in->IsZombie()) return 10;
 
@@ -59,7 +45,7 @@ int run(char *gen_file, char *sim_file, std::vector<double> &b_Q2,
     FILE *t_out = fopen("../data/acc_corr.txt", "w");
 
     // Open TTrees.
-    TNtuple *thrown = g_in->Get<TNtuple>("ntuple_thrown");
+    TNtuple *thrown = t_in->Get<TNtuple>("ntuple_thrown");
     if (thrown == NULL) return 12;
 
     TTree *simul;
@@ -74,32 +60,46 @@ int run(char *gen_file, char *sim_file, std::vector<double> &b_Q2,
     int Pt2s = b_Pt2.size()-1;
     int pPQs = b_pPQ.size()-1;
 
-    // Count # of generated events in each bin.
-    double g_evn[Q2s][nus][zhs][Pt2s][pPQs];
-    Float_t g_Q2, g_nu, g_zh, g_Pt2, g_pPQ;
-    thrown->SetBranchAddress(S_Q2,    &g_Q2);
-    thrown->SetBranchAddress(S_NU,    &g_nu);
-    thrown->SetBranchAddress(S_ZH,    &g_zh);
-    thrown->SetBranchAddress(S_PT2,   &g_Pt2);
-    thrown->SetBranchAddress(S_PHIPQ, &g_pPQ);
+    // Count # of thrown events in each bin.
+    int t_evn[Q2s][nus][zhs][Pt2s][pPQs];
+    for (int i0 = 0; i0 < Q2s; ++i0)
+        for (int i1 = 0; i1 < nus; ++i1)
+            for (int i2 = 0; i2 < zhs; ++i2)
+                for (int i3 = 0; i3 < Pt2s; ++i3)
+                    for (int i4 = 0; i4 < pPQs; ++ i4)
+                        t_evn[i0][i1][i2][i3][i4] = 0;
+
+    Float_t t_Q2, t_nu, t_zh, t_Pt2, t_pPQ;
+    thrown->SetBranchAddress(S_Q2,    &t_Q2);
+    thrown->SetBranchAddress(S_NU,    &t_nu);
+    thrown->SetBranchAddress(S_ZH,    &t_zh);
+    thrown->SetBranchAddress(S_PT2,   &t_Pt2);
+    thrown->SetBranchAddress(S_PHIPQ, &t_pPQ);
     for (int evn = 0; evn < thrown->GetEntries(); ++evn) {
         int i0, i1, i2, i3, i4;
         thrown->GetEntry(evn);
 
         // Find position of event.
-        i0 = find_pos(g_Q2,  b_Q2,  Q2s);
-        i1 = find_pos(g_nu,  b_nu,  nus);
-        i2 = find_pos(g_zh,  b_zh,  zhs);
-        i3 = find_pos(g_Pt2, b_Pt2, Pt2s);
-        i4 = find_pos(g_pPQ, b_pPQ, pPQs);
+        i0 = find_pos(t_Q2,  b_Q2,  Q2s);
+        i1 = find_pos(t_nu,  b_nu,  nus);
+        i2 = find_pos(t_zh,  b_zh,  zhs);
+        i3 = find_pos(t_Pt2, b_Pt2, Pt2s);
+        i4 = find_pos(t_pPQ, b_pPQ, pPQs);
         if (i0 < 0 || i1 < 0 || i2 < 0 || i3 < 0 || i4 < 0) continue;
 
         // Increase counter.
-        ++g_evn[i0][i1][i2][i3][i4];
+        ++t_evn[i0][i1][i2][i3][i4];
     }
 
     // Count # of simulated events in each bin.
-    double s_evn[Q2s][nus][zhs][Pt2s][pPQs];
+    int s_evn[Q2s][nus][zhs][Pt2s][pPQs];
+    for (int i0 = 0; i0 < Q2s; ++i0)
+        for (int i1 = 0; i1 < nus; ++i1)
+            for (int i2 = 0; i2 < zhs; ++i2)
+                for (int i3 = 0; i3 < Pt2s; ++i3)
+                    for (int i4 = 0; i4 < pPQs; ++ i4)
+                        s_evn[i0][i1][i2][i3][i4] = 0;
+
     Float_t s_Q2, s_nu, s_zh, s_Pt2, s_pPQ;
     simul->SetBranchAddress(S_Q2,    &s_Q2);
     simul->SetBranchAddress(S_NU,    &s_nu);
@@ -111,18 +111,11 @@ int run(char *gen_file, char *sim_file, std::vector<double> &b_Q2,
         simul->GetEntry(evn);
 
         // Find position of event.
-        // TODO. I think the error is here. I need both the particle and the
-        //       electron variables on the same "event"!
         i0 = find_pos(s_Q2,  b_Q2,  Q2s);
         i1 = find_pos(s_nu,  b_nu,  nus);
         i2 = find_pos(s_zh,  b_zh,  zhs);
         i3 = find_pos(s_Pt2, b_Pt2, Pt2s);
         i4 = find_pos(s_pPQ, b_pPQ, pPQs);
-        if (i0 < 0) printf("i0 < 0!\n");
-        if (i1 < 0) printf("i1 < 0!\n");
-        if (i2 < 0) printf("i2 < 0!\n");
-        if (i3 < 0) printf("i3 < 0!\n");
-        if (i4 < 0) printf("i4 < 0!\n");
         if (i0 < 0 || i1 < 0 || i2 < 0 || i3 < 0 || i4 < 0) continue;
 
         // Increase counter.
@@ -135,8 +128,8 @@ int run(char *gen_file, char *sim_file, std::vector<double> &b_Q2,
             for (int i2 = 0; i2 < zhs; ++i2) {
                 for (int i3 = 0; i3 < Pt2s; ++i3) {
                     for (int i4 = 0; i4 < pPQs; ++i4) {
-                        printf("%5.2f/%5.2f ", s_evn[i0][i1][i2][i3][i4],
-                                g_evn[i0][i1][i2][i3][i4]);
+                        printf("%5d/%5d ", s_evn[i0][i1][i2][i3][i4],
+                                t_evn[i0][i1][i2][i3][i4]);
                     }
                     printf("\n");
                 }
@@ -149,7 +142,7 @@ int run(char *gen_file, char *sim_file, std::vector<double> &b_Q2,
     printf("\n");
 
     // Clean up after ourselves.
-    g_in->Close();
+    t_in->Close();
     s_in->Close();
     fclose(t_out);
     free(gen_file);

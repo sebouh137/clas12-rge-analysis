@@ -247,7 +247,7 @@ int run(char *in_filename, bool debug, int nevn, int run_no, double beam_E) {
             int pindex = rtrk.pindex->at(pos); // pindex is always equal to pos!
 
             // Conditional to avoid trigger electron double counting.
-            if (trigger_pindex==pindex&&trigger_pos==pos) continue;
+            if (trigger_pindex == pindex && trigger_pos == pos) continue;
 
             // Get reconstructed particle from DC and from FMT.
             particle p[2];
@@ -316,12 +316,15 @@ int run(char *in_filename, bool debug, int nevn, int run_no, double beam_E) {
                         p[pi].vz, p[pi].px, p[pi].py, p[pi].pz, P(p[pi]),
                         theta_lab(p[pi]), phi_lab(p[pi]), p[pi].beta, chi2, ndf,
                         pcal_E, ecin_E, ecou_E, tot_E, (tof - tre_tof),
-                        Q2(p[pi], beam_E), nu(p[pi], beam_E),
-                        Xb(p[pi], beam_E), W2(p[pi], beam_E),
-                        zh(p[pi],p_el[pi], beam_E), Pt2(p[pi],p_el[pi], beam_E),
-                        Pl2(p[pi],p_el[pi], beam_E),
-                        phi_pq(p[pi],p_el[pi], beam_E),
-                        theta_pq(p[pi],p_el[pi], beam_E)
+                        // DIS e- functions just use the trigger electron.
+                        Q2(p_el[pi], beam_E), nu(p_el[pi], beam_E),
+                        Xb(p_el[pi], beam_E), W2(p_el[pi], beam_E),
+                        // SIDIS functions use both particle and electron.
+                        zh(p[pi], p_el[pi], beam_E),
+                        Pt2(p[pi], p_el[pi], beam_E),
+                        Pl2(p[pi], p_el[pi], beam_E),
+                        phi_pq(p[pi], p_el[pi], beam_E),
+                        theta_pq(p[pi], p_el[pi], beam_E)
                 };
 
                 t_out[pi]->Fill(v);
