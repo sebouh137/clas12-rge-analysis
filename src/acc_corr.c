@@ -28,6 +28,44 @@ int find_pos(double val, std::vector<double> vec, int size) {
     return -1;
 }
 
+int count_events(int *evn_cnt, TTree *tree, int *sizes,
+        std::vector<double> &b_Q2, std::vector<double> &b_nu,
+        std::vector<double> &b_zh, std::vector<double> &b_Pt2,
+        std::vector<double> &b_pPQ)
+{
+    for (int i = 0; i < sizes[5]; ++i) evn_cnt[i] = 0;
+
+    Float_t s_Q2, s_nu, s_zh, s_Pt2, s_pPQ;
+    tree->SetBranchAddress(S_Q2,    &s_Q2);
+    tree->SetBranchAddress(S_NU,    &s_nu);
+    tree->SetBranchAddress(S_ZH,    &s_zh);
+    tree->SetBranchAddress(S_PT2,   &s_Pt2);
+    tree->SetBranchAddress(S_PHIPQ, &s_pPQ);
+    for (int evn = 0; evn < tree->GetEntries(); ++evn) {
+        int i0, i1, i2, i3, i4;
+        tree->GetEntry(evn);
+
+        // Find position of event.
+        i0 = find_pos(s_Q2,  b_Q2,  sizes[0]);
+        i1 = find_pos(s_nu,  b_nu,  sizes[1]);
+        i2 = find_pos(s_zh,  b_zh,  sizes[2]);
+        i3 = find_pos(s_Pt2, b_Pt2, sizes[3]);
+        i4 = find_pos(s_pPQ, b_pPQ, sizes[4]);
+        if (i0 < 0 || i1 < 0 || i2 < 0 || i3 < 0 || i4 < 0) continue;
+
+        // Increase counter.
+        ++evn_cnt[
+                i0*sizes[1]*sizes[2]*sizes[3]*sizes[4] +
+                i1*sizes[2]*sizes[3]*sizes[4] +
+                i2*sizes[3]*sizes[4] +
+                i3*sizes[4] +
+                i4
+        ];
+    }
+
+    return 0;
+}
+
 int run(char *gen_file, char *sim_file, std::vector<double> &b_Q2,
         std::vector<double> &b_nu,  std::vector<double> &b_zh,
         std::vector<double> &b_Pt2, std::vector<double> &b_pPQ, bool use_fmt)
@@ -53,83 +91,33 @@ int run(char *gen_file, char *sim_file, std::vector<double> &b_Q2,
     else          simul = s_in->Get<TTree>("fmt");
     if (simul == NULL) return 13;
 
+    // Count # of thrown and simulated events in each bin.
     // Helper variables.
-    int Q2s  = b_Q2.size()-1;
-    int nus  = b_nu.size()-1;
-    int zhs  = b_zh.size()-1;
-    int Pt2s = b_Pt2.size()-1;
-    int pPQs = b_pPQ.size()-1;
+    int sizes[6];
+    sizes[0] = b_Q2.size()-1;
+    sizes[1] = b_nu.size()-1;
+    sizes[2] = b_zh.size()-1;
+    sizes[3] = b_Pt2.size()-1;
+    sizes[4] = b_pPQ.size()-1;
+    sizes[5] = sizes[0]*sizes[1]*sizes[2]*sizes[3]*sizes[4];
 
-    // Count # of thrown events in each bin.
-    int t_evn[Q2s][nus][zhs][Pt2s][pPQs];
-    for (int i0 = 0; i0 < Q2s; ++i0)
-        for (int i1 = 0; i1 < nus; ++i1)
-            for (int i2 = 0; i2 < zhs; ++i2)
-                for (int i3 = 0; i3 < Pt2s; ++i3)
-                    for (int i4 = 0; i4 < pPQs; ++ i4)
-                        t_evn[i0][i1][i2][i3][i4] = 0;
-
-    Float_t t_Q2, t_nu, t_zh, t_Pt2, t_pPQ;
-    thrown->SetBranchAddress(S_Q2,    &t_Q2);
-    thrown->SetBranchAddress(S_NU,    &t_nu);
-    thrown->SetBranchAddress(S_ZH,    &t_zh);
-    thrown->SetBranchAddress(S_PT2,   &t_Pt2);
-    thrown->SetBranchAddress(S_PHIPQ, &t_pPQ);
-    for (int evn = 0; evn < thrown->GetEntries(); ++evn) {
-        int i0, i1, i2, i3, i4;
-        thrown->GetEntry(evn);
-
-        // Find position of event.
-        i0 = find_pos(t_Q2,  b_Q2,  Q2s);
-        i1 = find_pos(t_nu,  b_nu,  nus);
-        i2 = find_pos(t_zh,  b_zh,  zhs);
-        i3 = find_pos(t_Pt2, b_Pt2, Pt2s);
-        i4 = find_pos(t_pPQ, b_pPQ, pPQs);
-        if (i0 < 0 || i1 < 0 || i2 < 0 || i3 < 0 || i4 < 0) continue;
-
-        // Increase counter.
-        ++t_evn[i0][i1][i2][i3][i4];
-    }
-
-    // Count # of simulated events in each bin.
-    int s_evn[Q2s][nus][zhs][Pt2s][pPQs];
-    for (int i0 = 0; i0 < Q2s; ++i0)
-        for (int i1 = 0; i1 < nus; ++i1)
-            for (int i2 = 0; i2 < zhs; ++i2)
-                for (int i3 = 0; i3 < Pt2s; ++i3)
-                    for (int i4 = 0; i4 < pPQs; ++ i4)
-                        s_evn[i0][i1][i2][i3][i4] = 0;
-
-    Float_t s_Q2, s_nu, s_zh, s_Pt2, s_pPQ;
-    simul->SetBranchAddress(S_Q2,    &s_Q2);
-    simul->SetBranchAddress(S_NU,    &s_nu);
-    simul->SetBranchAddress(S_ZH,    &s_zh);
-    simul->SetBranchAddress(S_PT2,   &s_Pt2);
-    simul->SetBranchAddress(S_PHIPQ, &s_pPQ);
-    for (int evn = 0; evn < simul->GetEntries(); ++evn) {
-        int i0, i1, i2, i3, i4;
-        simul->GetEntry(evn);
-
-        // Find position of event.
-        i0 = find_pos(s_Q2,  b_Q2,  Q2s);
-        i1 = find_pos(s_nu,  b_nu,  nus);
-        i2 = find_pos(s_zh,  b_zh,  zhs);
-        i3 = find_pos(s_Pt2, b_Pt2, Pt2s);
-        i4 = find_pos(s_pPQ, b_pPQ, pPQs);
-        if (i0 < 0 || i1 < 0 || i2 < 0 || i3 < 0 || i4 < 0) continue;
-
-        // Increase counter.
-        ++s_evn[i0][i1][i2][i3][i4];
-    }
+    int t_evn[sizes[5]];
+    int s_evn[sizes[5]];
+    count_events(t_evn, thrown, sizes, b_Q2, b_nu, b_zh, b_Pt2, b_pPQ);
+    count_events(s_evn, simul,  sizes, b_Q2, b_nu, b_zh, b_Pt2, b_pPQ);
 
     // TODO. Compute and save acceptance ratios.
-    for (int i0 = 0; i0 < Q2s; ++i0) {
-        for (int i1 = 0; i1 < nus; ++i1) {
-            for (int i2 = 0; i2 < zhs; ++i2) {
-                for (int i3 = 0; i3 < Pt2s; ++i3) {
-                    for (int i4 = 0; i4 < pPQs; ++i4) {
-                        printf("%5d/%5d ", s_evn[i0][i1][i2][i3][i4],
-                                t_evn[i0][i1][i2][i3][i4]);
+    for (int i0 = 0; i0 < sizes[0]; ++i0) {
+        for (int i1 = 0; i1 < sizes[1]; ++i1) {
+            for (int i2 = 0; i2 < sizes[2]; ++i2) {
+                for (int i3 = 0; i3 < sizes[3]; ++i3) {
+                    for (int i4 = 0; i4 < sizes[4]; ++i4) {
+                        int i = i0*sizes[1]*sizes[2]*sizes[3]*sizes[4] +
+                                i1*sizes[2]*sizes[3]*sizes[4] +
+                                i2*sizes[3]*sizes[4] +
+                                i3*sizes[4] +
+                                i4;
+                        printf("%5d/%5d ", s_evn[i], t_evn[i]);
                     }
                     printf("\n");
                 }
