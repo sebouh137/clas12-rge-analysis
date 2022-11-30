@@ -18,12 +18,20 @@
 #include <TNtuple.h>
 #include "../lib/io_handler.h"
 
+// Print contents of vector v to file f.
+int print_vector(FILE *f, std::vector<double> &v) {
+    for (double d : v) fprintf(f, "%12.9f ", d);
+    fprintf(f, "\n");
+    return 0;
+}
+
 // Return position of val in vec or -1 if val is not inside vec.
 int find_pos(double val, std::vector<double> vec, int size) {
     for (int i = 0; i < size; ++i) if (vec[i] < val && val < vec[i+1]) return i;
     return -1;
 }
 
+// Count number of events in tree for each bin for a given pid.
 int count_events(int *evn_cnt, TTree *tree, int pid, int *sizes,
         std::vector<double> &b_Q2, std::vector<double> &b_nu,
         std::vector<double> &b_zh, std::vector<double> &b_Pt2,
@@ -80,13 +88,18 @@ int run(char *gen_file, char *sim_file, std::vector<double> &b_Q2,
     if (!access(out_file, F_OK)) return 11;
     FILE *t_out = fopen("../data/acc_corr.txt", "w");
 
+    // Write binning to output file.
+    print_vector(t_out, b_Q2);
+    print_vector(t_out, b_nu);
+    print_vector(t_out, b_zh);
+    print_vector(t_out, b_Pt2);
+    print_vector(t_out, b_pPQ);
+
     // Open TTrees.
     TNtuple *thrown = t_in->Get<TNtuple>("ntuple_thrown");
     if (thrown == NULL) return 12;
 
-    TTree *simul;
-    if (!use_fmt) simul = s_in->Get<TTree>("dc");
-    else          simul = s_in->Get<TTree>("fmt");
+    TTree *simul = use_fmt ? s_in->Get<TTree>("fmt") : s_in->Get<TTree>("dc");
     if (simul == NULL) return 13;
 
     // Get list of PIDs.
@@ -95,7 +108,7 @@ int run(char *gen_file, char *sim_file, std::vector<double> &b_Q2,
     thrown->SetBranchAddress(S_PID, &s_pid);
     for (int evn = 0; evn < thrown->GetEntries(); ++evn) {
         thrown->GetEntry(evn);
-        if (std::find(pid_list.begin(), pid_list.end(), s_pid) == pid_list.end())
+        if (std::find(pid_list.begin(),pid_list.end(),s_pid) == pid_list.end())
             pid_list.push_back(s_pid);
     }
 
@@ -110,6 +123,8 @@ int run(char *gen_file, char *sim_file, std::vector<double> &b_Q2,
 
     for (double pid_tmp : pid_list) {
         int pid = (int) pid_tmp;
+        printf("Working on PID %5d...", pid);
+        fflush(stdout);
 
         int t_evn[sizes[5]];
         int s_evn[sizes[5]];
@@ -124,6 +139,7 @@ int run(char *gen_file, char *sim_file, std::vector<double> &b_Q2,
             fprintf(t_out, "%.12f ", acc);
         }
         fprintf(t_out, "\n");
+        printf(" Done!\n");
     }
 
     // Clean up after ourselves.
