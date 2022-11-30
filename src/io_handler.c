@@ -30,8 +30,8 @@ int handle_root_filename(char *input_file, int *run_no, double *beam_energy) {
     int chk = check_root_filename(input_file);
     if (chk) return chk;
     // Get run number and beam energy from filename.
-    if (!get_run_no(input_file, run_no))  return 5;
-    if (get_beam_energy(*run_no, beam_energy))      return 6;
+    if (!get_run_no(input_file, run_no))       return 5;
+    if (get_beam_energy(*run_no, beam_energy)) return 6;
 
     return 0;
 }
@@ -49,6 +49,30 @@ int handle_hipo_filename(char *input_file, int *run_no) {
     // Get run number from filename.
     if (!get_run_no(input_file, run_no)) return 5;
 
+    return 0;
+}
+
+// Grab multiple arguments and fill a vector of doubles with it.
+// TODO. This doesn't accept negative numbers!
+int grab_multiarg(int argc, char **argv, int *optind, std::vector<double> &v) {
+    // Initialize and fill array.
+    int idx = *optind - 1;
+    char *next;
+    while (idx < argc) {
+        next = strdup(argv[idx++]);
+        if (next[0] >= '0' && next[0] <= '9') v.push_back(atof(next));
+        else                                  break;
+    }
+
+    // Continue with getopts.
+    *optind = idx - 1;
+    return 0;
+}
+
+// Grab filename from optarg.
+int grab_filename(char *optarg, char **file) {
+    *file = (char *) malloc(strlen(optarg) + 1);
+    strcpy(*file, optarg);
     return 0;
 }
 

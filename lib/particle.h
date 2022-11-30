@@ -44,13 +44,14 @@ typedef struct {
 
 // particle functions.
 particle particle_init();
-particle particle_init(REC_Particle * rp, REC_Track * rt, int pos);
-particle particle_init(REC_Particle * rp, REC_Track * rt, FMT_Tracks * ft,
+particle particle_init(REC_Particle *rp, REC_Track *rt, int pos);
+particle particle_init(REC_Particle *rp, REC_Track *rt, FMT_Tracks *ft,
         int pos);
-particle particle_init(int charge, double beta, int sector, double vx, double vy,
-        double vz, double px, double py, double pz);
-int set_pid(particle * p, int recon_pid, int status, double tot_E, double pcal_E,
-        int htcc_nphe, int ltcc_nphe, double sf_params[SF_NPARAMS][2]);
+particle particle_init(int charge, double beta, int sector, double vx,
+        double vy, double vz, double px, double py, double pz);
+int set_pid(particle *p, int recon_pid, int status, double tot_E,
+        double pcal_E, int htcc_nphe, int ltcc_nphe,
+        double sf_params[SF_NPARAMS][2]);
 bool is_electron(double tot_E, double pcal_E, double htcc_nphe, double p,
         double pars[SF_NPARAMS][2]);
 int assign_neutral_pid(double tot_E, double beta);

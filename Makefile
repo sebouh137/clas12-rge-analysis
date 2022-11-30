@@ -28,39 +28,43 @@ CXX         := $(CXX) $(CFLAGS)
 # ROOT.
 ROOTCFLAGS  := $(shell root-config --cflags)
 ROOTLDFLAGS := $(shell root-config --ldflags)
-ROOTLIBS    := $(shell root-config --libs) -lEG
+RLIBS       := $(shell root-config --libs) -lEG
 RXX         := $(CXX) $(ROOTCFLAGS)
 
 # HIPO.
 HIPOCFLAGS  := -I$(HIPO)/hipo4
-HIPOLIBS    := $(ROOTLIBS) -L$(HIPO)/lib -lhipo4
+HLIBS       := $(RLIBS) -L$(HIPO)/lib -lhipo4
 HXX         := $(RXX) $(HIPOCFLAGS)
 
 # Object lists.
-OBJS_HIPO2ROOT   := $(BLD)/bank_containers.o $(BLD)/file_handler.o \
-				    $(BLD)/io_handler.o
-OBJS_EXTRACTSF   := $(BLD)/bank_containers.o $(BLD)/constants.o \
-				    $(BLD)/file_handler.o $(BLD)/io_handler.o $(BLD)/utilities.o
-OBJS_MAKENTUPLES := $(BLD)/bank_containers.o $(BLD)/constants.o \
-			        $(BLD)/file_handler.o $(BLD)/io_handler.o \
-					$(BLD)/particle.o $(BLD)/utilities.o
-OBJS_DRAWPLOTS   := $(BLD)/constants.o $(BLD)/file_handler.o \
-				    $(BLD)/io_handler.o $(BLD)/utilities.o
+O_HIPO2ROOT   := $(BLD)/bank_containers.o $(BLD)/file_handler.o \
+				 $(BLD)/io_handler.o
+O_EXTRACTSF   := $(BLD)/bank_containers.o $(BLD)/constants.o \
+				 $(BLD)/file_handler.o $(BLD)/io_handler.o $(BLD)/utilities.o
+O_ACCCORR     := $(BLD)/file_handler.o $(BLD)/io_handler.o
+O_MKNTUPLES   := $(BLD)/bank_containers.o $(BLD)/constants.o \
+				 $(BLD)/file_handler.o $(BLD)/io_handler.o \
+				 $(BLD)/particle.o $(BLD)/utilities.o
+O_DRAWPLOTS   := $(BLD)/constants.o $(BLD)/file_handler.o \
+				 $(BLD)/io_handler.o $(BLD)/utilities.o
 
-all: $(BIN)/hipo2root $(BIN)/extract_sf $(BIN)/make_ntuples $(BIN)/draw_plots
+all: $(BIN)/hipo2root $(BIN)/extract_sf $(BIN)/acc_corr \
+	 $(BIN)/make_ntuples $(BIN)/draw_plots
 
-$(BIN)/hipo2root: $(OBJS_HIPO2ROOT) $(SRC)/hipo2root.c
-	$(HXX) $(OBJS_HIPO2ROOT) $(SRC)/hipo2root.c -o $(BIN)/hipo2root $(HIPOLIBS)
+$(BIN)/hipo2root: $(O_HIPO2ROOT) $(SRC)/hipo2root.c
+	$(HXX) $(O_HIPO2ROOT) $(SRC)/hipo2root.c -o $(BIN)/hipo2root $(HLIBS)
 
-$(BIN)/extract_sf: $(OBJS_EXTRACTSF) $(SRC)/extract_sf.c
-	$(HXX) $(OBJS_EXTRACTSF) $(SRC)/extract_sf.c -o $(BIN)/extract_sf $(HIPOLIBS)
+$(BIN)/extract_sf: $(O_EXTRACTSF) $(SRC)/extract_sf.c
+	$(HXX) $(O_EXTRACTSF) $(SRC)/extract_sf.c -o $(BIN)/extract_sf $(HLIBS)
 
-$(BIN)/make_ntuples: $(OBJS_MAKENTUPLES) $(SRC)/make_ntuples.c
-	$(HXX) $(OBJS_MAKENTUPLES) $(SRC)/make_ntuples.c -o $(BIN)/make_ntuples \
-	$(HIPOLIBS)
+$(BIN)/acc_corr: $(O_ACCCORR) $(SRC)/acc_corr.c
+	$(RXX) $(O_ACCCORR) $(SRC)/acc_corr.c -o $(BIN)/acc_corr $(RLIBS)
 
-$(BIN)/draw_plots: $(OBJS_DRAWPLOTS) $(SRC)/draw_plots.c
-	$(RXX) $(OBJS_DRAWPLOTS) $(SRC)/draw_plots.c -o $(BIN)/draw_plots $(ROOTLIBS)
+$(BIN)/make_ntuples: $(O_MKNTUPLES) $(SRC)/make_ntuples.c
+	$(HXX) $(O_MKNTUPLES) $(SRC)/make_ntuples.c -o $(BIN)/make_ntuples $(HLIBS)
+
+$(BIN)/draw_plots: $(O_DRAWPLOTS) $(SRC)/draw_plots.c
+	$(RXX) $(O_DRAWPLOTS) $(SRC)/draw_plots.c -o $(BIN)/draw_plots $(RLIBS)
 
 $(BLD)/bank_containers.o: $(SRC)/bank_containers.c $(LIB)/bank_containers.h
 	$(HXX) -c $(SRC)/bank_containers.c -o $(BLD)/bank_containers.o

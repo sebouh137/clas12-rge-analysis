@@ -97,7 +97,8 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no) {
     int evnsplitter = 0;
     printf("Reading %lld events from %s.\n", nevn == -1 ? t->GetEntries() :
             nevn, in_filename);
-    for (evn = 0; (evn < t->GetEntries()) && (nevn == -1 || evn < nevn); ++evn) {
+    for (evn = 0; (evn < t->GetEntries()) &&
+            (nevn == -1 || evn < nevn); ++evn) {
         if (evn >= evnsplitter) {
             if (evn != 0) printf("\33[2K\r");
             printf("[");
@@ -162,10 +163,17 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no) {
 
                 // Get detector.
                 switch(rc.layer->at(i)) {
-                    case PCAL_LYR: sf_E[PCAL_IDX][si] += rc.energy->at(i); break;
-                    case ECIN_LYR: sf_E[ECIN_IDX][si] += rc.energy->at(i); break;
-                    case ECOU_LYR: sf_E[ECOU_IDX][si] += rc.energy->at(i); break;
-                    default:       return 7;
+                    case PCAL_LYR:
+                        sf_E[PCAL_IDX][si] += rc.energy->at(i);
+                        break;
+                    case ECIN_LYR:
+                        sf_E[ECIN_IDX][si] += rc.energy->at(i);
+                        break;
+                    case ECOU_LYR:
+                        sf_E[ECOU_IDX][si] += rc.energy->at(i);
+                        break;
+                    default:
+                        return 7;
                 }
             }
 
@@ -287,7 +295,8 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no) {
             sf_polyfit[ci][si]->Draw("same");
             gcvs->Write(sf2D_name_arr[ci][si]);
             free(sf2D_name_arr[ci][si]);
-            for (int pi = 0; pi < ((int) ((SF_PMAX - SF_PMIN)/SF_PSTEP)); ++pi) {
+            for (int pi = 0; pi < ((int) ((SF_PMAX - SF_PMIN)/SF_PSTEP)); ++pi)
+            {
                 histos[sf1D_name_arr[ci][si][pi]]->Write();
                 free(sf1D_name_arr[ci][si][pi]);
             }
@@ -323,15 +332,14 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no) {
 int usage() {
     fprintf(stderr,
             "Usage: extract_sf [-f] [-n nevents] file\n"
-            " * -f: Use FMT data. If unspecified, program will use DC data.\n"
-            " * -n nevents: Number of events\n"
-            " * file: ROOT file to be processed.\n\n"
-            "    Obtain the EC sampling fraction from an input file.\n\n"
+            " * -f         : Use FMT data. If unspecified, will use DC data.\n"
+            " * -n nevents : Number of events\n"
+            " * file       : ROOT file to be processed.\n\n"
+            "Obtain the EC sampling fraction from an input file.\n\n"
     );
     return 1;
 }
 
-// Handle errs
 int handle_err(int errcode, char **file) {
     switch (errcode) {
         case 0:
@@ -372,7 +380,6 @@ int handle_err(int errcode, char **file) {
     return usage();
 }
 
-// Handle args
 int handle_args(int argc, char **argv, bool *use_fmt, int *nevents,
         char **input_file, int *run_no) {
     // Handle optional arguments.
@@ -382,10 +389,10 @@ int handle_args(int argc, char **argv, bool *use_fmt, int *nevents,
             case 'f': *use_fmt = true;         break;
             case 'n': *nevents = atoi(optarg); break;
             case  1 :
-                * input_file = (char *) malloc(strlen(optarg) + 1);
+                *input_file = (char *) malloc(strlen(optarg) + 1);
                 strcpy(*input_file, optarg);
                 break;
-            default:  return 1;
+            default: return 1;
         }
     }
     if (*nevents == 0) return 2;
@@ -394,7 +401,6 @@ int handle_args(int argc, char **argv, bool *use_fmt, int *nevents,
     return handle_root_filename(*input_file, run_no);
 }
 
-// Call program from terminal, C-style.
 int main(int argc, char **argv) {
     bool use_fmt = false;
     int nevn     = -1;
