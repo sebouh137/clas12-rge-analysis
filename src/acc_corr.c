@@ -106,28 +106,12 @@ int run(char *gen_file, char *sim_file, std::vector<double> &b_Q2,
     count_events(t_evn, thrown, sizes, b_Q2, b_nu, b_zh, b_Pt2, b_pPQ);
     count_events(s_evn, simul,  sizes, b_Q2, b_nu, b_zh, b_Pt2, b_pPQ);
 
-    // TODO. Compute and save acceptance ratios.
-    for (int i0 = 0; i0 < sizes[0]; ++i0) {
-        for (int i1 = 0; i1 < sizes[1]; ++i1) {
-            for (int i2 = 0; i2 < sizes[2]; ++i2) {
-                for (int i3 = 0; i3 < sizes[3]; ++i3) {
-                    for (int i4 = 0; i4 < sizes[4]; ++i4) {
-                        int i = i0*sizes[1]*sizes[2]*sizes[3]*sizes[4] +
-                                i1*sizes[2]*sizes[3]*sizes[4] +
-                                i2*sizes[3]*sizes[4] +
-                                i3*sizes[4] +
-                                i4;
-                        printf("%5d/%5d ", s_evn[i], t_evn[i]);
-                    }
-                    printf("\n");
-                }
-                printf("\n");
-            }
-            printf("\n");
-        }
-        printf("\n");
+    // Compute and save acceptance ratios.
+    for (int i = 0; i < sizes[5]; ++i) {
+        double acc = (double)s_evn[i] / (double)t_evn[i];
+        if (std::fpclassify(acc) != FP_NORMAL || acc > 1) acc = 0;
+        fprintf(t_out, "%.12f\n", acc);
     }
-    printf("\n");
 
     // Clean up after ourselves.
     t_in->Close();
