@@ -20,6 +20,7 @@
 
 // Print contents of vector v to file f.
 int print_vector(FILE *f, std::vector<double> &v) {
+    fprintf(f, "%ld ", v.size());
     for (double d : v) fprintf(f, "%12.9f ", d);
     fprintf(f, "\n");
     return 0;
@@ -154,7 +155,7 @@ int run(char *gen_file, char *sim_file, std::vector<double> &b_Q2,
 
 int usage() {
     fprintf(stderr,
-            "Usage: acc_corr [q:n:z:p:f:] genfile simfile\n"
+            "Usage: acc_corr [q:n:z:p:f:] [-g genfile] [-s simfile]\n"
             " * -q ...     : Q2 bins.\n"
             " * -n ...     : nu bins.\n"
             " * -z ...     : z_h bins.\n"
