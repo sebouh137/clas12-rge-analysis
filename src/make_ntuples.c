@@ -386,48 +386,53 @@ int handle_err(int errcode, char **file) {
         case 0:
             return 0;
         case 1:
-            fprintf(stderr, "Error. Bad usage of optional arguments.\n");
+            fprintf(stderr, "Error. Bad usage of optional arguments.\n\n");
             break;
         case 2:
             fprintf(stderr, "Error. nevents should be a number greater than"
-                            " 0.\n");
+                            " 0.\n\n");
             break;
         case 3:
-            fprintf(stderr, "Error. input file should be in root format.\n");
+            fprintf(stderr, "Error. input file should be in root format.\n\n");
             break;
         case 4:
-            fprintf(stderr, "Error. file does not exist!\n");
+            fprintf(stderr, "Error. file does not exist!\n\n");
             break;
         case 5:
             fprintf(stderr, "Error. Run number could not be extracted from "
-                            "filename.\n");
+                            "filename.\n\n");
             break;
         case 6:
             fprintf(stderr, "Error. Run number not in database. Add from "
-                            "RCDB.\n");
+                            "RCDB.\n\n");
             break;
         case 7:
-            fprintf(stderr, "Error. No file name provided.\n");
+            fprintf(stderr, "Error. No file name provided.\n\n");
             break;
         case 8:
-            fprintf(stderr, "Error. %s is not a valid ROOT file.\n", *file);
+            fprintf(stderr, "Error. %s is not a valid ROOT file.\n\n", *file);
             break;
         case 9:
-            fprintf(stderr, "Error. Invalid EC layer. Check bank integrity.\n");
+            fprintf(stderr, "Error. Invalid EC layer. Check bank integrity."
+                            "\n\n");
             break;
         case 10:
             fprintf(stderr, "Error. Invalid Cherenkov Counter ID. Check bank "
-                            "integrity.\n");
+                            "integrity.\n\n");
             break;
         case 11:
             // NOTE. In this scenario, a smoother behavior would be that the
             //       program calls extract_sf itself!
-            fprintf(stderr, "Error. No sampling fraction available for input "
-                            "file! Run extract_sf before generating the ntuples"
-                            ".\n");
+            fprintf(stderr, "Error. No sampling fraction available for run "
+                            "number! Run extract_sf before\ngenerating the "
+                            "ntuples.\n\n");
+            break;
+        case 12:
+            fprintf(stderr, "Error. Acceptance correction file was not found."
+                            "\n\n");
             break;
         default:
-            fprintf(stderr, "Error code %d not implemented!\n", errcode);
+            fprintf(stderr, "Error code %d not implemented!\n\n", errcode);
             return 1;
     }
 
@@ -435,14 +440,19 @@ int handle_err(int errcode, char **file) {
     return usage();
 }
 
-int handle_args(int argc, char **argv, bool *debug, int *nevents, char **file,
-        int *run_no, double *beam_energy) {
+int handle_args(int argc, char **argv, bool *debug, int *nevents,
+        char **accfile, char **file, int *run_no, double *beam_energy)
+{
     // Handle optional arguments.
     int opt;
-    while ((opt = getopt(argc, argv, "-dn:")) != -1) {
+    while ((opt = getopt(argc, argv, "-dn:a:")) != -1) {
         switch (opt) {
             case 'd': *debug   = true;         break;
             case 'n': *nevents = atoi(optarg); break;
+            case 'a':
+                *accfile = (char *) malloc(strlen(optarg) + 1);
+                strcpy(*accfile, optarg);
+                break;
             case  1 :
                 *file = (char *) malloc(strlen(optarg) + 1);
                 strcpy(*file, optarg);
@@ -462,6 +472,7 @@ int handle_args(int argc, char **argv, bool *debug, int *nevents, char **file,
 int main(int argc, char **argv) {
     bool dbg      = false;
     int nevn      = -1;
+    char *accfile = NULL;
     int run_no    = -1;
     double beam_E = -1;
     char *file    = NULL;
