@@ -39,7 +39,7 @@ int get_beam_energy(int run_no, double *beam_energy) {
         case 999106: *beam_energy = BE999106; break;
         case 999110: *beam_energy = BE999110; break;
         case 999120: *beam_energy = BE999120; break;
-        default:    return -1;
+        default:     return -1;
     }
 
     return 0;
@@ -61,3 +61,53 @@ int get_sf_params(char *fname, double sf[NSECTORS][SF_NPARAMS][2]) {
     fclose(t_in);
     return 0;
 }
+
+// Get sizes of binning arrays from acceptance correction file.
+int get_b_sizes(char *fname, long int *sizes) {
+    if (access(fname, F_OK) != 0) return 1;
+    FILE *f_in = fopen(fname, "r");
+    double dump;
+
+    for (int bi = 0; bi < 5; ++bi) {
+        fscanf(f_in, "%ld ", &sizes[bi]);
+        for (int bii = 0; bii < sizes[bi]; ++bii) fscanf(f_in, "%lf ", &dump);
+    }
+
+    fclose(f_in);
+    return 0;
+}
+
+int get_binnings(char *fname, long int *sizes, double *b_Q2, double *b_nu,
+        double *b_zh, double *b_Pt2, double *b_pPQ)
+{
+    FILE *f_in = fopen(fname, "r");
+    long int dump;
+
+    for (int bi = 0; bi < 5; ++bi) {
+        fscanf(f_in, "%ld ", &dump);
+        for (int bii = 0; bii < sizes[bi]; ++bii) {
+            if (bi == 0) fscanf(f_in, "%lf ", &b_Q2[bii]);
+            if (bi == 1) fscanf(f_in, "%lf ", &b_nu[bii]);
+            if (bi == 2) fscanf(f_in, "%lf ", &b_zh[bii]);
+            if (bi == 3) fscanf(f_in, "%lf ", &b_Pt2[bii]);
+            if (bi == 4) fscanf(f_in, "%lf ", &b_pPQ[bii]);
+        }
+    }
+
+    fclose(f_in);
+    return 0;
+}
+
+// Get array size for acceptance correction from file.
+// int get_ac_size(char *fname, std::vector<double> b_Q2,
+//         std::vector<double> b_nu,  std::vector<double> b_zh,
+//         std::vector<double> b_Pt2, std::vector<double> b_pPQ)
+// {
+//     if (access(fname, F_OK) != 0) return 1;
+//     FILE *t_in = fopen(fname, "r");
+//
+//
+// }
+
+// // Get acceptance correction from file.
+// int get_acc_correction(char *fname, )

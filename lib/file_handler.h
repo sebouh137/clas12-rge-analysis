@@ -20,10 +20,17 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <vector>
 #include "constants.h"
 
 int get_run_no(char *input_file, int *run_no_int);
 int get_beam_energy(int run_no, double *beam_energy);
 int get_sf_params(char *fname, double sf[NSECTORS][SF_NPARAMS][2]);
+int get_b_sizes(char *fname, long int *sizes);
+int get_binnings(char *fname, long int *sizes, double *b_Q2, double *b_nu,
+        double *b_zh, double *b_Pt2, double *b_pPQ);
+// int get_ac_size(char *fname, std::vector<double> b_Q2,
+//         std::vector<double> b_nu,  std::vector<double> b_zh,
+//         std::vector<double> b_Pt2, std::vector<double> b_pPQ);
 
 #endif

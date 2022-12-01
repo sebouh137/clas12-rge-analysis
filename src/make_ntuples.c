@@ -70,11 +70,46 @@ double get_tof(REC_Scintillator rsci, REC_Calorimeter rcal, int pindex) {
     return tof;
 }
 
-int run(char *in_filename, bool debug, int nevn, int run_no, double beam_E) {
+int run(char *in_filename, bool debug, int nevn, char *ac_filename, int run_no,
+        double beam_E)
+{
+    // Get sampling fraction.
     double sf_params[NSECTORS][SF_NPARAMS][2];
     if (get_sf_params(Form("../data/sf_params_%06d.txt", run_no), sf_params))
         return 11;
 
+    // Get acceptance correction
+    long int b_sizes[5];
+    if (ac_filename != NULL && get_b_sizes(ac_filename, b_sizes)) return 12;
+    if (ac_filename == NULL) for (int i = 0; i < 5; ++i) b_sizes[i] = 1;
+    // for (int i = 0; i < 5; ++i) printf("  * %d\n", b_sizes[i]);
+
+    double b_Q2 [b_sizes[0]];
+    double b_nu [b_sizes[1]];
+    double b_zh [b_sizes[2]];
+    double b_Pt2[b_sizes[3]];
+    double b_pPQ[b_sizes[4]];
+    if (ac_filename != NULL)
+        get_binnings(ac_filename, b_sizes, b_Q2, b_nu, b_zh, b_Pt2, b_pPQ);
+
+    for (int bi = 0; bi < 5; ++bi) {
+        printf("binning[%ld]: [", b_sizes[bi]);
+        for (int bii = 0; bii < b_sizes[bi]; ++bii) {
+            if (bi == 0) printf("%lf, ", b_Q2[bii]);
+            if (bi == 1) printf("%lf, ", b_nu[bii]);
+            if (bi == 2) printf("%lf, ", b_zh[bii]);
+            if (bi == 3) printf("%lf, ", b_Pt2[bii]);
+            if (bi == 4) printf("%lf, ", b_pPQ[bii]);
+        }
+        printf("\b\b]\n");
+    }
+
+    // int sizes[6];
+    // if (ac_filename != NULL &&
+    //         get_ac_sizes(ac_filename, sizes, b_Q2, b_nu, b_zh, b_Pt2, b_pPQ))
+    //     return 12;
+
+    // Create output file.
     char *out_filename = (char *) malloc(128 * sizeof(char));
     sprintf(out_filename, "../root_io/ntuples.root");
 
@@ -363,15 +398,17 @@ int run(char *in_filename, bool debug, int nevn, int run_no, double beam_E) {
     f_in ->Close();
     f_out->Close();
     free(in_filename);
+    if (ac_filename != NULL) free(ac_filename);
 
     return 0;
 }
 
 int usage() {
     fprintf(stderr,
-            "Usage: make_ntuples [-fd] [-n nevents] file\n"
-            " * -d         : Activate debug mode.\n"
+            "Usage: make_ntuples [-fd] [-n nevents] [-a accfile] file\n"
+            " * -d         : activate debug mode.\n"
             " * -n nevents : number of events.\n"
+            " * -a accfile : apply acceptance correction using accfile.\n"
             " * file       : ROOT file. Expected file format: "
             "<text>run_no.root`.\n\n"
             "    Generate ntuples relevant to SIDIS analysis based on the "
@@ -477,7 +514,8 @@ int main(int argc, char **argv) {
     double beam_E = -1;
     char *file    = NULL;
 
-    int errcode = handle_args(argc, argv, &dbg, &nevn, &file, &run_no, &beam_E);
-    if (errcode == 0) errcode = run(file, dbg, nevn, run_no, beam_E);
+    int errcode = handle_args(argc, argv, &dbg, &nevn, &accfile, &file, &run_no,
+            &beam_E);
+    if (errcode == 0) errcode = run(file, dbg, nevn, accfile, run_no, beam_E);
     return handle_err(errcode, &file);
 }
