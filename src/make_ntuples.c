@@ -80,26 +80,16 @@ int run(char *in_filename, bool debug, int nevn, char *ac_filename, int run_no,
 
     // Get acceptance correction
     long int b_sizes[5];
-    if (ac_filename != NULL && get_b_sizes(ac_filename, b_sizes)) return 12;
-    if (ac_filename == NULL) for (int i = 0; i < 5; ++i) b_sizes[i] = 1;
-    // for (int i = 0; i < 5; ++i) printf("  * %d\n", b_sizes[i]);
+    double **binnings;
 
-    double b_Q2 [b_sizes[0]];
-    double b_nu [b_sizes[1]];
-    double b_zh [b_sizes[2]];
-    double b_Pt2[b_sizes[3]];
-    double b_pPQ[b_sizes[4]];
-    if (ac_filename != NULL)
-        get_binnings(ac_filename, b_sizes, b_Q2, b_nu, b_zh, b_Pt2, b_pPQ);
+    binnings = (double **) malloc(5 * sizeof(*binnings));
+    if (ac_filename != NULL && get_binnings(ac_filename, b_sizes, binnings))
+        return 12;
 
     for (int bi = 0; bi < 5; ++bi) {
         printf("binning[%ld]: [", b_sizes[bi]);
         for (int bii = 0; bii < b_sizes[bi]; ++bii) {
-            if (bi == 0) printf("%lf, ", b_Q2[bii]);
-            if (bi == 1) printf("%lf, ", b_nu[bii]);
-            if (bi == 2) printf("%lf, ", b_zh[bii]);
-            if (bi == 3) printf("%lf, ", b_Pt2[bii]);
-            if (bi == 4) printf("%lf, ", b_pPQ[bii]);
+            printf("%lf, ", binnings[bi][bii]);
         }
         printf("\b\b]\n");
     }
@@ -399,6 +389,8 @@ int run(char *in_filename, bool debug, int nevn, char *ac_filename, int run_no,
     f_out->Close();
     free(in_filename);
     if (ac_filename != NULL) free(ac_filename);
+    for (int bi = 0; bi < 5; ++bi) free(binnings[bi]);
+    free(binnings);
 
     return 0;
 }
