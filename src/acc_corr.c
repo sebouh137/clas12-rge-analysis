@@ -20,7 +20,6 @@
 
 // Print contents of vector v to file f.
 int print_vector(FILE *f, std::vector<double> &v) {
-    fprintf(f, "%ld ", v.size());
     for (double d : v) fprintf(f, "%12.9f ", d);
     fprintf(f, "\n");
     return 0;
@@ -89,7 +88,14 @@ int run(char *gen_file, char *sim_file, std::vector<double> &b_Q2,
     if (!access(out_file, F_OK)) return 11;
     FILE *t_out = fopen("../data/acc_corr.txt", "w");
 
-    // Write binning to output file.
+    // Write binning sizes to output file.
+    fprintf(t_out, "%ld ", b_Q2.size());
+    fprintf(t_out, "%ld ", b_nu.size());
+    fprintf(t_out, "%ld ", b_zh.size());
+    fprintf(t_out, "%ld ", b_Pt2.size());
+    fprintf(t_out, "%ld\n", b_pPQ.size());
+
+    // Write binnings to output file.
     print_vector(t_out, b_Q2);
     print_vector(t_out, b_nu);
     print_vector(t_out, b_zh);
@@ -113,6 +119,10 @@ int run(char *gen_file, char *sim_file, std::vector<double> &b_Q2,
             pid_list.push_back(s_pid);
     }
 
+    // Write list of PIDs to output file.
+    for (double pid : pid_list) fprintf(t_out, "%d ", (int) pid);
+    fprintf(t_out, "\n");
+
     // Count # of thrown and simulated events in each bin.
     int sizes[6];
     sizes[0] = b_Q2.size()-1;
@@ -132,7 +142,6 @@ int run(char *gen_file, char *sim_file, std::vector<double> &b_Q2,
         count_events(t_evn, thrown, pid, sizes, b_Q2, b_nu, b_zh, b_Pt2, b_pPQ);
         count_events(s_evn, simul,  pid, sizes, b_Q2, b_nu, b_zh, b_Pt2, b_pPQ);
 
-        fprintf(t_out, "%d ", pid);
         // Compute and save acceptance ratios.
         for (int i = 0; i < sizes[5]; ++i) {
             double acc = (double)s_evn[i] / (double)t_evn[i];
