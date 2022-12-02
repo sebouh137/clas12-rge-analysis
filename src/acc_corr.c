@@ -18,70 +18,68 @@
 #include <TNtuple.h>
 #include "../lib/io_handler.h"
 
-// Print contents of vector v to file f.
-int print_vector(FILE *f, std::vector<double> &v) {
-    for (double d : v) fprintf(f, "%12.9f ", d);
-    fprintf(f, "\n");
-    return 0;
-}
-
 // Return position of val in vec or -1 if val is not inside vec.
-int find_pos(double val, std::vector<double> vec, int size) {
-    for (int i = 0; i < size; ++i) if (vec[i] < val && val < vec[i+1]) return i;
+int find_pos(double val, double *b, int size) {
+    for (int i = 0; i < size; ++i) if (b[i] < val && val < b[i+1]) return i;
     return -1;
 }
 
 // Count number of events in tree for each bin for a given pid.
-int count_events(int *evn_cnt, TTree *tree, int pid, int *sizes,
-        std::vector<double> &b_Q2, std::vector<double> &b_nu,
-        std::vector<double> &b_zh, std::vector<double> &b_Pt2,
-        std::vector<double> &b_pPQ)
+int count_events(int *evn_cnt, TTree *tree, int pid, int tsize, int *sizes,
+        double **binnings)
 {
-    for (int i = 0; i < sizes[5]; ++i) evn_cnt[i] = 0;
+    for (int i = 0; i < tsize; ++i) evn_cnt[i] = 0;
 
-    Float_t s_pid, s_Q2, s_nu, s_zh, s_Pt2, s_pPQ;
+    Float_t s_pid;
+    Float_t s_binning[5] = {0, 0, 0, 0, 0};
     tree->SetBranchAddress(S_PID,   &s_pid);
-    tree->SetBranchAddress(S_Q2,    &s_Q2);
-    tree->SetBranchAddress(S_NU,    &s_nu);
-    tree->SetBranchAddress(S_ZH,    &s_zh);
-    tree->SetBranchAddress(S_PT2,   &s_Pt2);
-    tree->SetBranchAddress(S_PHIPQ, &s_pPQ);
+    tree->SetBranchAddress(S_Q2,    &(s_binning[0]));
+    tree->SetBranchAddress(S_NU,    &(s_binning[1]));
+    tree->SetBranchAddress(S_ZH,    &(s_binning[2]));
+    tree->SetBranchAddress(S_PT2,   &(s_binning[3]));
+    tree->SetBranchAddress(S_PHIPQ, &(s_binning[4]));
     for (int evn = 0; evn < tree->GetEntries(); ++evn) {
         tree->GetEntry(evn);
         if (pid-0.5 < s_pid && s_pid < pid+0.5) continue;
 
         // Find position of event.
-        int i0, i1, i2, i3, i4;
-        i0 = find_pos(s_Q2,  b_Q2,  sizes[0]);
-        i1 = find_pos(s_nu,  b_nu,  sizes[1]);
-        i2 = find_pos(s_zh,  b_zh,  sizes[2]);
-        i3 = find_pos(s_Pt2, b_Pt2, sizes[3]);
-        i4 = find_pos(s_pPQ, b_pPQ, sizes[4]);
-        if (i0 < 0 || i1 < 0 || i2 < 0 || i3 < 0 || i4 < 0) continue;
+        int idx[5];
+        bool kill = false;
+        for (int bi = 0; bi < 5; ++bi) {
+            idx[bi] = find_pos(s_binning[bi], binnings[bi], sizes[bi]-1);
+            if (idx[bi] < 0) {
+                kill = true;
+                break;
+            }
+        }
+        if (kill) continue;
 
         // Increase counter.
         ++evn_cnt[
-                i0*sizes[1]*sizes[2]*sizes[3]*sizes[4] +
-                i1*sizes[2]*sizes[3]*sizes[4] +
-                i2*sizes[3]*sizes[4] +
-                i3*sizes[4] +
-                i4
+                idx[0]*(sizes[1]-1)*(sizes[2]-1)*(sizes[3]-1)*(sizes[4]-1) +
+                idx[1]*(sizes[2]-1)*(sizes[3]-1)*(sizes[4]-1) +
+                idx[2]*(sizes[3]-1)*(sizes[4]-1) +
+                idx[3]*(sizes[4]-1) +
+                idx[4]
         ];
     }
 
     return 0;
 }
 
-int run(char *gen_file, char *sim_file, std::vector<double> &b_Q2,
-        std::vector<double> &b_nu,  std::vector<double> &b_zh,
-        std::vector<double> &b_Pt2, std::vector<double> &b_pPQ, bool use_fmt)
+int run(char *gen_file, char *sim_file, int *sizes, double **binnings,
+        bool use_fmt)
 {
     // Open input files and load TTrees.
     TFile *t_in = TFile::Open(gen_file, "READ");
     if (!t_in || t_in->IsZombie()) return 9;
+    TNtuple *thrown = t_in->Get<TNtuple>("ntuple_thrown");
+    if (thrown == NULL) return 12;
 
     TFile *s_in = TFile::Open(sim_file, "READ");
     if (!s_in || s_in->IsZombie()) return 10;
+    TTree *simul = use_fmt ? s_in->Get<TTree>("fmt") : s_in->Get<TTree>("dc");
+    if (simul == NULL) return 13;
 
     // Open output file.
     const char *out_file = "../data/acc_corr.txt";
@@ -89,25 +87,16 @@ int run(char *gen_file, char *sim_file, std::vector<double> &b_Q2,
     FILE *t_out = fopen("../data/acc_corr.txt", "w");
 
     // Write binning sizes to output file.
-    fprintf(t_out, "%ld ", b_Q2.size());
-    fprintf(t_out, "%ld ", b_nu.size());
-    fprintf(t_out, "%ld ", b_zh.size());
-    fprintf(t_out, "%ld ", b_Pt2.size());
-    fprintf(t_out, "%ld\n", b_pPQ.size());
+    for (int bi = 0; bi < 5; ++bi) fprintf(t_out, "%d ", sizes[bi]);
+    fprintf(t_out, "\n");
 
     // Write binnings to output file.
-    print_vector(t_out, b_Q2);
-    print_vector(t_out, b_nu);
-    print_vector(t_out, b_zh);
-    print_vector(t_out, b_Pt2);
-    print_vector(t_out, b_pPQ);
-
-    // Open TTrees.
-    TNtuple *thrown = t_in->Get<TNtuple>("ntuple_thrown");
-    if (thrown == NULL) return 12;
-
-    TTree *simul = use_fmt ? s_in->Get<TTree>("fmt") : s_in->Get<TTree>("dc");
-    if (simul == NULL) return 13;
+    for (int bi = 0; bi < 5; ++bi) {
+        for (int bii = 0; bii < sizes[bi]; ++bii) {
+            fprintf(t_out, "%12.9f ", binnings[bi][bii]);
+        }
+        fprintf(t_out, "\n");
+    }
 
     // Get list of PIDs.
     Float_t s_pid;
@@ -120,30 +109,26 @@ int run(char *gen_file, char *sim_file, std::vector<double> &b_Q2,
     }
 
     // Write list of PIDs to output file.
+    fprintf(t_out, "%ld\n", pid_list.size());
     for (double pid : pid_list) fprintf(t_out, "%d ", (int) pid);
     fprintf(t_out, "\n");
 
     // Count # of thrown and simulated events in each bin.
-    int sizes[6];
-    sizes[0] = b_Q2.size()-1;
-    sizes[1] = b_nu.size()-1;
-    sizes[2] = b_zh.size()-1;
-    sizes[3] = b_Pt2.size()-1;
-    sizes[4] = b_pPQ.size()-1;
-    sizes[5] = sizes[0]*sizes[1]*sizes[2]*sizes[3]*sizes[4];
+    int tsize = 1;
+    for (int bi = 0; bi < 5; ++bi) tsize *= sizes[bi] - 1;
 
-    for (double pid_tmp : pid_list) {
-        int pid = (int) pid_tmp;
+    for (double pid_dbl : pid_list) {
+        int pid = (int) pid_dbl;
         printf("Working on PID %5d...", pid);
         fflush(stdout);
 
-        int t_evn[sizes[5]];
-        int s_evn[sizes[5]];
-        count_events(t_evn, thrown, pid, sizes, b_Q2, b_nu, b_zh, b_Pt2, b_pPQ);
-        count_events(s_evn, simul,  pid, sizes, b_Q2, b_nu, b_zh, b_Pt2, b_pPQ);
+        int t_evn[tsize];
+        int s_evn[tsize];
+        count_events(t_evn, thrown, pid, tsize, sizes, binnings);
+        count_events(s_evn, simul,  pid, tsize, sizes, binnings);
 
         // Compute and save acceptance ratios.
-        for (int i = 0; i < sizes[5]; ++i) {
+        for (int i = 0; i < tsize; ++i) {
             double acc = (double)s_evn[i] / (double)t_evn[i];
             if (std::fpclassify(acc) != FP_NORMAL || acc > 1) acc = 0;
             fprintf(t_out, "%.12f ", acc);
@@ -158,6 +143,8 @@ int run(char *gen_file, char *sim_file, std::vector<double> &b_Q2,
     fclose(t_out);
     free(gen_file);
     free(sim_file);
+    for (int bi = 0; bi < 5; ++bi) free(binnings[bi]);
+    free(binnings);
 
     return 0;
 }
@@ -237,31 +224,43 @@ int handle_err(int errcode) {
 }
 
 int handle_args(int argc, char **argv, char **gen_file, char **sim_file,
-        std::vector<double> &b_Q2, std::vector<double> &b_nu,
-        std::vector<double> &b_zh, std::vector<double> &b_Pt2,
-        std::vector<double> &b_pPQ, bool *use_fmt)
+        int *sizes, double **binnings, bool *use_fmt)
 {
     // Handle optional arguments.
     int opt;
     while ((opt = getopt(argc, argv, "q:n:z:p:f:g:s:F")) != -1) {
         switch (opt) {
-            case 'q': grab_multiarg(argc, argv, &optind, b_Q2);  break;
-            case 'n': grab_multiarg(argc, argv, &optind, b_nu);  break;
-            case 'z': grab_multiarg(argc, argv, &optind, b_zh);  break;
-            case 'p': grab_multiarg(argc, argv, &optind, b_Pt2); break;
-            case 'f': grab_multiarg(argc, argv, &optind, b_pPQ); break;
-            case 'g': grab_filename(optarg, gen_file);           break;
-            case 's': grab_filename(optarg, sim_file);           break;
-            case 'F': *use_fmt = true;                           break;
-            default: break;
+        case 'q':
+            grab_multiarg(argc, argv, &optind, &(sizes[0]), &(binnings[0]));
+            break;
+        case 'n':
+            grab_multiarg(argc, argv, &optind, &(sizes[1]), &(binnings[1]));
+            break;
+        case 'z':
+            grab_multiarg(argc, argv, &optind, &(sizes[2]), &(binnings[2]));
+            break;
+        case 'p':
+            grab_multiarg(argc, argv, &optind, &(sizes[3]), &(binnings[3]));
+            break;
+        case 'f':
+            grab_multiarg(argc, argv, &optind, &(sizes[4]), &(binnings[4]));
+            break;
+        case 'g':
+            grab_filename(optarg, gen_file);
+            break;
+        case 's':
+            grab_filename(optarg, sim_file);
+            break;
+        case 'F':
+            *use_fmt = true;
+            break;
+        default:
+            break;
         }
     }
 
     // Check that all vectors have *at least* two values.
-    if (b_Q2.size() < 2 || b_nu.size() < 2 || b_zh.size() < 2 ||
-            b_Pt2.size() < 2 || b_pPQ.size() < 2) {
-        return 2;
-    }
+    for (int bi = 0; bi < 5; ++bi) if (sizes[bi] < 2) return 2;
 
     // Check input file existence and validity.
     if (!(*gen_file)) return 7;
@@ -278,16 +277,13 @@ int main(int argc, char **argv) {
     bool use_fmt   = false;
     char *gen_file = NULL;
     char *sim_file = NULL;
-    std::vector<double> b_Q2;
-    std::vector<double> b_nu;
-    std::vector<double> b_zh;
-    std::vector<double> b_Pt2;
-    std::vector<double> b_pPQ;
+    int sizes[5];
+    double **binnings;
 
-    int errcode = handle_args(argc, argv, &gen_file, &sim_file, b_Q2, b_nu,
-            b_zh, b_Pt2, b_pPQ, &use_fmt);
+    binnings = (double **) malloc(5 * sizeof(*binnings));
+    int errcode = handle_args(argc, argv, &gen_file, &sim_file, sizes, binnings,
+            &use_fmt);
     if (handle_err(errcode)) return 1;
 
-    return handle_err(run(gen_file, sim_file, b_Q2, b_nu, b_zh, b_Pt2, b_pPQ,
-            use_fmt));
+    return handle_err(run(gen_file, sim_file, sizes, binnings, use_fmt));
 }

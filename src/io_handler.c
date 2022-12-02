@@ -54,13 +54,28 @@ int handle_hipo_filename(char *input_file, int *run_no) {
 
 // Grab multiple arguments and fill a vector of doubles with it.
 // TODO. This doesn't accept negative numbers!
-int grab_multiarg(int argc, char **argv, int *optind, std::vector<double> &v) {
-    // Initialize and fill array.
-    int idx = *optind - 1;
+int grab_multiarg(int argc, char **argv, int *optind, int *size, double **b) {
+    int idx   = *optind - 1;
+    int start = idx;
+    *size     = 0;
     char *next;
+
+    // Get size.
     while (idx < argc) {
         next = strdup(argv[idx++]);
-        if (next[0] >= '0' && next[0] <= '9') v.push_back(atof(next));
+        if (next[0] >= '0' && next[0] <= '9') ++(*size);
+        else                                  break;
+    }
+
+    // Restart counter and initialize binning.
+    idx = start;
+    (*b) = (double *) malloc((*size) * sizeof(**b));
+
+    // Fill binning.
+    int i = 0;
+    while (idx < argc) {
+        next = strdup(argv[idx++]);
+        if (next[0] >= '0' && next[0] <= '9') (*b)[i++] = atof(next);
         else                                  break;
     }
 
