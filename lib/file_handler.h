@@ -26,9 +26,9 @@
 int get_run_no(char *input_file, int *run_no_int);
 int get_beam_energy(int run_no, double *beam_energy);
 int get_sf_params(char *fname, double sf[NSECTORS][SF_NPARAMS][2]);
-int get_binnings(char *fname, long int *sizes, double **binnings);
-// int get_ac_size(char *fname, std::vector<double> b_Q2,
-//         std::vector<double> b_nu,  std::vector<double> b_zh,
-//         std::vector<double> b_Pt2, std::vector<double> b_pPQ);
+int get_binnings(FILE *f_in, long int *b_sizes, double **binnings,
+        long int *pids_size);
+int get_acc_corr(FILE *f_in, long int pids_size, long int tsize, long int *pids,
+        double **acc_corr);
 
 #endif

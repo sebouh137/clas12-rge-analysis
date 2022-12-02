@@ -80,24 +80,49 @@ int run(char *in_filename, bool debug, int nevn, char *ac_filename, int run_no,
 
     // Get acceptance correction
     long int b_sizes[5];
+    long int tsize;
     double **binnings;
+    long int pids_size;
+    long int *pids;
+    double **acc_corr;
 
-    binnings = (double **) malloc(5 * sizeof(*binnings));
-    if (ac_filename != NULL && get_binnings(ac_filename, b_sizes, binnings))
-        return 12;
+    if (ac_filename != NULL) {
+        if (access(ac_filename, F_OK) != 0) return 12;
+        FILE *ac_file = fopen(ac_filename, "r");
 
-    for (int bi = 0; bi < 5; ++bi) {
-        printf("binning[%ld]: [", b_sizes[bi]);
-        for (int bii = 0; bii < b_sizes[bi]; ++bii) {
-            printf("%lf, ", binnings[bi][bii]);
-        }
-        printf("\b\b]\n");
+        binnings = (double **) malloc(5 * sizeof(*binnings));
+        get_binnings(ac_file, b_sizes, binnings, &pids_size);
+
+        tsize = 1;
+        for (int bi = 0; bi < 5; ++bi) tsize *= b_sizes[bi] - 1;
+
+        // for (int bi = 0; bi < 5; ++bi) {
+        //     printf("binning[%ld]: [", b_sizes[bi]);
+        //     for (int bii = 0; bii < b_sizes[bi]; ++bii)
+        //         printf("%lf, ", binnings[bi][bii]);
+        //     printf("\b\b]\n");
+        // }
+
+        pids = (long int *) malloc(pids_size * sizeof(*pids));
+        acc_corr = (double **) malloc(pids_size * sizeof(*acc_corr));
+
+        get_acc_corr(ac_file, pids_size, tsize, pids, acc_corr);
+
+        // printf("pids[%ld] = [", pids_size);
+        // for (int pi = 0; pi < pids_size; ++pi) {
+        //     printf("%ld ", pids[pi]);
+        // }
+        // printf("\b\b]\n");
+
+        // for (int pi = 0; pi < pids_size; ++pi) {
+        //     printf("acc_corr[%ld]: [", tsize);
+        //     for (int bii = 0; bii < tsize; ++bii)
+        //         printf("%lf ", acc_corr[pi][bii]);
+        //     printf("\b\b]\n");
+        // }
+
+        fclose(ac_file);
     }
-
-    // int sizes[6];
-    // if (ac_filename != NULL &&
-    //         get_ac_sizes(ac_filename, sizes, b_Q2, b_nu, b_zh, b_Pt2, b_pPQ))
-    //     return 12;
 
     // Create output file.
     char *out_filename = (char *) malloc(128 * sizeof(char));
@@ -388,9 +413,15 @@ int run(char *in_filename, bool debug, int nevn, char *ac_filename, int run_no,
     f_in ->Close();
     f_out->Close();
     free(in_filename);
-    if (ac_filename != NULL) free(ac_filename);
-    for (int bi = 0; bi < 5; ++bi) free(binnings[bi]);
-    free(binnings);
+
+    if (ac_filename != NULL) {
+        free(ac_filename);
+        for (int bi = 0; bi < 5; ++bi) free(binnings[bi]);
+        free(binnings);
+        free(pids);
+        for (int pi = 0; pi < pids_size; ++pi) free(acc_corr[pi]);
+        free(acc_corr);
+    }
 
     return 0;
 }

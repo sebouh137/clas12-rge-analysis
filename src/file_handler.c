@@ -62,20 +62,40 @@ int get_sf_params(char *fname, double sf[NSECTORS][SF_NPARAMS][2]) {
     return 0;
 }
 
-// Get sizes of binnings, initialize and fill them from file.
-int get_binnings(char *fname, long int *sizes, double **binnings)
+// Get sizes of binnings, initialize, and fill them from file.
+int get_binnings(FILE *f_in, long int *b_sizes, double **binnings,
+        long int *pids_size)
 {
-    if (access(fname, F_OK) != 0) return 1;
-    FILE *f_in = fopen(fname, "r");
+    // Get binning sizes.
+    for (int bi = 0; bi < 5; ++bi) fscanf(f_in, "%ld ", &(b_sizes[bi]));
 
+    // Get binnings.
     for (int bi = 0; bi < 5; ++bi) {
-        fscanf(f_in, "%ld ", &sizes[bi]);
-        binnings[bi] = (double *) malloc(sizes[bi] * sizeof(*binnings[bi]));
-        for (int bii = 0; bii < sizes[bi]; ++bii)
+        binnings[bi] = (double *) malloc(b_sizes[bi] * sizeof(*binnings[bi]));
+        for (int bii = 0; bii < b_sizes[bi]; ++bii)
             fscanf(f_in, "%lf ", &(binnings[bi][bii]));
     }
 
-    fclose(f_in);
+    // Get # of pids.
+    fscanf(f_in, "%ld", pids_size);
+
+    return 0;
+}
+
+// Get pids and acceptance correction from file.
+int get_acc_corr(FILE *f_in, long int pids_size, long int tsize, long int *pids,
+        double **acc_corr) {
+    // Get PIDs.
+    for (int pi = 0; pi < pids_size; ++pi)
+        fscanf(f_in, "%ld ", &(pids[pi]));
+
+    // Get acceptance correction.
+    for (int pi = 0; pi < pids_size; ++pi) {
+        acc_corr[pi] = (double *) malloc(tsize * sizeof(*acc_corr[pi]));
+        for (int bii = 0; bii < tsize; ++ bii)
+            fscanf(f_in, "%lf ", &(acc_corr[pi][bii]));
+    }
+
     return 0;
 }
 
