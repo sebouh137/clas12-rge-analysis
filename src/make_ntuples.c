@@ -96,30 +96,30 @@ int run(char *in_filename, bool debug, int nevn, char *ac_filename, int run_no,
         tsize = 1;
         for (int bi = 0; bi < 5; ++bi) tsize *= b_sizes[bi] - 1;
 
-        // for (int bi = 0; bi < 5; ++bi) {
-        //     printf("binning[%ld]: [", b_sizes[bi]);
-        //     for (int bii = 0; bii < b_sizes[bi]; ++bii)
-        //         printf("%lf, ", binnings[bi][bii]);
-        //     printf("\b\b]\n");
-        // }
+        for (int bi = 0; bi < 5; ++bi) {
+            printf("binning[%ld]: [", b_sizes[bi]);
+            for (int bii = 0; bii < b_sizes[bi]; ++bii)
+                printf("%lf, ", binnings[bi][bii]);
+            printf("\b\b]\n");
+        }
 
         pids = (long int *) malloc(pids_size * sizeof(*pids));
         acc_corr = (double **) malloc(pids_size * sizeof(*acc_corr));
 
         get_acc_corr(ac_file, pids_size, tsize, pids, acc_corr);
 
-        // printf("pids[%ld] = [", pids_size);
-        // for (int pi = 0; pi < pids_size; ++pi) {
-        //     printf("%ld ", pids[pi]);
-        // }
-        // printf("\b\b]\n");
+        printf("pids[%ld] = [", pids_size);
+        for (int pi = 0; pi < pids_size; ++pi) {
+            printf("%ld ", pids[pi]);
+        }
+        printf("\b\b]\n");
 
-        // for (int pi = 0; pi < pids_size; ++pi) {
-        //     printf("acc_corr[%ld]: [", tsize);
-        //     for (int bii = 0; bii < tsize; ++bii)
-        //         printf("%lf ", acc_corr[pi][bii]);
-        //     printf("\b\b]\n");
-        // }
+        for (int pi = 0; pi < pids_size; ++pi) {
+            printf("acc_corr[%ld]: [", tsize);
+            for (int bii = 0; bii < tsize; ++bii)
+                printf("%lf ", acc_corr[pi][bii]);
+            printf("\b\b]\n");
+        }
 
         fclose(ac_file);
     }
@@ -428,8 +428,9 @@ int run(char *in_filename, bool debug, int nevn, char *ac_filename, int run_no,
 
 int usage() {
     fprintf(stderr,
-            "Usage: make_ntuples [-fd] [-n nevents] [-a accfile] file\n"
+            "\nUsage: make_ntuples [-dh] [-n nevents] [-a accfile] file\n"
             " * -d         : activate debug mode.\n"
+            " * -h         : show this message and exit.\n"
             " * -n nevents : number of events.\n"
             " * -a accfile : apply acceptance correction using accfile.\n"
             " * file       : ROOT file. Expected file format: "
@@ -491,6 +492,8 @@ int handle_err(int errcode, char **file) {
             fprintf(stderr, "Error. Acceptance correction file was not found."
                             "\n\n");
             break;
+        case 13:
+            return usage();
         default:
             fprintf(stderr, "Error code %d not implemented!\n\n", errcode);
             return 1;
@@ -505,9 +508,10 @@ int handle_args(int argc, char **argv, bool *debug, int *nevents,
 {
     // Handle optional arguments.
     int opt;
-    while ((opt = getopt(argc, argv, "-dn:a:")) != -1) {
+    while ((opt = getopt(argc, argv, "-dhn:a:")) != -1) {
         switch (opt) {
             case 'd': *debug   = true;         break;
+            case 'h': return 13;
             case 'n': *nevents = atoi(optarg); break;
             case 'a':
                 *accfile = (char *) malloc(strlen(optarg) + 1);

@@ -331,9 +331,10 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no) {
 // Usage
 int usage() {
     fprintf(stderr,
-            "Usage: extract_sf [-f] [-n nevents] file\n"
-            " * -f         : Use FMT data. If unspecified, will use DC data.\n"
-            " * -n nevents : Number of events\n"
+            "\nUsage: extract_sf [-fh] [-n nevents] file\n"
+            " * -f         : use FMT data. If unspecified, will use DC data.\n"
+            " * -h         : show this message and exit.\n"
+            " * -n nevents : number of events\n"
             " * file       : ROOT file to be processed.\n\n"
             "Obtain the EC sampling fraction from an input file.\n\n"
     );
@@ -371,6 +372,8 @@ int handle_err(int errcode, char **file) {
         case 9:
             fprintf(stderr, "Error. Could not create sf_results file.\n");
             break;
+        case 10:
+            return usage();
         default:
             fprintf(stderr, "Error code %d not implemented!\n", errcode);
             return 1;
@@ -384,9 +387,10 @@ int handle_args(int argc, char **argv, bool *use_fmt, int *nevents,
         char **input_file, int *run_no) {
     // Handle optional arguments.
     int opt;
-    while ((opt = getopt(argc, argv, "-fn:")) != -1) {
+    while ((opt = getopt(argc, argv, "-fhn:")) != -1) {
         switch (opt) {
             case 'f': *use_fmt = true;         break;
+            case 'h': return 10;
             case 'n': *nevents = atoi(optarg); break;
             case  1 :
                 *input_file = (char *) malloc(strlen(optarg) + 1);

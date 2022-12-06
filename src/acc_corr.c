@@ -154,7 +154,7 @@ int run(char *gen_file, char *sim_file, int *sizes, double **binnings,
 
 int usage() {
     fprintf(stderr,
-            "Usage: acc_corr [q:n:z:p:f:Fd] [-g genfile] [-s simfile]\n"
+            "\nUsage: acc_corr [q:n:z:p:f:Fdh] [-g genfile] [-s simfile]\n"
             " * -q ...     : Q2 bins.\n"
             " * -n ...     : nu bins.\n"
             " * -z ...     : z_h bins.\n"
@@ -163,9 +163,10 @@ int usage() {
             " * -g genfile : generated events ROOT file.\n"
             " * -s simfile : simulated events ROOT file.\n"
             " * -F         : flag to tell program to use FMT data instead of DC"
-            " data from\n                the simulation file.\n\n"
+            " data from\n                the simulation file.\n"
             " * -d         : flag to tell program that generated events are in "
-            "degrees\ninstead of radians. "
+            "degrees\n                instead of radians.\n"
+            " * -h         : show this message and exit.\n\n"
             "    Get the 5-dimensional acceptance correction factors for Q2, nu"
             ", z_h, Pt2, and\n    phi_PQ. For each optional argument, an array "
             "of doubles is expected. The first\n    double will be the lower "
@@ -180,6 +181,8 @@ int handle_err(int errcode) {
     switch (errcode) {
         case 0:
             return 0;
+        case 1:
+            break;
         case 2:
             fprintf(stderr, "Error. All binnings should have *at least* two "
                             "values -- a minimum and a\n maximum.\n\n");
@@ -233,7 +236,7 @@ int handle_args(int argc, char **argv, char **gen_file, char **sim_file,
 {
     // Handle optional arguments.
     int opt;
-    while ((opt = getopt(argc, argv, "q:n:z:p:f:g:s:Fd")) != -1) {
+    while ((opt = getopt(argc, argv, "q:n:z:p:f:g:s:Fdh")) != -1) {
         switch (opt) {
         case 'q':
             grab_multiarg(argc, argv, &optind, &(sizes[0]), &(binnings[0]));
@@ -262,6 +265,8 @@ int handle_args(int argc, char **argv, char **gen_file, char **sim_file,
         case 'd':
             *in_deg = true;
             break;
+        case 'h':
+            return 1;
         default:
             break;
         }
