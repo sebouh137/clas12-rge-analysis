@@ -21,11 +21,9 @@
 #include "../lib/utilities.h"
 
 // TODO. See why I'm not seeing any neutrals.
-// TODO. Learn how to do acceptance correction.
+// TODO. Do acceptance correction.
 
-// TODO. Separate in z bins and see what happens.
 // TODO. Evaluate **acceptance** in diferent regions.
-// TODO. See simulations with Esteban or get them from RG-F.
 
 // TODO. Check what happens with the acceptance of different particles (like pi+
 //       and pi-) when you reverse the magnetic fields.
@@ -37,19 +35,19 @@
 // TODO. Separate in vz bins. Start from -40 to 40 cm, 4-cm bins.
 
 // Assign name to plots, recursively going through binnings.
-int name_plt(TH1 * plt[], TString * name, const char * nx, const char * ny,
-             int * idx, long dbins, long depth, int px, long bx[],
-             double rx[][2], int bvx[], long bbx[], double brx[][2],
-             double b_interval[]) {
+int name_plt(TH1 *plt[], TString *name, const char *nx, const char *ny,
+        int *idx, long dbins, long depth, int px, long bx[], double rx[][2],
+        int bvx[], long bbx[], double brx[][2], double b_interval[])
+{
     if (depth == dbins) {
         // Create plot and increase index.
-        if (px == 0) plt[* idx] =
-                new TH1F(* name, Form("%s;%s", name->Data(), nx), bx[0],
+        if (px == 0) plt[*idx] =
+                new TH1F(*name, Form("%s;%s", name->Data(), nx), bx[0],
                          rx[0][0], rx[0][1]);
-        if (px == 1) plt[* idx] =
-                new TH2F(* name, Form("%s;%s;%s", name->Data(), nx, ny), bx[0],
+        if (px == 1) plt[*idx] =
+                new TH2F(*name, Form("%s;%s;%s", name->Data(), nx, ny), bx[0],
                          rx[0][0], rx[0][1], bx[1], rx[1][0], rx[1][1]);
-        ++(* idx);
+        ++(*idx);
         return 0;
     }
 
@@ -71,9 +69,10 @@ int name_plt(TH1 * plt[], TString * name, const char * nx, const char * ny,
     return 0;
 }
 
-int find_bin(TString * name, int plt_size, int idx, long dbins, long depth,
-             int prev_dim_factor, int vx[], long bx[], double rx[][2],
-             double interval[]) {
+int find_bin(TString *name, int plt_size, int idx, long dbins, long depth,
+        int prev_dim_factor, int vx[], long bx[], double rx[][2],
+        double interval[])
+{
     if (depth == dbins) return 0;
 
     // Find index in array (for this dimension).
@@ -94,7 +93,8 @@ int find_bin(TString * name, int plt_size, int idx, long dbins, long depth,
 
 // Find index of plot in array, recursively going through binnings.
 int find_idx(long dbins, long depth, Float_t var[], long bx[], double rx[][2],
-             double interval[]) {
+        double interval[])
+{
     if (depth == dbins) return 0;
     for (int bi = 0; bi < bx[depth]; ++bi) {
         // Define bin limits.
@@ -115,7 +115,7 @@ int find_idx(long dbins, long depth, Float_t var[], long bx[], double rx[][2],
 
 int run() {
     // Open input file. TODO. Change paths so that they are no longer relative!
-    TFile * f_in  = TFile::Open("../root_io/ntuples.root", "READ");
+    TFile *f_in  = TFile::Open("../root_io/ntuples.root", "READ");
 
     if (!f_in || f_in->IsZombie()) return 1;
 
@@ -147,12 +147,12 @@ int run() {
         p_pid = catch_long();
     }
 
-    char * outfilename = p_pid == INT_MAX ?
+    char *outfilename = p_pid == INT_MAX ?
             Form("../root_io/plots_%s_%s.root", TRK_LIST[trk], PART_LIST[part]):
             Form("../root_io/plots_%s_pid%d.root", TRK_LIST[trk], p_pid);
 
     // Open output file (NOTE. This path sucks).
-    TFile * f_out = TFile::Open(outfilename, "RECREATE");
+    TFile *f_out = TFile::Open(outfilename, "RECREATE");
 
     bool general_cuts  = false;
     bool geometry_cuts = false;
@@ -258,7 +258,7 @@ int run() {
     }
 
     // === NTUPLES SETUP =======================================================
-    TNtuple * t = (TNtuple *) f_in->Get(trk == 0 ? S_DC : S_FMT);
+    TNtuple *t = (TNtuple *) f_in->Get(trk == 0 ? S_DC : S_FMT);
     Float_t vars[VAR_LIST_SIZE];
     for (int vi = 0; vi < VAR_LIST_SIZE; ++vi)
         t->SetBranchAddress(S_VAR_LIST[vi], &vars[vi]);
@@ -300,7 +300,7 @@ int run() {
     long plt_size = 1;
     for (int bdi = 0; bdi < dbins; ++bdi) plt_size *= bbx[bdi];
 
-    TH1 * plt[pn][plt_size];
+    TH1 *plt[pn][plt_size];
     for (int pi = 0; pi < pn; ++pi) {
         TString name;
         int idx = 0;
@@ -391,6 +391,6 @@ int run() {
     return 0;
 }
 
-int main(int argc, char ** argv) {
+int main(int argc, char **argv) {
     return run();
 }

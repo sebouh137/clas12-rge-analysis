@@ -262,7 +262,7 @@ int run(char *in_filename, bool debug, int nevn, char *ac_filename, int run_no,
 
             // Fill TNtuples with trigger electron info
             for (int pi = 0; pi < 2; ++pi) {
-                if (!(p_el[pi].is_valid&&p_el[pi].is_trigger_electron))
+                if (!(p_el[pi].is_valid && p_el[pi].is_trigger_electron))
                     continue;
                 trigger_exist = true;
                 Float_t v[VAR_LIST_SIZE] = {

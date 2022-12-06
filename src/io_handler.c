@@ -65,7 +65,6 @@ int is_number(char c) {
 }
 
 // Grab multiple arguments and fill a vector of doubles with it.
-// TODO. This doesn't accept negative numbers!
 int grab_multiarg(int argc, char **argv, int *optind, int *size, double **b) {
     int idx   = *optind - 1;
     int start = idx;
