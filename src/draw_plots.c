@@ -113,11 +113,56 @@ int find_idx(long dbins, long depth, Float_t var[], long bx[], double rx[][2],
     return -1; // Variable is not within binning range.
 }
 
-int run() {
+int run(char *filename, char *ac_filename) {
     // Open input file. TODO. Change paths so that they are no longer relative!
-    TFile *f_in  = TFile::Open("../root_io/ntuples.root", "READ");
+    TFile *f_in  = TFile::Open(filename, "READ");
+    if (!f_in || f_in->IsZombie()) return 2;
 
-    if (!f_in || f_in->IsZombie()) return 1;
+    // Get acceptance correction
+    long int b_sizes[5];
+    long int tsize;
+    double **binnings;
+    long int pids_size;
+    long int *pids;
+    double **acc_corr;
+
+    if (ac_filename != NULL) {
+        if (access(ac_filename, F_OK) != 0) return 3;
+        FILE *ac_file = fopen(ac_filename, "r");
+
+        binnings = (double **) malloc(5 * sizeof(*binnings));
+        get_binnings(ac_file, b_sizes, binnings, &pids_size);
+
+        tsize = 1;
+        for (int bi = 0; bi < 5; ++bi) tsize *= b_sizes[bi] - 1;
+
+        for (int bi = 0; bi < 5; ++bi) {
+            printf("binning[%ld]: [", b_sizes[bi]);
+            for (int bii = 0; bii < b_sizes[bi]; ++bii)
+                printf("%lf, ", binnings[bi][bii]);
+            printf("\b\b]\n");
+        }
+
+        pids = (long int *) malloc(pids_size * sizeof(*pids));
+        acc_corr = (double **) malloc(pids_size * sizeof(*acc_corr));
+
+        get_acc_corr(ac_file, pids_size, tsize, pids, acc_corr);
+
+        printf("pids[%ld] = [", pids_size);
+        for (int pi = 0; pi < pids_size; ++pi) {
+            printf("%ld ", pids[pi]);
+        }
+        printf("\b\b]\n");
+
+        for (int pi = 0; pi < pids_size; ++pi) {
+            printf("acc_corr[%ld]: [", tsize);
+            for (int bii = 0; bii < tsize; ++bii)
+                printf("%lf ", acc_corr[pi][bii]);
+            printf("\b\b]\n");
+        }
+
+        fclose(ac_file);
+    }
 
     // NOTE. This function could receive a few arguments to speed IO up.
     //       Pre-configured cuts, binnings, and corrections would be nice.
@@ -231,8 +276,8 @@ int run() {
 
         for (int di = 0; di < px[pi]+1; ++di) {
             // Check variable(s) to be plotted.
-            printf("\nDefine var to be plotted on the %s axis. Available vars:\n[",
-                    DIM_LIST[di]);
+            printf("\nDefine var to be plotted on the %s axis. Available "
+                   "vars:\n[", DIM_LIST[di]);
             for (int vi = 0; vi < VAR_LIST_SIZE; ++vi)
                 printf("%s, ", R_VAR_LIST[vi]);
             printf("\b\b]\n");
@@ -310,10 +355,11 @@ int run() {
                      px[pi], bx[pi], rx[pi], bvx, bbx, brx, b_interval);
         }
         if (px[pi] == 1) {
-            name = Form("%s vs %s", S_VAR_LIST[vx[pi][0]], S_VAR_LIST[vx[pi][1]]);
-            name_plt(plt[pi], &name, S_VAR_LIST[vx[pi][0]], S_VAR_LIST[vx[pi][1]],
-                     &idx, dbins, 0, px[pi], bx[pi], rx[pi], bvx, bbx, brx,
-                     b_interval);
+            name = Form("%s vs %s", S_VAR_LIST[vx[pi][0]],
+                    S_VAR_LIST[vx[pi][1]]);
+            name_plt(plt[pi], &name, S_VAR_LIST[vx[pi][0]],
+                    S_VAR_LIST[vx[pi][1]], &idx, dbins, 0, px[pi], bx[pi],
+                    rx[pi], bvx, bbx, brx, b_interval);
         }
     }
 
@@ -329,7 +375,13 @@ int run() {
         }
         if (p_pid != INT_MAX && vars[A_PID] != p_pid) continue;
 
-        // Apply other cuts.
+        // Apply geometry cuts.
+        if (geometry_cuts) {
+            if (calc_magnitude(vars[A_VX], vars[A_VY]) > VXVYCUT) continue;
+            if (VZLOWCUT > vars[A_VZ] || vars[A_VZ] > VZHIGHCUT)  continue;
+        }
+
+        // Apply miscellaneous cuts.
         if (general_cuts) {
             // Non-identified particle.
             if (-0.5 < vars[A_PID] && vars[A_PID] <  0.5) continue;
@@ -339,24 +391,21 @@ int run() {
             if (vars[A_CHI2]/vars[A_NDF] >= CHI2NDFCUT)   continue;
         }
 
-        if (geometry_cuts) {
-            if (calc_magnitude(vars[A_VX], vars[A_VY]) > VXVYCUT) continue;
-            if (VZLOWCUT > vars[A_VZ] || vars[A_VZ] > VZHIGHCUT)  continue;
-        }
-
+        // Apply DIS cuts.
         if (dis_cuts && !valid_event[(int) (vars[A_EVENTNO]+0.5)]) continue;
 
         // Prepare binning vars.
         Float_t b_vars[dbins];
         for (long bdi = 0; bdi < dbins; ++bdi) b_vars[bdi] = vars[bvx[bdi]];
 
+        // Fills plots.
         for (int pi = 0; pi < pn; ++pi) {
             // SIDIS variables only make sense for some particles.
             bool sidis_pass = true;
             for (int di = 0; di < px[pi]+1; ++di) {
                 for (int li = 0; li < DIS_LIST_SIZE; ++li) {
-                    if (!strcmp(R_VAR_LIST[vx[pi][di]], DIS_LIST[li])
-                        && vars[vx[pi][di]] < 1e-9)
+                    if (!strcmp(R_VAR_LIST[vx[pi][di]], DIS_LIST[li]) &&
+                            vars[vx[pi][di]] < 1e-9)
                         sidis_pass = false;
                 }
             }
@@ -367,11 +416,16 @@ int run() {
             if (idx == -1) continue;
 
             // Fill histogram.
-            if (px[pi] == 0) plt[pi][idx]->Fill(vars[vx[pi][0]]);
-            if (px[pi] == 1) plt[pi][idx]->Fill(vars[vx[pi][0]], vars[vx[pi][1]]);
+            if (px[pi] == 0)
+                plt[pi][idx]->Fill(vars[vx[pi][0]]);
+            if (px[pi] == 1)
+                plt[pi][idx]->Fill(vars[vx[pi][0]], vars[vx[pi][1]]);
         }
     }
 
+    // TODO. Apply acceptance correction.
+
+    // Write plots to output file.
     for (int plti = 0; plti < plt_size; ++plti) {
         // Find dir.
         TString dir;
@@ -388,9 +442,89 @@ int run() {
     f_in ->Close();
     f_out->Close();
 
+    free(filename);
+    if (ac_filename != NULL) {
+        free(ac_filename);
+        for (int bi = 0; bi < 5; ++bi) free(binnings[bi]);
+        free(binnings);
+        free(pids);
+        for (int pi = 0; pi < pids_size; ++pi) free(acc_corr[pi]);
+        free(acc_corr);
+    }
+
+    return 0;
+}
+
+int usage() {
+    fprintf(stderr,
+        "\nUsage: draw_plots [-h] [-a accfile] filename\n"
+        " * -h         : show this message and exit.\n"
+        " * -a accfile : apply acceptance correction using accfile.\n"
+        " * filename   : input file produced by make_ntuples.\n\n"
+        "    Draw plots from a ROOT file built from make_ntuples. File "
+        "should be named\n    ntuples.root.\n\n"
+    );
+
+    return 1;
+}
+
+int handle_err(int errcode) {
+    switch (errcode) {
+        case 0:
+            return 0;
+        case 1:
+            break;
+        case 2:
+            fprintf(stderr, "Error. Input file not found!\n\n");
+            break;
+        case 3:
+            fprintf(stderr, "Error. Acceptance correction file not found!\n\n");
+            break;
+        case 4:
+            fprintf(stderr, "Error. Bad usage of optional arguments.\n\n");
+            break;
+        case 5:
+            fprintf(stderr, "Error. No input file name provided.\n\n");
+            break;
+        default:
+            fprintf(stderr, "Error code %d not implemented!\n\n", errcode);
+            return 1;
+    }
+
+    return usage();
+}
+
+int handle_args(int argc, char **argv, char **accfile, char **file) {
+    // Handle optional arguments.
+    int opt;
+    while ((opt = getopt(argc, argv, "-ha:")) != -1) {
+        switch (opt) {
+            case 'h':
+                return 1;
+            case 'a':
+                *accfile = (char *) malloc(strlen(optarg) + 1);
+                strcpy(*accfile, optarg);
+                break;
+            case 1:
+                *file = (char *) malloc(strlen(optarg) + 1);
+                strcpy(*file, optarg);
+                break;
+            default:
+                return 4; // Bad usage of optional arguments.
+        }
+    }
+
+    // Handle positional argument.
+    if (argc < 2) return 5;
+
     return 0;
 }
 
 int main(int argc, char **argv) {
-    return run();
+    char *accfile = NULL;
+    char *file    = NULL;
+
+    int errcode = handle_args(argc, argv, &accfile, &file);
+    if (errcode != 0) return handle_err(errcode);
+    return handle_err(run(file, accfile));
 }

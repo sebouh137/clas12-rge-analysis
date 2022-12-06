@@ -70,59 +70,11 @@ double get_tof(REC_Scintillator rsci, REC_Calorimeter rcal, int pindex) {
     return tof;
 }
 
-int run(char *in_filename, bool debug, int nevn, char *ac_filename, int run_no,
-        double beam_E)
-{
+int run(char *in_filename, bool debug, int nevn, int run_no, double beam_E) {
     // Get sampling fraction.
     double sf_params[NSECTORS][SF_NPARAMS][2];
     if (get_sf_params(Form("../data/sf_params_%06d.txt", run_no), sf_params))
         return 11;
-
-    // Get acceptance correction
-    long int b_sizes[5];
-    long int tsize;
-    double **binnings;
-    long int pids_size;
-    long int *pids;
-    double **acc_corr;
-
-    if (ac_filename != NULL) {
-        if (access(ac_filename, F_OK) != 0) return 12;
-        FILE *ac_file = fopen(ac_filename, "r");
-
-        binnings = (double **) malloc(5 * sizeof(*binnings));
-        get_binnings(ac_file, b_sizes, binnings, &pids_size);
-
-        tsize = 1;
-        for (int bi = 0; bi < 5; ++bi) tsize *= b_sizes[bi] - 1;
-
-        for (int bi = 0; bi < 5; ++bi) {
-            printf("binning[%ld]: [", b_sizes[bi]);
-            for (int bii = 0; bii < b_sizes[bi]; ++bii)
-                printf("%lf, ", binnings[bi][bii]);
-            printf("\b\b]\n");
-        }
-
-        pids = (long int *) malloc(pids_size * sizeof(*pids));
-        acc_corr = (double **) malloc(pids_size * sizeof(*acc_corr));
-
-        get_acc_corr(ac_file, pids_size, tsize, pids, acc_corr);
-
-        printf("pids[%ld] = [", pids_size);
-        for (int pi = 0; pi < pids_size; ++pi) {
-            printf("%ld ", pids[pi]);
-        }
-        printf("\b\b]\n");
-
-        for (int pi = 0; pi < pids_size; ++pi) {
-            printf("acc_corr[%ld]: [", tsize);
-            for (int bii = 0; bii < tsize; ++bii)
-                printf("%lf ", acc_corr[pi][bii]);
-            printf("\b\b]\n");
-        }
-
-        fclose(ac_file);
-    }
 
     // Create output file.
     char *out_filename = (char *) malloc(128 * sizeof(char));
@@ -414,25 +366,15 @@ int run(char *in_filename, bool debug, int nevn, char *ac_filename, int run_no,
     f_out->Close();
     free(in_filename);
 
-    if (ac_filename != NULL) {
-        free(ac_filename);
-        for (int bi = 0; bi < 5; ++bi) free(binnings[bi]);
-        free(binnings);
-        free(pids);
-        for (int pi = 0; pi < pids_size; ++pi) free(acc_corr[pi]);
-        free(acc_corr);
-    }
-
     return 0;
 }
 
 int usage() {
     fprintf(stderr,
-            "\nUsage: make_ntuples [-dh] [-n nevents] [-a accfile] file\n"
+            "\nUsage: make_ntuples [-dh] [-n nevents] file\n"
             " * -d         : activate debug mode.\n"
             " * -h         : show this message and exit.\n"
             " * -n nevents : number of events.\n"
-            " * -a accfile : apply acceptance correction using accfile.\n"
             " * file       : ROOT file. Expected file format: "
             "<text>run_no.root`.\n\n"
             "    Generate ntuples relevant to SIDIS analysis based on the "
@@ -488,10 +430,6 @@ int handle_err(int errcode, char **file) {
                             "number! Run extract_sf before\ngenerating the "
                             "ntuples.\n\n");
             break;
-        case 12:
-            fprintf(stderr, "Error. Acceptance correction file was not found."
-                            "\n\n");
-            break;
         case 13:
             return usage();
         default:
@@ -503,20 +441,16 @@ int handle_err(int errcode, char **file) {
     return usage();
 }
 
-int handle_args(int argc, char **argv, bool *debug, int *nevents,
-        char **accfile, char **file, int *run_no, double *beam_energy)
+int handle_args(int argc, char **argv, bool *debug, int *nevents, char **file,
+        int *run_no, double *beam_energy)
 {
     // Handle optional arguments.
     int opt;
-    while ((opt = getopt(argc, argv, "-dhn:a:")) != -1) {
+    while ((opt = getopt(argc, argv, "-dhn:")) != -1) {
         switch (opt) {
             case 'd': *debug   = true;         break;
             case 'h': return 13;
             case 'n': *nevents = atoi(optarg); break;
-            case 'a':
-                *accfile = (char *) malloc(strlen(optarg) + 1);
-                strcpy(*accfile, optarg);
-                break;
             case  1 :
                 *file = (char *) malloc(strlen(optarg) + 1);
                 strcpy(*file, optarg);
@@ -536,13 +470,11 @@ int handle_args(int argc, char **argv, bool *debug, int *nevents,
 int main(int argc, char **argv) {
     bool dbg      = false;
     int nevn      = -1;
-    char *accfile = NULL;
     int run_no    = -1;
     double beam_E = -1;
     char *file    = NULL;
 
-    int errcode = handle_args(argc, argv, &dbg, &nevn, &accfile, &file, &run_no,
-            &beam_E);
-    if (errcode == 0) errcode = run(file, dbg, nevn, accfile, run_no, beam_E);
+    int errcode = handle_args(argc, argv, &dbg, &nevn, &file, &run_no, &beam_E);
+    if (errcode == 0) errcode = run(file, dbg, nevn, run_no, beam_E);
     return handle_err(errcode, &file);
 }
