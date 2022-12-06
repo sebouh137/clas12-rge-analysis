@@ -52,6 +52,18 @@ int handle_hipo_filename(char *input_file, int *run_no) {
     return 0;
 }
 
+// Check if string is a number.
+int is_number(char *s) {
+    if (is_number(s[0]) || (s[0] == '-' && is_number(s[1]))) return 1;
+    return 0;
+}
+
+// Check if character is a number.
+int is_number(char c) {
+    if (c >= '0' && c <= '9') return 1;
+    return 0;
+}
+
 // Grab multiple arguments and fill a vector of doubles with it.
 // TODO. This doesn't accept negative numbers!
 int grab_multiarg(int argc, char **argv, int *optind, int *size, double **b) {
@@ -63,8 +75,8 @@ int grab_multiarg(int argc, char **argv, int *optind, int *size, double **b) {
     // Get size.
     while (idx < argc) {
         next = strdup(argv[idx++]);
-        if (next[0] >= '0' && next[0] <= '9') ++(*size);
-        else                                  break;
+        if (is_number(next)) ++(*size);
+        else break;
     }
 
     // Restart counter and initialize binning.
@@ -75,8 +87,8 @@ int grab_multiarg(int argc, char **argv, int *optind, int *size, double **b) {
     int i = 0;
     while (idx < argc) {
         next = strdup(argv[idx++]);
-        if (next[0] >= '0' && next[0] <= '9') (*b)[i++] = atof(next);
-        else                                  break;
+        if (is_number(next)) (*b)[i++] = atof(next);
+        else break;
     }
 
     // Continue with getopts.

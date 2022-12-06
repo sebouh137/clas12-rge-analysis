@@ -26,6 +26,8 @@ int handle_root_filename(char *input_file, int *run_no, double *beam_energy);
 int check_hipo_filename(char *input_file);
 int handle_hipo_filename(char *input_file, int *run_no);
 
+int is_number(char *s);
+int is_number(char c);
 int grab_multiarg(int argc, char **argv, int *optind, int *size, double **b);
 int grab_filename(char *optarg, char **file);
 
