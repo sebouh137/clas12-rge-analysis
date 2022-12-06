@@ -37,16 +37,16 @@ HLIBS       := $(RLIBS) -L$(HIPO)/lib -lhipo4
 HXX         := $(RXX) $(HIPOCFLAGS)
 
 # Object lists.
-O_HIPO2ROOT   := $(BLD)/bank_containers.o $(BLD)/file_handler.o \
-				 $(BLD)/io_handler.o
-O_EXTRACTSF   := $(BLD)/bank_containers.o $(BLD)/constants.o \
-				 $(BLD)/file_handler.o $(BLD)/io_handler.o $(BLD)/utilities.o
-O_ACCCORR     := $(BLD)/file_handler.o $(BLD)/io_handler.o $(BLD)/utilities.o
-O_MKNTUPLES   := $(BLD)/bank_containers.o $(BLD)/constants.o \
-				 $(BLD)/file_handler.o $(BLD)/io_handler.o \
-				 $(BLD)/particle.o $(BLD)/utilities.o
-O_DRAWPLOTS   := $(BLD)/constants.o $(BLD)/file_handler.o \
-				 $(BLD)/io_handler.o $(BLD)/utilities.o
+O_HIPO2ROOT := $(BLD)/bank_containers.o $(BLD)/file_handler.o \
+			   $(BLD)/io_handler.o
+O_EXTRACTSF := $(BLD)/bank_containers.o $(BLD)/constants.o \
+			   $(BLD)/file_handler.o $(BLD)/io_handler.o $(BLD)/utilities.o
+O_ACCCORR   := $(BLD)/file_handler.o $(BLD)/io_handler.o $(BLD)/utilities.o
+O_MKNTUPLES := $(BLD)/bank_containers.o $(BLD)/constants.o \
+			   $(BLD)/file_handler.o $(BLD)/io_handler.o \
+			   $(BLD)/particle.o $(BLD)/utilities.o
+O_DRAWPLOTS := $(BLD)/constants.o $(BLD)/file_handler.o \
+			   $(BLD)/io_handler.o $(BLD)/utilities.o
 
 all: $(BIN)/hipo2root $(BIN)/extract_sf $(BIN)/acc_corr \
 	 $(BIN)/make_ntuples $(BIN)/draw_plots
