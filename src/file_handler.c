@@ -84,7 +84,8 @@ int get_binnings(FILE *f_in, long int *b_sizes, double **binnings,
 
 // Get pids and acceptance correction from file.
 int get_acc_corr(FILE *f_in, long int pids_size, long int tsize, long int *pids,
-        double **acc_corr) {
+        double **acc_corr)
+{
     // Get PIDs.
     for (int pi = 0; pi < pids_size; ++pi)
         fscanf(f_in, "%ld ", &(pids[pi]));
@@ -98,17 +99,3 @@ int get_acc_corr(FILE *f_in, long int pids_size, long int tsize, long int *pids,
 
     return 0;
 }
-
-// Get array size for acceptance correction from file.
-// int get_ac_size(char *fname, std::vector<double> b_Q2,
-//         std::vector<double> b_nu,  std::vector<double> b_zh,
-//         std::vector<double> b_Pt2, std::vector<double> b_pPQ)
-// {
-//     if (access(fname, F_OK) != 0) return 1;
-//     FILE *t_in = fopen(fname, "r");
-//
-//
-// }
-
-// // Get acceptance correction from file.
-// int get_acc_correction(char *fname, )
