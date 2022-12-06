@@ -17,6 +17,7 @@
 #include <TFile.h>
 #include <TNtuple.h>
 #include "../lib/io_handler.h"
+#include "../lib/utilities.h"
 
 // Return position of val in vec or -1 if val is not inside vec.
 int find_pos(double val, double *b, int size) {
@@ -26,7 +27,7 @@ int find_pos(double val, double *b, int size) {
 
 // Count number of events in tree for each bin for a given pid.
 int count_events(int *evn_cnt, TTree *tree, int pid, int tsize, int *sizes,
-        double **binnings)
+        double **binnings, bool in_deg)
 {
     for (int i = 0; i < tsize; ++i) evn_cnt[i] = 0;
 
@@ -45,12 +46,14 @@ int count_events(int *evn_cnt, TTree *tree, int pid, int tsize, int *sizes,
         // Find position of event.
         int idx[5];
         bool kill = false;
-        for (int bi = 0; bi < 5; ++bi) {
-            idx[bi] = find_pos(s_binning[bi], binnings[bi], sizes[bi]-1);
-            if (idx[bi] < 0) {
-                kill = true;
-                break;
-            }
+        for (int bi = 0; bi < 5 && !kill; ++bi) {
+            if (bi == 4 && in_deg)
+                idx[bi] = find_pos(to_rad(s_binning[bi]), binnings[bi],
+                        sizes[bi]-1);
+            else
+                idx[bi] = find_pos(s_binning[bi], binnings[bi], sizes[bi]-1);
+
+            if (idx[bi] < 0) kill = true;
         }
         if (kill) continue;
 
@@ -68,7 +71,7 @@ int count_events(int *evn_cnt, TTree *tree, int pid, int tsize, int *sizes,
 }
 
 int run(char *gen_file, char *sim_file, int *sizes, double **binnings,
-        bool use_fmt)
+        bool use_fmt, bool in_deg)
 {
     // Open input files and load TTrees.
     TFile *t_in = TFile::Open(gen_file, "READ");
@@ -124,8 +127,8 @@ int run(char *gen_file, char *sim_file, int *sizes, double **binnings,
 
         int t_evn[tsize];
         int s_evn[tsize];
-        count_events(t_evn, thrown, pid, tsize, sizes, binnings);
-        count_events(s_evn, simul,  pid, tsize, sizes, binnings);
+        count_events(t_evn, thrown, pid, tsize, sizes, binnings, in_deg);
+        count_events(s_evn, simul,  pid, tsize, sizes, binnings, false);
 
         // Compute and save acceptance ratios.
         for (int i = 0; i < tsize; ++i) {
@@ -151,7 +154,7 @@ int run(char *gen_file, char *sim_file, int *sizes, double **binnings,
 
 int usage() {
     fprintf(stderr,
-            "Usage: acc_corr [q:n:z:p:f:] [-g genfile] [-s simfile]\n"
+            "Usage: acc_corr [q:n:z:p:f:Fd] [-g genfile] [-s simfile]\n"
             " * -q ...     : Q2 bins.\n"
             " * -n ...     : nu bins.\n"
             " * -z ...     : z_h bins.\n"
@@ -161,6 +164,8 @@ int usage() {
             " * -s simfile : simulated events ROOT file.\n"
             " * -F         : flag to tell program to use FMT data instead of DC"
             " data from\n                the simulation file.\n\n"
+            " * -d         : flag to tell program that generated events are in "
+            "degrees\ninstead of radians. "
             "    Get the 5-dimensional acceptance correction factors for Q2, nu"
             ", z_h, Pt2, and\n    phi_PQ. For each optional argument, an array "
             "of doubles is expected. The first\n    double will be the lower "
@@ -224,11 +229,11 @@ int handle_err(int errcode) {
 }
 
 int handle_args(int argc, char **argv, char **gen_file, char **sim_file,
-        int *sizes, double **binnings, bool *use_fmt)
+        int *sizes, double **binnings, bool *use_fmt, bool *in_deg)
 {
     // Handle optional arguments.
     int opt;
-    while ((opt = getopt(argc, argv, "q:n:z:p:f:g:s:F")) != -1) {
+    while ((opt = getopt(argc, argv, "q:n:z:p:f:g:s:Fd")) != -1) {
         switch (opt) {
         case 'q':
             grab_multiarg(argc, argv, &optind, &(sizes[0]), &(binnings[0]));
@@ -254,6 +259,9 @@ int handle_args(int argc, char **argv, char **gen_file, char **sim_file,
         case 'F':
             *use_fmt = true;
             break;
+        case 'd':
+            *in_deg = true;
+            break;
         default:
             break;
         }
@@ -275,6 +283,7 @@ int handle_args(int argc, char **argv, char **gen_file, char **sim_file,
 
 int main(int argc, char **argv) {
     bool use_fmt   = false;
+    bool in_deg    = false;
     char *gen_file = NULL;
     char *sim_file = NULL;
     int sizes[5];
@@ -282,8 +291,9 @@ int main(int argc, char **argv) {
 
     binnings = (double **) malloc(5 * sizeof(*binnings));
     int errcode = handle_args(argc, argv, &gen_file, &sim_file, sizes, binnings,
-            &use_fmt);
+            &use_fmt, &in_deg);
     if (handle_err(errcode)) return 1;
 
-    return handle_err(run(gen_file, sim_file, sizes, binnings, use_fmt));
+    return handle_err(run(gen_file, sim_file, sizes, binnings, use_fmt,
+            in_deg));
 }

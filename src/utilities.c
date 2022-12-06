@@ -20,6 +20,11 @@ double to_deg(double radians) {
     return radians * (180.0 / M_PI);
 }
 
+// Pass from degrees to radians.
+double to_rad(double degrees) {
+    return degrees * (M_PI / 180.0);
+}
+
 // Compute a 2D vector's magnitude from its components.
 double calc_magnitude(double x, double y) {
     return sqrt(x*x + y*y);
