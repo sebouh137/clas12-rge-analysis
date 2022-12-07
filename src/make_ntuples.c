@@ -13,6 +13,7 @@
 //
 // You can see a copy of the GNU Lesser Public License under the LICENSE file.
 
+#include <libgen.h>
 #include <TFile.h>
 #include <TNtuple.h>
 #include <TROOT.h>
@@ -70,24 +71,26 @@ double get_tof(REC_Scintillator rsci, REC_Calorimeter rcal, int pindex) {
     return tof;
 }
 
-int run(char *in_filename, bool debug, int nevn, int run_no, double beam_E) {
+int run(char *in_file, char *work_dir, char *data_dir, bool debug, int nevn,
+        int run_no, double beam_E)
+{
     // Get sampling fraction.
     double sf_params[NSECTORS][SF_NPARAMS][2];
-    if (get_sf_params(Form("../data/sf_params_%06d.txt", run_no), sf_params))
-        return 11;
+    int errcode = get_sf_params(Form("%s/sf_params_%06d.txt", data_dir, run_no),
+            sf_params);
+    if (errcode) return 11;
 
     // Create output file.
-    char *out_filename = (char *) malloc(128 * sizeof(char));
-    sprintf(out_filename, "../root_io/ntuples.root");
+    char out_file[PATH_MAX];
+    sprintf(out_file, "%s/ntuples_%06d.root", work_dir, run_no);
+    TFile *f_out = TFile::Open(out_file, "RECREATE");
 
     // Access input file.
-    TFile *f_in  = TFile::Open(in_filename, "READ");
-    TFile *f_out = TFile::Open(out_filename, "RECREATE");
-
-    // Return to top directory.
-    gROOT->cd();
-
+    TFile *f_in  = TFile::Open(in_file,  "READ");
     if (!f_in || f_in->IsZombie()) return 8;
+
+    // Return to top directory (weird root stuff).
+    gROOT->cd();
 
     // Generate lists of variables.
     TString vars("");
@@ -126,11 +129,12 @@ int run(char *in_filename, bool debug, int nevn, int run_no, double beam_E) {
 
     // Iterate through input file. Each TTree entry is one event.
     printf("Reading %lld events from %s.\n", nevn == -1 ? t_in->GetEntries() :
-            nevn, in_filename);
+            nevn, in_file);
 
-    // test of electrons
-    for (int evn = 0; (evn < t_in->GetEntries()) &&
-            (nevn == -1 || evn < nevn); ++evn) {
+    for (int evn = 0; (evn < t_in->GetEntries()) && (nevn == -1 || evn < nevn);
+            ++evn)
+    {
+        // Print fancy progress bar.
         if (!debug && evn >= evnsplitter) {
             if (evn != 0) printf("\33[2K\r");
             printf("[");
@@ -145,6 +149,7 @@ int run(char *in_filename, bool debug, int nevn, int run_no, double beam_E) {
                     (nevn/100) * divcntr;
         }
 
+        // Get entries from input file.
         rpart.get_entries(t_in, evn);
         rtrk .get_entries(t_in, evn);
         rsci .get_entries(t_in, evn);
@@ -164,7 +169,7 @@ int run(char *in_filename, bool debug, int nevn, int run_no, double beam_E) {
         UInt_t  trigger_pos    = -1;
         int     trigger_pindex = -1;
         for (UInt_t pos = 0; pos < rtrk.index->size(); ++pos) {
-            int pindex = rtrk.pindex->at(pos); // pindex is always equal to pos!
+            int pindex = rtrk.pindex->at(pos);
 
             // Get reconstructed particle from DC and from FMT.
             p_el[0] = particle_init(&rpart, &rtrk, pos);        // DC.
@@ -212,7 +217,7 @@ int run(char *in_filename, bool debug, int nevn, int run_no, double beam_E) {
                         sf_params[rtrk.sector->at(pos)]);
             }
 
-            // Fill TNtuples with trigger electron info
+            // Fill TNtuples with trigger electron information.
             for (int pi = 0; pi < 2; ++pi) {
                 if (!(p_el[pi].is_valid && p_el[pi].is_trigger_electron))
                     continue;
@@ -231,7 +236,7 @@ int run(char *in_filename, bool debug, int nevn, int run_no, double beam_E) {
                 };
                 t_out[pi]->Fill(v);
             }
-            if (trigger_exist){
+            if (trigger_exist) {
                 trigger_pindex = pindex;
                 trigger_pos    = pos;
                 break;
@@ -239,7 +244,7 @@ int run(char *in_filename, bool debug, int nevn, int run_no, double beam_E) {
         }
 
         // In case no trigger e was found, initiate p_el as dummy particles.
-        if (!trigger_exist){
+        if (!trigger_exist) {
             p_el[0] = particle_init();
             p_el[1] = particle_init();
         }
@@ -300,7 +305,8 @@ int run(char *in_filename, bool debug, int nevn, int run_no, double beam_E) {
             // Test PID assignment precision.
             if (debug
                     && PID_QA.find(abs(rpart.pid->at(pindex))) != PID_QA.end()
-                    && PID_QA.find(abs(p[0].pid)) != PID_QA.end()) {
+                    && PID_QA.find(abs(p[0].pid)) != PID_QA.end())
+            {
                 pid_n[PID_QA.at(abs(rpart.pid->at(pindex)))]++;
                 pid_qa[PID_QA.at(abs(rpart.pid->at(pindex)))]
                         [PID_QA.at(abs(p[0].pid))]++;
@@ -364,18 +370,21 @@ int run(char *in_filename, bool debug, int nevn, int run_no, double beam_E) {
     // Clean up after ourselves.
     f_in ->Close();
     f_out->Close();
-    free(in_filename);
 
     return 0;
 }
 
 int usage() {
     fprintf(stderr,
-            "\nUsage: make_ntuples [-dh] [-n nevents] file\n"
-            " * -d         : activate debug mode.\n"
+            "\nUsage: make_ntuples [-hDn:w:d:] infile\n"
             " * -h         : show this message and exit.\n"
+            " * -D         : activate debug mode.\n"
             " * -n nevents : number of events.\n"
-            " * file       : ROOT file. Expected file format: "
+            " * -w workdir : location where output root files are to be "
+            "stored. Default\n                is root_io.\n"
+            " * -d datadir : location where sampling fraction files are "
+            "located. Default is\n                data.\n"
+            " * infile     : input ROOT file. Expected file format: "
             "<text>run_no.root`.\n\n"
             "    Generate ntuples relevant to SIDIS analysis based on the "
             "reconstructed\n    variables from CLAS12 data.\n\n"
@@ -384,103 +393,141 @@ int usage() {
     return 1;
 }
 
-int handle_err(int errcode, char **file) {
+int handle_err(int errcode) {
     switch (errcode) {
         case 0:
             return 0;
         case 1:
-            fprintf(stderr, "Error. Bad usage of optional arguments.\n\n");
             break;
         case 2:
-            fprintf(stderr, "Error. nevents should be a number greater than"
-                            " 0.\n\n");
+            fprintf(stderr, "Error %02d. nevents should be a number greater "
+                            "than 0.\n", errcode);
             break;
         case 3:
-            fprintf(stderr, "Error. input file should be in root format.\n\n");
+            fprintf(stderr, "Error %02d. input file should be in root format."
+                            "\n", errcode);
             break;
         case 4:
-            fprintf(stderr, "Error. file does not exist!\n\n");
+            fprintf(stderr, "Error %02d. file does not exist!\n", errcode);
             break;
         case 5:
-            fprintf(stderr, "Error. Run number could not be extracted from "
-                            "filename.\n\n");
+            fprintf(stderr, "Error %02d. Run number could not be extracted from"
+                            " filename.\n", errcode);
             break;
         case 6:
-            fprintf(stderr, "Error. Run number not in database. Add from "
-                            "RCDB.\n\n");
+            fprintf(stderr, "Error %02d. Run number not in database. Add from "
+                            "RCDB.\n", errcode);
             break;
         case 7:
-            fprintf(stderr, "Error. No file name provided.\n\n");
+            fprintf(stderr, "Error %02d. No file name provided.\n", errcode);
             break;
         case 8:
-            fprintf(stderr, "Error. %s is not a valid ROOT file.\n\n", *file);
+            fprintf(stderr, "Error %02d. Input file is not valid.\n", errcode);
             break;
         case 9:
-            fprintf(stderr, "Error. Invalid EC layer. Check bank integrity."
-                            "\n\n");
+            fprintf(stderr, "Error %02d. Invalid EC layer. Check bank "
+                            "integrity.\n", errcode);
             break;
         case 10:
-            fprintf(stderr, "Error. Invalid Cherenkov Counter ID. Check bank "
-                            "integrity.\n\n");
+            fprintf(stderr, "Error %02d. Invalid Cherenkov Counter ID. Check "
+                            "bank integrity.\n", errcode);
             break;
         case 11:
             // NOTE. In this scenario, a smoother behavior would be that the
             //       program calls extract_sf itself!
-            fprintf(stderr, "Error. No sampling fraction available for run "
-                            "number! Run extract_sf before\ngenerating the "
-                            "ntuples.\n\n");
+            fprintf(stderr, "Error %02d. No sampling fraction available for run"
+                            " number! Run extract_sf before\ngenerating the "
+                            "ntuples.\n", errcode);
             break;
-        case 13:
-            return usage();
+        case 12:
+            fprintf(stderr, "Error %02d. Bad usage of optional arguments.\n",
+                    errcode);
+            break;
         default:
-            fprintf(stderr, "Error code %d not implemented!\n\n", errcode);
+            fprintf(stderr, "Error code %d not implemented!\n", errcode);
             return 1;
     }
 
-    if (errcode > 2) free(*file);
     return usage();
 }
 
-int handle_args(int argc, char **argv, bool *debug, int *nevents, char **file,
-        int *run_no, double *beam_energy)
+int handle_args(int argc, char **argv, char **in_file, char **work_dir,
+        char **data_dir, bool *debug, int *nevn, int *run_no, double *beam_E)
 {
     // Handle optional arguments.
     int opt;
-    while ((opt = getopt(argc, argv, "-dhn:")) != -1) {
+    while ((opt = getopt(argc, argv, "-Dhn:w:d:")) != -1) {
         switch (opt) {
-            case 'd':
-                *debug   = true;
-                break;
             case 'h':
-                return 13;
-            case 'n':
-                *nevents = atoi(optarg);
+                return 1;
+            case 'D':
+                *debug = true;
                 break;
-            case  1 :
-                *file = (char *) malloc(strlen(optarg) + 1);
-                strcpy(*file, optarg);
+            case 'n':
+                *nevn = atoi(optarg);
+                break;
+            case 'w':
+                *work_dir = (char *) malloc(strlen(optarg) + 1);
+                strcpy(*work_dir, optarg);
+                break;
+            case 'd':
+                *data_dir = (char *) malloc(strlen(optarg) + 1);
+                strcpy(*data_dir, optarg);
+                break;
+            case 1:
+                *in_file = (char *) malloc(strlen(optarg) + 1);
+                strcpy(*in_file, optarg);
                 break;
             default:
-                return 1; // Bad usage of optional arguments.
+                return 12; // Bad usage of optional arguments.
         }
     }
+
     // Check that nevents is valid and that atoi performed correctly.
-    if (*nevents == 0) return 2;
+    if (*nevn == 0) return 2;
 
-    // Handle positional argument.
-    if (argc < 2) return 7;
+    // Define workdir if undefined.
+    char tmpfile[PATH_MAX];
+    sprintf(tmpfile, "%s", argv[0]);
+    if (*work_dir == NULL) {
+        *work_dir = (char *) malloc(PATH_MAX);
+        sprintf(*work_dir, "%s/../root_io", dirname(argv[0]));
+    }
 
-    return handle_root_filename(*file, run_no, beam_energy);
+    // Define datadir if undefined.
+    if (*data_dir == NULL) {
+        *data_dir = (char *) malloc(PATH_MAX);
+        sprintf(*data_dir, "%s/../data", dirname(tmpfile));
+    }
+
+    // Check positional argument.
+    if (*in_file == NULL) return 7;
+
+    return handle_root_filename(*in_file, run_no, beam_E);
 }
 
 int main(int argc, char **argv) {
-    bool dbg      = false;
-    int nevn      = -1;
-    int run_no    = -1;
-    double beam_E = -1;
-    char *file    = NULL;
+    // Handle arguments.
+    char *in_file  = NULL;
+    char *work_dir = NULL;
+    char *data_dir = NULL;
+    bool debug     = false;
+    int nevn       = -1;
+    int run_no     = -1;
+    double beam_E  = -1;
 
-    int errcode = handle_args(argc, argv, &dbg, &nevn, &file, &run_no, &beam_E);
-    if (errcode == 0) errcode = run(file, dbg, nevn, run_no, beam_E);
-    return handle_err(errcode, &file);
+    int errcode = handle_args(argc, argv, &in_file, &work_dir, &data_dir,
+            &debug, &nevn, &run_no, &beam_E);
+
+    // Run.
+    if (errcode == 0)
+        errcode = run(in_file, work_dir, data_dir, debug, nevn, run_no, beam_E);
+
+    // Free up memory.
+    if (in_file  != NULL) free(in_file);
+    if (work_dir != NULL) free(work_dir);
+    if (data_dir != NULL) free(data_dir);
+
+    // Return errcode.
+    return handle_err(errcode);
 }

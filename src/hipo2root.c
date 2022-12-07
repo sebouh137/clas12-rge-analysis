@@ -24,13 +24,14 @@
 #include "../lib/bank_containers.h"
 
 int run(char *in_file, char *work_dir, int run_no, int nevn) {
-    // Create output file. TODO. I should fix these paths ASAP. I'm on it!
+    // Create output file.
     char out_file[PATH_MAX];
     sprintf(out_file, "%s/banks_%06d.root", work_dir, run_no);
 
     TFile *f = TFile::Open(out_file, "RECREATE");
     f->SetCompressionAlgorithm(ROOT::kLZ4);
 
+    // Create tree for output file.
     TTree *tree = new TTree("Tree", "Tree");
     REC_Particle     rprt; rprt.link_branches(tree);
     REC_Track        rtrk; rtrk.link_branches(tree);
@@ -39,7 +40,7 @@ int run(char *in_file, char *work_dir, int run_no, int nevn) {
     REC_Scintillator rsci; rsci.link_branches(tree);
     FMT_Tracks       ftrk; ftrk.link_branches(tree);
 
-    // Setup.
+    // Open input file and get hipo schemas.
     hipo::reader reader;
     reader.open(in_file);
 
@@ -54,6 +55,7 @@ int run(char *in_file, char *work_dir, int run_no, int nevn) {
     hipo::bank ftrk_b(factory.getSchema("FMT::Tracks"));
     hipo::event event;
 
+    // Get stuff from hipo file and write to root file.
     int evn = 0;
     while (reader.next() && (nevn == -1 || evn < nevn)) {
         evn++;
@@ -84,12 +86,12 @@ int run(char *in_file, char *work_dir, int run_no, int nevn) {
 
 int usage() {
     fprintf(stderr,
-            "\nUsage: hipo2root [-h] [-n nevents] [-w workdir] file\n"
+            "\nUsage: hipo2root [-hn:w:] infile\n"
             " * -h         : show this message and exit.\n"
-            " * -n nevents : specify number of events.\n"
+            " * -n nevents : number of events.\n"
             " * -w workdir : location where output root files are to be "
-            "exported. Default\n                is root_io.\n"
-            " * file       : HIPO file. Expected file format is "
+            "stored. Default\n                is root_io.\n"
+            " * infile     : input HIPO file. Expected file format is "
             "<text>run_no.hipo.\n\n"
             "    Convert a file from hipo to root format. This program only "
             "conserves the\n    banks that are useful for EG2 analysis, as "
@@ -130,7 +132,7 @@ int handle_err(int errcode) {
     return usage();
 }
 
-int handle_args(int argc, char **argv, char **input_file, char **work_dir,
+int handle_args(int argc, char **argv, char **in_file, char **work_dir,
         int *run_no, int *nevents)
 {
     // Handle optional arguments.
@@ -147,8 +149,8 @@ int handle_args(int argc, char **argv, char **input_file, char **work_dir,
                 strcpy(*work_dir, optarg);
                 break;
             case 1:
-                *input_file = (char *) malloc(strlen(optarg) + 1);
-                strcpy(*input_file, optarg);
+                *in_file = (char *) malloc(strlen(optarg) + 1);
+                strcpy(*in_file, optarg);
                 break;
             default:
                 return 5;
@@ -165,9 +167,9 @@ int handle_args(int argc, char **argv, char **input_file, char **work_dir,
     }
 
     // Check positional argument.
-    if (*input_file == NULL) return 2;
+    if (*in_file == NULL) return 2;
 
-    return handle_hipo_filename(*input_file, run_no);
+    return handle_hipo_filename(*in_file, run_no);
 }
 
 int main(int argc, char **argv) {
