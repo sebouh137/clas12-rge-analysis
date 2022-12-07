@@ -15,17 +15,20 @@
 
 #include <cstdlib>
 #include <iostream>
+#include <libgen.h>
+#include <limits.h>
+#include <unistd.h>
 #include "TFile.h"
 #include "TTree.h"
 #include "../lib/io_handler.h"
 #include "../lib/bank_containers.h"
 
-int run(char *in_filename, int run_no, int nevn) {
-    // Create output file. TODO. I should fix these paths ASAP.
-    char out_filename[128];
-    sprintf(out_filename, "../root_io/banks_%06d.root", run_no);
+int run(char *in_file, char *work_dir, int run_no, int nevn) {
+    // Create output file. TODO. I should fix these paths ASAP. I'm on it!
+    char out_file[PATH_MAX];
+    sprintf(out_file, "%s/banks_%06d.root", work_dir, run_no);
 
-    TFile *f = TFile::Open(out_filename, "RECREATE");
+    TFile *f = TFile::Open(out_file, "RECREATE");
     f->SetCompressionAlgorithm(ROOT::kLZ4);
 
     TTree *tree = new TTree("Tree", "Tree");
@@ -38,7 +41,7 @@ int run(char *in_filename, int run_no, int nevn) {
 
     // Setup.
     hipo::reader reader;
-    reader.open(in_filename);
+    reader.open(in_file);
 
     hipo::dictionary factory;
     reader.readDictionary(factory);
@@ -81,9 +84,11 @@ int run(char *in_filename, int run_no, int nevn) {
 
 int usage() {
     fprintf(stderr,
-            "\nUsage: hipo2root [-h] [-n nevents] file\n"
+            "\nUsage: hipo2root [-h] [-n nevents] [-w workdir] file\n"
             " * -h         : show this message and exit.\n"
             " * -n nevents : specify number of events.\n"
+            " * -w workdir : location where output root files are to be "
+            "exported. Default\n                is root_io.\n"
             " * file       : HIPO file. Expected file format is "
             "<text>run_no.hipo.\n\n"
             "    Convert a file from hipo to root format. This program only "
@@ -101,41 +106,45 @@ int handle_err(int errcode) {
         case 1:
             break;
         case 2:
-            fprintf(stderr, "Error %02d. No file name provided.\n\n", errcode);
+            fprintf(stderr, "Error %02d. No file name provided.\n", errcode);
             break;
         case 3:
             fprintf(stderr, "Error %02d. input file should be in hipo format."
-                            "\n\n", errcode);
+                            "\n", errcode);
             break;
         case 4:
-            fprintf(stderr, "Error %02d. file does not exist!\n\n", errcode);
+            fprintf(stderr, "Error %02d. file does not exist!\n", errcode);
             break;
         case 5:
-            fprintf(stderr, "Error %02d. Bad usage of optional arguments.\n\n",
+            fprintf(stderr, "Error %02d. Bad usage of optional arguments.\n",
                     errcode);
             break;
         case 6:
             fprintf(stderr, "Error %02d. nevents should be a number greater "
-                            "than 0", errcode);
+                            "than 0\n", errcode);
             break;
         default:
-            fprintf(stderr, "Error code %02d not implemented!\n\n", errcode);
+            fprintf(stderr, "Error code %02d not implemented!\n", errcode);
             return 1;
     }
     return usage();
 }
 
-int handle_args(int argc, char **argv, char **input_file, int *run_no,
-        int *nevents)
+int handle_args(int argc, char **argv, char **input_file, char **work_dir,
+        int *run_no, int *nevents)
 {
     // Handle optional arguments.
     int opt;
-    while ((opt = getopt(argc, argv, "-hn:")) != -1) {
+    while ((opt = getopt(argc, argv, "-hn:w:")) != -1) {
         switch (opt) {
             case 'h':
                 return 1;
             case 'n':
                 *nevents = atoi(optarg);
+                break;
+            case 'w':
+                *work_dir = (char *) malloc(strlen(optarg) + 1);
+                strcpy(*work_dir, optarg);
                 break;
             case 1:
                 *input_file = (char *) malloc(strlen(optarg) + 1);
@@ -149,6 +158,12 @@ int handle_args(int argc, char **argv, char **input_file, int *run_no,
     // Check that nevents is valid and that atoi performed correctly.
     if (*nevents == 0) return 6;
 
+    // Define workdir if undefined.
+    if (*work_dir == NULL) {
+        *work_dir = (char *) malloc(PATH_MAX);
+        sprintf(*work_dir, "%s/../root_io", dirname(argv[0]));
+    }
+
     // Check positional argument.
     if (*input_file == NULL) return 2;
 
@@ -157,17 +172,19 @@ int handle_args(int argc, char **argv, char **input_file, int *run_no,
 
 int main(int argc, char **argv) {
     // Handle arguments.
-    char *in_filename = NULL;
-    int  run_no       = -1;
-    int  nevn         = -1;
+    char *in_file  = NULL;
+    char *work_dir = NULL;
+    int  run_no    = -1;
+    int  nevn      = -1;
 
-    int errcode = handle_args(argc, argv, &in_filename, &run_no, &nevn);
+    int errcode = handle_args(argc, argv, &in_file, &work_dir, &run_no, &nevn);
 
     // Run.
-    if (errcode == 0) errcode = run(in_filename, run_no, nevn);
+    if (errcode == 0) errcode = run(in_file, work_dir, run_no, nevn);
 
     // Free up memory.
-    if (in_filename != NULL) free(in_filename);
+    if (in_file  != NULL) free(in_file);
+    if (work_dir != NULL) free(work_dir);
 
     // Return errcode.
     return handle_err(errcode);
