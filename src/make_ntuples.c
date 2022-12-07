@@ -97,7 +97,7 @@ int run(char *in_filename, bool debug, int nevn, int run_no, double beam_E) {
     }
 
     // Create TTree and TNTuples.
-    TTree   *t_in = f_in->Get<TTree>("Tree");
+    TTree *t_in = f_in->Get<TTree>("Tree");
     if (t_in == NULL) return 8;
     TNtuple *t_out[2];
     t_out[0] = new TNtuple(S_DC,  S_DC,  vars);
@@ -448,14 +448,20 @@ int handle_args(int argc, char **argv, bool *debug, int *nevents, char **file,
     int opt;
     while ((opt = getopt(argc, argv, "-dhn:")) != -1) {
         switch (opt) {
-            case 'd': *debug   = true;         break;
-            case 'h': return 13;
-            case 'n': *nevents = atoi(optarg); break;
+            case 'd':
+                *debug   = true;
+                break;
+            case 'h':
+                return 13;
+            case 'n':
+                *nevents = atoi(optarg);
+                break;
             case  1 :
                 *file = (char *) malloc(strlen(optarg) + 1);
                 strcpy(*file, optarg);
                 break;
-            default: return 1; // Bad usage of optional arguments.
+            default:
+                return 1; // Bad usage of optional arguments.
         }
     }
     // Check that nevents is valid and that atoi performed correctly.
