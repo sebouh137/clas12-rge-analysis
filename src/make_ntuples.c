@@ -455,7 +455,7 @@ int handle_err(int errcode) {
 int handle_args(int argc, char **argv, char **in_file, char **work_dir,
         char **data_dir, bool *debug, int *nevn, int *run_no, double *beam_E)
 {
-    // Handle optional arguments.
+    // Handle arguments.
     int opt;
     while ((opt = getopt(argc, argv, "-Dhn:w:d:")) != -1) {
         switch (opt) {
@@ -480,7 +480,7 @@ int handle_args(int argc, char **argv, char **in_file, char **work_dir,
                 strcpy(*in_file, optarg);
                 break;
             default:
-                return 12; // Bad usage of optional arguments.
+                return 12;
         }
     }
 

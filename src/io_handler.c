@@ -15,17 +15,20 @@
 
 #include "../lib/io_handler.h"
 
+// TODO. Errcode is not handled well here.
 int check_root_filename(char *input_file) {
     if (!strstr(input_file, ".root"))     return 3; // Check that file is valid.
     if (!(access(input_file, F_OK) == 0)) return 4; // Check that file exists.
     return 0;
 }
 
+// TODO. Errcode is not handled well here.
 int handle_root_filename(char *input_file, int *run_no) {
     double dump = 0.;
     return handle_root_filename(input_file, run_no, &dump);
 }
 
+// TODO. Errcode is not handled well here.
 int handle_root_filename(char *input_file, int *run_no, double *beam_energy) {
     int chk = check_root_filename(input_file);
     if (chk) return chk;
@@ -36,12 +39,14 @@ int handle_root_filename(char *input_file, int *run_no, double *beam_energy) {
     return 0;
 }
 
+// TODO. Errcode is not handled well here.
 int check_hipo_filename(char *input_file) {
     if (!strstr(input_file, ".hipo"))     return 3; // Check that file is valid.
     if (!(access(input_file, F_OK) == 0)) return 4; // Check that file exists.
     return 0;
 }
 
+// TODO. Errcode is not handled well here.
 int handle_hipo_filename(char *input_file, int *run_no) {
     int chk = check_hipo_filename(input_file);
     if (chk) return chk;

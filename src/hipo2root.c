@@ -135,7 +135,7 @@ int handle_err(int errcode) {
 int handle_args(int argc, char **argv, char **in_file, char **work_dir,
         int *run_no, int *nevents)
 {
-    // Handle optional arguments.
+    // Handle arguments.
     int opt;
     while ((opt = getopt(argc, argv, "-hn:w:")) != -1) {
         switch (opt) {

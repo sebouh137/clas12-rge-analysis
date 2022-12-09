@@ -14,6 +14,7 @@
 // You can see a copy of the GNU Lesser Public License under the LICENSE file.
 
 #include <climits>
+#include <libgen.h>
 #include <TFile.h>
 #include <TNtuple.h>
 #include "../lib/constants.h"
@@ -23,8 +24,6 @@
 // TODO. See why I'm not seeing any neutrals.
 // TODO. Do acceptance correction.
 
-// TODO. Evaluate **acceptance** in diferent regions.
-
 // TODO. Check what happens with the acceptance of different particles (like pi+
 //       and pi-) when you reverse the magnetic fields.
 // TODO. Check if we can run high luminosity with reverse fields.
@@ -32,6 +31,7 @@
 // TODO. See what happens to low-momentum particles inside CLAS12 through
 //       simulation and see if they are reconstructed.
 
+// TODO. Evaluate **acceptance** in diferent regions.
 // TODO. Separate in vz bins. Start from -40 to 40 cm, 4-cm bins.
 
 // Assign name to plots, recursively going through binnings.
@@ -113,9 +113,9 @@ int find_idx(long dbins, long depth, Float_t var[], long bx[], double rx[][2],
     return -1; // Variable is not within binning range.
 }
 
-int run(char *filename, char *ac_filename) {
-    // Open input file. TODO. Change paths so that they are no longer relative!
-    TFile *f_in  = TFile::Open(filename, "READ");
+int run(char *in_file, char *acc_file, char *work_dir, int run_no) {
+    // Open input file.
+    TFile *f_in  = TFile::Open(in_file, "READ");
     if (!f_in || f_in->IsZombie()) return 2;
 
     // Get acceptance correction
@@ -126,9 +126,9 @@ int run(char *filename, char *ac_filename) {
     long int *pids;
     double **acc_corr;
 
-    if (ac_filename != NULL) {
-        if (access(ac_filename, F_OK) != 0) return 3;
-        FILE *ac_file = fopen(ac_filename, "r");
+    if (acc_file != NULL) {
+        if (access(acc_file, F_OK) != 0) return 3;
+        FILE *ac_file = fopen(acc_file, "r");
 
         binnings = (double **) malloc(5 * sizeof(*binnings));
         get_binnings(ac_file, b_sizes, binnings, &pids_size);
@@ -191,13 +191,6 @@ int run(char *filename, char *ac_filename) {
         printf("\b\b]\n");
         p_pid = catch_long();
     }
-
-    char *outfilename = p_pid == INT_MAX ?
-            Form("../root_io/plots_%s_%s.root", TRK_LIST[trk], PART_LIST[part]):
-            Form("../root_io/plots_%s_pid%d.root", TRK_LIST[trk], p_pid);
-
-    // Open output file (NOTE. This path sucks).
-    TFile *f_out = TFile::Open(outfilename, "RECREATE");
 
     bool general_cuts  = false;
     bool geometry_cuts = false;
@@ -310,7 +303,6 @@ int run(char *filename, char *ac_filename) {
 
     // === APPLY CUTS ==========================================================
     // Apply SIDIS cuts, checking which event numbers should be skipped.
-    // int nruns   =  1; // TODO.
     int nevents = -1;
     // Count number of events. NOTE. There's probably a cleaner way to do this.
     for (int i = 0; i < t->GetEntries(); ++i) {
@@ -423,7 +415,20 @@ int run(char *filename, char *ac_filename) {
         }
     }
 
-    // TODO. Apply acceptance correction.
+    // === APPLY ACCEPTANCE CORRECTION =========================================
+    // TODO...
+
+    // === WRITE TO OUTPUT FILE ================================================
+    // Create output file.
+    char out_file[PATH_MAX];
+    if (p_pid == INT_MAX)
+        sprintf(out_file, "%s/plots_%06d_%s_%s.root", work_dir, run_no,
+                TRK_LIST[trk], PART_LIST[part]);
+    else
+        sprintf(out_file, "%s/plots_%06d_%s_pid%d.root", work_dir, run_no,
+                TRK_LIST[trk], p_pid);
+
+    TFile *f_out = TFile::Open(out_file, "RECREATE");
 
     // Write plots to output file.
     for (int plti = 0; plti < plt_size; ++plti) {
@@ -442,9 +447,7 @@ int run(char *filename, char *ac_filename) {
     f_in ->Close();
     f_out->Close();
 
-    free(filename);
-    if (ac_filename != NULL) {
-        free(ac_filename);
+    if (acc_file != NULL) {
         for (int bi = 0; bi < 5; ++bi) free(binnings[bi]);
         free(binnings);
         free(pids);
@@ -457,12 +460,14 @@ int run(char *filename, char *ac_filename) {
 
 int usage() {
     fprintf(stderr,
-        "\nUsage: draw_plots [-h] [-a accfile] filename\n"
+        "\nUsage: draw_plots [-ha:w:] infile\n"
         " * -h         : show this message and exit.\n"
-        " * -a accfile : apply acceptance correction using accfile.\n"
-        " * filename   : input file produced by make_ntuples.\n\n"
+        " * -a accfile : apply acceptance correction using acc_file.\n"
+        " * -w workdir : location where output root files are to be "
+        "stored. Default\n                is root_io.\n"
+        " * infile     : input file produced by make_ntuples.\n\n"
         "    Draw plots from a ROOT file built from make_ntuples. File "
-        "should be named\n    ntuples.root.\n\n"
+        "should be named\n    <text>run_no.root.\n\n"
     );
 
     return 1;
@@ -475,56 +480,87 @@ int handle_err(int errcode) {
         case 1:
             break;
         case 2:
-            fprintf(stderr, "Error. Input file not found!\n\n");
+            fprintf(stderr, "Error %02d. Input file not found!\n", errcode);
             break;
         case 3:
-            fprintf(stderr, "Error. Acceptance correction file not found!\n\n");
+            fprintf(stderr, "Error %02d. Acceptance correction file not found!"
+                            "\n", errcode);
             break;
         case 4:
-            fprintf(stderr, "Error. Bad usage of optional arguments.\n\n");
+            fprintf(stderr, "Error %02d. Bad usage of optional arguments.\n",
+                    errcode);
             break;
         case 5:
-            fprintf(stderr, "Error. No input file name provided.\n\n");
+            fprintf(stderr, "Error %02d. No file name provided.\n", errcode);
+            break;
+        case 6:
+            fprintf(stderr, "Error %02d. input is not a valid ROOT file.\n",
+                    errcode);
             break;
         default:
-            fprintf(stderr, "Error code %d not implemented!\n\n", errcode);
+            fprintf(stderr, "Error code %d not implemented!\n", errcode);
             return 1;
     }
 
     return usage();
 }
 
-int handle_args(int argc, char **argv, char **accfile, char **file) {
-    // Handle optional arguments.
+int handle_args(int argc, char **argv, char **in_file, char **acc_file,
+        char **work_dir, int *run_no)
+{
+    // Handle arguments.
     int opt;
-    while ((opt = getopt(argc, argv, "-ha:")) != -1) {
+    while ((opt = getopt(argc, argv, "-ha:w:")) != -1) {
         switch (opt) {
             case 'h':
                 return 1;
             case 'a':
-                *accfile = (char *) malloc(strlen(optarg) + 1);
-                strcpy(*accfile, optarg);
+                *acc_file = (char *) malloc(strlen(optarg) + 1);
+                strcpy(*acc_file, optarg);
                 break;
+            case 'w':
+                *work_dir = (char *) malloc(strlen(optarg) + 1);
+                strcpy(*work_dir, optarg);
             case 1:
-                *file = (char *) malloc(strlen(optarg) + 1);
-                strcpy(*file, optarg);
+                *in_file = (char *) malloc(strlen(optarg) + 1);
+                strcpy(*in_file, optarg);
                 break;
             default:
-                return 4; // Bad usage of optional arguments.
+                return 4;
         }
     }
 
-    // Handle positional argument.
-    if (argc < 2) return 5;
+    // Define workdir if undefined.
+    if (*work_dir == NULL) {
+        *work_dir = (char *) malloc(PATH_MAX);
+        sprintf(*work_dir, "%s/../root_io", dirname(argv[0]));
+    }
 
-    return 0;
+    // Check positional argument.
+    if (*in_file == NULL) return 5;
+
+    return handle_root_filename(*in_file, run_no);
 }
 
 int main(int argc, char **argv) {
-    char *accfile = NULL;
-    char *file    = NULL;
+    // Handle arguments.
+    char *in_file  = NULL;
+    char *acc_file = NULL;
+    char *work_dir = NULL;
+    int run_no     = -1;
 
-    int errcode = handle_args(argc, argv, &accfile, &file);
-    if (errcode != 0) return handle_err(errcode);
-    return handle_err(run(file, accfile));
+    int errcode = handle_args(argc, argv, &in_file, &acc_file, &work_dir,
+            &run_no);
+
+    // Run.
+    if (errcode == 0)
+        errcode = run(in_file, acc_file, work_dir, run_no);
+
+    // Free up memory.
+    if (in_file  != NULL) free(in_file);
+    if (acc_file != NULL) free(acc_file);
+    if (work_dir != NULL) free(work_dir);
+
+    // Return errcode.
+    return handle_err(errcode);
 }
