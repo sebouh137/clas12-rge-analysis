@@ -13,13 +13,8 @@
 //
 // You can see a copy of the GNU Lesser Public License under the LICENSE file.
 
-#include <cstdlib>
-#include <iostream>
 #include <libgen.h>
-#include <limits.h>
-#include <unistd.h>
 #include "TFile.h"
-#include "TTree.h"
 #include "../lib/io_handler.h"
 #include "../lib/bank_containers.h"
 

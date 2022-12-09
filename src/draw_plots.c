@@ -17,7 +17,6 @@
 #include <libgen.h>
 #include <TFile.h>
 #include <TNtuple.h>
-#include "../lib/constants.h"
 #include "../lib/io_handler.h"
 #include "../lib/utilities.h"
 

@@ -15,7 +15,6 @@
 
 #include <libgen.h>
 #include <limits.h>
-#include <algorithm>
 #include <TFile.h>
 #include <TNtuple.h>
 #include "../lib/io_handler.h"

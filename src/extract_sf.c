@@ -14,7 +14,6 @@
 // You can see a copy of the GNU Lesser Public License under the LICENSE file.
 
 #include <libgen.h>
-#include <limits.h>
 #include <TCanvas.h>
 #include <TFile.h>
 #include <TF1.h>
