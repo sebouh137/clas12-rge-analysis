@@ -13,6 +13,8 @@
 //
 // You can see a copy of the GNU Lesser Public License under the LICENSE file.
 
+#include <libgen.h>
+#include <limits.h>
 #include <algorithm>
 #include <TFile.h>
 #include <TNtuple.h>
@@ -70,8 +72,8 @@ int count_events(int *evn_cnt, TTree *tree, int pid, int tsize, int *sizes,
     return 0;
 }
 
-int run(char *gen_file, char *sim_file, int *sizes, double **binnings,
-        bool use_fmt, bool in_deg)
+int run(char *gen_file, char *sim_file, char *data_dir, int *sizes,
+        double **binnings, bool use_fmt, bool in_deg)
 {
     // Open input files and load TTrees.
     TFile *t_in = TFile::Open(gen_file, "READ");
@@ -84,10 +86,11 @@ int run(char *gen_file, char *sim_file, int *sizes, double **binnings,
     TTree *simul = use_fmt ? s_in->Get<TTree>("fmt") : s_in->Get<TTree>("dc");
     if (simul == NULL) return 13;
 
-    // Open output file.
-    const char *out_file = "../data/acc_corr.txt";
+    // Create output file.
+    char out_file[PATH_MAX];
+    sprintf(out_file, "%s/acc_corr.txt", data_dir);
     if (!access(out_file, F_OK)) return 11;
-    FILE *t_out = fopen("../data/acc_corr.txt", "w");
+    FILE *t_out = fopen(out_file, "w");
 
     // Write binning sizes to output file.
     for (int bi = 0; bi < 5; ++bi) fprintf(t_out, "%d ", sizes[bi]);
@@ -144,8 +147,6 @@ int run(char *gen_file, char *sim_file, int *sizes, double **binnings,
     t_in->Close();
     s_in->Close();
     fclose(t_out);
-    free(gen_file);
-    free(sim_file);
     for (int bi = 0; bi < 5; ++bi) free(binnings[bi]);
     free(binnings);
 
@@ -154,7 +155,8 @@ int run(char *gen_file, char *sim_file, int *sizes, double **binnings,
 
 int usage() {
     fprintf(stderr,
-            "\nUsage: acc_corr [q:n:z:p:f:Fdh] [-g genfile] [-s simfile]\n"
+            "\nUsage: acc_corr [hq:n:z:p:f:g:s:d:FD]\n"
+            " * -h         : show this message and exit.\n"
             " * -q ...     : Q2 bins.\n"
             " * -n ...     : nu bins.\n"
             " * -z ...     : z_h bins.\n"
@@ -162,11 +164,12 @@ int usage() {
             " * -f ...     : phi_PQ bins.\n"
             " * -g genfile : generated events ROOT file.\n"
             " * -s simfile : simulated events ROOT file.\n"
+            " * -d datadir : location where sampling fraction files are "
+            "located. Default is\n                data.\n"
             " * -F         : flag to tell program to use FMT data instead of DC"
             " data from\n                the simulation file.\n"
-            " * -d         : flag to tell program that generated events are in "
+            " * -D         : flag to tell program that generated events are in "
             "degrees\n                instead of radians.\n"
-            " * -h         : show this message and exit.\n\n"
             "    Get the 5-dimensional acceptance correction factors for Q2, nu"
             ", z_h, Pt2, and\n    phi_PQ. For each optional argument, an array "
             "of doubles is expected. The first\n    double will be the lower "
@@ -232,12 +235,15 @@ int handle_err(int errcode) {
 }
 
 int handle_args(int argc, char **argv, char **gen_file, char **sim_file,
-        int *sizes, double **binnings, bool *use_fmt, bool *in_deg)
+        char **data_dir, int *sizes, double **binnings, bool *use_fmt,
+        bool *in_deg)
 {
-    // Handle optional arguments.
+    // Handle arguments.
     int opt;
-    while ((opt = getopt(argc, argv, "q:n:z:p:f:g:s:Fdh")) != -1) {
+    while ((opt = getopt(argc, argv, "hq:n:z:p:f:g:s:d:FD")) != -1) {
         switch (opt) {
+        case 'h':
+            return 1;
         case 'q':
             grab_multiarg(argc, argv, &optind, &(sizes[0]), &(binnings[0]));
             break;
@@ -259,14 +265,16 @@ int handle_args(int argc, char **argv, char **gen_file, char **sim_file,
         case 's':
             grab_filename(optarg, sim_file);
             break;
+        case 'd':
+            *data_dir = (char *) malloc(strlen(optarg) + 1);
+            strcpy(*data_dir, optarg);
+            break;
         case 'F':
             *use_fmt = true;
             break;
-        case 'd':
+        case 'D':
             *in_deg = true;
             break;
-        case 'h':
-            return 1;
         default:
             break;
         }
@@ -275,30 +283,49 @@ int handle_args(int argc, char **argv, char **gen_file, char **sim_file,
     // Check that all vectors have *at least* two values.
     for (int bi = 0; bi < 5; ++bi) if (sizes[bi] < 2) return 2;
 
-    // Check input file existence and validity.
-    if (!(*gen_file)) return 7;
+    // Define datadir if undefined.
+    if (*data_dir == NULL) {
+        *data_dir = (char *) malloc(PATH_MAX);
+        sprintf(*data_dir, "%s/../data", dirname(argv[0]));
+    }
+
+    // Check genfile.
+    if (*gen_file == NULL) return 7;
     int errcode = check_root_filename(*gen_file);
     if (errcode) return errcode;
-    if (!(*sim_file)) return 8;
-    errcode     = check_root_filename(*sim_file);
+
+    // Check simfile.
+    if (*sim_file == NULL) return 8;
+    errcode = check_root_filename(*sim_file);
     if (errcode) return errcode + 2;
 
     return 0;
 }
 
 int main(int argc, char **argv) {
-    bool use_fmt   = false;
-    bool in_deg    = false;
+    // Handle arguments.
     char *gen_file = NULL;
     char *sim_file = NULL;
+    char *data_dir = NULL;
+    bool use_fmt   = false;
+    bool in_deg    = false;
     int sizes[5];
     double **binnings;
 
     binnings = (double **) malloc(5 * sizeof(*binnings));
-    int errcode = handle_args(argc, argv, &gen_file, &sim_file, sizes, binnings,
-            &use_fmt, &in_deg);
-    if (handle_err(errcode)) return 1;
+    int errcode = handle_args(argc, argv, &gen_file, &sim_file, &data_dir,
+            sizes, binnings, &use_fmt, &in_deg);
 
-    return handle_err(run(gen_file, sim_file, sizes, binnings, use_fmt,
-            in_deg));
+    // Run.
+    if (errcode == 0)
+        errcode = run(gen_file, sim_file, data_dir, sizes, binnings, use_fmt,
+                in_deg);
+
+    // Free up memory.
+    if (gen_file != NULL) free(gen_file);
+    if (sim_file != NULL) free(sim_file);
+    if (data_dir != NULL) free(data_dir);
+
+    // Return errcode.
+    return handle_err(errcode);
 }

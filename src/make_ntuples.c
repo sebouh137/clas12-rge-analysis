@@ -457,7 +457,7 @@ int handle_args(int argc, char **argv, char **in_file, char **work_dir,
 {
     // Handle arguments.
     int opt;
-    while ((opt = getopt(argc, argv, "-Dhn:w:d:")) != -1) {
+    while ((opt = getopt(argc, argv, "-hDn:w:d:")) != -1) {
         switch (opt) {
             case 'h':
                 return 1;
