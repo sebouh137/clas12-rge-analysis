@@ -75,9 +75,10 @@ int run(char *in_file, char *work_dir, char *data_dir, bool debug, int nevn,
         int run_no, double beam_E)
 {
     // Get sampling fraction.
+    char t_file[PATH_MAX];
+    sprintf(t_file, "%s/sf_params_%06d.txt", data_dir, run_no);
     double sf_params[NSECTORS][SF_NPARAMS][2];
-    int errcode = get_sf_params(Form("%s/sf_params_%06d.txt", data_dir, run_no),
-            sf_params);
+    int errcode = get_sf_params(t_file, sf_params);
     if (errcode) return 11;
 
     // Create output file.
