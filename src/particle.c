@@ -437,7 +437,7 @@ float PLong2PQ(particle p, particle e, double bE) {
     return P(p)*P(p) * cos_theta_pq(p,e,bE)*cos_theta_pq(p,e,bE);
 }
 
-// Calculate X_f (X Feynmann).
+// Calculate X_f (X Feynman).
 float Xf(particle p, particle e, double bE) {
     if (!(p.is_hadron && e.is_trigger_electron)) return 0;
     return PlCM(p,e,bE) / PmaxCM(p,e,bE);

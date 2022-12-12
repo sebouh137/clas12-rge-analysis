@@ -154,7 +154,7 @@ int run(char *gen_file, char *sim_file, char *data_dir, int *sizes,
 
 int usage() {
     fprintf(stderr,
-            "\nUsage: acc_corr [hq:n:z:p:f:g:s:d:FD]\n"
+            "\nUsage: acc_corr [-hq:n:z:p:f:g:s:d:FD]\n"
             " * -h         : show this message and exit.\n"
             " * -q ...     : Q2 bins.\n"
             " * -n ...     : nu bins.\n"

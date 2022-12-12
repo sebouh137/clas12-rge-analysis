@@ -89,7 +89,7 @@ int usage() {
             " * infile     : input HIPO file. Expected file format is "
             "<text>run_no.hipo.\n\n"
             "    Convert a file from hipo to root format. This program only "
-            "conserves the\n    banks that are useful for EG2 analysis, as "
+            "conserves the\n    banks that are useful for RG-E analysis, as "
             "specified in the\n    lib/bank_containers.h file.\n\n"
     );
 
