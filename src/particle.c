@@ -39,7 +39,9 @@ particle particle_init(REC_Particle * rp, REC_Track * rt, int pos) {
 }
 
 // Initialize a new particle from the particle, tracks, and FMT banks.
-particle particle_init(REC_Particle * rp, REC_Track * rt, FMT_Tracks * ft, int pos) {
+particle particle_init(REC_Particle * rp, REC_Track * rt, FMT_Tracks * ft,
+        int pos)
+{
     int index  = rt->index->at(pos);
     int pindex = rt->pindex->at(pos); // pindex is always equal to pos!
 
@@ -56,8 +58,9 @@ particle particle_init(REC_Particle * rp, REC_Track * rt, FMT_Tracks * ft, int p
 }
 
 // Initialize a new particle.
-particle particle_init(int charge, double beta, int sector, double vx, double vy,
-            double vz, double px, double py, double pz) {
+particle particle_init(int charge, double beta, int sector, double vx,
+        double vy, double vz, double px, double py, double pz)
+{
     particle p;
 
     // Inherent vars.
@@ -84,8 +87,10 @@ particle particle_init(int charge, double beta, int sector, double vx, double vy
 
 // Set PID from all available information. This function mimics PIDMatch from
 //         the EB engine.
-int set_pid(particle * p, int recon_pid, int status, double tot_E, double pcal_E,
-        int htcc_nphe, int ltcc_nphe, double sf_params[SF_NPARAMS][2]) {
+int set_pid(particle * p, int recon_pid, int status, double tot_E,
+        double pcal_E, int htcc_nphe, int ltcc_nphe,
+        double sf_params[SF_NPARAMS][2])
+{
     // Assign PID for neutrals and store PID from reconstruction for charge
     //         particles.
     int rpid = p->q == 0 ? assign_neutral_pid(tot_E, p->beta) : recon_pid;
@@ -122,8 +127,8 @@ int set_pid(particle * p, int recon_pid, int status, double tot_E, double pcal_E
 
     // Match PID.
     for (int pi = 0; p->pid == 0 && pi < hypotheses_size; ++pi) {
-        p->pid = match_pid(hypotheses[pi], hypotheses[pi] == rpid, p->q, e_check,
-                htcc_signal_check, htcc_pion_threshold);
+        p->pid = match_pid(hypotheses[pi], hypotheses[pi] == rpid, p->q,
+                e_check, htcc_signal_check, htcc_pion_threshold);
     }
 
     // Check if particle is trigger electron and define mass from PID.
@@ -382,14 +387,15 @@ float Xf(particle p, particle e, double bE) {
 // Compute the missing mass
 float Mx2(particle p, particle e, double bE) {
     if (!(p.is_hadron&&e.is_trigger_electron)) return 0;
-    return W(e,bE)*W(e,bE) - 2*nu(e,bE)*zh(p,e,bE) * (nu(e,bE) + MASS.at(2212)) +
-            MASS.at(211)*MASS.at(211) + 2*sqrt((Q2(e,bE) + nu(e,bE)*nu(e,bE)) *
-            Pl2(p,e,bE));
+    return W(e,bE)*W(e,bE) - 2*nu(e,bE)*zh(p,e,bE) * (nu(e,bE) +
+            MASS.at(2212)) + MASS.at(211)*MASS.at(211) + 2*sqrt((Q2(e,bE) +
+            nu(e,bE)*nu(e,bE)) * Pl2(p,e,bE));
 }
 
 // Compute Mandelstam t. TODO. Make sure that that is what this is!
 float t_mandelstam(particle p, particle e, double bE) {
     if (!(p.is_hadron&&e.is_trigger_electron)) return 0;
     return 2*sqrt((nu(e,bE)*nu(e,bE) + Q2(e,bE)) * Pl2(p,e,bE)) +
-            MASS.at(211)*MASS.at(211) - Q2(e,bE) - 2*nu(e,bE)*nu(e,bE)*zh(p,e,bE);
+            MASS.at(211)*MASS.at(211) - Q2(e,bE) -
+            2*nu(e,bE)*nu(e,bE)*zh(p,e,bE);
 }
