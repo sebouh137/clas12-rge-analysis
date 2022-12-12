@@ -189,7 +189,6 @@ int run(char *in_file, char *work_dir, char *data_dir, bool debug, int nevn,
                 else if (lyr == ECOU_LYR) ecou_E += rcal.energy->at(i);
                 else return 9;
             }
-            float tot_E = pcal_E + ecin_E + ecou_E;
 
             // Get Cherenkov counters data.
             int htcc_nphe = 0; // Number of photoelectrons deposited in htcc.
@@ -213,8 +212,8 @@ int run(char *in_file, char *work_dir, char *data_dir, bool debug, int nevn,
 
             // Assign PID.
             for (int pi = 0; pi < 2; ++pi) {
-                set_pid(&(p_el[pi]), rpart.pid->at(pindex), status, tot_E,
-                        pcal_E, htcc_nphe, ltcc_nphe,
+                set_pid(&(p_el[pi]), rpart.pid->at(pindex), status,
+                        pcal_E + ecin_E + ecou_E, pcal_E, htcc_nphe, ltcc_nphe,
                         sf_params[rtrk.sector->at(pos)]);
             }
 
@@ -223,19 +222,13 @@ int run(char *in_file, char *work_dir, char *data_dir, bool debug, int nevn,
                 if (!(p_el[pi].is_valid && p_el[pi].is_trigger_electron))
                     continue;
                 trigger_exist = true;
-                Float_t v[VAR_LIST_SIZE] = {
-                        (Float_t) run_no, (Float_t) evn, (Float_t) beam_E,
-                        (Float_t) p_el[pi].pid, (Float_t) status,
-                        (Float_t) p_el[pi].q, p_el[pi].mass, p_el[pi].vx,
-                        p_el[pi].vy, p_el[pi].vz, p_el[pi].px, p_el[pi].py,
-                        p_el[pi].pz, P(p_el[pi]), theta_lab(p_el[pi]),
-                        phi_lab(p_el[pi]), p_el[pi].beta, chi2, ndf, pcal_E,
-                        ecin_E, ecou_E, tot_E, (tof - tre_tof),
-                        Q2(p_el[pi], beam_E), nu(p_el[pi], beam_E),
-                        Xb(p_el[pi], beam_E), W2(p_el[pi], beam_E),
-                        0, 0, 0, 0, 0
-                };
-                t_out[pi]->Fill(v);
+
+                Float_t arr[VAR_LIST_SIZE];
+                fill_ntuples_arr(arr, p_el[pi], p_el[pi], run_no, evn, status,
+                        beam_E, chi2, ndf, pcal_E, ecin_E, ecou_E, tof,
+                        tre_tof);
+
+                t_out[pi]->Fill(arr);
             }
             if (trigger_exist) {
                 trigger_pindex = pindex;
@@ -252,9 +245,12 @@ int run(char *in_file, char *work_dir, char *data_dir, bool debug, int nevn,
 
         // Processing particles.
         for (UInt_t pos = 0; pos < rtrk.index->size(); ++pos) {
-            int pindex = rtrk.pindex->at(pos); // pindex is always equal to pos!
+            // Currently pindex is always equal to pos, but this is not a given
+            //     in the future of reconstruction development. Better safe than
+            //     sorry!
+            int pindex = rtrk.pindex->at(pos);
 
-            // Conditional to avoid trigger electron double counting.
+            // Avoid double-counting the trigger electron.
             if (trigger_pindex == pindex && trigger_pos == pos) continue;
 
             // Get reconstructed particle from DC and from FMT.
@@ -275,7 +271,6 @@ int run(char *in_file, char *work_dir, char *data_dir, bool debug, int nevn,
                 else if (lyr == ECOU_LYR) ecou_E += rcal.energy->at(i);
                 else return 9;
             }
-            float tot_E = pcal_E + ecin_E + ecou_E;
 
             // Get Cherenkov counters data.
             int htcc_nphe = 0; // Number of photoelectrons deposited in htcc.
@@ -299,8 +294,9 @@ int run(char *in_file, char *work_dir, char *data_dir, bool debug, int nevn,
 
             // Assign PID.
             for (int pi = 0; pi < 2; ++pi) {
-                set_pid(&(p[pi]), rpart.pid->at(pindex), status, tot_E, pcal_E,
-                        htcc_nphe, ltcc_nphe, sf_params[rtrk.sector->at(pos)]);
+                set_pid(&(p[pi]), rpart.pid->at(pindex), status,
+                        pcal_E + ecin_E + ecou_E, pcal_E, htcc_nphe, ltcc_nphe,
+                        sf_params[rtrk.sector->at(pos)]);
             }
 
             // Test PID assignment precision.
@@ -314,29 +310,15 @@ int run(char *in_file, char *work_dir, char *data_dir, bool debug, int nevn,
             }
 
             // Fill TNtuples.
-            // TODO. This probably should be implemented more elegantly.
             // NOTE. If adding new variables, check their order in S_VAR_LIST.
             for (int pi = 0; pi < 2; ++pi) {
                 if (!p[pi].is_valid) continue;
-                Float_t v[VAR_LIST_SIZE] = {
-                        (Float_t) run_no, (Float_t) evn, (Float_t) beam_E,
-                        (Float_t) p[pi].pid, (Float_t) status,
-                        (Float_t) p[pi].q, p[pi].mass, p[pi].vx, p[pi].vy,
-                        p[pi].vz, p[pi].px, p[pi].py, p[pi].pz, P(p[pi]),
-                        theta_lab(p[pi]), phi_lab(p[pi]), p[pi].beta, chi2, ndf,
-                        pcal_E, ecin_E, ecou_E, tot_E, (tof - tre_tof),
-                        // DIS e- functions just use the trigger electron.
-                        Q2(p_el[pi], beam_E), nu(p_el[pi], beam_E),
-                        Xb(p_el[pi], beam_E), W2(p_el[pi], beam_E),
-                        // SIDIS functions use both particle and electron.
-                        zh(p[pi], p_el[pi], beam_E),
-                        Pt2(p[pi], p_el[pi], beam_E),
-                        Pl2(p[pi], p_el[pi], beam_E),
-                        phi_pq(p[pi], p_el[pi], beam_E),
-                        theta_pq(p[pi], p_el[pi], beam_E)
-                };
+                Float_t arr[VAR_LIST_SIZE];
+                fill_ntuples_arr(arr, p[pi], p_el[pi], run_no, evn, status,
+                        beam_E, chi2, ndf, pcal_E, ecin_E, ecou_E, tof,
+                        tre_tof);
 
-                t_out[pi]->Fill(v);
+                t_out[pi]->Fill(arr);
             }
         }
     }
