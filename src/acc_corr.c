@@ -105,25 +105,33 @@ int run(char *gen_file, char *sim_file, char *data_dir, int *sizes,
 
     // Get list of PIDs.
     Float_t s_pid;
-    std::vector<double> pid_list;
+    double pidlist[256]; // We assume that we'll deal with less than 256 PIDs.
+    int pidlist_size = 0;
     thrown->SetBranchAddress(S_PID, &s_pid);
     for (int evn = 0; evn < thrown->GetEntries(); ++evn) {
         thrown->GetEntry(evn);
-        if (std::find(pid_list.begin(),pid_list.end(),s_pid) == pid_list.end())
-            pid_list.push_back(s_pid);
+        bool found = false;
+        for (int pi = 0; pi < pidlist_size; ++pi) {
+            if (pidlist[pi] - 0.5 <= s_pid && s_pid <= pidlist[pi] + 0.5)
+                found = true;
+        }
+        if (found) continue;
+        pidlist[pidlist_size] = s_pid;
+        ++pidlist_size;
     }
 
     // Write list of PIDs to output file.
-    fprintf(t_out, "%ld\n", pid_list.size());
-    for (double pid : pid_list) fprintf(t_out, "%d ", (int) pid);
+    fprintf(t_out, "%d\n", pidlist_size);
+    for (int pi = 0; pi < pidlist_size; ++pi)
+        fprintf(t_out, "%d ", (int) pidlist[pi]);
     fprintf(t_out, "\n");
 
     // Count # of thrown and simulated events in each bin.
     int tsize = 1;
     for (int bi = 0; bi < 5; ++bi) tsize *= sizes[bi] - 1;
 
-    for (double pid_dbl : pid_list) {
-        int pid = (int) pid_dbl;
+    for (int pi = 0; pi < pidlist_size; ++pi) {
+        int pid = (int) pidlist[pi];
         printf("Working on PID %5d...", pid);
         fflush(stdout);
 
@@ -279,7 +287,7 @@ int handle_args(int argc, char **argv, char **gen_file, char **sim_file,
         }
     }
 
-    // Check that all vectors have *at least* two values.
+    // Check that all arrays have *at least* two values.
     for (int bi = 0; bi < 5; ++bi) if (sizes[bi] < 2) return 2;
 
     // Define datadir if undefined.
