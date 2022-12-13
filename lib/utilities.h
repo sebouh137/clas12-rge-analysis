@@ -20,6 +20,7 @@
 #include "constants.h"
 
 double to_deg(double radians);
+double to_rad(double degrees);
 double calc_magnitude(double x, double y);
 double calc_magnitude(double x, double y, double z);
 double calc_angle(double x1, double y1, double z1, double x2, double y2,

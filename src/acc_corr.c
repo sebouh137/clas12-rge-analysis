@@ -13,127 +13,135 @@
 //
 // You can see a copy of the GNU Lesser Public License under the LICENSE file.
 
-#include <algorithm>
+#include <libgen.h>
+#include <limits.h>
 #include <TFile.h>
 #include <TNtuple.h>
 #include "../lib/io_handler.h"
-
-// Print contents of vector v to file f.
-int print_vector(FILE *f, std::vector<double> &v) {
-    for (double d : v) fprintf(f, "%12.9f ", d);
-    fprintf(f, "\n");
-    return 0;
-}
+#include "../lib/utilities.h"
 
 // Return position of val in vec or -1 if val is not inside vec.
-int find_pos(double val, std::vector<double> vec, int size) {
-    for (int i = 0; i < size; ++i) if (vec[i] < val && val < vec[i+1]) return i;
+int find_pos(double val, double *b, int size) {
+    for (int i = 0; i < size; ++i) if (b[i] < val && val < b[i+1]) return i;
     return -1;
 }
 
 // Count number of events in tree for each bin for a given pid.
-int count_events(int *evn_cnt, TTree *tree, int pid, int *sizes,
-        std::vector<double> &b_Q2, std::vector<double> &b_nu,
-        std::vector<double> &b_zh, std::vector<double> &b_Pt2,
-        std::vector<double> &b_pPQ)
+int count_events(int *evn_cnt, TTree *tree, int pid, int tsize, int *sizes,
+        double **binnings, bool in_deg)
 {
-    for (int i = 0; i < sizes[5]; ++i) evn_cnt[i] = 0;
+    for (int i = 0; i < tsize; ++i) evn_cnt[i] = 0;
 
-    Float_t s_pid, s_Q2, s_nu, s_zh, s_Pt2, s_pPQ;
+    Float_t s_pid;
+    Float_t s_binning[5] = {0, 0, 0, 0, 0};
     tree->SetBranchAddress(S_PID,   &s_pid);
-    tree->SetBranchAddress(S_Q2,    &s_Q2);
-    tree->SetBranchAddress(S_NU,    &s_nu);
-    tree->SetBranchAddress(S_ZH,    &s_zh);
-    tree->SetBranchAddress(S_PT2,   &s_Pt2);
-    tree->SetBranchAddress(S_PHIPQ, &s_pPQ);
+    tree->SetBranchAddress(S_Q2,    &(s_binning[0]));
+    tree->SetBranchAddress(S_NU,    &(s_binning[1]));
+    tree->SetBranchAddress(S_ZH,    &(s_binning[2]));
+    tree->SetBranchAddress(S_PT2,   &(s_binning[3]));
+    tree->SetBranchAddress(S_PHIPQ, &(s_binning[4]));
     for (int evn = 0; evn < tree->GetEntries(); ++evn) {
         tree->GetEntry(evn);
         if (pid-0.5 < s_pid && s_pid < pid+0.5) continue;
 
         // Find position of event.
-        int i0, i1, i2, i3, i4;
-        i0 = find_pos(s_Q2,  b_Q2,  sizes[0]);
-        i1 = find_pos(s_nu,  b_nu,  sizes[1]);
-        i2 = find_pos(s_zh,  b_zh,  sizes[2]);
-        i3 = find_pos(s_Pt2, b_Pt2, sizes[3]);
-        i4 = find_pos(s_pPQ, b_pPQ, sizes[4]);
-        if (i0 < 0 || i1 < 0 || i2 < 0 || i3 < 0 || i4 < 0) continue;
+        int idx[5];
+        bool kill = false;
+        for (int bi = 0; bi < 5 && !kill; ++bi) {
+            if (bi == 4 && in_deg)
+                idx[bi] = find_pos(to_rad(s_binning[bi]), binnings[bi],
+                        sizes[bi]-1);
+            else
+                idx[bi] = find_pos(s_binning[bi], binnings[bi], sizes[bi]-1);
+
+            if (idx[bi] < 0) kill = true;
+        }
+        if (kill) continue;
 
         // Increase counter.
         ++evn_cnt[
-                i0*sizes[1]*sizes[2]*sizes[3]*sizes[4] +
-                i1*sizes[2]*sizes[3]*sizes[4] +
-                i2*sizes[3]*sizes[4] +
-                i3*sizes[4] +
-                i4
+                idx[0]*(sizes[1]-1)*(sizes[2]-1)*(sizes[3]-1)*(sizes[4]-1) +
+                idx[1]*(sizes[2]-1)*(sizes[3]-1)*(sizes[4]-1) +
+                idx[2]*(sizes[3]-1)*(sizes[4]-1) +
+                idx[3]*(sizes[4]-1) +
+                idx[4]
         ];
     }
 
     return 0;
 }
 
-int run(char *gen_file, char *sim_file, std::vector<double> &b_Q2,
-        std::vector<double> &b_nu,  std::vector<double> &b_zh,
-        std::vector<double> &b_Pt2, std::vector<double> &b_pPQ, bool use_fmt)
+int run(char *gen_file, char *sim_file, char *data_dir, int *sizes,
+        double **binnings, bool use_fmt, bool in_deg)
 {
     // Open input files and load TTrees.
     TFile *t_in = TFile::Open(gen_file, "READ");
     if (!t_in || t_in->IsZombie()) return 9;
-
-    TFile *s_in = TFile::Open(sim_file, "READ");
-    if (!s_in || s_in->IsZombie()) return 10;
-
-    // Open output file.
-    const char *out_file = "../data/acc_corr.txt";
-    if (!access(out_file, F_OK)) return 11;
-    FILE *t_out = fopen("../data/acc_corr.txt", "w");
-
-    // Write binning to output file.
-    print_vector(t_out, b_Q2);
-    print_vector(t_out, b_nu);
-    print_vector(t_out, b_zh);
-    print_vector(t_out, b_Pt2);
-    print_vector(t_out, b_pPQ);
-
-    // Open TTrees.
     TNtuple *thrown = t_in->Get<TNtuple>("ntuple_thrown");
     if (thrown == NULL) return 12;
 
+    TFile *s_in = TFile::Open(sim_file, "READ");
+    if (!s_in || s_in->IsZombie()) return 10;
     TTree *simul = use_fmt ? s_in->Get<TTree>("fmt") : s_in->Get<TTree>("dc");
     if (simul == NULL) return 13;
 
+    // Create output file.
+    char out_file[PATH_MAX];
+    sprintf(out_file, "%s/acc_corr.txt", data_dir);
+    if (!access(out_file, F_OK)) return 11;
+    FILE *t_out = fopen(out_file, "w");
+
+    // Write binning sizes to output file.
+    for (int bi = 0; bi < 5; ++bi) fprintf(t_out, "%d ", sizes[bi]);
+    fprintf(t_out, "\n");
+
+    // Write binnings to output file.
+    for (int bi = 0; bi < 5; ++bi) {
+        for (int bii = 0; bii < sizes[bi]; ++bii) {
+            fprintf(t_out, "%12.9f ", binnings[bi][bii]);
+        }
+        fprintf(t_out, "\n");
+    }
+
     // Get list of PIDs.
     Float_t s_pid;
-    std::vector<double> pid_list;
+    double pidlist[256]; // We assume that we'll deal with less than 256 PIDs.
+    int pidlist_size = 0;
     thrown->SetBranchAddress(S_PID, &s_pid);
     for (int evn = 0; evn < thrown->GetEntries(); ++evn) {
         thrown->GetEntry(evn);
-        if (std::find(pid_list.begin(),pid_list.end(),s_pid) == pid_list.end())
-            pid_list.push_back(s_pid);
+        bool found = false;
+        for (int pi = 0; pi < pidlist_size; ++pi) {
+            if (pidlist[pi] - 0.5 <= s_pid && s_pid <= pidlist[pi] + 0.5)
+                found = true;
+        }
+        if (found) continue;
+        pidlist[pidlist_size] = s_pid;
+        ++pidlist_size;
     }
 
-    // Count # of thrown and simulated events in each bin.
-    int sizes[6];
-    sizes[0] = b_Q2.size()-1;
-    sizes[1] = b_nu.size()-1;
-    sizes[2] = b_zh.size()-1;
-    sizes[3] = b_Pt2.size()-1;
-    sizes[4] = b_pPQ.size()-1;
-    sizes[5] = sizes[0]*sizes[1]*sizes[2]*sizes[3]*sizes[4];
+    // Write list of PIDs to output file.
+    fprintf(t_out, "%d\n", pidlist_size);
+    for (int pi = 0; pi < pidlist_size; ++pi)
+        fprintf(t_out, "%d ", (int) pidlist[pi]);
+    fprintf(t_out, "\n");
 
-    for (double pid_tmp : pid_list) {
-        int pid = (int) pid_tmp;
+    // Count # of thrown and simulated events in each bin.
+    int tsize = 1;
+    for (int bi = 0; bi < 5; ++bi) tsize *= sizes[bi] - 1;
+
+    for (int pi = 0; pi < pidlist_size; ++pi) {
+        int pid = (int) pidlist[pi];
         printf("Working on PID %5d...", pid);
         fflush(stdout);
 
-        int t_evn[sizes[5]];
-        int s_evn[sizes[5]];
-        count_events(t_evn, thrown, pid, sizes, b_Q2, b_nu, b_zh, b_Pt2, b_pPQ);
-        count_events(s_evn, simul,  pid, sizes, b_Q2, b_nu, b_zh, b_Pt2, b_pPQ);
+        int t_evn[tsize];
+        int s_evn[tsize];
+        count_events(t_evn, thrown, pid, tsize, sizes, binnings, in_deg);
+        count_events(s_evn, simul,  pid, tsize, sizes, binnings, false);
 
-        fprintf(t_out, "%d ", pid);
         // Compute and save acceptance ratios.
-        for (int i = 0; i < sizes[5]; ++i) {
+        for (int i = 0; i < tsize; ++i) {
             double acc = (double)s_evn[i] / (double)t_evn[i];
             if (std::fpclassify(acc) != FP_NORMAL || acc > 1) acc = 0;
             fprintf(t_out, "%.12f ", acc);
@@ -146,15 +154,16 @@ int run(char *gen_file, char *sim_file, std::vector<double> &b_Q2,
     t_in->Close();
     s_in->Close();
     fclose(t_out);
-    free(gen_file);
-    free(sim_file);
+    for (int bi = 0; bi < 5; ++bi) free(binnings[bi]);
+    free(binnings);
 
     return 0;
 }
 
 int usage() {
     fprintf(stderr,
-            "Usage: acc_corr [q:n:z:p:f:] genfile simfile\n"
+            "\nUsage: acc_corr [-hq:n:z:p:f:g:s:d:FD]\n"
+            " * -h         : show this message and exit.\n"
             " * -q ...     : Q2 bins.\n"
             " * -n ...     : nu bins.\n"
             " * -z ...     : z_h bins.\n"
@@ -162,8 +171,12 @@ int usage() {
             " * -f ...     : phi_PQ bins.\n"
             " * -g genfile : generated events ROOT file.\n"
             " * -s simfile : simulated events ROOT file.\n"
+            " * -d datadir : location where sampling fraction files are "
+            "located. Default is\n                data.\n"
             " * -F         : flag to tell program to use FMT data instead of DC"
-            " data from\n                the simulation file.\n\n"
+            " data from\n                the simulation file.\n"
+            " * -D         : flag to tell program that generated events are in "
+            "degrees\n                instead of radians.\n"
             "    Get the 5-dimensional acceptance correction factors for Q2, nu"
             ", z_h, Pt2, and\n    phi_PQ. For each optional argument, an array "
             "of doubles is expected. The first\n    double will be the lower "
@@ -178,6 +191,8 @@ int handle_err(int errcode) {
     switch (errcode) {
         case 0:
             return 0;
+        case 1:
+            break;
         case 2:
             fprintf(stderr, "Error. All binnings should have *at least* two "
                             "values -- a minimum and a\n maximum.\n\n");
@@ -227,57 +242,97 @@ int handle_err(int errcode) {
 }
 
 int handle_args(int argc, char **argv, char **gen_file, char **sim_file,
-        std::vector<double> &b_Q2, std::vector<double> &b_nu,
-        std::vector<double> &b_zh, std::vector<double> &b_Pt2,
-        std::vector<double> &b_pPQ, bool *use_fmt)
+        char **data_dir, int *sizes, double **binnings, bool *use_fmt,
+        bool *in_deg)
 {
-    // Handle optional arguments.
+    // Handle arguments.
     int opt;
-    while ((opt = getopt(argc, argv, "q:n:z:p:f:g:s:F")) != -1) {
+    while ((opt = getopt(argc, argv, "hq:n:z:p:f:g:s:d:FD")) != -1) {
         switch (opt) {
-            case 'q': grab_multiarg(argc, argv, &optind, b_Q2);  break;
-            case 'n': grab_multiarg(argc, argv, &optind, b_nu);  break;
-            case 'z': grab_multiarg(argc, argv, &optind, b_zh);  break;
-            case 'p': grab_multiarg(argc, argv, &optind, b_Pt2); break;
-            case 'f': grab_multiarg(argc, argv, &optind, b_pPQ); break;
-            case 'g': grab_filename(optarg, gen_file);           break;
-            case 's': grab_filename(optarg, sim_file);           break;
-            case 'F': *use_fmt = true;                           break;
-            default: break;
+        case 'h':
+            return 1;
+        case 'q':
+            grab_multiarg(argc, argv, &optind, &(sizes[0]), &(binnings[0]));
+            break;
+        case 'n':
+            grab_multiarg(argc, argv, &optind, &(sizes[1]), &(binnings[1]));
+            break;
+        case 'z':
+            grab_multiarg(argc, argv, &optind, &(sizes[2]), &(binnings[2]));
+            break;
+        case 'p':
+            grab_multiarg(argc, argv, &optind, &(sizes[3]), &(binnings[3]));
+            break;
+        case 'f':
+            grab_multiarg(argc, argv, &optind, &(sizes[4]), &(binnings[4]));
+            break;
+        case 'g':
+            grab_filename(optarg, gen_file);
+            break;
+        case 's':
+            grab_filename(optarg, sim_file);
+            break;
+        case 'd':
+            *data_dir = (char *) malloc(strlen(optarg) + 1);
+            strcpy(*data_dir, optarg);
+            break;
+        case 'F':
+            *use_fmt = true;
+            break;
+        case 'D':
+            *in_deg = true;
+            break;
+        default:
+            break;
         }
     }
 
-    // Check that all vectors have *at least* two values.
-    if (b_Q2.size() < 2 || b_nu.size() < 2 || b_zh.size() < 2 ||
-            b_Pt2.size() < 2 || b_pPQ.size() < 2) {
-        return 2;
+    // Check that all arrays have *at least* two values.
+    for (int bi = 0; bi < 5; ++bi) if (sizes[bi] < 2) return 2;
+
+    // Define datadir if undefined.
+    if (*data_dir == NULL) {
+        *data_dir = (char *) malloc(PATH_MAX);
+        sprintf(*data_dir, "%s/../data", dirname(argv[0]));
     }
 
-    // Check input file existence and validity.
-    if (!(*gen_file)) return 7;
+    // Check genfile.
+    if (*gen_file == NULL) return 7;
     int errcode = check_root_filename(*gen_file);
     if (errcode) return errcode;
-    if (!(*sim_file)) return 8;
-    errcode     = check_root_filename(*sim_file);
+
+    // Check simfile.
+    if (*sim_file == NULL) return 8;
+    errcode = check_root_filename(*sim_file);
     if (errcode) return errcode + 2;
 
     return 0;
 }
 
 int main(int argc, char **argv) {
-    bool use_fmt   = false;
+    // Handle arguments.
     char *gen_file = NULL;
     char *sim_file = NULL;
-    std::vector<double> b_Q2;
-    std::vector<double> b_nu;
-    std::vector<double> b_zh;
-    std::vector<double> b_Pt2;
-    std::vector<double> b_pPQ;
+    char *data_dir = NULL;
+    bool use_fmt   = false;
+    bool in_deg    = false;
+    int sizes[5];
+    double **binnings;
 
-    int errcode = handle_args(argc, argv, &gen_file, &sim_file, b_Q2, b_nu,
-            b_zh, b_Pt2, b_pPQ, &use_fmt);
-    if (handle_err(errcode)) return 1;
+    binnings = (double **) malloc(5 * sizeof(*binnings));
+    int errcode = handle_args(argc, argv, &gen_file, &sim_file, &data_dir,
+            sizes, binnings, &use_fmt, &in_deg);
 
-    return handle_err(run(gen_file, sim_file, b_Q2, b_nu, b_zh, b_Pt2, b_pPQ,
-            use_fmt));
+    // Run.
+    if (errcode == 0)
+        errcode = run(gen_file, sim_file, data_dir, sizes, binnings, use_fmt,
+                in_deg);
+
+    // Free up memory.
+    if (gen_file != NULL) free(gen_file);
+    if (sim_file != NULL) free(sim_file);
+    if (data_dir != NULL) free(data_dir);
+
+    // Return errcode.
+    return handle_err(errcode);
 }

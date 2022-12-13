@@ -13,22 +13,20 @@
 //
 // You can see a copy of the GNU Lesser Public License under the LICENSE file.
 
-#include <cstdlib>
-#include <iostream>
+#include <libgen.h>
 #include "TFile.h"
-#include "TTree.h"
 #include "../lib/io_handler.h"
 #include "../lib/bank_containers.h"
 
-int run(char *in_filename, int run_no) {
-    char *out_filename = (char *) malloc(128 * sizeof(char));
+int run(char *in_file, char *work_dir, int run_no, int nevn) {
+    // Create output file.
+    char out_file[PATH_MAX];
+    sprintf(out_file, "%s/banks_%06d.root", work_dir, run_no);
 
-    // TODO. I should fix these paths ASAP.
-    sprintf(out_filename, "../root_io/banks_%06d.root", run_no);
-
-    TFile *f = TFile::Open(out_filename, "RECREATE");
+    TFile *f = TFile::Open(out_file, "RECREATE");
     f->SetCompressionAlgorithm(ROOT::kLZ4);
 
+    // Create tree for output file.
     TTree *tree = new TTree("Tree", "Tree");
     REC_Particle     rprt; rprt.link_branches(tree);
     REC_Track        rtrk; rtrk.link_branches(tree);
@@ -37,9 +35,9 @@ int run(char *in_filename, int run_no) {
     REC_Scintillator rsci; rsci.link_branches(tree);
     FMT_Tracks       ftrk; ftrk.link_branches(tree);
 
-    // Setup.
+    // Open input file and get hipo schemas.
     hipo::reader reader;
-    reader.open(in_filename);
+    reader.open(in_file);
 
     hipo::dictionary factory;
     reader.readDictionary(factory);
@@ -52,12 +50,13 @@ int run(char *in_filename, int run_no) {
     hipo::bank ftrk_b(factory.getSchema("FMT::Tracks"));
     hipo::event event;
 
-    int c = 0;
-    while (reader.next() && c < 840000) {
-        c++;
-        if (c % 10000 == 0) {
-            if (c != 10000) printf("\33[2K\r");
-            printf("Read %8d events...", c);
+    // Get stuff from hipo file and write to root file.
+    int evn = 0;
+    while (reader.next() && (nevn == -1 || evn < nevn)) {
+        evn++;
+        if (evn % 10000 == 0) {
+            if (evn != 10000) printf("\33[2K\r");
+            printf("Read %8d events...", evn);
             fflush(stdout);
         }
         reader.read(event);
@@ -72,63 +71,118 @@ int run(char *in_filename, int run_no) {
                 rche.get_nrows() + rsci.get_nrows() + ftrk.get_nrows() > 0)
             tree->Fill();
     }
-    printf("\33[2K\rRead %8d events... Done!\n", c);
+    printf("\33[2K\rRead %8d events... Done!\n", evn);
 
     // Clean up.
     tree->Write();
     f->Close();
-    free(in_filename);
-    free(out_filename);
     return 0;
 }
 
 int usage() {
     fprintf(stderr,
-            "\nUsage: hipo2root filename\n\n"
-            "    Convert a file from the hipo format to the root format.\n\n"
+            "\nUsage: hipo2root [-hn:w:] infile\n"
+            " * -h         : show this message and exit.\n"
+            " * -n nevents : number of events.\n"
+            " * -w workdir : location where output root files are to be "
+            "stored. Default\n                is root_io.\n"
+            " * infile     : input HIPO file. Expected file format is "
+            "<text>run_no.hipo.\n\n"
+            "    Convert a file from hipo to root format. This program only "
+            "conserves the\n    banks that are useful for RG-E analysis, as "
+            "specified in the\n    lib/bank_containers.h file.\n\n"
     );
 
     return 1;
 }
 
-int handle_err(int errcode, char **in_filename) {
+int handle_err(int errcode) {
     switch (errcode) {
         case 0:
             return 0;
         case 1:
-            fprintf(stderr, "Error. No file name provided.\n");
             break;
         case 2:
-            fprintf(stderr, "Error. Too many arguments.\n");
+            fprintf(stderr, "Error %02d. No file name provided.\n", errcode);
             break;
         case 3:
-            fprintf(stderr, "Error. input file should be in hipo format.\n");
+            fprintf(stderr, "Error %02d. input file should be in hipo format."
+                            "\n", errcode);
             break;
         case 4:
-            fprintf(stderr, "Error. file does not exist!\n");
+            fprintf(stderr, "Error %02d. file does not exist!\n", errcode);
+            break;
+        case 5:
+            fprintf(stderr, "Error %02d. Bad usage of optional arguments.\n",
+                    errcode);
+            break;
+        case 6:
+            fprintf(stderr, "Error %02d. nevents should be a number greater "
+                            "than 0\n", errcode);
             break;
         default:
-            fprintf(stderr, "Error code %d not implemented!\n", errcode);
+            fprintf(stderr, "Error code %02d not implemented!\n", errcode);
             return 1;
     }
-    if (errcode > 2) free(*in_filename);
     return usage();
 }
 
-int handle_args(int argc, char **argv, char **input_file, int *run_no) {
-    if (argc < 2) return 1;
-    if (argc > 2) return 2;
+int handle_args(int argc, char **argv, char **in_file, char **work_dir,
+        int *run_no, int *nevents)
+{
+    // Handle arguments.
+    int opt;
+    while ((opt = getopt(argc, argv, "-hn:w:")) != -1) {
+        switch (opt) {
+            case 'h':
+                return 1;
+            case 'n':
+                *nevents = atoi(optarg);
+                break;
+            case 'w':
+                *work_dir = (char *) malloc(strlen(optarg) + 1);
+                strcpy(*work_dir, optarg);
+                break;
+            case 1:
+                *in_file = (char *) malloc(strlen(optarg) + 1);
+                strcpy(*in_file, optarg);
+                break;
+            default:
+                return 5;
+        }
+    }
 
-    *input_file = (char *) malloc(strlen(argv[1]) + 1);
-    strcpy(*input_file, argv[1]);
-    return handle_hipo_filename(*input_file, run_no);
+    // Check that nevents is valid and that atoi performed correctly.
+    if (*nevents == 0) return 6;
+
+    // Define workdir if undefined.
+    if (*work_dir == NULL) {
+        *work_dir = (char *) malloc(PATH_MAX);
+        sprintf(*work_dir, "%s/../root_io", dirname(argv[0]));
+    }
+
+    // Check positional argument.
+    if (*in_file == NULL) return 2;
+
+    return handle_hipo_filename(*in_file, run_no);
 }
 
 int main(int argc, char **argv) {
-    char *in_filename = NULL;
-    int  run_no       = -1;
+    // Handle arguments.
+    char *in_file  = NULL;
+    char *work_dir = NULL;
+    int  run_no    = -1;
+    int  nevn      = -1;
 
-    int errcode = handle_args(argc, argv, &in_filename, &run_no);
-    if (errcode == 0) errcode = run(in_filename, run_no);
-    return handle_err(errcode, &in_filename);
+    int errcode = handle_args(argc, argv, &in_file, &work_dir, &run_no, &nevn);
+
+    // Run.
+    if (errcode == 0) errcode = run(in_file, work_dir, run_no, nevn);
+
+    // Free up memory.
+    if (in_file  != NULL) free(in_file);
+    if (work_dir != NULL) free(work_dir);
+
+    // Return errcode.
+    return handle_err(errcode);
 }

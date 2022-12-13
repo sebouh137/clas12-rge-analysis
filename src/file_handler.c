@@ -39,7 +39,7 @@ int get_beam_energy(int run_no, double *beam_energy) {
         case 999106: *beam_energy = BE999106; break;
         case 999110: *beam_energy = BE999110; break;
         case 999120: *beam_energy = BE999120; break;
-        default:    return -1;
+        default:     return -1;
     }
 
     return 0;
@@ -59,5 +59,43 @@ int get_sf_params(char *fname, double sf[NSECTORS][SF_NPARAMS][2]) {
     }
 
     fclose(t_in);
+    return 0;
+}
+
+// Get sizes of binnings, initialize, and fill them from file.
+int get_binnings(FILE *f_in, long int *b_sizes, double **binnings,
+        long int *pids_size)
+{
+    // Get binning sizes.
+    for (int bi = 0; bi < 5; ++bi) fscanf(f_in, "%ld ", &(b_sizes[bi]));
+
+    // Get binnings.
+    for (int bi = 0; bi < 5; ++bi) {
+        binnings[bi] = (double *) malloc(b_sizes[bi] * sizeof(*binnings[bi]));
+        for (int bii = 0; bii < b_sizes[bi]; ++bii)
+            fscanf(f_in, "%lf ", &(binnings[bi][bii]));
+    }
+
+    // Get # of pids.
+    fscanf(f_in, "%ld", pids_size);
+
+    return 0;
+}
+
+// Get pids and acceptance correction from file.
+int get_acc_corr(FILE *f_in, long int pids_size, long int tsize, long int *pids,
+        double **acc_corr)
+{
+    // Get PIDs.
+    for (int pi = 0; pi < pids_size; ++pi)
+        fscanf(f_in, "%ld ", &(pids[pi]));
+
+    // Get acceptance correction.
+    for (int pi = 0; pi < pids_size; ++pi) {
+        acc_corr[pi] = (double *) malloc(tsize * sizeof(*acc_corr[pi]));
+        for (int bii = 0; bii < tsize; ++ bii)
+            fscanf(f_in, "%lf ", &(acc_corr[pi][bii]));
+    }
+
     return 0;
 }

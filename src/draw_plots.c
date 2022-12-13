@@ -14,18 +14,14 @@
 // You can see a copy of the GNU Lesser Public License under the LICENSE file.
 
 #include <climits>
+#include <libgen.h>
 #include <TFile.h>
 #include <TNtuple.h>
-#include "../lib/constants.h"
 #include "../lib/io_handler.h"
 #include "../lib/utilities.h"
 
 // TODO. See why I'm not seeing any neutrals.
-// TODO. Learn how to do acceptance correction.
-
-// TODO. Separate in z bins and see what happens.
-// TODO. Evaluate **acceptance** in diferent regions.
-// TODO. See simulations with Esteban or get them from RG-F.
+// TODO. Do acceptance correction.
 
 // TODO. Check what happens with the acceptance of different particles (like pi+
 //       and pi-) when you reverse the magnetic fields.
@@ -34,22 +30,23 @@
 // TODO. See what happens to low-momentum particles inside CLAS12 through
 //       simulation and see if they are reconstructed.
 
+// TODO. Evaluate **acceptance** in diferent regions.
 // TODO. Separate in vz bins. Start from -40 to 40 cm, 4-cm bins.
 
 // Assign name to plots, recursively going through binnings.
-int name_plt(TH1 * plt[], TString * name, const char * nx, const char * ny,
-             int * idx, long dbins, long depth, int px, long bx[],
-             double rx[][2], int bvx[], long bbx[], double brx[][2],
-             double b_interval[]) {
+int name_plt(TH1 *plt[], TString *name, const char *nx, const char *ny,
+        int *idx, long dbins, long depth, int px, long bx[], double rx[][2],
+        int bvx[], long bbx[], double brx[][2], double b_interval[])
+{
     if (depth == dbins) {
         // Create plot and increase index.
-        if (px == 0) plt[* idx] =
-                new TH1F(* name, Form("%s;%s", name->Data(), nx), bx[0],
+        if (px == 0) plt[*idx] =
+                new TH1F(*name, Form("%s;%s", name->Data(), nx), bx[0],
                          rx[0][0], rx[0][1]);
-        if (px == 1) plt[* idx] =
-                new TH2F(* name, Form("%s;%s;%s", name->Data(), nx, ny), bx[0],
+        if (px == 1) plt[*idx] =
+                new TH2F(*name, Form("%s;%s;%s", name->Data(), nx, ny), bx[0],
                          rx[0][0], rx[0][1], bx[1], rx[1][0], rx[1][1]);
-        ++(* idx);
+        ++(*idx);
         return 0;
     }
 
@@ -71,9 +68,10 @@ int name_plt(TH1 * plt[], TString * name, const char * nx, const char * ny,
     return 0;
 }
 
-int find_bin(TString * name, int plt_size, int idx, long dbins, long depth,
-             int prev_dim_factor, int vx[], long bx[], double rx[][2],
-             double interval[]) {
+int find_bin(TString *name, int plt_size, int idx, long dbins, long depth,
+        int prev_dim_factor, int vx[], long bx[], double rx[][2],
+        double interval[])
+{
     if (depth == dbins) return 0;
 
     // Find index in array (for this dimension).
@@ -94,7 +92,8 @@ int find_bin(TString * name, int plt_size, int idx, long dbins, long depth,
 
 // Find index of plot in array, recursively going through binnings.
 int find_idx(long dbins, long depth, Float_t var[], long bx[], double rx[][2],
-             double interval[]) {
+        double interval[])
+{
     if (depth == dbins) return 0;
     for (int bi = 0; bi < bx[depth]; ++bi) {
         // Define bin limits.
@@ -113,11 +112,56 @@ int find_idx(long dbins, long depth, Float_t var[], long bx[], double rx[][2],
     return -1; // Variable is not within binning range.
 }
 
-int run() {
-    // Open input file. TODO. Change paths so that they are no longer relative!
-    TFile * f_in  = TFile::Open("../root_io/ntuples.root", "READ");
+int run(char *in_file, char *acc_file, char *work_dir, int run_no) {
+    // Open input file.
+    TFile *f_in  = TFile::Open(in_file, "READ");
+    if (!f_in || f_in->IsZombie()) return 2;
 
-    if (!f_in || f_in->IsZombie()) return 1;
+    // Get acceptance correction
+    long int b_sizes[5];
+    long int tsize;
+    double **binnings;
+    long int pids_size;
+    long int *pids;
+    double **acc_corr;
+
+    if (acc_file != NULL) {
+        if (access(acc_file, F_OK) != 0) return 3;
+        FILE *ac_file = fopen(acc_file, "r");
+
+        binnings = (double **) malloc(5 * sizeof(*binnings));
+        get_binnings(ac_file, b_sizes, binnings, &pids_size);
+
+        tsize = 1;
+        for (int bi = 0; bi < 5; ++bi) tsize *= b_sizes[bi] - 1;
+
+        for (int bi = 0; bi < 5; ++bi) {
+            printf("binning[%ld]: [", b_sizes[bi]);
+            for (int bii = 0; bii < b_sizes[bi]; ++bii)
+                printf("%lf, ", binnings[bi][bii]);
+            printf("\b\b]\n");
+        }
+
+        pids = (long int *) malloc(pids_size * sizeof(*pids));
+        acc_corr = (double **) malloc(pids_size * sizeof(*acc_corr));
+
+        get_acc_corr(ac_file, pids_size, tsize, pids, acc_corr);
+
+        printf("pids[%ld] = [", pids_size);
+        for (int pi = 0; pi < pids_size; ++pi) {
+            printf("%ld ", pids[pi]);
+        }
+        printf("\b\b]\n");
+
+        for (int pi = 0; pi < pids_size; ++pi) {
+            printf("acc_corr[%ld]: [", tsize);
+            for (int bii = 0; bii < tsize; ++bii)
+                printf("%lf ", acc_corr[pi][bii]);
+            printf("\b\b]\n");
+        }
+
+        fclose(ac_file);
+    }
 
     // NOTE. This function could receive a few arguments to speed IO up.
     //       Pre-configured cuts, binnings, and corrections would be nice.
@@ -146,13 +190,6 @@ int run() {
         printf("\b\b]\n");
         p_pid = catch_long();
     }
-
-    char * outfilename = p_pid == INT_MAX ?
-            Form("../root_io/plots_%s_%s.root", TRK_LIST[trk], PART_LIST[part]):
-            Form("../root_io/plots_%s_pid%d.root", TRK_LIST[trk], p_pid);
-
-    // Open output file (NOTE. This path sucks).
-    TFile * f_out = TFile::Open(outfilename, "RECREATE");
 
     bool general_cuts  = false;
     bool geometry_cuts = false;
@@ -231,8 +268,8 @@ int run() {
 
         for (int di = 0; di < px[pi]+1; ++di) {
             // Check variable(s) to be plotted.
-            printf("\nDefine var to be plotted on the %s axis. Available vars:\n[",
-                    DIM_LIST[di]);
+            printf("\nDefine var to be plotted on the %s axis. Available "
+                   "vars:\n[", DIM_LIST[di]);
             for (int vi = 0; vi < VAR_LIST_SIZE; ++vi)
                 printf("%s, ", R_VAR_LIST[vi]);
             printf("\b\b]\n");
@@ -258,14 +295,13 @@ int run() {
     }
 
     // === NTUPLES SETUP =======================================================
-    TNtuple * t = (TNtuple *) f_in->Get(trk == 0 ? S_DC : S_FMT);
+    TNtuple *t = (TNtuple *) f_in->Get(trk == 0 ? S_DC : S_FMT);
     Float_t vars[VAR_LIST_SIZE];
     for (int vi = 0; vi < VAR_LIST_SIZE; ++vi)
         t->SetBranchAddress(S_VAR_LIST[vi], &vars[vi]);
 
     // === APPLY CUTS ==========================================================
     // Apply SIDIS cuts, checking which event numbers should be skipped.
-    // int nruns   =  1; // TODO.
     int nevents = -1;
     // Count number of events. NOTE. There's probably a cleaner way to do this.
     for (int i = 0; i < t->GetEntries(); ++i) {
@@ -300,7 +336,7 @@ int run() {
     long plt_size = 1;
     for (int bdi = 0; bdi < dbins; ++bdi) plt_size *= bbx[bdi];
 
-    TH1 * plt[pn][plt_size];
+    TH1 *plt[pn][plt_size];
     for (int pi = 0; pi < pn; ++pi) {
         TString name;
         int idx = 0;
@@ -310,10 +346,11 @@ int run() {
                      px[pi], bx[pi], rx[pi], bvx, bbx, brx, b_interval);
         }
         if (px[pi] == 1) {
-            name = Form("%s vs %s", S_VAR_LIST[vx[pi][0]], S_VAR_LIST[vx[pi][1]]);
-            name_plt(plt[pi], &name, S_VAR_LIST[vx[pi][0]], S_VAR_LIST[vx[pi][1]],
-                     &idx, dbins, 0, px[pi], bx[pi], rx[pi], bvx, bbx, brx,
-                     b_interval);
+            name = Form("%s vs %s", S_VAR_LIST[vx[pi][0]],
+                    S_VAR_LIST[vx[pi][1]]);
+            name_plt(plt[pi], &name, S_VAR_LIST[vx[pi][0]],
+                    S_VAR_LIST[vx[pi][1]], &idx, dbins, 0, px[pi], bx[pi],
+                    rx[pi], bvx, bbx, brx, b_interval);
         }
     }
 
@@ -329,7 +366,13 @@ int run() {
         }
         if (p_pid != INT_MAX && vars[A_PID] != p_pid) continue;
 
-        // Apply other cuts.
+        // Apply geometry cuts.
+        if (geometry_cuts) {
+            if (calc_magnitude(vars[A_VX], vars[A_VY]) > VXVYCUT) continue;
+            if (VZLOWCUT > vars[A_VZ] || vars[A_VZ] > VZHIGHCUT)  continue;
+        }
+
+        // Apply miscellaneous cuts.
         if (general_cuts) {
             // Non-identified particle.
             if (-0.5 < vars[A_PID] && vars[A_PID] <  0.5) continue;
@@ -339,24 +382,21 @@ int run() {
             if (vars[A_CHI2]/vars[A_NDF] >= CHI2NDFCUT)   continue;
         }
 
-        if (geometry_cuts) {
-            if (calc_magnitude(vars[A_VX], vars[A_VY]) > VXVYCUT) continue;
-            if (VZLOWCUT > vars[A_VZ] || vars[A_VZ] > VZHIGHCUT)  continue;
-        }
-
+        // Apply DIS cuts.
         if (dis_cuts && !valid_event[(int) (vars[A_EVENTNO]+0.5)]) continue;
 
         // Prepare binning vars.
         Float_t b_vars[dbins];
         for (long bdi = 0; bdi < dbins; ++bdi) b_vars[bdi] = vars[bvx[bdi]];
 
+        // Fills plots.
         for (int pi = 0; pi < pn; ++pi) {
             // SIDIS variables only make sense for some particles.
             bool sidis_pass = true;
             for (int di = 0; di < px[pi]+1; ++di) {
                 for (int li = 0; li < DIS_LIST_SIZE; ++li) {
-                    if (!strcmp(R_VAR_LIST[vx[pi][di]], DIS_LIST[li])
-                        && vars[vx[pi][di]] < 1e-9)
+                    if (!strcmp(R_VAR_LIST[vx[pi][di]], DIS_LIST[li]) &&
+                            vars[vx[pi][di]] < 1e-9)
                         sidis_pass = false;
                 }
             }
@@ -367,11 +407,29 @@ int run() {
             if (idx == -1) continue;
 
             // Fill histogram.
-            if (px[pi] == 0) plt[pi][idx]->Fill(vars[vx[pi][0]]);
-            if (px[pi] == 1) plt[pi][idx]->Fill(vars[vx[pi][0]], vars[vx[pi][1]]);
+            if (px[pi] == 0)
+                plt[pi][idx]->Fill(vars[vx[pi][0]]);
+            if (px[pi] == 1)
+                plt[pi][idx]->Fill(vars[vx[pi][0]], vars[vx[pi][1]]);
         }
     }
 
+    // === APPLY ACCEPTANCE CORRECTION =========================================
+    // TODO...
+
+    // === WRITE TO OUTPUT FILE ================================================
+    // Create output file.
+    char out_file[PATH_MAX];
+    if (p_pid == INT_MAX)
+        sprintf(out_file, "%s/plots_%06d_%s_%s.root", work_dir, run_no,
+                TRK_LIST[trk], PART_LIST[part]);
+    else
+        sprintf(out_file, "%s/plots_%06d_%s_pid%d.root", work_dir, run_no,
+                TRK_LIST[trk], p_pid);
+
+    TFile *f_out = TFile::Open(out_file, "RECREATE");
+
+    // Write plots to output file.
     for (int plti = 0; plti < plt_size; ++plti) {
         // Find dir.
         TString dir;
@@ -388,9 +446,120 @@ int run() {
     f_in ->Close();
     f_out->Close();
 
+    if (acc_file != NULL) {
+        for (int bi = 0; bi < 5; ++bi) free(binnings[bi]);
+        free(binnings);
+        free(pids);
+        for (int pi = 0; pi < pids_size; ++pi) free(acc_corr[pi]);
+        free(acc_corr);
+    }
+
     return 0;
 }
 
-int main(int argc, char ** argv) {
-    return run();
+int usage() {
+    fprintf(stderr,
+        "\nUsage: draw_plots [-ha:w:] infile\n"
+        " * -h         : show this message and exit.\n"
+        " * -a accfile : apply acceptance correction using acc_file.\n"
+        " * -w workdir : location where output root files are to be "
+        "stored. Default\n                is root_io.\n"
+        " * infile     : input file produced by make_ntuples.\n\n"
+        "    Draw plots from a ROOT file built from make_ntuples. File "
+        "should be named\n    <text>run_no.root.\n\n"
+    );
+
+    return 1;
+}
+
+int handle_err(int errcode) {
+    switch (errcode) {
+        case 0:
+            return 0;
+        case 1:
+            break;
+        case 2:
+            fprintf(stderr, "Error %02d. Input file not found!\n", errcode);
+            break;
+        case 3:
+            fprintf(stderr, "Error %02d. Acceptance correction file not found!"
+                            "\n", errcode);
+            break;
+        case 4:
+            fprintf(stderr, "Error %02d. Bad usage of optional arguments.\n",
+                    errcode);
+            break;
+        case 5:
+            fprintf(stderr, "Error %02d. No file name provided.\n", errcode);
+            break;
+        case 6:
+            fprintf(stderr, "Error %02d. input is not a valid ROOT file.\n",
+                    errcode);
+            break;
+        default:
+            fprintf(stderr, "Error code %d not implemented!\n", errcode);
+            return 1;
+    }
+
+    return usage();
+}
+
+int handle_args(int argc, char **argv, char **in_file, char **acc_file,
+        char **work_dir, int *run_no)
+{
+    // Handle arguments.
+    int opt;
+    while ((opt = getopt(argc, argv, "-ha:w:")) != -1) {
+        switch (opt) {
+            case 'h':
+                return 1;
+            case 'a':
+                *acc_file = (char *) malloc(strlen(optarg) + 1);
+                strcpy(*acc_file, optarg);
+                break;
+            case 'w':
+                *work_dir = (char *) malloc(strlen(optarg) + 1);
+                strcpy(*work_dir, optarg);
+            case 1:
+                *in_file = (char *) malloc(strlen(optarg) + 1);
+                strcpy(*in_file, optarg);
+                break;
+            default:
+                return 4;
+        }
+    }
+
+    // Define workdir if undefined.
+    if (*work_dir == NULL) {
+        *work_dir = (char *) malloc(PATH_MAX);
+        sprintf(*work_dir, "%s/../root_io", dirname(argv[0]));
+    }
+
+    // Check positional argument.
+    if (*in_file == NULL) return 5;
+
+    return handle_root_filename(*in_file, run_no);
+}
+
+int main(int argc, char **argv) {
+    // Handle arguments.
+    char *in_file  = NULL;
+    char *acc_file = NULL;
+    char *work_dir = NULL;
+    int run_no     = -1;
+
+    int errcode = handle_args(argc, argv, &in_file, &acc_file, &work_dir,
+            &run_no);
+
+    // Run.
+    if (errcode == 0)
+        errcode = run(in_file, acc_file, work_dir, run_no);
+
+    // Free up memory.
+    if (in_file  != NULL) free(in_file);
+    if (acc_file != NULL) free(acc_file);
+    if (work_dir != NULL) free(work_dir);
+
+    // Return errcode.
+    return handle_err(errcode);
 }

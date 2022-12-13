@@ -13,6 +13,7 @@
 //
 // You can see a copy of the GNU Lesser Public License under the LICENSE file.
 
+#include <libgen.h>
 #include <TCanvas.h>
 #include <TFile.h>
 #include <TF1.h>
@@ -22,11 +23,25 @@
 #include "../lib/io_handler.h"
 #include "../lib/utilities.h"
 
-int run(char *in_filename, bool use_fmt, int nevn, int run_no) {
+int run(char *in_file, char *work_dir, char *data_dir, bool use_fmt, int nevn,
+        int run_no)
+{
     gStyle->SetOptFit();
 
+    // Create output root file.
+    char out_file[PATH_MAX];
+    sprintf(out_file, "%s/sf_study_%06d.root", work_dir, run_no);
+    TFile *f_out = TFile::Open(out_file, "RECREATE");
+    if (!f_out || f_out->IsZombie()) return 10;
+
+    // Create output data file.
+    char t_file[PATH_MAX];
+    sprintf(t_file, "%s/sf_params_%06d.txt", data_dir, run_no);
+    FILE *t_out = fopen(t_file, "w");
+    if (t_out == NULL) return 9;
+
     // Access input file.
-    TFile *f_in = TFile::Open(in_filename, "READ");
+    TFile *f_in = TFile::Open(in_file, "READ");
     if (!f_in || f_in->IsZombie()) return 6;
 
     // Create and organize histos and name arrays.
@@ -96,9 +111,9 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no) {
     int divcntr = 0;
     int evnsplitter = 0;
     printf("Reading %lld events from %s.\n", nevn == -1 ? t->GetEntries() :
-            nevn, in_filename);
-    for (evn = 0; (evn < t->GetEntries()) &&
-            (nevn == -1 || evn < nevn); ++evn) {
+            nevn, in_file);
+    for (evn = 0; (evn < t->GetEntries()) && (nevn == -1 || evn < nevn); ++evn)
+    {
         if (evn >= evnsplitter) {
             if (evn != 0) printf("\33[2K\r");
             printf("[");
@@ -273,11 +288,6 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no) {
         }
     }
 
-    // Create output file.
-    char *out_filename = (char *) malloc(128 * sizeof(char));
-    sprintf(out_filename, "../root_io/sf_study_%06d.root", run_no);
-
-    TFile *f_out = TFile::Open(out_filename, "RECREATE");
     // Write to output file.
     TString dir;
     TCanvas *gcvs = new TCanvas();
@@ -304,10 +314,7 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no) {
         }
     }
 
-    // Write results to file.
-    FILE *t_out = fopen(Form("../data/sf_params_%06d.txt", run_no), "w");
-
-    if (t_out == NULL) return 9;
+    // Write results to data file.
     for (int ci = 3; ci < 4; ++ci) { // NOTE. Only writing ECAL sf results.
         for (int si = 0; si < NSECTORS; ++si) {
             for (int ppi = 0; ppi < 2; ++ppi) { // sf and sfs.
@@ -322,93 +329,151 @@ int run(char *in_filename, bool use_fmt, int nevn, int run_no) {
     fclose(t_out);
     f_in ->Close();
     f_out->Close();
-    free(in_filename);
-    free(out_filename);
 
     return 0;
 }
 
-// Usage
 int usage() {
     fprintf(stderr,
-            "Usage: extract_sf [-f] [-n nevents] file\n"
-            " * -f         : Use FMT data. If unspecified, will use DC data.\n"
-            " * -n nevents : Number of events\n"
-            " * file       : ROOT file to be processed.\n\n"
-            "Obtain the EC sampling fraction from an input file.\n\n"
+            "\nUsage: extract_sf [-hfn:w:d:] infile\n"
+            " * -h         : show this message and exit.\n"
+            " * -f         : use FMT data. If unspecified, will use DC data.\n"
+            " * -n nevents : number of events\n"
+            " * -w workdir : location where output root files are to be "
+            "stored. Default\n                is root_io.\n"
+            " * -d datadir : location where sampling fraction files are "
+            "located. Default\n                is data.\n"
+            " * infile     : input ROOT file. Expected file format: "
+            "<text>run_no.root.\n\n"
+            "    Obtain the EC sampling fraction from an input file.\n\n"
     );
     return 1;
 }
 
-int handle_err(int errcode, char **file) {
+int handle_err(int errcode) {
     switch (errcode) {
         case 0:
             return 0;
         case 1:
             break;
         case 2:
-            fprintf(stderr, "Error. nevents should greater than 0.\n");
+            fprintf(stderr, "Error %02d. nevents should greater than 0.\n",
+                    errcode);
             break;
         case 3:
-            fprintf(stderr, "Error. input file should be in root format.\n");
+            fprintf(stderr, "Error %02d. input file should be in root format."
+                            "\n", errcode);
             break;
         case 4:
-            fprintf(stderr, "Error. input file does not exist!\n");
+            fprintf(stderr, "Error %02d. input file does not exist!\n",
+                    errcode);
             break;
         case 5:
-            fprintf(stderr, "Error. No file name provided.\n");
+            fprintf(stderr, "Error %02d. No file name provided.\n", errcode);
             break;
         case 6:
-            fprintf(stderr, "Error. input is not a valid ROOT file.\n");
+            fprintf(stderr, "Error %02d. input is not a valid ROOT file.\n",
+                    errcode);
             break;
         case 7:
-            fprintf(stderr, "Error. Invalid EC layer. Check bank integrity.\n");
+            fprintf(stderr, "Error %02d. Invalid EC layer. Check bank "
+                            "integrity.\n", errcode);
             break;
         case 8:
-            fprintf(stderr, "Error. A particle is in an invalid sector. Check "
-                            "bank integrity.\n");
+            fprintf(stderr, "Error %02d. A particle is in an invalid sector. "
+                            "Check bank integrity.\n", errcode);
             break;
         case 9:
-            fprintf(stderr, "Error. Could not create sf_results file.\n");
+            fprintf(stderr, "Error %02d. Could not create sf_params file.\n",
+                    errcode);
+            break;
+        case 10:
+            fprintf(stderr, "Error %02d. Could not create sf_study file.\n",
+                    errcode);
             break;
         default:
             fprintf(stderr, "Error code %d not implemented!\n", errcode);
             return 1;
     }
 
-    if (errcode > 2) free(*file);
     return usage();
 }
 
-int handle_args(int argc, char **argv, bool *use_fmt, int *nevents,
-        char **input_file, int *run_no) {
+int handle_args(int argc, char **argv, char **in_file, char **work_dir,
+        char **data_dir, bool *use_fmt, int *run_no, int *nevn)
+{
     // Handle optional arguments.
     int opt;
-    while ((opt = getopt(argc, argv, "-fn:")) != -1) {
+    while ((opt = getopt(argc, argv, "-hfn:w:d:")) != -1) {
         switch (opt) {
-            case 'f': *use_fmt = true;         break;
-            case 'n': *nevents = atoi(optarg); break;
-            case  1 :
-                *input_file = (char *) malloc(strlen(optarg) + 1);
-                strcpy(*input_file, optarg);
+            case 'h':
+                return 1;
+            case 'f':
+                *use_fmt = true;
                 break;
-            default: return 1;
+            case 'n':
+                *nevn = atoi(optarg);
+                break;
+            case 'w':
+                *work_dir = (char *) malloc(strlen(optarg) + 1);
+                strcpy(*work_dir, optarg);
+            case 'd':
+                *data_dir = (char *) malloc(strlen(optarg) + 1);
+                strcpy(*data_dir, optarg);
+                break;
+            case 1:
+                *in_file = (char *) malloc(strlen(optarg) + 1);
+                strcpy(*in_file, optarg);
+                break;
+            default:
+                return 1;
         }
     }
-    if (*nevents == 0) return 2;
-    if (argc < 2) return 5;
 
-    return handle_root_filename(*input_file, run_no);
+    // Check that nevents is valid and that atoi performed correctly.
+    if (*nevn == 0) return 2;
+
+    // Define workdir if undefined.
+    char tmpfile[PATH_MAX];
+    sprintf(tmpfile, "%s", argv[0]);
+    if (*work_dir == NULL) {
+        *work_dir = (char *) malloc(PATH_MAX);
+        sprintf(*work_dir, "%s/../root_io", dirname(argv[0]));
+    }
+
+    // Define datadir if undefined.
+    if (*data_dir == NULL) {
+        *data_dir = (char *) malloc(PATH_MAX);
+        sprintf(*data_dir, "%s/../data", dirname(tmpfile));
+    }
+
+    // Check positional argument.
+    if (*in_file == NULL) return 5;
+
+    return handle_root_filename(*in_file, run_no);
 }
 
 int main(int argc, char **argv) {
-    bool use_fmt = false;
-    int nevn     = -1;
-    char *file   = NULL;
-    int run_no   = -1;
+    // Handle arguments.
+    char *in_file  = NULL;
+    char *work_dir = NULL;
+    char *data_dir = NULL;
+    bool use_fmt   = false;
+    int nevn       = -1;
+    int run_no     = -1;
 
-    int errcode = handle_args(argc, argv, &use_fmt, &nevn, &file, &run_no);
-    if (handle_err(errcode, &file)) return 1;
+    int errcode = handle_args(argc, argv, &in_file, &work_dir, &data_dir,
+            &use_fmt, &run_no, &nevn);
 
-    return handle_err(run(file, use_fmt, nevn, run_no), &file);
+    // Run.
+    if (errcode == 0)
+        errcode = run(in_file, work_dir, data_dir, use_fmt, nevn, run_no);
+
+    // Free up memory.
+    if (in_file  != NULL) free(in_file);
+    if (work_dir != NULL) free(work_dir);
+    if (data_dir != NULL) free(data_dir);
+
+    // Return errcode.
+    return handle_err(errcode);
 }
