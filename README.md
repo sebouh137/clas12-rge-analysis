@@ -33,7 +33,7 @@ Usage: extract_sf [-hfn:w:d:] infile
                 is data.
  * infile     : input ROOT file. Expected file format: <text>run_no.root.
 ```
-Obtain the EC sampling fraction from an input file. An alternative to using this program is filling the output file (by default stored in the `data` directory) with the data obtained from CCDB (**TODO. LINK PENDING**). The function used to fit the data is
+Obtain the EC sampling fraction from an input file. An alternative to using this program is filling the output file (by default stored in the `data` directory) with the data obtained from [CCDB](https://clasweb.jlab.org/cgi-bin/ccdb/versions?table=/calibration/eb/electron_sf). The function used to fit the data is
 
 ```
 [0]*Gaus(x,[1],[2]) + [3]*x*x + [4]*x + [5]
