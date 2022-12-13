@@ -16,7 +16,6 @@
 #ifndef IO_HANDLER
 #define IO_HANDLER
 
-#include <vector>
 #include "file_handler.h"
 
 int check_root_filename(char *input_file);

@@ -20,7 +20,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <vector>
 #include "constants.h"
 
 int get_run_no(char *input_file, int *run_no_int);

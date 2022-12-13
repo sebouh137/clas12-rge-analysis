@@ -69,7 +69,7 @@ int is_number(char c) {
     return 0;
 }
 
-// Grab multiple arguments and fill a vector of doubles with it.
+// Grab multiple arguments and fill an array of doubles with it.
 int grab_multiarg(int argc, char **argv, int *optind, int *size, double **b) {
     int idx   = *optind - 1;
     int start = idx;
