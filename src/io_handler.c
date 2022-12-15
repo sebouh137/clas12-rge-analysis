@@ -15,55 +15,149 @@
 
 #include "../lib/io_handler.h"
 
-// TODO. Errcode is not handled well here.
-int check_root_filename(char *input_file) {
-    if (!strstr(input_file, ".root"))     return 3; // Check that file is valid.
-    if (!(access(input_file, F_OK) == 0)) return 4; // Check that file exists.
+/**
+ * Get run number from a filename, assuming the filename is in format
+ *     <text><run_no>.<extension>. If the filename is badly formatted or if atoi
+ *     fails, the function returns 0.
+ *
+ * @param filename: filename to be processed.
+ * @param run_no:   pointer to the int where the run number is written.
+ * @return          an error code:
+ *                    * 0: everything went fine.
+ *                    * 1: couldn't find dot position in filename.
+ *                    * 2: atoi failed -- couldn't find run number.
+ */
+int get_run_no(char *filename, int *run_no) {
+    char run_no_str[7];
+    char *dot_pos = strrchr(filename, '.');
+    if (!dot_pos) return 1; // Couldn't find dot.
+    strncpy(run_no_str, dot_pos - 6, 6);
+    run_no_str[6] = '\0';
+    *run_no = atoi(run_no_str); // If atoi fails, it returns 0.
+    if (*run_no == 0) return 2;
+
     return 0;
 }
 
-// TODO. Errcode is not handled well here.
-int handle_root_filename(char *input_file, int *run_no) {
+/**
+ * Match a run number to a beam energy. The beam energy for different runs is
+ *     available in the constants.
+ *
+ * @param run_no:      run number for which the beam energy is to be found.
+ * @param beam_energy: pointer to the double where the beam energy will be
+ *                     saved.
+ * @return             an error code:
+ *                       * 0: everything went fine.
+ *                       * 1: beam energy for run number is unavailable.
+ */
+int get_beam_energy(int run_no, double *beam_energy) {
+    // NOTE. This should be a map in constants or taken directly from the RCDB.
+    switch (run_no) {
+        case 11983:  *beam_energy = BE11983;  break;
+        case 12016:  *beam_energy = BE12016;  break;
+        case 12439:  *beam_energy = BE12439;  break;
+        case 999106: *beam_energy = BE999106; break;
+        case 999110: *beam_energy = BE999110; break;
+        case 999120: *beam_energy = BE999120; break;
+        default:     return 1;
+    }
+
+    return 0;
+}
+
+/**
+ * Check if a root filename is valid.
+ *
+ * @param filename: filename to be processed.
+ * @return          an error code:
+ *                    * 1: filename extension isn't root.
+ *                    * 2: no file with filename was found.
+ */
+int check_root_filename(char *filename) {
+    if (!strstr(filename, ".root")) return 1;
+    if (access(filename, F_OK))     return 2;
+    return 0;
+}
+
+/**
+ * Handle a root filename, checking its validity, file existence, and grabbing
+ *     the run number and beam energy from it.
+ *
+ * @param filename:    filename to be processed.
+ * @param run_no:      pointer to the int where the run number will be written.
+ * @param beam_energy: pointer to the double where the beam energy will be
+ *                     written.
+ * @return             an error code:
+ *                       * 0: everything went fine.
+ *                       * 1: filename extension isn't root.
+ *                       * 2: no file with filename was found.
+ *                       * 3: couldn't find dot position in filename.
+ *                       * 4: atoi failed -- couldn't find run number.
+ *                       * 5: beam energy for run number is unavailable.
+ */
+int handle_root_filename(char *filename, int *run_no, double *beam_energy) {
+    int check = check_root_filename(filename);
+    if (check) return check;
+
+    check = get_run_no(filename, run_no);
+    if (check) return check + 2;
+
+    check = get_beam_energy(*run_no, beam_energy);
+    if (check) return check + 4;
+
+    return 0;
+}
+
+/** Run handle_root_filename() above without writing beam_energy. */
+int handle_root_filename(char *filename, int *run_no) {
     double dump = 0.;
-    return handle_root_filename(input_file, run_no, &dump);
+    return handle_root_filename(filename, run_no, &dump);
 }
 
-// TODO. Errcode is not handled well here.
-int handle_root_filename(char *input_file, int *run_no, double *beam_energy) {
-    int chk = check_root_filename(input_file);
-    if (chk) return chk;
-    // Get run number and beam energy from filename.
-    if (!get_run_no(input_file, run_no))       return 5;
-    if (get_beam_energy(*run_no, beam_energy)) return 6;
+/**
+ * Check if a hipo filename is valid.
+ *
+ * @param filename: filename to be processed.
+ * @return          an error code:
+ *                    * 1: filename extension isn't hipo.
+ *                    * 2: no file with filename was found.
+ */
+int check_hipo_filename(char *filename) {
+    if (!strstr(filename, ".hipo")) return 1;
+    if (access(filename, F_OK))     return 2;
+    return 0;
+}
+
+/**
+ * Handle a hipo filename, checking its validity, file existence, and grabbing
+ *     the run number from it.
+ *
+ * @param filename: filename to be processed.
+ * @param run_no:   pointer to the int where the run number will be written.
+ * @return          an error code:
+ *                    * 0: everything went fine.
+ *                    * 1: filename extension isn't hipo.
+ *                    * 2: no file with filename was found.
+ *                    * 3: couldn't find dot position in filename.
+ *                    * 4: atoi failed -- couldn't find run number.
+ */
+int handle_hipo_filename(char *filename, int *run_no) {
+    int check = check_hipo_filename(filename);
+    if (check) return check;
+
+    check = get_run_no(filename, run_no);
+    if (check) return check + 2;
 
     return 0;
 }
 
-// TODO. Errcode is not handled well here.
-int check_hipo_filename(char *input_file) {
-    if (!strstr(input_file, ".hipo"))     return 3; // Check that file is valid.
-    if (!(access(input_file, F_OK) == 0)) return 4; // Check that file exists.
-    return 0;
-}
-
-// TODO. Errcode is not handled well here.
-int handle_hipo_filename(char *input_file, int *run_no) {
-    int chk = check_hipo_filename(input_file);
-    if (chk) return chk;
-
-    // Get run number from filename.
-    if (!get_run_no(input_file, run_no)) return 5;
-
-    return 0;
-}
-
-// Check if string is a number.
+/** Check if string s is a number. Returns 1 if it is, 0 if it isn't. */
 int is_number(char *s) {
     if (is_number(s[0]) || (s[0] == '-' && is_number(s[1]))) return 1;
     return 0;
 }
 
-// Check if character is a number.
+/** Check if character c is a number. Returns 1 if it is, 0 if it isn't. */
 int is_number(char c) {
     if (c >= '0' && c <= '9') return 1;
     return 0;
@@ -135,7 +229,7 @@ int catch_string(const char * list[], int size) {
     return x;
 }
 
-// Catch a long value from stdin.
+/** Catch a long value from stdin. */
 long catch_long() {
     long r;
     while (true) {
@@ -151,7 +245,7 @@ long catch_long() {
     return r;
 }
 
-// Catch a double value from stdin.
+/** Catch a double value from stdin. */
 double catch_double() {
     double r;
     while (true) {

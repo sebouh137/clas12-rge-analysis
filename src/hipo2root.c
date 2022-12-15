@@ -18,6 +18,7 @@
 #include "../lib/io_handler.h"
 #include "../lib/bank_containers.h"
 
+/** run() function of the program. Check usage() for details. */
 int run(char *in_file, char *work_dir, int run_no, int nevn) {
     // Create output file.
     char out_file[PATH_MAX];
@@ -79,9 +80,10 @@ int run(char *in_file, char *work_dir, int run_no, int nevn) {
     return 0;
 }
 
+/** Print usage and exit. */
 int usage() {
     fprintf(stderr,
-            "\nUsage: hipo2root [-hn:w:] infile\n"
+            "\n\nUsage: hipo2root [-hn:w:] infile\n"
             " * -h         : show this message and exit.\n"
             " * -n nevents : number of events.\n"
             " * -w workdir : location where output root files are to be "
@@ -96,37 +98,46 @@ int usage() {
     return 1;
 }
 
+/** Print error number and provide a short description of the error. */
 int handle_err(int errcode) {
+    if (errcode > 1) fprintf(stderr, "Error %02d. ", errcode);
     switch (errcode) {
         case 0:
             return 0;
         case 1:
             break;
         case 2:
-            fprintf(stderr, "Error %02d. No file name provided.\n", errcode);
+            fprintf(stderr, "nevents should be a number greater than 0");
             break;
         case 3:
-            fprintf(stderr, "Error %02d. input file should be in hipo format."
-                            "\n", errcode);
+            fprintf(stderr, "Bad usage of optional arguments.");
             break;
         case 4:
-            fprintf(stderr, "Error %02d. file does not exist!\n", errcode);
+            fprintf(stderr, "No input filename provided.");
             break;
         case 5:
-            fprintf(stderr, "Error %02d. Bad usage of optional arguments.\n",
-                    errcode);
+            fprintf(stderr, "Input file should be in hipo format.");
             break;
         case 6:
-            fprintf(stderr, "Error %02d. nevents should be a number greater "
-                            "than 0\n", errcode);
+            fprintf(stderr, "Input file does not exist!");
+            break;
+        case 7:
+            fprintf(stderr, "Couldn't find extension in input filename.");
+            break;
+        case 8:
+            fprintf(stderr, "Couldn't find run number in input filename.");
             break;
         default:
-            fprintf(stderr, "Error code %02d not implemented!\n", errcode);
+            fprintf(stderr, "Error code not implemented!\n");
             return 1;
     }
     return usage();
 }
 
+/**
+ * Handle arguments for hipo2root using optarg. Error codes used are explained
+ * in the handle_err() function.
+ */
 int handle_args(int argc, char **argv, char **in_file, char **work_dir,
         int *run_no, int *nevents)
 {
@@ -138,6 +149,7 @@ int handle_args(int argc, char **argv, char **in_file, char **work_dir,
                 return 1;
             case 'n':
                 *nevents = atoi(optarg);
+                if (*nevents <= 0) return 2; // Check if nevents is valid.
                 break;
             case 'w':
                 *work_dir = (char *) malloc(strlen(optarg) + 1);
@@ -148,12 +160,9 @@ int handle_args(int argc, char **argv, char **in_file, char **work_dir,
                 strcpy(*in_file, optarg);
                 break;
             default:
-                return 5;
+                return 3;
         }
     }
-
-    // Check that nevents is valid and that atoi performed correctly.
-    if (*nevents == 0) return 6;
 
     // Define workdir if undefined.
     if (*work_dir == NULL) {
@@ -161,12 +170,16 @@ int handle_args(int argc, char **argv, char **in_file, char **work_dir,
         sprintf(*work_dir, "%s/../root_io", dirname(argv[0]));
     }
 
-    // Check positional argument.
-    if (*in_file == NULL) return 2;
+    // Check that a positional argument was given.
+    if (*in_file == NULL) return 4;
 
-    return handle_hipo_filename(*in_file, run_no);
+    int check = handle_hipo_filename(*in_file, run_no);
+    if (check) return check + 4;
+
+    return 0;
 }
 
+/** Entry point of hipo2root. Check usage() for details. */
 int main(int argc, char **argv) {
     // Handle arguments.
     char *in_file  = NULL;

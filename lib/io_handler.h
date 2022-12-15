@@ -18,12 +18,15 @@
 
 #include "file_handler.h"
 
-int check_root_filename(char *input_file);
-int handle_root_filename(char *input_file, int *run_no);
-int handle_root_filename(char *input_file, int *run_no, double *beam_energy);
+int get_run_no(char *filename, int *run_no);
+int get_beam_energy(int run_no, double *beam_energy);
 
-int check_hipo_filename(char *input_file);
-int handle_hipo_filename(char *input_file, int *run_no);
+int check_root_filename(char *filename);
+int handle_root_filename(char *filename, int *run_no, double *beam_energy);
+int handle_root_filename(char *filename, int *run_no);
+
+int check_hipo_filename(char *filename);
+int handle_hipo_filename(char *filename, int *run_no);
 
 int is_number(char *s);
 int is_number(char c);
