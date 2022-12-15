@@ -15,10 +15,19 @@
 
 #include "../lib/file_handler.h"
 
-// Get sampling fraction parameters from file.
-int get_sf_params(char *fname, double sf[NSECTORS][SF_NPARAMS][2]) {
-    if (access(fname, F_OK) != 0) return 1;
-    FILE *t_in = fopen(fname, "r");
+/**
+ * Get sampling fraction parameters from file.
+ *
+ * @param filename: filename to be processed.
+ * @param sf[][][]: 3-dimensional array where sampling fraction data is to be
+ *                  written. Check the README.md for more information.
+ * @return          error code:
+ *                    * 0: everything went fine.
+ *                    * 1: no file with filename was found.
+ */
+int get_sf_params(char *filename, double sf[NSECTORS][SF_NPARAMS][2]) {
+    if (access(filename, F_OK) != 0) return 1;
+    FILE *t_in = fopen(filename, "r");
 
     for (int si = 0; si < NSECTORS; ++si) {
         for (int ppi = 0; ppi < 2; ++ppi) {

@@ -119,9 +119,11 @@ int handle_err(int errcode) {
             fprintf(stderr, "Input file should be in hipo format.");
             break;
         case 6:
-            fprintf(stderr, "Input file does not exist!");
+            fprintf(stderr, "Input file does not exist.");
             break;
         case 7:
+            // NOTE. It's technically impossible to get here, this error should
+            //     be fully covered by errcode 5. Better safe than sorry.
             fprintf(stderr, "Couldn't find extension in input filename.");
             break;
         case 8:
@@ -136,7 +138,7 @@ int handle_err(int errcode) {
 
 /**
  * Handle arguments for hipo2root using optarg. Error codes used are explained
- * in the handle_err() function.
+ *     in the handle_err() function.
  */
 int handle_args(int argc, char **argv, char **in_file, char **work_dir,
         int *run_no, int *nevents)
@@ -174,7 +176,7 @@ int handle_args(int argc, char **argv, char **in_file, char **work_dir,
     if (*in_file == NULL) return 4;
 
     int check = handle_hipo_filename(*in_file, run_no);
-    if (check) return check + 4;
+    if (check) return check + 4; // Shift errcode.
 
     return 0;
 }

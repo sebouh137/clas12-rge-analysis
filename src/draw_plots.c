@@ -214,6 +214,8 @@ int run(char *in_file, char *acc_file, char *work_dir, int run_no) {
     // bool custom_cuts = catch_yn();
 
     // === BINNING SETUP =======================================================
+    // TODO. If acc_file != NULL, limit binning in Q2, nu, z_h, Pt2, and phi_PQ
+    //       to acceptance correction bins.
     printf("\nNumber of dimensions for binning?\n");
     long   dbins = catch_long();
     int    bvx[dbins];

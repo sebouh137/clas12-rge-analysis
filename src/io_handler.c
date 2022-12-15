@@ -51,7 +51,7 @@ int get_run_no(char *filename, int *run_no) {
  *                       * 1: beam energy for run number is unavailable.
  */
 int get_beam_energy(int run_no, double *beam_energy) {
-    // NOTE. This should be a map in constants or taken directly from the RCDB.
+    // NOTE. This should be taken directly from RCDB.
     switch (run_no) {
         case 11983:  *beam_energy = BE11983;  break;
         case 12016:  *beam_energy = BE12016;  break;
