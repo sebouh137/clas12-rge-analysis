@@ -34,7 +34,7 @@ int grab_multiarg(int argc, char **argv, int *optind, int *size, double **b);
 int grab_str(char *optarg, char **str);
 
 bool catch_yn();
-int catch_string(const char *list[], int size);
+int catch_string(const char *arr[], int size);
 double catch_double();
 long catch_long();
 

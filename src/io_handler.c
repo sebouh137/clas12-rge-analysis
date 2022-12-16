@@ -216,7 +216,7 @@ int grab_str(char *optarg, char **str) {
     return 0;
 }
 
-// Catch a y or n input.
+/** Catch a y (yes) or a n (no) from stdin. */
 bool catch_yn() {
     // TODO. Figure out how to catch no input so that this can be [Y/n].
     while (true) {
@@ -229,15 +229,22 @@ bool catch_yn() {
     }
 }
 
-// Catch a string within a list.
-int catch_string(const char * list[], int size) {
+/**
+ * Catch a string from stdin and find its location in an array of strings. If
+ *     string is not in list, ask the user again.
+ *
+ * @param arr:  array of strings.
+ * @param size: size of arr.
+ * @return:     location of string in stdin inside arr.
+ */
+int catch_string(const char *arr[], int size) {
     double x;
     while (true) {
         char str[32];
         printf(">>> ");
         scanf("%31s", str);
 
-        for (int i = 0; i < size; ++i) if (!strcmp(str, list[i])) x = i;
+        for (int i = 0; i < size; ++i) if (!strcmp(str, arr[i])) x = i;
         if (x != -1) break;
     }
 

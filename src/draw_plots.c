@@ -20,7 +20,6 @@
 #include "../lib/io_handler.h"
 #include "../lib/utilities.h"
 
-// TODO. See why I'm not seeing any neutrals.
 // TODO. Do acceptance correction.
 
 // TODO. Check what happens with the acceptance of different particles (like pi+
@@ -33,7 +32,33 @@
 // TODO. Evaluate **acceptance** in diferent regions.
 // TODO. Separate in vz bins. Start from -40 to 40 cm, 4-cm bins.
 
-// Assign name to plots, recursively going through binnings.
+/**
+ * Assign name to plots, recursively going through binnings.
+ *
+ * @param plt:        List of plots to be named.
+ * @param name:       Base for the name given to the plot. The final name will
+ *                    be "<name> (<bin 1>) (<bin 2>) ... (<bin n>)".
+ * @param nx:         Variable name for the x axis..
+ * @param ny:         Variable name for the y axis.
+ * @param idx:        Index in the plot array of the plot to be named. When
+ *                    calling the function, should be 0.
+ * @param dbins:      Binning dimension. Needed to compute how deep the
+ *                    recursion should go before stopping.
+ * @param depth:      How deep along the number of bins we are. When calling the
+ *                    function, this should always be 0.
+ * @param px:         Dimensionality of plot. Set to 1 for 1d plot, 2 for 2d.
+ * @param bx:         2-dimensional array containing the number of bins for each
+ *                    axis for each plot.
+ * @param rx:         2-dimensional array containing the range for each axis for
+ *                    each plot.
+ * @param bvx:        Array of variables for binning for each plot.
+ * @param bbx:        Array with number of dimensions for binning for each
+ *                    binning.
+ * @param brx:        2-dimensional array with lower and upper limits for each
+ *                    binning variable.
+ * @param b_interval: Array with size of each bin for each binning.
+ * @return:           Error code. Currently, can only return 0 (success).
+ */
 int name_plt(TH1 *plt[], TString *name, const char *nx, const char *ny,
         int *idx, long dbins, long depth, int px, long bx[], double rx[][2],
         int bvx[], long bbx[], double brx[][2], double b_interval[])
@@ -68,6 +93,28 @@ int name_plt(TH1 *plt[], TString *name, const char *nx, const char *ny,
     return 0;
 }
 
+/**
+ * Find name of bin by recursively going through binnings and appending their
+ *     range to the name.
+ *
+ * @param name:            Name to which we append each bin.
+ * @param plt_size:        Number of "versions" of a plot, depending on number
+ *                         of bins.
+ * @param idx:             Index in the plot array of the plot to be named. When
+ *                         calling the function, should be 0.
+ * @param dbins:           Binning dimension. Needed to compute how deep the
+ *                         recursion should go before stopping.
+ * @param depth:           How deep along the number of bins we are. When
+ *                         calling the function, this should always be 0.
+ * @param prev_dim_factor: Dimension factor
+ * @param vx:              Array of variables for binning for each plot.
+ * @param bx:              Array with number of dimensions for binning for each
+ *                         binning.
+ * @param rx:              2-dimensional array with lower and upper limits for
+ *                         each binning variable.
+ * @param interval:        Array with size of each bin for each binning.
+ * @return:                Success code (0).
+ */
 int find_bin(TString *name, int plt_size, int idx, long dbins, long depth,
         int prev_dim_factor, int vx[], long bx[], double rx[][2],
         double interval[])
@@ -87,10 +134,23 @@ int find_bin(TString *name, int plt_size, int idx, long dbins, long depth,
     name->Append(Form("%s (%6.2f, %6.2f)/", S_VAR_LIST[vx[depth]], low, high));
 
     return find_bin(name, plt_size, idx, dbins, depth+1, dim_factor, vx, bx, rx,
-                    interval);
+            interval);
 }
 
-// Find index of plot in array, recursively going through binnings.
+/**
+ * Find index of plot in array, recursively going through binnings.
+ *
+ * @param dbins:    Binning dimension. Needed to compute how deep the recursion
+ *                  should go before stopping.
+ * @param depth:    How deep along the number of bins we are. When calling the
+ *                  function, this should always be 0.
+ * @param var:      Binning variables.
+ * @param bx:       Array with number of dimensions for binning for each
+ *                  binning.
+ * @param rx:       2-dimensional array with lower and upper limits for each
+ *                  binning variable.
+ * @param interval: Array with size of each bin for each binning.
+ */
 int find_idx(long dbins, long depth, Float_t var[], long bx[], double rx[][2],
         double interval[])
 {
@@ -112,10 +172,11 @@ int find_idx(long dbins, long depth, Float_t var[], long bx[], double rx[][2],
     return -1; // Variable is not within binning range.
 }
 
+/** run() function of the program. Check usage() for details. */
 int run(char *in_file, char *acc_file, char *work_dir, int run_no) {
     // Open input file.
     TFile *f_in  = TFile::Open(in_file, "READ");
-    if (!f_in || f_in->IsZombie()) return 2;
+    if (!f_in || f_in->IsZombie()) return 8;
 
     // Get acceptance correction
     long int b_sizes[5];
@@ -126,7 +187,7 @@ int run(char *in_file, char *acc_file, char *work_dir, int run_no) {
     double **acc_corr;
 
     if (acc_file != NULL) {
-        if (access(acc_file, F_OK) != 0) return 3;
+        if (access(acc_file, F_OK) != 0) return 9;
         FILE *ac_file = fopen(acc_file, "r");
 
         binnings = (double **) malloc(5 * sizeof(*binnings));
@@ -459,9 +520,10 @@ int run(char *in_file, char *acc_file, char *work_dir, int run_no) {
     return 0;
 }
 
+/** Print usage and exit. */
 int usage() {
     fprintf(stderr,
-        "\nUsage: draw_plots [-ha:w:] infile\n"
+        "\n\nUsage: draw_plots [-ha:w:] infile\n"
         " * -h         : show this message and exit.\n"
         " * -a accfile : apply acceptance correction using acc_file.\n"
         " * -w workdir : location where output root files are to be "
@@ -474,38 +536,51 @@ int usage() {
     return 1;
 }
 
+/** Print error number and provide a short description of the error. */
 int handle_err(int errcode) {
+    if (errcode > 1) fprintf(stderr, "Error %02d. ", errcode);
     switch (errcode) {
         case 0:
             return 0;
         case 1:
             break;
         case 2:
-            fprintf(stderr, "Error %02d. Input file not found!\n", errcode);
+            fprintf(stderr, "Bad usage of optional arguments.");
             break;
         case 3:
-            fprintf(stderr, "Error %02d. Acceptance correction file not found!"
-                            "\n", errcode);
+            fprintf(stderr, "No input file provided.");
             break;
         case 4:
-            fprintf(stderr, "Error %02d. Bad usage of optional arguments.\n",
-                    errcode);
+            fprintf(stderr, "Input file should be a root file.");
             break;
         case 5:
-            fprintf(stderr, "Error %02d. No file name provided.\n", errcode);
+            fprintf(stderr, "Input file wasn't found.");
             break;
         case 6:
-            fprintf(stderr, "Error %02d. input is not a valid ROOT file.\n",
-                    errcode);
+            fprintf(stderr, "Couldn't find extension in input filename.");
+            break;
+        case 7:
+            fprintf(stderr, "Couldn't find run number from input filename.");
+            break;
+        case 8:
+            fprintf(stderr, "Input file is not a valid root file.");
+            break;
+        case 9:
+            fprintf(stderr, "Acceptance correction text file couldn't be "
+                            "opened.");
             break;
         default:
-            fprintf(stderr, "Error code %d not implemented!\n", errcode);
+            fprintf(stderr, "Error code not implemented!\n");
             return 1;
     }
 
     return usage();
 }
 
+/**
+ * Handle arguments for make_ntuples using optarg. Error codes used are
+ *     explained in the handle_err() function.
+ */
 int handle_args(int argc, char **argv, char **in_file, char **acc_file,
         char **work_dir, int *run_no)
 {
@@ -527,7 +602,7 @@ int handle_args(int argc, char **argv, char **in_file, char **acc_file,
                 strcpy(*in_file, optarg);
                 break;
             default:
-                return 4;
+                return 2;
         }
     }
 
@@ -538,11 +613,14 @@ int handle_args(int argc, char **argv, char **in_file, char **acc_file,
     }
 
     // Check positional argument.
-    if (*in_file == NULL) return 5;
+    if (*in_file == NULL) return 3;
 
-    return handle_root_filename(*in_file, run_no);
+    int check = handle_root_filename(*in_file, run_no);
+    if (!check || check == 5) return 0;
+    else                      return check + 3; // Shift errcode.
 }
 
+/** Entry point of the program. */
 int main(int argc, char **argv) {
     // Handle arguments.
     char *in_file  = NULL;
