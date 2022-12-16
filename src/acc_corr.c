@@ -20,17 +20,33 @@
 #include "../lib/io_handler.h"
 #include "../lib/utilities.h"
 
-// Return position of val in vec or -1 if val is not inside vec.
-int find_pos(double val, double *b, int size) {
-    for (int i = 0; i < size; ++i) if (b[i] < val && val < b[i+1]) return i;
+/**
+ * Return position of value v inside a binning array b of size s. If v is not
+ *     inside b, return -1.
+ */
+int find_pos(double v, double *b, int size) {
+    for (int i = 0; i < size; ++i) if (b[i] < v && v < b[i+1]) return i;
     return -1;
 }
 
-// Count number of events in tree for each bin for a given pid.
-int count_events(int *evn_cnt, TTree *tree, int pid, int tsize, int *sizes,
+/**
+ * Count number of events in a tree for each bin, for a given pid. The number of
+ *     bins is equal to the multiplication of the size-1 of each binning.
+ *
+ * @param evn_cnt:  array of integers that count events in each bin.
+ * @param tree:     TTree containing the data we're to process.
+ * @param pid:      pid of the particle for which we're counting events.
+ * @param nbins:    number of bins, or size of the evn_cnt array.
+ * @param bsizes:   size of each binning, should be an array of size 5.
+ * @param binnings: 2-dimensional array of binnings.
+ * @param in_deg:   boolean telling us if thrown events are in degrees --
+ *                  default is radians.
+ * @return:         success code (0).
+ */
+int count_events(int *evn_cnt, TTree *tree, int pid, int nbins, int *bsizes,
         double **binnings, bool in_deg)
 {
-    for (int i = 0; i < tsize; ++i) evn_cnt[i] = 0;
+    for (int i = 0; i < nbins; ++i) evn_cnt[i] = 0;
 
     Float_t s_pid;
     Float_t s_binning[5] = {0, 0, 0, 0, 0};
@@ -50,9 +66,9 @@ int count_events(int *evn_cnt, TTree *tree, int pid, int tsize, int *sizes,
         for (int bi = 0; bi < 5 && !kill; ++bi) {
             if (bi == 4 && in_deg)
                 idx[bi] = find_pos(to_rad(s_binning[bi]), binnings[bi],
-                        sizes[bi]-1);
+                        bsizes[bi]-1);
             else
-                idx[bi] = find_pos(s_binning[bi], binnings[bi], sizes[bi]-1);
+                idx[bi] = find_pos(s_binning[bi], binnings[bi], bsizes[bi]-1);
 
             if (idx[bi] < 0) kill = true;
         }
@@ -60,10 +76,10 @@ int count_events(int *evn_cnt, TTree *tree, int pid, int tsize, int *sizes,
 
         // Increase counter.
         ++evn_cnt[
-                idx[0]*(sizes[1]-1)*(sizes[2]-1)*(sizes[3]-1)*(sizes[4]-1) +
-                idx[1]*(sizes[2]-1)*(sizes[3]-1)*(sizes[4]-1) +
-                idx[2]*(sizes[3]-1)*(sizes[4]-1) +
-                idx[3]*(sizes[4]-1) +
+                idx[0]*(bsizes[1]-1)*(bsizes[2]-1)*(bsizes[3]-1)*(bsizes[4]-1) +
+                idx[1]*(bsizes[2]-1)*(bsizes[3]-1)*(bsizes[4]-1) +
+                idx[2]*(bsizes[3]-1)*(bsizes[4]-1) +
+                idx[3]*(bsizes[4]-1) +
                 idx[4]
         ];
     }
@@ -71,33 +87,34 @@ int count_events(int *evn_cnt, TTree *tree, int pid, int tsize, int *sizes,
     return 0;
 }
 
-int run(char *gen_file, char *sim_file, char *data_dir, int *sizes,
+/** run() function of the program. Check usage() for details. */
+int run(char *gen_file, char *sim_file, char *data_dir, int *bsizes,
         double **binnings, bool use_fmt, bool in_deg)
 {
     // Open input files and load TTrees.
     TFile *t_in = TFile::Open(gen_file, "READ");
-    if (!t_in || t_in->IsZombie()) return 9;
+    if (!t_in || t_in->IsZombie()) return 10;
     TNtuple *thrown = t_in->Get<TNtuple>("ntuple_thrown");
-    if (thrown == NULL) return 12;
+    if (thrown == NULL) return 11;
 
     TFile *s_in = TFile::Open(sim_file, "READ");
-    if (!s_in || s_in->IsZombie()) return 10;
+    if (!s_in || s_in->IsZombie()) return 12;
     TTree *simul = use_fmt ? s_in->Get<TTree>("fmt") : s_in->Get<TTree>("dc");
     if (simul == NULL) return 13;
 
     // Create output file.
     char out_file[PATH_MAX];
     sprintf(out_file, "%s/acc_corr.txt", data_dir);
-    if (!access(out_file, F_OK)) return 11;
+    if (!access(out_file, F_OK)) return 14;
     FILE *t_out = fopen(out_file, "w");
 
-    // Write binning sizes to output file.
-    for (int bi = 0; bi < 5; ++bi) fprintf(t_out, "%d ", sizes[bi]);
+    // Write binning bsizes to output file.
+    for (int bi = 0; bi < 5; ++bi) fprintf(t_out, "%d ", bsizes[bi]);
     fprintf(t_out, "\n");
 
     // Write binnings to output file.
     for (int bi = 0; bi < 5; ++bi) {
-        for (int bii = 0; bii < sizes[bi]; ++bii) {
+        for (int bii = 0; bii < bsizes[bi]; ++bii) {
             fprintf(t_out, "%12.9f ", binnings[bi][bii]);
         }
         fprintf(t_out, "\n");
@@ -127,21 +144,21 @@ int run(char *gen_file, char *sim_file, char *data_dir, int *sizes,
     fprintf(t_out, "\n");
 
     // Count # of thrown and simulated events in each bin.
-    int tsize = 1;
-    for (int bi = 0; bi < 5; ++bi) tsize *= sizes[bi] - 1;
+    int nbins = 1;
+    for (int bi = 0; bi < 5; ++bi) nbins *= bsizes[bi] - 1;
 
     for (int pi = 0; pi < pidlist_size; ++pi) {
         int pid = (int) pidlist[pi];
         printf("Working on PID %5d...", pid);
         fflush(stdout);
 
-        int t_evn[tsize];
-        int s_evn[tsize];
-        count_events(t_evn, thrown, pid, tsize, sizes, binnings, in_deg);
-        count_events(s_evn, simul,  pid, tsize, sizes, binnings, false);
+        int t_evn[nbins];
+        int s_evn[nbins];
+        count_events(t_evn, thrown, pid, nbins, bsizes, binnings, in_deg);
+        count_events(s_evn, simul,  pid, nbins, bsizes, binnings, false);
 
         // Compute and save acceptance ratios.
-        for (int i = 0; i < tsize; ++i) {
+        for (int i = 0; i < nbins; ++i) {
             double acc = (double)s_evn[i] / (double)t_evn[i];
             if (std::fpclassify(acc) != FP_NORMAL || acc > 1) acc = 0;
             fprintf(t_out, "%.12f ", acc);
@@ -160,15 +177,16 @@ int run(char *gen_file, char *sim_file, char *data_dir, int *sizes,
     return 0;
 }
 
+/** Print usage and exit. */
 int usage() {
     fprintf(stderr,
-            "\nUsage: acc_corr [-hq:n:z:p:f:g:s:d:FD]\n"
+            "\n\nUsage: acc_corr [-hq:n:z:p:f:g:s:d:FD]\n"
             " * -h         : show this message and exit.\n"
             " * -q ...     : Q2 bins.\n"
             " * -n ...     : nu bins.\n"
             " * -z ...     : z_h bins.\n"
             " * -p ...     : Pt2 bins.\n"
-            " * -f ...     : phi_PQ bins.\n"
+            " * -f ...     : phi_PQ bins (in radians).\n"
             " * -g genfile : generated events ROOT file.\n"
             " * -s simfile : simulated events ROOT file.\n"
             " * -d datadir : location where sampling fraction files are "
@@ -187,62 +205,67 @@ int usage() {
     return 1;
 }
 
+/** Print error number and provide a short description of the error. */
 int handle_err(int errcode) {
+    if (errcode > 1) fprintf(stderr, "Error %02d. ", errcode);
     switch (errcode) {
         case 0:
             return 0;
         case 1:
             break;
         case 2:
-            fprintf(stderr, "Error. All binnings should have *at least* two "
-                            "values -- a minimum and a\n maximum.\n\n");
+            fprintf(stderr, "All binnings should be specified.");
             break;
         case 3:
-            fprintf(stderr, "Error. Generated file should be in root "
-                            "format.\n\n");
+            fprintf(stderr, "All binnings should have *at least* two values -- "
+                            "a minimum and a maximum.");
             break;
         case 4:
-            fprintf(stderr, "Error. Generated file does not exist!\n\n");
+            fprintf(stderr, "Generated file must be specified.");
             break;
         case 5:
-            fprintf(stderr, "Error. Simulated file should be in root "
-                            "format.\n\n");
+            fprintf(stderr, "Generated file should be in root format.");
             break;
         case 6:
-            fprintf(stderr, "Error. Simulated file does not exist!\n\n");
+            fprintf(stderr, "Generated file does not exist.");
             break;
         case 7:
-            fprintf(stderr, "Error. Please specify a generated file.\n\n");
+            fprintf(stderr, "Simulated file must be specified.");
             break;
         case 8:
-            fprintf(stderr, "Error. Please specify a simulated file.\n\n");
+            fprintf(stderr, "Simulated file should be in root format.");
             break;
         case 9:
-            fprintf(stderr, "Error. Generated file is not a valid ROOT file."
-                            "\n\n");
+            fprintf(stderr, "Simulated file does not exist.");
             break;
         case 10:
-            fprintf(stderr, "Error. Simulated file is not a valid ROOT file."
-                            "\n\n");
+            fprintf(stderr, "Generated file is not a valid root file.");
             break;
         case 11:
-            fprintf(stderr, "Error. Output file already exists.\n\n");
+            fprintf(stderr, "Generated file is badly formatted.");
             break;
         case 12:
-            fprintf(stderr, "Error. Generated file is badly formatted.\n\n");
+            fprintf(stderr, "Simulated file is not a valid root file.");
             break;
         case 13:
-            fprintf(stderr, "Error. Simualted file is badly formatted.\n\n");
+            fprintf(stderr, "Simualted file is badly formatted.");
+            break;
+        case 14:
+            fprintf(stderr, "Output file already exists.");
             break;
         default:
-            fprintf(stderr, "Error code %d not implemented!\n\n", errcode);
+            fprintf(stderr, "Error code not implemented!\n");
             return 1;
     }
     return usage();
 }
 
+/**
+ * Handle arguments for make_ntuples using optarg. Error codes used are
+ *     explained in the handle_err() function.
+ */
 int handle_args(int argc, char **argv, char **gen_file, char **sim_file,
-        char **data_dir, int *sizes, double **binnings, bool *use_fmt,
+        char **data_dir, int *bsizes, double **binnings, bool *use_fmt,
         bool *in_deg)
 {
     // Handle arguments.
@@ -252,25 +275,25 @@ int handle_args(int argc, char **argv, char **gen_file, char **sim_file,
         case 'h':
             return 1;
         case 'q':
-            grab_multiarg(argc, argv, &optind, &(sizes[0]), &(binnings[0]));
+            grab_multiarg(argc, argv, &optind, &(bsizes[0]), &(binnings[0]));
             break;
         case 'n':
-            grab_multiarg(argc, argv, &optind, &(sizes[1]), &(binnings[1]));
+            grab_multiarg(argc, argv, &optind, &(bsizes[1]), &(binnings[1]));
             break;
         case 'z':
-            grab_multiarg(argc, argv, &optind, &(sizes[2]), &(binnings[2]));
+            grab_multiarg(argc, argv, &optind, &(bsizes[2]), &(binnings[2]));
             break;
         case 'p':
-            grab_multiarg(argc, argv, &optind, &(sizes[3]), &(binnings[3]));
+            grab_multiarg(argc, argv, &optind, &(bsizes[3]), &(binnings[3]));
             break;
         case 'f':
-            grab_multiarg(argc, argv, &optind, &(sizes[4]), &(binnings[4]));
+            grab_multiarg(argc, argv, &optind, &(bsizes[4]), &(binnings[4]));
             break;
         case 'g':
-            grab_filename(optarg, gen_file);
+            grab_str(optarg, gen_file);
             break;
         case 's':
-            grab_filename(optarg, sim_file);
+            grab_str(optarg, sim_file);
             break;
         case 'd':
             *data_dir = (char *) malloc(strlen(optarg) + 1);
@@ -288,7 +311,8 @@ int handle_args(int argc, char **argv, char **gen_file, char **sim_file,
     }
 
     // Check that all arrays have *at least* two values.
-    for (int bi = 0; bi < 5; ++bi) if (sizes[bi] < 2) return 2;
+    for (int bi = 0; bi < 5; ++bi) if (bsizes[bi] == -1) return 2;
+    for (int bi = 0; bi < 5; ++bi) if (bsizes[bi] < 2)   return 3;
 
     // Define datadir if undefined.
     if (*data_dir == NULL) {
@@ -297,18 +321,19 @@ int handle_args(int argc, char **argv, char **gen_file, char **sim_file,
     }
 
     // Check genfile.
-    if (*gen_file == NULL) return 7;
+    if (*gen_file == NULL) return 4;
     int errcode = check_root_filename(*gen_file);
-    if (errcode) return errcode;
+    if (errcode) return errcode + 4; // Shift errcode.
 
     // Check simfile.
-    if (*sim_file == NULL) return 8;
+    if (*sim_file == NULL) return 7;
     errcode = check_root_filename(*sim_file);
-    if (errcode) return errcode + 2;
+    if (errcode) return errcode + 7; // Shift errcode.
 
     return 0;
 }
 
+/** Entry point of the program. */
 int main(int argc, char **argv) {
     // Handle arguments.
     char *gen_file = NULL;
@@ -316,16 +341,16 @@ int main(int argc, char **argv) {
     char *data_dir = NULL;
     bool use_fmt   = false;
     bool in_deg    = false;
-    int sizes[5];
+    int bsizes[5]  = {-1, -1, -1, -1, -1};
     double **binnings;
 
     binnings = (double **) malloc(5 * sizeof(*binnings));
     int errcode = handle_args(argc, argv, &gen_file, &sim_file, &data_dir,
-            sizes, binnings, &use_fmt, &in_deg);
+            bsizes, binnings, &use_fmt, &in_deg);
 
     // Run.
     if (errcode == 0)
-        errcode = run(gen_file, sim_file, data_dir, sizes, binnings, use_fmt,
+        errcode = run(gen_file, sim_file, data_dir, bsizes, binnings, use_fmt,
                 in_deg);
 
     // Free up memory.

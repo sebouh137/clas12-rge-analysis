@@ -119,7 +119,7 @@ int run(char *in_file, char *acc_file, char *work_dir, int run_no) {
 
     // Get acceptance correction
     long int b_sizes[5];
-    long int tsize;
+    long int nbins;
     double **binnings;
     long int pids_size;
     long int *pids;
@@ -132,8 +132,8 @@ int run(char *in_file, char *acc_file, char *work_dir, int run_no) {
         binnings = (double **) malloc(5 * sizeof(*binnings));
         get_binnings(ac_file, b_sizes, binnings, &pids_size);
 
-        tsize = 1;
-        for (int bi = 0; bi < 5; ++bi) tsize *= b_sizes[bi] - 1;
+        nbins = 1;
+        for (int bi = 0; bi < 5; ++bi) nbins *= b_sizes[bi] - 1;
 
         for (int bi = 0; bi < 5; ++bi) {
             printf("binning[%ld]: [", b_sizes[bi]);
@@ -145,7 +145,7 @@ int run(char *in_file, char *acc_file, char *work_dir, int run_no) {
         pids = (long int *) malloc(pids_size * sizeof(*pids));
         acc_corr = (double **) malloc(pids_size * sizeof(*acc_corr));
 
-        get_acc_corr(ac_file, pids_size, tsize, pids, acc_corr);
+        get_acc_corr(ac_file, pids_size, nbins, pids, acc_corr);
 
         printf("pids[%ld] = [", pids_size);
         for (int pi = 0; pi < pids_size; ++pi) {
@@ -154,8 +154,8 @@ int run(char *in_file, char *acc_file, char *work_dir, int run_no) {
         printf("\b\b]\n");
 
         for (int pi = 0; pi < pids_size; ++pi) {
-            printf("acc_corr[%ld]: [", tsize);
-            for (int bii = 0; bii < tsize; ++bii)
+            printf("acc_corr[%ld]: [", nbins);
+            for (int bii = 0; bii < nbins; ++bii)
                 printf("%lf ", acc_corr[pi][bii]);
             printf("\b\b]\n");
         }

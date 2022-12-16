@@ -41,7 +41,16 @@ int get_sf_params(char *filename, double sf[NSECTORS][SF_NPARAMS][2]) {
     return 0;
 }
 
-// Get sizes of binnings, initialize, and fill them from file.
+/**
+ * Read binning data from text file and fill binning sizes array, binnings
+ *     array, and an array of PID list sizes.
+ *
+ * @param f_in:      file from which we extract the data.
+ * @param b_sizes:   array of size 5 with binning sizes.
+ * @param binnings:  2-dimensional array containing all 5 binnings.
+ * @param pids_size: number of PIDs in list of PIDs.
+ * @return:          success code (0).
+ */
 int get_binnings(FILE *f_in, long int *b_sizes, double **binnings,
         long int *pids_size)
 {
@@ -61,8 +70,19 @@ int get_binnings(FILE *f_in, long int *b_sizes, double **binnings,
     return 0;
 }
 
-// Get pids and acceptance correction from file.
-int get_acc_corr(FILE *f_in, long int pids_size, long int tsize, long int *pids,
+/**
+ * Read acceptance correction data from text file and fill PIDs list and
+ *     accceptance correction array. This function follows from get_binnings().
+ *
+ * @param f_in:      file from which we extract the data.
+ * @param pids_size: number of PIDs to process, as found in get_binnings().
+ * @param nbins:     total number of bins.
+ * @param pids:      array of PIDs to process.
+ * @param acc_corr:  2-dimensional array containing the acceptance correction
+ *                   for each bin, for each PID.
+ * @return:          success code (0).
+ */
+int get_acc_corr(FILE *f_in, long int pids_size, long int nbins, long int *pids,
         double **acc_corr)
 {
     // Get PIDs.
@@ -71,8 +91,8 @@ int get_acc_corr(FILE *f_in, long int pids_size, long int tsize, long int *pids,
 
     // Get acceptance correction.
     for (int pi = 0; pi < pids_size; ++pi) {
-        acc_corr[pi] = (double *) malloc(tsize * sizeof(*acc_corr[pi]));
-        for (int bii = 0; bii < tsize; ++ bii)
+        acc_corr[pi] = (double *) malloc(nbins * sizeof(*acc_corr[pi]));
+        for (int bii = 0; bii < nbins; ++ bii)
             fscanf(f_in, "%lf ", &(acc_corr[pi][bii]));
     }
 

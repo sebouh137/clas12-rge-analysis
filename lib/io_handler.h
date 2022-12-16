@@ -31,7 +31,7 @@ int handle_hipo_filename(char *filename, int *run_no);
 int is_number(char *s);
 int is_number(char c);
 int grab_multiarg(int argc, char **argv, int *optind, int *size, double **b);
-int grab_filename(char *optarg, char **file);
+int grab_str(char *optarg, char **str);
 
 bool catch_yn();
 int catch_string(const char *list[], int size);

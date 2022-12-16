@@ -163,8 +163,17 @@ int is_number(char c) {
     return 0;
 }
 
-// Grab multiple arguments and fill an array of doubles with it.
-int grab_multiarg(int argc, char **argv, int *optind, int *size, double **b) {
+/**
+ * Grab multiple arguments and fill an array with their values.
+ *
+ * @param argc:   size of list of arguments given to program.
+ * @param argv:   list of arguments given to program.
+ * @param optind: optind variable from getopt.
+ * @param size:   pointer to the size of the array that we'll fill.
+ * @param arr:    array that we'll fill.
+ * @return:       error code, which is always 0 (no error).
+ */
+int grab_multiarg(int argc, char **argv, int *optind, int *size, double **arr) {
     int idx   = *optind - 1;
     int start = idx;
     *size     = 0;
@@ -179,13 +188,13 @@ int grab_multiarg(int argc, char **argv, int *optind, int *size, double **b) {
 
     // Restart counter and initialize binning.
     idx = start;
-    (*b) = (double *) malloc((*size) * sizeof(**b));
+    (*arr) = (double *) malloc((*size) * sizeof(**arr));
 
     // Fill binning.
     int i = 0;
     while (idx < argc) {
         next = strdup(argv[idx++]);
-        if (is_number(next)) (*b)[i++] = atof(next);
+        if (is_number(next)) (*arr)[i++] = atof(next);
         else break;
     }
 
@@ -194,10 +203,16 @@ int grab_multiarg(int argc, char **argv, int *optind, int *size, double **b) {
     return 0;
 }
 
-// Grab filename from optarg.
-int grab_filename(char *optarg, char **file) {
-    *file = (char *) malloc(strlen(optarg) + 1);
-    strcpy(*file, optarg);
+/**
+ * Grab a string from an optarg.
+ *
+ * @param optarg: optarg variable from getopt.
+ * @param str:    string to which optarg will be copied.
+ * @return:       error code, which is always 0 (no error).
+ */
+int grab_str(char *optarg, char **str) {
+    *str = (char *) malloc(strlen(optarg) + 1);
+    strcpy(*str, optarg);
     return 0;
 }
 
