@@ -15,11 +15,12 @@
 
 #include "../lib/particle.h"
 
+// Lists of positive, negative, and neutral particles.
 const int PID_POSITIVE[PID_POSITIVE_SIZE] = {-11,  211,  321,  2212, 45};
 const int PID_NEGATIVE[PID_NEGATIVE_SIZE] = { 11, -211, -321, -2212};
 const int PID_NEUTRAL [PID_NEUTRAL_SIZE]  = { 22, 2112};
 
-// Initialize an empty particle.
+/** Initialize an empty particle. */
 particle particle_init() {
     particle p;
     p.is_valid            = false;
