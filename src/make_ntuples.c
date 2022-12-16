@@ -20,8 +20,22 @@
 #include "../lib/io_handler.h"
 #include "../lib/particle.h"
 
-// Find most precise TOF. In order of decreasing precision, the detectors are
-//     FTOF1B > FTOF1A > FTOF2 > PCAL > ECIN > ECOU.
+/**
+ * Find and return the most precise time of flight (TOF). Both the Forward Time
+ *     Of Flight (FTOF) detectors and the Electronic Calorimeter (EC) can
+ *     measure TOF, but they have different precisions. So, in order to get the
+ *     most accurate measurement possible, this function returns the TOF
+ *     measured by the most accurate detector for a given particle.
+ *
+ * In order of decreasing precision, the list of detectors are:
+ *     FTOF1B > FTOF1A > FTOF2 > PCAL > ECIN > ECOU.
+ *
+ * @param rsci:  instance of the REC_Scintillator class.
+ * @param rcal:  instance of the REC_Calorimeter class.
+ * @param pindex: particle index of the particle we're studying.
+ * @return:       the most accurate TOF available in the scintillator and
+ *                calorimeter banks.
+ */
 double get_tof(REC_Scintillator rsci, REC_Calorimeter rcal, int pindex) {
     int    most_precise_lyr = 0;
     double tof              = INFINITY;

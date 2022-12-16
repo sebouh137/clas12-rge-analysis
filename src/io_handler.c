@@ -108,7 +108,7 @@ int handle_root_filename(char *filename, int *run_no, double *beam_energy) {
     return 0;
 }
 
-/** Run handle_root_filename() above without writing beam_energy. */
+/** Run handle_root_filename() without writing beam_energy. */
 int handle_root_filename(char *filename, int *run_no) {
     double dump = 0.;
     return handle_root_filename(filename, run_no, &dump);
