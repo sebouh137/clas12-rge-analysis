@@ -111,16 +111,16 @@ const long STD_BX[STDPLT_LIST_SIZE][2] = {
 };
 
 // Sampling fraction constant arrays.
-const char * CALNAME[4] = {
+const char *CALNAME[4] = {
         "PCAL", "ECIN", "ECOU", "ALL"
 };
-const char * SFARR2D[4] = {
+const char *SFARR2D[4] = {
         "Vp vs E/Vp (PCAL sector ",
         "Vp vs E/Vp (ECIN sector ",
         "Vp vs E/Vp (ECOU sector ",
         "Vp vs E/Vp (CALs sector "
 };
-const char * SFARR1D[4] = {
+const char *SFARR1D[4] = {
         "PCAL Sampling Fraction sector ",
         "ECIN Sampling Fraction sector ",
         "ECOU Sampling Fraction sector ",

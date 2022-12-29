@@ -31,7 +31,7 @@ particle particle_init() {
 }
 
 // Initialize a new particle from the particle and track banks.
-particle particle_init(REC_Particle * rp, REC_Track * rt, int pos) {
+particle particle_init(REC_Particle *rp, REC_Track *rt, int pos) {
     int pindex = rt->pindex->at(pos); // pindex is always equal to pos!
     return particle_init(rp->charge->at(pindex), rp->beta->at(pindex),
             rt->sector->at(pos), rp->vx->at(pindex), rp->vy->at(pindex),
@@ -40,7 +40,7 @@ particle particle_init(REC_Particle * rp, REC_Track * rt, int pos) {
 }
 
 // Initialize a new particle from the particle, tracks, and FMT banks.
-particle particle_init(REC_Particle * rp, REC_Track * rt, FMT_Tracks * ft,
+particle particle_init(REC_Particle *rp, REC_Track *rt, FMT_Tracks *ft,
         int pos)
 {
     int index  = rt->index->at(pos);

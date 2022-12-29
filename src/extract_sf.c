@@ -90,7 +90,7 @@ int run(char *in_file, char *work_dir, char *data_dir, bool use_fmt, int nevn,
             int pi = -1;
             for (double p = SF_PMIN; p < SF_PMAX; p += SF_PSTEP) {
                 pi++;
-                char * tmp_str = Form("%s%d (%5.2f < p < %5.2f)", cal, si+1, p,
+                char *tmp_str = Form("%s%d (%5.2f < p < %5.2f)", cal, si+1, p,
                         p+SF_PSTEP);
                 sf1D_name_arr[ci][si][pi] = (char *) malloc(strlen(tmp_str)+1);
                 strncpy(sf1D_name_arr[ci][si][pi], tmp_str, strlen(tmp_str));
@@ -235,7 +235,7 @@ int run(char *in_file, char *work_dir, char *data_dir, bool use_fmt, int nevn,
                 TH1 *EdivP = histos[sf1D_name_arr[ci][si][pi]];
 
                 // Form fit string name.
-                char * tmp_str = Form("%s%d (%5.2f < p < %5.2f) fit", cal, si+1,
+                char *tmp_str = Form("%s%d (%5.2f < p < %5.2f) fit", cal, si+1,
                         p, p+SF_PSTEP);
 
                 // Fit.

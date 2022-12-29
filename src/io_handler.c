@@ -257,7 +257,7 @@ long catch_long() {
     long r;
     while (true) {
         char str[32];
-        char * endptr;
+        char *endptr;
         printf(">>> ");
         scanf("%31s", str);
         r = strtol(str, &endptr, 10);
