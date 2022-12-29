@@ -44,26 +44,26 @@ const std::map<int, int> PID_QA = {
 };
 
 // Trackers array.
-const char * TRK_LIST[TRK_LIST_SIZE] = {
+const char *TRK_LIST[TRK_LIST_SIZE] = {
     S_DC, S_FMT
 };
 
 // Particle constant array.
-const char * PART_LIST[PART_LIST_SIZE] = {
+const char *PART_LIST[PART_LIST_SIZE] = {
     R_PALL, R_PPOS, R_PNEG, R_PNEU, R_PPID
 };
 
 // Plotting constant arrays.
-const char * PLOT_LIST[PLOT_LIST_SIZE] = {
+const char *PLOT_LIST[PLOT_LIST_SIZE] = {
         R_PLOT1D, R_PLOT2D
 };
-const char * DIM_LIST[DIM_LIST_SIZE] = {
+const char *DIM_LIST[DIM_LIST_SIZE] = {
         S_DIM1, S_DIM2
 };
-const char * RAN_LIST[2] = {
+const char *RAN_LIST[2] = {
         S_LOWER, S_UPPER
 };
-const char * R_VAR_LIST[VAR_LIST_SIZE] = {
+const char *R_VAR_LIST[VAR_LIST_SIZE] = {
         R_RUNNO, R_EVENTNO, R_BEAME,
         R_PID, R_STATUS, R_CHARGE, R_MASS, R_VX, R_VY, R_VZ, R_PX, R_PY, R_PZ,
                 R_P, R_THETA, R_PHI, R_BETA,
@@ -73,7 +73,7 @@ const char * R_VAR_LIST[VAR_LIST_SIZE] = {
         R_Q2, R_NU, R_XB, R_W2,
         R_ZH, R_PT2, R_PL2, R_PHIPQ, R_THETAPQ
 };
-const char * S_VAR_LIST[VAR_LIST_SIZE] = {
+const char *S_VAR_LIST[VAR_LIST_SIZE] = {
         S_RUNNO, S_EVENTNO, S_BEAME,
         S_PID, S_STATUS, S_CHARGE, S_MASS, S_VX, S_VY, S_VZ, S_PX, S_PY, S_PZ,
                 S_P, S_THETA, S_PHI, S_BETA,
@@ -83,10 +83,10 @@ const char * S_VAR_LIST[VAR_LIST_SIZE] = {
         S_Q2, S_NU, S_XB, S_W2,
         S_ZH, S_PT2, S_PL2, S_PHIPQ, S_THETAPQ
 };
-const char * DIS_LIST[DIS_LIST_SIZE] = {
+const char *DIS_LIST[DIS_LIST_SIZE] = {
         R_Q2, R_NU, R_XB, R_W2
 };
-const char * SIDIS_LIST[SIDIS_LIST_SIZE] = {
+const char *SIDIS_LIST[SIDIS_LIST_SIZE] = {
         R_ZH, R_PT2, R_PL2, R_PHIPQ, R_THETAPQ
 };
 
@@ -106,8 +106,8 @@ const double STD_RX[STDPLT_LIST_SIZE][2][2] = {
         {{ 0,20},{-1,-1}}, {{ 0,12},{ 0,12}}
 };
 const long STD_BX[STDPLT_LIST_SIZE][2] = {
-        {200,200}, {200,100}, {200,200}, { 22, -1}, { 22, -1}, { 20, -1},
-        {200, -1}, {200,200}
+        {200,200}, {200,100}, {200,200}, {400, -1}, {400, -1}, {400, -1},
+        {400, -1}, {200,200}
 };
 
 // Sampling fraction constant arrays.
