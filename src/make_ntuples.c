@@ -102,7 +102,7 @@ int run(char *in_file, char *work_dir, char *data_dir, bool debug, int nevn,
     TFile *f_out = TFile::Open(out_file, "RECREATE");
 
     // Access input file.
-    TFile *f_in  = TFile::Open(in_file,  "READ");
+    TFile *f_in  = TFile::Open(in_file, "READ");
     if (!f_in || f_in->IsZombie()) return 11;
 
     // Return to top directory (weird root stuff).

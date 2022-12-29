@@ -364,19 +364,56 @@ int run(char *in_file, char *acc_file, char *work_dir, int run_no) {
         t->SetBranchAddress(S_VAR_LIST[vi], &vars[vi]);
 
     // === APPLY CUTS ==========================================================
+    printf("\nOpening file...\n");
+    // Counters for fancy progress bar.
+    int divcntr     = 0;
+    int evnsplitter = 0;
+
     // Apply SIDIS cuts, checking which event numbers should be skipped.
     int nevents = -1;
     // Count number of events. NOTE. There's probably a cleaner way to do this.
-    for (int i = 0; i < t->GetEntries(); ++i) {
-        t->GetEntry(i);
+    for (int evn = 0; evn < t->GetEntries(); ++evn) {
+        // Print fancy progress bar.
+        if (evn >= evnsplitter) {
+            if (evn != 0) printf("\33[2K\r");
+            printf("[");
+            for (int i = 0; i <= 50; ++i) {
+                if (i <= divcntr/2) printf("=");
+                else                printf(" ");
+            }
+            printf("] %2d%%", divcntr);
+            fflush(stdout);
+            divcntr++;
+            evnsplitter = (t->GetEntries() / 100) * divcntr;
+        }
+
+        t->GetEntry(evn);
         if (vars[A_EVENTNO] > nevents) nevents = (int) (vars[A_EVENTNO]+0.5);
     }
+
+    printf("\nApplying cuts...\n");
+    divcntr     = 0;
+    evnsplitter = 0;
 
     bool valid_event[nevents];
     Float_t current_evn = -1;
     bool no_tre_pass, Q2_pass, W2_pass;
-    for (int i = 0; i < t->GetEntries(); ++i) {
-        t->GetEntry(i);
+    for (int evn = 0; evn < t->GetEntries(); ++evn) {
+        // Print fancy progress bar.
+        if (evn >= evnsplitter) {
+            if (evn != 0) printf("\33[2K\r");
+            printf("[");
+            for (int i = 0; i <= 50; ++i) {
+                if (i <= divcntr/2) printf("=");
+                else                printf(" ");
+            }
+            printf("] %2d%%", divcntr);
+            fflush(stdout);
+            divcntr++;
+            evnsplitter = (t->GetEntries() / 100) * divcntr;
+        }
+
+        t->GetEntry(evn);
         if (vars[A_EVENTNO] != current_evn) {
             current_evn = vars[A_EVENTNO];
             valid_event[(int) (vars[A_EVENTNO]+0.5)] = false;
@@ -417,9 +454,28 @@ int run(char *in_file, char *acc_file, char *work_dir, int run_no) {
         }
     }
 
+    // Counters for fancy progress bar.
+    divcntr     = 0;
+    evnsplitter = 0;
+
     // Run through events.
-    for (int i = 0; i < t->GetEntries(); ++i) {
-        t->GetEntry(i);
+    printf("\nProcessing plots...\n");
+    for (int evn = 0; evn < t->GetEntries(); ++evn) {
+        // Print fancy progress bar.
+        if (evn >= evnsplitter) {
+            if (evn != 0) printf("\33[2K\r");
+            printf("[");
+            for (int i = 0; i <= 50; ++i) {
+                if (i <= divcntr/2) printf("=");
+                else                printf(" ");
+            }
+            printf("] %2d%%", divcntr);
+            fflush(stdout);
+            divcntr++;
+            evnsplitter = (t->GetEntries() / 100) * divcntr;
+        }
+
+        t->GetEntry(evn);
 
         // Apply particle cuts.
         if (p_charge != INT_MAX) {
@@ -504,6 +560,8 @@ int run(char *in_file, char *acc_file, char *work_dir, int run_no) {
         // Write plot(s).
         for (int pi = 0; pi < pn; ++pi) plt[pi][plti]->Write();
     }
+
+    printf("\nDone! Check out plots at %s.\n\n", out_file);
 
     // === CLEAN-UP ============================================================
     f_in ->Close();
