@@ -130,10 +130,6 @@ int run(char *in_file, char *work_dir, char *data_dir, bool debug, int nevn,
     REC_Scintillator rsci (t_in);
     FMT_Tracks       ftrk (t_in);
 
-    // Counters for fancy progress bar.
-    int divcntr     = 0;
-    int evnsplitter = 0;
-
     // Counters for PID assignment quality assessment.
     int pid_n[NPIDS];
     int pid_qa[NPIDS][NPIDS];
@@ -147,23 +143,16 @@ int run(char *in_file, char *work_dir, char *data_dir, bool debug, int nevn,
     printf("Reading %lld events from %s.\n", nevn == -1 ? t_in->GetEntries() :
             nevn, in_file);
 
+    // Counters for fancy progress bar.
+    int divcntr     = 0;
+    int evnsplitter = 0;
+
     for (int evn = 0; (evn < t_in->GetEntries()) && (nevn == -1 || evn < nevn);
             ++evn)
     {
         // Print fancy progress bar.
-        if (!debug && evn >= evnsplitter) {
-            if (evn != 0) printf("\33[2K\r");
-            printf("[");
-            for (int i = 0; i <= 50; ++i) {
-                if (i <= divcntr/2) printf("=");
-                else                printf(" ");
-            }
-            printf("] %2d%%", divcntr);
-            fflush(stdout);
-            divcntr++;
-            evnsplitter = nevn == -1 ? (t_in->GetEntries() / 100) * divcntr :
-                    (nevn/100) * divcntr;
-        }
+        if (!debug) update_progress_bar(nevn == -1 ? t_in->GetEntries() : nevn,
+                evn, &evnsplitter, &divcntr);
 
         // Get entries from input file.
         rpart.get_entries(t_in, evn);
@@ -336,10 +325,6 @@ int run(char *in_file, char *work_dir, char *data_dir, bool debug, int nevn,
                 t_out[pi]->Fill(arr);
             }
         }
-    }
-    if (!debug) {
-        printf("\33[2K\r");
-        printf("[==================================================] 100%% \n");
     }
 
     if (debug) {

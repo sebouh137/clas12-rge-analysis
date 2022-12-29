@@ -30,6 +30,9 @@ int handle_hipo_filename(char *filename, int *run_no);
 
 int is_number(char *s);
 int is_number(char c);
+
+int update_progress_bar(int nevn, int evn, int *evnsplitter, int *divcntr);
+
 int grab_multiarg(int argc, char **argv, int *optind, int *size, double **b);
 int grab_str(char *optarg, char **str);
 

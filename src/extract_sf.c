@@ -115,19 +115,8 @@ int run(char *in_file, char *work_dir, char *data_dir, bool use_fmt, int nevn,
             nevn, in_file);
     for (evn = 0; (evn < t->GetEntries()) && (nevn == -1 || evn < nevn); ++evn)
     {
-        if (evn >= evnsplitter) {
-            if (evn != 0) printf("\33[2K\r");
-            printf("[");
-            for (int i = 0; i <= 50; ++i) {
-                if (i <= divcntr/2) printf("=");
-                else                printf(" ");
-            }
-            printf("] %2d%%", divcntr);
-            fflush(stdout);
-            divcntr++;
-            evnsplitter = nevn == -1 ? (t->GetEntries() / 100) * divcntr :
-                    (nevn/100) * divcntr;
-        }
+        update_progress_bar(nevn == -1 ? t->GetEntries() : nevn, evn,
+                &evnsplitter, &divcntr);
 
         rp.get_entries(t, evn);
         rt.get_entries(t, evn);
@@ -217,8 +206,6 @@ int run(char *in_file, char *work_dir, char *data_dir, bool use_fmt, int nevn,
             }
         }
     }
-    printf("\33[2K\r[==================================================] 100%%"
-           "\n");
 
     // Fit histograms.
     ci = -1;
