@@ -371,7 +371,7 @@ int run(char *in_file, char *acc_file, char *work_dir, int run_no) {
 
     // Apply SIDIS cuts, checking which event numbers should be skipped.
     int nevents = -1;
-    // Count number of events. NOTE. There's probably a cleaner way to do this.
+    // Count number of events. TODO. There's a cleaner way to do this...
     for (int evn = 0; evn < t->GetEntries(); ++evn) {
         update_progress_bar(t->GetEntries(), evn, &evnsplitter, &divcntr);
 

@@ -16,6 +16,7 @@
 #ifndef CONSTANTS
 #define CONSTANTS
 
+#include <math.h>
 #include <map>
 
 // Physics constants.
@@ -34,6 +35,7 @@ extern const char *PART_LIST[PART_LIST_SIZE];
 #define A_PPOS 1
 #define R_PNEG "-"       // Negative.
 #define A_PNEG 2
+
 #define R_PNEU "neutral" // Neutral.
 #define A_PNEU 3
 #define R_PPID "pid"     // Filter by PID.
@@ -64,7 +66,7 @@ extern const char *RAN_LIST[2];
 #define S_UPPER "upper"
 
 // "Standard" plots.
-#define STDPLT_LIST_SIZE 8
+#define STDPLT_LIST_SIZE 11
 extern const int    STD_PX[STDPLT_LIST_SIZE];
 extern const int    STD_VX[STDPLT_LIST_SIZE][2];
 extern const double STD_RX[STDPLT_LIST_SIZE][2][2];
