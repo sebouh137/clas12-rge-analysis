@@ -244,11 +244,12 @@ int run(char *in_file, char *acc_file, char *work_dir, int run_no) {
     else if (part == A_PNEU) p_charge =  0;
     else if (part == A_PNEG) p_charge = -1;
     else if (part == A_PPID) {
-        printf("\nSelect PID from [");
-        for (std::map<int, double>::const_iterator it = MASS.begin();
-                it != MASS.end(); ++it)
-            printf("%d, ", it->first);
-        printf("\b\b]\n");
+        printf("\nSelect PID from:\n");
+        for (std::map<int, const char*>::const_iterator it = PID_NAME.begin();
+                it != PID_NAME.end(); ++it)
+        {
+            printf("  * %5d (%s).\n", it->first, it->second);
+        }
         p_pid = catch_long();
     }
 
@@ -371,7 +372,7 @@ int run(char *in_file, char *acc_file, char *work_dir, int run_no) {
 
     // Apply SIDIS cuts, checking which event numbers should be skipped.
     int nevents = -1;
-    // Count number of events. TODO. There's a cleaner way to do this...
+    // Count number of events.
     for (int evn = 0; evn < t->GetEntries(); ++evn) {
         update_progress_bar(t->GetEntries(), evn, &evnsplitter, &divcntr);
 
@@ -385,7 +386,7 @@ int run(char *in_file, char *acc_file, char *work_dir, int run_no) {
 
     bool valid_event[nevents];
     Float_t current_evn = -1;
-    bool no_tre_pass, Q2_pass, W2_pass;
+    bool no_tre_pass, Q2_pass, W2_pass, zh_pass;
     for (int evn = 0; evn < t->GetEntries(); ++evn) {
         update_progress_bar(t->GetEntries(), evn, &evnsplitter, &divcntr);
 
@@ -396,15 +397,17 @@ int run(char *in_file, char *acc_file, char *work_dir, int run_no) {
             no_tre_pass = false;
             Q2_pass     = true;
             W2_pass     = true;
+            zh_pass     = true;
         }
 
         if (vars[A_PID] != 11 || vars[A_STATUS] > 0) continue;
         no_tre_pass = true;
         Q2_pass = vars[A_Q2] >= Q2CUT;
         W2_pass = vars[A_W2] >= W2CUT;
+        // zh_pass = vars[A_ZH] <= ZHCUT;
 
         valid_event[(int) (vars[A_EVENTNO]+0.5)] =
-                no_tre_pass && Q2_pass && W2_pass;
+                no_tre_pass && Q2_pass && W2_pass && zh_pass;
     }
 
     // === PLOT ================================================================

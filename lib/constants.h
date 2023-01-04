@@ -23,7 +23,8 @@
 #define SPEEDOFLIGHT 29.9792458
 
 // PID arrays.
-extern const std::map<int, double> MASS;
+extern const std::map<int, const char*> PID_NAME;
+extern const std::map<int, double> PID_MASS;
 extern const std::map<int, int> PID_QA;
 
 // Particle cut array.
@@ -242,6 +243,7 @@ extern const double PLIMITSARR[SF_NPARAMS][2]; // Momentum limits for 1D SF fit.
 #define FMTNLYRSCUT   3 // # of FMT layers required to accept track.
 #define Q2CUT         1 // Q2 of particle must be over this value.
 #define W2CUT         4 // W2 of particle must be over this value.
+#define ZHCUT         1 // zh of particle must be below this value.
 #define CHI2NDFCUT   15 // Chi2/NDF must be below this value.
 #define VXVYCUT       4 // sqrt(vx^2 + vy^2) must be below this value.
 #define VZLOWCUT    -40 // vz must be above this value.

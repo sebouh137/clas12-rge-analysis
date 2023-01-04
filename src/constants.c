@@ -15,8 +15,31 @@
 
 #include "../lib/constants.h"
 
+// Particle name map.
+const std::map<int, const char*> PID_NAME = {
+        {        11,  "electron"},
+        {       -11,  "positron"},
+        {      2212,  "proton"},
+        {     -2212,  "antiproton"},
+        {      2112,  "neutron"},
+        {       211,  "positive pion"},
+        {      -211,  "negative pion"},
+        {       321,  "positive kaon"},
+        {      -321,  "negative kaon"},
+        // {        13,  "positive muon"}, // NOTE. not yet implemented.
+        // {       -13,  "negative muon"}, // NOTE. not yet implemented.
+        // {       111,  "neutral pion"},  // NOTE. not yet implemented.
+        // {       311,  "neutral kaon"},  // NOTE. not yet implemented.
+        {        22,  "photon"},
+        // {       221,  "eta"},           // NOTE. not yet implemented.
+        // {       223,  "omega"},         // NOTE. not yet implemented.
+        // {1000010020,  "deuterium"},     // NOTE. not yet implemented.
+        {        45,  "unidentified particle"},
+        {         0,  "unidentified particle"}
+};
+
 // Mass map in GeV.
-const std::map<int, double> MASS = {
+const std::map<int, double> PID_MASS = {
         {        11,  0.000051}, // electron.
         {       -11,  0.000051}, // positron.
         {      2212,  0.938272}, // proton.
@@ -26,14 +49,14 @@ const std::map<int, double> MASS = {
         {      -211,  0.139570}, // negative pion.
         {       321,  0.493677}, // positive kaon.
         {      -321,  0.493677}, // negative kaon.
-        // {        13,  0.105658}, // positive muon. *not yet implemented*.
-        // {       -13,  0.105658}, // negative muon. *not yet implemented*.
-        // {       111,  0.134977}, // neutral pion. *not yet implemented*.
-        // {       311,  0.497614}, // neutral kaon. *not yet implemented*.
+        // {        13,  0.105658}, // positive muon. NOTE. not yet implemented.
+        // {       -13,  0.105658}, // negative muon. NOTE. not yet implemented.
+        // {       111,  0.134977}, // neutral pion. NOTE. not yet implemented.
+        // {       311,  0.497614}, // neutral kaon. NOTE. not yet implemented.
         {        22,  0.},       // photon.
-        // {       221,  0.548953}, // eta. *not yet implemented*.
-        // {       223,  0.782650}, // omega. *not yet implemented*.
-        // {1000010020,  1.875},    // deuterium. *not yet implemented*.
+        // {       221,  0.548953}, // eta. NOTE. not yet implemented.
+        // {       223,  0.782650}, // omega. NOTE. not yet implemented.
+        // {1000010020,  1.875},    // deuterium. NOTE. not yet implemented.
         {        45, -1.},       // unidentified particle.
         {         0, -1.}        // unidentified particle.
 };
@@ -105,7 +128,7 @@ const int STD_VX[STDPLT_LIST_SIZE][2] = {
 };
 const double STD_RX[STDPLT_LIST_SIZE][2][2] = {
         {{ 0,10},{ 0, 1}}, {{ 0,10},{ 0,20}}, {{ 0,10},{ 0, 3}},
-        {{ 0,12},{-1,-1}}, {{ 0,12},{-1,-1}}, {{ 0, 4},{-1,-1}},
+        {{ 0,12},{-1,-1}}, {{ 0,12},{-1,-1}}, {{ 0, 1},{-1,-1}},
         {{ 0,12},{-1,-1}}, {{ -M_PI,M_PI},{-1,-1}},
         {{ 0, 1},{-1,-1}}, {{ 0,20},{-1,-1}}, {{ 0,12},{ 0,12}}
 };
