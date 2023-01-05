@@ -546,14 +546,14 @@ int run(char *in_file, char *acc_file, char *work_dir, int run_no) {
 /** Print usage and exit. */
 int usage() {
     fprintf(stderr,
-        "\n\nUsage: draw_plots [-ha:w:] infile\n"
-        " * -h         : show this message and exit.\n"
-        " * -a accfile : apply acceptance correction using acc_file.\n"
-        " * -w workdir : location where output root files are to be "
-        "stored. Default\n                is root_io.\n"
-        " * infile     : input file produced by make_ntuples.\n\n"
-        "    Draw plots from a ROOT file built from make_ntuples. File "
-        "should be named\n    <text>run_no.root.\n\n"
+            "\n\nUsage: draw_plots [-ha:w:] infile\n"
+            " * -h         : show this message and exit.\n"
+            " * -a accfile : apply acceptance correction using acc_file.\n"
+            " * -w workdir : location where output root files are to be "
+            "stored. Default\n                is root_io.\n"
+            " * infile     : input file produced by make_ntuples.\n\n"
+            "    Draw plots from a ROOT file built from make_ntuples. File "
+            "should be named\n    <text>run_no.root.\n\n"
     );
 
     return 1;
