@@ -16,13 +16,15 @@
 #ifndef CONSTANTS
 #define CONSTANTS
 
+#include <math.h>
 #include <map>
 
 // Physics constants.
 #define SPEEDOFLIGHT 29.9792458
 
 // PID arrays.
-extern const std::map<int, double> MASS;
+extern const std::map<int, const char*> PID_NAME;
+extern const std::map<int, double> PID_MASS;
 extern const std::map<int, int> PID_QA;
 
 // Particle cut array.
@@ -34,6 +36,7 @@ extern const char *PART_LIST[PART_LIST_SIZE];
 #define A_PPOS 1
 #define R_PNEG "-"       // Negative.
 #define A_PNEG 2
+
 #define R_PNEU "neutral" // Neutral.
 #define A_PNEU 3
 #define R_PPID "pid"     // Filter by PID.
@@ -64,7 +67,7 @@ extern const char *RAN_LIST[2];
 #define S_UPPER "upper"
 
 // "Standard" plots.
-#define STDPLT_LIST_SIZE 8
+#define STDPLT_LIST_SIZE 11
 extern const int    STD_PX[STDPLT_LIST_SIZE];
 extern const int    STD_VX[STDPLT_LIST_SIZE][2];
 extern const double STD_RX[STDPLT_LIST_SIZE][2][2];
@@ -165,7 +168,8 @@ extern const char *DIS_LIST[DIS_LIST_SIZE];
 #define S_Q2 "Q2"          // GeV^2.
 #define R_Q2 "q2"
 #define A_Q2 24
-#define S_NU "#nu"         // GeV.
+// #define S_NU "#nu"         // GeV.
+#define S_NU "nu"
 #define R_NU "nu"
 #define A_NU 25
 #define S_XB "x_{bjorken}" // adimensional.
@@ -180,7 +184,8 @@ extern const char *DIS_LIST[DIS_LIST_SIZE];
 #define SIDIS_LIST_SIZE 5
 extern const char *SIDIS_LIST[SIDIS_LIST_SIZE];
 
-#define S_ZH      "z_{h}"       // adimensional.
+// #define S_ZH      "z_{h}"       // adimensional.
+#define S_ZH      "zh"
 #define R_ZH      "zh"
 #define A_ZH       28
 #define S_PT2     "Pt2"         // GeV^2.
@@ -189,7 +194,8 @@ extern const char *SIDIS_LIST[SIDIS_LIST_SIZE];
 #define S_PL2     "Pl2"         // GeV^2.
 #define R_PL2     "pl2"
 #define A_PL2      30
-#define S_PHIPQ   "#phi_{PQ}"   // Rad.
+// #define S_PHIPQ   "#phi_{PQ}"   // Rad.
+#define S_PHIPQ   "phiPQ"
 #define R_PHIPQ   "phipq"
 #define A_PHIPQ    31
 #define S_THETAPQ "#theta_{PQ}" // Rad.
@@ -219,6 +225,7 @@ extern const double PLIMITSARR[SF_NPARAMS][2]; // Momentum limits for 1D SF fit.
 #define BE11983 10.3894 //  50 nA.
 #define BE12016 10.3894 // 250 nA.
 #define BE12439  2.1864 //  15 nA.
+#define BE12933 10.4057 // 250 nA.
 #define BE999106 10.6
 #define BE999110 11.
 #define BE999120 12.
@@ -239,6 +246,7 @@ extern const double PLIMITSARR[SF_NPARAMS][2]; // Momentum limits for 1D SF fit.
 #define FMTNLYRSCUT   3 // # of FMT layers required to accept track.
 #define Q2CUT         1 // Q2 of particle must be over this value.
 #define W2CUT         4 // W2 of particle must be over this value.
+#define ZHCUT         1 // zh of particle must be below this value.
 #define CHI2NDFCUT   15 // Chi2/NDF must be below this value.
 #define VXVYCUT       4 // sqrt(vx^2 + vy^2) must be below this value.
 #define VZLOWCUT    -40 // vz must be above this value.

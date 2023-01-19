@@ -15,27 +15,27 @@
 
 #include "../lib/utilities.h"
 
-// Pass from radians to degrees.
-double to_deg(double radians) {
-    return radians * (180.0 / M_PI);
+/** Transform an angle a from radians to degrees. */
+double to_deg(double a) {
+    return a * (180.0 / M_PI);
 }
 
-// Pass from degrees to radians.
-double to_rad(double degrees) {
-    return degrees * (M_PI / 180.0);
+/** Transform an angle a from degrees to radians. */
+double to_rad(double a) {
+    return a * (M_PI / 180.0);
 }
 
-// Compute a 2D vector's magnitude from its components.
+/** Compute a 2D vector's magntitude from its x and y components. */
 double calc_magnitude(double x, double y) {
     return sqrt(x*x + y*y);
 }
 
-// Compute a 3D vector's magnitude from its components.
+/** Compute a 3D vector's magnitude from its x, y, and z components. */
 double calc_magnitude(double x, double y, double z) {
     return sqrt(x*x + y*y + z*z);
 }
 
-// Get angle between two vectors.
+/** Compute the angle between two vectors (x1,y1,z1) and (x2,y2,z2). */
 double calc_angle(double x1, double y1, double z1, double x2, double y2,
         double z2)
 {
@@ -43,7 +43,13 @@ double calc_angle(double x1, double y1, double z1, double x2, double y2,
             calc_magnitude(x2,y2,z2)));
 }
 
-// Rotate a vector around the y axis by theta.
+/**
+ * Rotate a 3D vector around the y axis by an angle theta.
+ *
+ * @param x:  x coordinate of the vector. This variable *will be updated*.
+ * @param z:  z coordinate of the vector. This variable *will be updated*.
+ * @param th: theta angle (in radians) for the rotation.
+ */
 void rotate_y(double *x, double *z, double th) {
     double x_prev = *x;
     double z_prev = *z;
@@ -51,7 +57,13 @@ void rotate_y(double *x, double *z, double th) {
     *z = -x_prev*sin(th) + z_prev*cos(th);
 }
 
-// Rotate a vector around the z axis by theta.
+/**
+ * Rotate a 3D vector around the z axis by an angle theta.
+ *
+ * @param x:  x coordinate of the vector. This variable *will be updated*.
+ * @param y:  y coordinate of the vector. This variable *will be updated*.
+ * @param th: theta angle (in radians) for the rotation.
+ */
 void rotate_z(double *x, double *y, double th) {
     double x_prev = *x;
     double y_prev = *y;
@@ -59,9 +71,20 @@ void rotate_z(double *x, double *y, double th) {
     *y = x_prev*sin(th) + y_prev*cos(th);
 }
 
-// Insert a 1-dimensional histogram of floating point numbers into a map.
-int insert_TH1F(std::map<const char *, TH1 *> *map, const char *k, const char *n,
-        const char *xn, int bins, double min, double max)
+/**
+ * Insert a 1-dimensional histogram of floats into a map.
+ *
+ * @param map:  Map onto which we'll insert the histogram.
+ * @param k:    Name of the particle (or set of particles) in the histogram.
+ * @param n:    Name of the histogram to be inserted.
+ * @param xn:   Name of the variable in the histogram's x axis.
+ * @param bins: Number of bins in the histogram.
+ * @param min:  Minimum value for the x axis of the histogram.
+ * @param max:  Maximum value for the x axis of the histogram.
+ * @return:      Success code (0).
+ */
+int insert_TH1F(std::map<const char *, TH1 *> *map, const char *k,
+        const char *n, const char *xn, int bins, double min, double max)
 {
     map->insert(std::pair<const char *, TH1 *>
             (n, new TH1F(Form("%s: %s", k, n), Form("%s;%s", n, xn), bins, min,
@@ -69,7 +92,22 @@ int insert_TH1F(std::map<const char *, TH1 *> *map, const char *k, const char *n
     return 0;
 }
 
-// Insert a 2-dimensional histogram of floating point numbers into a map.
+/**
+ * Insert a 2-dimensional histogram of floats into a map.
+ *
+ * @param map:   Map onto which we'll insert the histogram.
+ * @param k:     Name of the particle (or set of particles) in the histogram.
+ * @param n:     Name of the histogram to be inserted.
+ * @param nx:    Name of the variable in the histogram's x axis.
+ * @param ny:    Name of the variable in the histogram's y axis.
+ * @param xbins: Number of bins in the x axis of the histogram.
+ * @param ybins: Number of bins in the y axis of the histogram.
+ * @param xmin:  Minimum value for the x axis of the histogram.
+ * @param xmax:  Maximum value for the x axis of the histogram.
+ * @param ymin:  Minimum value for the y axis of the histogram.
+ * @param ymax:  Maximum value for the y axis of the histogram.
+ * @return:      Success code (0).
+ */
 int insert_TH2F(std::map<const char *, TH1 *> *map, const char *k,
         const char *n, const char *nx, const char *ny, int xbins, double xmin,
         double xmax, int ybins, double ymin, double ymax)

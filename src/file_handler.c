@@ -15,40 +15,19 @@
 
 #include "../lib/file_handler.h"
 
-// Get run number from input filename.
-int get_run_no(char *input_file, int *run_no_int) {
-    // TODO. This is a very brute way to find the run number and **should** be
-    //       changed.
-    char run_no_str[7];
-    char *dot_pos = strrchr(input_file, '.');
-    if (!dot_pos) return 0;
-    strncpy(run_no_str, dot_pos - 6, 6);
-    run_no_str[6] = '\0';
-    *run_no_int = atoi(run_no_str);
-
-    return *run_no_int;
-}
-
-// Match run number to beam energy from constants.
-int get_beam_energy(int run_no, double *beam_energy) {
-    // NOTE. This should be a map in constants or taken directly from clas12mon.
-    switch (run_no) {
-        case 11983:  *beam_energy = BE11983;  break;
-        case 12016:  *beam_energy = BE12016;  break;
-        case 12439:  *beam_energy = BE12439;  break;
-        case 999106: *beam_energy = BE999106; break;
-        case 999110: *beam_energy = BE999110; break;
-        case 999120: *beam_energy = BE999120; break;
-        default:     return -1;
-    }
-
-    return 0;
-}
-
-// Get sampling fraction parameters from file.
-int get_sf_params(char *fname, double sf[NSECTORS][SF_NPARAMS][2]) {
-    if (access(fname, F_OK) != 0) return 1;
-    FILE *t_in = fopen(fname, "r");
+/**
+ * Get sampling fraction parameters from file.
+ *
+ * @param filename: filename to be processed.
+ * @param sf[][][]: 3-dimensional array where sampling fraction data is to be
+ *                  written. Check the README.md for more information.
+ * @return          error code:
+ *                    * 0: everything went fine.
+ *                    * 1: no file with filename was found.
+ */
+int get_sf_params(char *filename, double sf[NSECTORS][SF_NPARAMS][2]) {
+    if (access(filename, F_OK) != 0) return 1;
+    FILE *t_in = fopen(filename, "r");
 
     for (int si = 0; si < NSECTORS; ++si) {
         for (int ppi = 0; ppi < 2; ++ppi) {
@@ -62,7 +41,16 @@ int get_sf_params(char *fname, double sf[NSECTORS][SF_NPARAMS][2]) {
     return 0;
 }
 
-// Get sizes of binnings, initialize, and fill them from file.
+/**
+ * Read binning data from text file and fill binning sizes array, binnings
+ *     array, and an array of PID list sizes.
+ *
+ * @param f_in:      file from which we extract the data.
+ * @param b_sizes:   array of size 5 with binning sizes.
+ * @param binnings:  2-dimensional array containing all 5 binnings.
+ * @param pids_size: number of PIDs in list of PIDs.
+ * @return:          success code (0).
+ */
 int get_binnings(FILE *f_in, long int *b_sizes, double **binnings,
         long int *pids_size)
 {
@@ -82,8 +70,19 @@ int get_binnings(FILE *f_in, long int *b_sizes, double **binnings,
     return 0;
 }
 
-// Get pids and acceptance correction from file.
-int get_acc_corr(FILE *f_in, long int pids_size, long int tsize, long int *pids,
+/**
+ * Read acceptance correction data from text file and fill PIDs list and
+ *     accceptance correction array. This function follows from get_binnings().
+ *
+ * @param f_in:      file from which we extract the data.
+ * @param pids_size: number of PIDs to process, as found in get_binnings().
+ * @param nbins:     total number of bins.
+ * @param pids:      array of PIDs to process.
+ * @param acc_corr:  2-dimensional array containing the acceptance correction
+ *                   for each bin, for each PID.
+ * @return:          success code (0).
+ */
+int get_acc_corr(FILE *f_in, long int pids_size, long int nbins, long int *pids,
         double **acc_corr)
 {
     // Get PIDs.
@@ -92,8 +91,8 @@ int get_acc_corr(FILE *f_in, long int pids_size, long int tsize, long int *pids,
 
     // Get acceptance correction.
     for (int pi = 0; pi < pids_size; ++pi) {
-        acc_corr[pi] = (double *) malloc(tsize * sizeof(*acc_corr[pi]));
-        for (int bii = 0; bii < tsize; ++ bii)
+        acc_corr[pi] = (double *) malloc(nbins * sizeof(*acc_corr[pi]));
+        for (int bii = 0; bii < nbins; ++ bii)
             fscanf(f_in, "%lf ", &(acc_corr[pi][bii]));
     }
 

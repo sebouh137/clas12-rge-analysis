@@ -20,8 +20,22 @@
 #include "../lib/io_handler.h"
 #include "../lib/particle.h"
 
-// Find most precise TOF. In order of decreasing precision, the detectors are
-//     FTOF1B > FTOF1A > FTOF2 > PCAL > ECIN > ECOU.
+/**
+ * Find and return the most precise time of flight (TOF). Both the Forward Time
+ *     Of Flight (FTOF) detectors and the Electronic Calorimeter (EC) can
+ *     measure TOF, but they have different precisions. So, in order to get the
+ *     most accurate measurement possible, this function returns the TOF
+ *     measured by the most accurate detector for a given particle.
+ *
+ * In order of decreasing precision, the list of detectors are:
+ *     FTOF1B > FTOF1A > FTOF2 > PCAL > ECIN > ECOU.
+ *
+ * @param rsci:  instance of the REC_Scintillator class.
+ * @param rcal:  instance of the REC_Calorimeter class.
+ * @param pindex: particle index of the particle we're studying.
+ * @return:       the most accurate TOF available in the scintillator and
+ *                calorimeter banks.
+ */
 double get_tof(REC_Scintillator rsci, REC_Calorimeter rcal, int pindex) {
     int    most_precise_lyr = 0;
     double tof              = INFINITY;
@@ -71,6 +85,7 @@ double get_tof(REC_Scintillator rsci, REC_Calorimeter rcal, int pindex) {
     return tof;
 }
 
+/** run() function of the program. Check usage() for details. */
 int run(char *in_file, char *work_dir, char *data_dir, bool debug, int nevn,
         int run_no, double beam_E)
 {
@@ -79,7 +94,7 @@ int run(char *in_file, char *work_dir, char *data_dir, bool debug, int nevn,
     sprintf(t_file, "%s/sf_params_%06d.txt", data_dir, run_no);
     double sf_params[NSECTORS][SF_NPARAMS][2];
     int errcode = get_sf_params(t_file, sf_params);
-    if (errcode) return 11;
+    if (errcode) return 10;
 
     // Create output file.
     char out_file[PATH_MAX];
@@ -87,8 +102,8 @@ int run(char *in_file, char *work_dir, char *data_dir, bool debug, int nevn,
     TFile *f_out = TFile::Open(out_file, "RECREATE");
 
     // Access input file.
-    TFile *f_in  = TFile::Open(in_file,  "READ");
-    if (!f_in || f_in->IsZombie()) return 8;
+    TFile *f_in  = TFile::Open(in_file, "READ");
+    if (!f_in || f_in->IsZombie()) return 11;
 
     // Return to top directory (weird root stuff).
     gROOT->cd();
@@ -102,7 +117,7 @@ int run(char *in_file, char *work_dir, char *data_dir, bool debug, int nevn,
 
     // Create TTree and TNTuples.
     TTree *t_in = f_in->Get<TTree>("Tree");
-    if (t_in == NULL) return 8;
+    if (t_in == NULL) return 12;
     TNtuple *t_out[2];
     t_out[0] = new TNtuple(S_DC,  S_DC,  vars);
     t_out[1] = new TNtuple(S_FMT, S_FMT, vars);
@@ -114,10 +129,6 @@ int run(char *in_file, char *work_dir, char *data_dir, bool debug, int nevn,
     REC_Cherenkov    rche (t_in);
     REC_Scintillator rsci (t_in);
     FMT_Tracks       ftrk (t_in);
-
-    // Counters for fancy progress bar.
-    int divcntr     = 0;
-    int evnsplitter = 0;
 
     // Counters for PID assignment quality assessment.
     int pid_n[NPIDS];
@@ -132,23 +143,16 @@ int run(char *in_file, char *work_dir, char *data_dir, bool debug, int nevn,
     printf("Reading %lld events from %s.\n", nevn == -1 ? t_in->GetEntries() :
             nevn, in_file);
 
+    // Counters for fancy progress bar.
+    int divcntr     = 0;
+    int evnsplitter = 0;
+
     for (int evn = 0; (evn < t_in->GetEntries()) && (nevn == -1 || evn < nevn);
             ++evn)
     {
         // Print fancy progress bar.
-        if (!debug && evn >= evnsplitter) {
-            if (evn != 0) printf("\33[2K\r");
-            printf("[");
-            for (int i = 0; i <= 50; ++i) {
-                if (i <= divcntr/2) printf("=");
-                else                printf(" ");
-            }
-            printf("] %2d%%", divcntr);
-            fflush(stdout);
-            divcntr++;
-            evnsplitter = nevn == -1 ? (t_in->GetEntries() / 100) * divcntr :
-                    (nevn/100) * divcntr;
-        }
+        if (!debug) update_progress_bar(nevn == -1 ? t_in->GetEntries() : nevn,
+                evn, &evnsplitter, &divcntr);
 
         // Get entries from input file.
         rpart.get_entries(t_in, evn);
@@ -187,7 +191,7 @@ int run(char *in_file, char *work_dir, char *data_dir, bool debug, int nevn,
                 if      (lyr == PCAL_LYR) pcal_E += rcal.energy->at(i);
                 else if (lyr == ECIN_LYR) ecin_E += rcal.energy->at(i);
                 else if (lyr == ECOU_LYR) ecou_E += rcal.energy->at(i);
-                else return 9;
+                else return 13;
             }
 
             // Get Cherenkov counters data.
@@ -198,7 +202,7 @@ int run(char *in_file, char *work_dir, char *data_dir, bool debug, int nevn,
                     int detector = rche.detector->at(i);
                     if      (detector == HTCC_ID) htcc_nphe += rche.nphe->at(i);
                     else if (detector == LTCC_ID) ltcc_nphe += rche.nphe->at(i);
-                    else return 10;
+                    else return 14;
                 }
             }
 
@@ -269,7 +273,7 @@ int run(char *in_file, char *work_dir, char *data_dir, bool debug, int nevn,
                 if      (lyr == PCAL_LYR) pcal_E += rcal.energy->at(i);
                 else if (lyr == ECIN_LYR) ecin_E += rcal.energy->at(i);
                 else if (lyr == ECOU_LYR) ecou_E += rcal.energy->at(i);
-                else return 9;
+                else return 13;
             }
 
             // Get Cherenkov counters data.
@@ -280,7 +284,7 @@ int run(char *in_file, char *work_dir, char *data_dir, bool debug, int nevn,
                     int detector = rche.detector->at(i);
                     if      (detector == HTCC_ID) htcc_nphe += rche.nphe->at(i);
                     else if (detector == LTCC_ID) ltcc_nphe += rche.nphe->at(i);
-                    else return 10;
+                    else return 14;
                 }
             }
 
@@ -322,10 +326,6 @@ int run(char *in_file, char *work_dir, char *data_dir, bool debug, int nevn,
             }
         }
     }
-    if (!debug) {
-        printf("\33[2K\r");
-        printf("[==================================================] 100%% \n");
-    }
 
     if (debug) {
         printf("\nparticle identification matrix:\n        e     pi    K     "
@@ -357,9 +357,10 @@ int run(char *in_file, char *work_dir, char *data_dir, bool debug, int nevn,
     return 0;
 }
 
+/** Print usage and exit. */
 int usage() {
     fprintf(stderr,
-            "\nUsage: make_ntuples [-hDn:w:d:] infile\n"
+            "\n\nUsage: make_ntuples [-hDn:w:d:] infile\n"
             " * -h         : show this message and exit.\n"
             " * -D         : activate debug mode.\n"
             " * -n nevents : number of events.\n"
@@ -376,64 +377,71 @@ int usage() {
     return 1;
 }
 
+/** Print error number and provide a short description of the error. */
 int handle_err(int errcode) {
+    if (errcode > 1) fprintf(stderr, "Error %02d. ", errcode);
     switch (errcode) {
         case 0:
             return 0;
         case 1:
             break;
         case 2:
-            fprintf(stderr, "Error %02d. nevents should be a number greater "
-                            "than 0.\n", errcode);
+            fprintf(stderr, "nevents should be a number greater than 0.");
             break;
         case 3:
-            fprintf(stderr, "Error %02d. input file should be in root format."
-                            "\n", errcode);
+            fprintf(stderr, "Bad usage of optional arguments.");
             break;
         case 4:
-            fprintf(stderr, "Error %02d. file does not exist!\n", errcode);
+            fprintf(stderr, "No file name provided.");
             break;
         case 5:
-            fprintf(stderr, "Error %02d. Run number could not be extracted from"
-                            " filename.\n", errcode);
+            fprintf(stderr, "Input file should be in root format.");
             break;
         case 6:
-            fprintf(stderr, "Error %02d. Run number not in database. Add from "
-                            "RCDB.\n", errcode);
+            fprintf(stderr, "Input file does not exist.");
             break;
         case 7:
-            fprintf(stderr, "Error %02d. No file name provided.\n", errcode);
+            fprintf(stderr, "Couldn't find dot position in input filename.");
             break;
         case 8:
-            fprintf(stderr, "Error %02d. Input file is not valid.\n", errcode);
+            fprintf(stderr, "Couldn't find run number in input filename.");
             break;
         case 9:
-            fprintf(stderr, "Error %02d. Invalid EC layer. Check bank "
-                            "integrity.\n", errcode);
+            fprintf(stderr, "Run number not in constants. Add from RCDB.");
             break;
         case 10:
-            fprintf(stderr, "Error %02d. Invalid Cherenkov Counter ID. Check "
-                            "bank integrity.\n", errcode);
+            // NOTE. In this scenario, a smoother behavior would be that the
+            //       program calls extract_sf itself.
+            fprintf(stderr, "No sampling fraction file is available for run "
+            "number! Run extract_sf on this\nroot file before running "
+            "make_ntuples.");
             break;
         case 11:
-            // NOTE. In this scenario, a smoother behavior would be that the
-            //       program calls extract_sf itself!
-            fprintf(stderr, "Error %02d. No sampling fraction available for run"
-                            " number! Run extract_sf before\ngenerating the "
-                            "ntuples.\n", errcode);
+            fprintf(stderr, "Input file is not a valid root file.");
             break;
         case 12:
-            fprintf(stderr, "Error %02d. Bad usage of optional arguments.\n",
-                    errcode);
+            fprintf(stderr, "Couldn't get relevant trees from input file.");
+            break;
+        case 13:
+            fprintf(stderr, "Invalid Electronic Calorimeter layer. Check bank "
+                            "integrity.\n");
+            break;
+        case 14:
+            fprintf(stderr, "Invalid Cherenkov Counter ID. Check bank "
+                            "integrity.");
             break;
         default:
-            fprintf(stderr, "Error code %d not implemented!\n", errcode);
+            fprintf(stderr, "Error code not implemented!\n");
             return 1;
     }
 
     return usage();
 }
 
+/**
+ * Handle arguments for make_ntuples using optarg. Error codes used are
+ *     explained in the handle_err() function.
+ */
 int handle_args(int argc, char **argv, char **in_file, char **work_dir,
         char **data_dir, bool *debug, int *nevn, int *run_no, double *beam_E)
 {
@@ -448,6 +456,7 @@ int handle_args(int argc, char **argv, char **in_file, char **work_dir,
                 break;
             case 'n':
                 *nevn = atoi(optarg);
+                if (*nevn <= 0) return 2; // Check if nevn is valid.
                 break;
             case 'w':
                 *work_dir = (char *) malloc(strlen(optarg) + 1);
@@ -462,14 +471,12 @@ int handle_args(int argc, char **argv, char **in_file, char **work_dir,
                 strcpy(*in_file, optarg);
                 break;
             default:
-                return 12;
+                return 3; // Bad usage of optional arguments.
         }
     }
 
-    // Check that nevents is valid and that atoi performed correctly.
-    if (*nevn == 0) return 2;
-
     // Define workdir if undefined.
+    // NOTE. We copy argv[0] because sprintf() writes over it.
     char tmpfile[PATH_MAX];
     sprintf(tmpfile, "%s", argv[0]);
     if (*work_dir == NULL) {
@@ -484,11 +491,15 @@ int handle_args(int argc, char **argv, char **in_file, char **work_dir,
     }
 
     // Check positional argument.
-    if (*in_file == NULL) return 7;
+    if (*in_file == NULL) return 4;
 
-    return handle_root_filename(*in_file, run_no, beam_E);
+    int check = handle_root_filename(*in_file, run_no, beam_E);
+    if (check) return check + 4; // Shift errcode.
+
+    return 0;
 }
 
+/** Entry point of the program. */
 int main(int argc, char **argv) {
     // Handle arguments.
     char *in_file  = NULL;

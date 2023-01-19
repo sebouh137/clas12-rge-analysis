@@ -15,62 +15,210 @@
 
 #include "../lib/io_handler.h"
 
-// TODO. Errcode is not handled well here.
-int check_root_filename(char *input_file) {
-    if (!strstr(input_file, ".root"))     return 3; // Check that file is valid.
-    if (!(access(input_file, F_OK) == 0)) return 4; // Check that file exists.
+/**
+ * Get run number from a filename, assuming the filename is in format
+ *     <text><run_no>.<extension>. If the filename is badly formatted or if atoi
+ *     fails, the function returns 0.
+ *
+ * @param filename: filename to be processed.
+ * @param run_no:   pointer to the int where the run number is written.
+ * @return          an error code:
+ *                    * 0: everything went fine.
+ *                    * 1: couldn't find dot position in filename.
+ *                    * 2: atoi failed -- couldn't find run number.
+ */
+int get_run_no(char *filename, int *run_no) {
+    char run_no_str[7];
+    char *dot_pos = strrchr(filename, '.');
+    if (!dot_pos) return 1; // Couldn't find dot.
+    strncpy(run_no_str, dot_pos - 6, 6);
+    run_no_str[6] = '\0';
+    *run_no = atoi(run_no_str); // If atoi fails, it returns 0.
+    if (*run_no == 0) return 2;
+
     return 0;
 }
 
-// TODO. Errcode is not handled well here.
-int handle_root_filename(char *input_file, int *run_no) {
+/**
+ * Match a run number to a beam energy. The beam energy for different runs is
+ *     available in the constants.
+ *
+ * @param run_no:      run number for which the beam energy is to be found.
+ * @param beam_energy: pointer to the double where the beam energy will be
+ *                     saved.
+ * @return             an error code:
+ *                       * 0: everything went fine.
+ *                       * 1: beam energy for run number is unavailable.
+ */
+int get_beam_energy(int run_no, double *beam_energy) {
+    // NOTE. This should be taken directly from RCDB.
+    switch (run_no) {
+        case  11983: *beam_energy = BE11983;  break;
+        case  12016: *beam_energy = BE12016;  break;
+        case  12439: *beam_energy = BE12439;  break;
+        case  12933: *beam_energy = BE12933;  break;
+        case 999106: *beam_energy = BE999106; break;
+        case 999110: *beam_energy = BE999110; break;
+        case 999120: *beam_energy = BE999120; break;
+        default:     return 1;
+    }
+
+    return 0;
+}
+
+/**
+ * Check if a root filename is valid.
+ *
+ * @param filename: filename to be processed.
+ * @return          an error code:
+ *                    * 1: filename extension isn't root.
+ *                    * 2: no file with filename was found.
+ */
+int check_root_filename(char *filename) {
+    if (!strstr(filename, ".root")) return 1;
+    if (access(filename, F_OK))     return 2;
+    return 0;
+}
+
+/**
+ * Handle a root filename, checking its validity, file existence, and grabbing
+ *     the run number and beam energy from it.
+ *
+ * @param filename:    filename to be processed.
+ * @param run_no:      pointer to the int where the run number will be written.
+ * @param beam_energy: pointer to the double where the beam energy will be
+ *                     written.
+ * @return             an error code:
+ *                       * 0: everything went fine.
+ *                       * 1: filename extension isn't root.
+ *                       * 2: no file with filename was found.
+ *                       * 3: couldn't find dot position in filename.
+ *                       * 4: atoi failed -- couldn't find run number.
+ *                       * 5: beam energy for run number is unavailable.
+ */
+int handle_root_filename(char *filename, int *run_no, double *beam_energy) {
+    int check = check_root_filename(filename);
+    if (check) return check;
+
+    check = get_run_no(filename, run_no);
+    if (check) return check + 2;
+
+    check = get_beam_energy(*run_no, beam_energy);
+    if (check) return check + 4;
+
+    return 0;
+}
+
+/** Run handle_root_filename() without writing beam_energy. */
+int handle_root_filename(char *filename, int *run_no) {
     double dump = 0.;
-    return handle_root_filename(input_file, run_no, &dump);
+    return handle_root_filename(filename, run_no, &dump);
 }
 
-// TODO. Errcode is not handled well here.
-int handle_root_filename(char *input_file, int *run_no, double *beam_energy) {
-    int chk = check_root_filename(input_file);
-    if (chk) return chk;
-    // Get run number and beam energy from filename.
-    if (!get_run_no(input_file, run_no))       return 5;
-    if (get_beam_energy(*run_no, beam_energy)) return 6;
+/**
+ * Check if a hipo filename is valid.
+ *
+ * @param filename: filename to be processed.
+ * @return          an error code:
+ *                    * 1: filename extension isn't hipo.
+ *                    * 2: no file with filename was found.
+ */
+int check_hipo_filename(char *filename) {
+    if (!strstr(filename, ".hipo")) return 1;
+    if (access(filename, F_OK))     return 2;
+    return 0;
+}
+
+/**
+ * Handle a hipo filename, checking its validity, file existence, and grabbing
+ *     the run number from it.
+ *
+ * @param filename: filename to be processed.
+ * @param run_no:   pointer to the int where the run number will be written.
+ * @return          an error code:
+ *                    * 0: everything went fine.
+ *                    * 1: filename extension isn't hipo.
+ *                    * 2: no file with filename was found.
+ *                    * 3: couldn't find dot position in filename.
+ *                    * 4: atoi failed -- couldn't find run number.
+ */
+int handle_hipo_filename(char *filename, int *run_no) {
+    int check = check_hipo_filename(filename);
+    if (check) return check;
+
+    check = get_run_no(filename, run_no);
+    if (check) return check + 2;
 
     return 0;
 }
 
-// TODO. Errcode is not handled well here.
-int check_hipo_filename(char *input_file) {
-    if (!strstr(input_file, ".hipo"))     return 3; // Check that file is valid.
-    if (!(access(input_file, F_OK) == 0)) return 4; // Check that file exists.
-    return 0;
-}
-
-// TODO. Errcode is not handled well here.
-int handle_hipo_filename(char *input_file, int *run_no) {
-    int chk = check_hipo_filename(input_file);
-    if (chk) return chk;
-
-    // Get run number from filename.
-    if (!get_run_no(input_file, run_no)) return 5;
-
-    return 0;
-}
-
-// Check if string is a number.
+/** Check if string s is a number. Returns 1 if it is, 0 if it isn't. */
 int is_number(char *s) {
     if (is_number(s[0]) || (s[0] == '-' && is_number(s[1]))) return 1;
     return 0;
 }
 
-// Check if character is a number.
+/** Check if character c is a number. Returns 1 if it is, 0 if it isn't. */
 int is_number(char c) {
     if (c >= '0' && c <= '9') return 1;
     return 0;
 }
 
-// Grab multiple arguments and fill a vector of doubles with it.
-int grab_multiarg(int argc, char **argv, int *optind, int *size, double **b) {
+/**
+ * Update a progress bar counting the number of events processed. Length of the
+ *     bar is defined by the `length` variable defined at the first line of the
+ *     function.
+ *
+ * @param nevn:        total number of events.
+ * @param evn:         number of the event being processed.
+ * @param evnsplitter: internal state variable used across executions, should be
+ *                     set to 0 for first iteration.
+ * @param divcntr:     internal state variable used across executions, should be
+ *                     set to 0 for first iteration.
+ * @return:            0 if no change was made, 1 otherwise, and 2 if bar is
+ *                     full.
+ */
+int update_progress_bar(int nevn, int evn, int *evnsplitter, int *divcntr) {
+    double length = 50.; // Length of the progress bar.
+
+    // Only update if necessary.
+    if (*evnsplitter == -1 || evn < *evnsplitter) return 0;
+
+    // Clear line if a previous bar has been printed.
+    if (evn != 0) printf("\33[2K\r");
+
+    // Print progress bar.
+    printf("[");
+    for (int i = 0; i <= length; ++i) {
+        if (i <= (length/100.) * (*divcntr)) printf("=");
+        else                                 printf(" ");
+    }
+    printf("] %2d%%", *divcntr);
+    fflush(stdout);
+
+    // Update divcntr and evnsplitter.
+    (*divcntr)++;
+    if (*divcntr <= 100) {
+        *evnsplitter = (nevn/100) * (*divcntr);
+        return 1;
+    }
+
+    *evnsplitter = -1;
+    printf("\n");
+    return 2;
+}
+
+/**
+ * Grab multiple arguments and fill an array with their values.
+ *
+ * @param argc:   size of list of arguments given to program.
+ * @param argv:   list of arguments given to program.
+ * @param optind: optind variable from getopt.
+ * @param size:   pointer to the size of the array that we'll fill.
+ * @param arr:    array that we'll fill.
+ * @return:       error code, which is always 0 (no error).
+ */
+int grab_multiarg(int argc, char **argv, int *optind, int *size, double **arr) {
     int idx   = *optind - 1;
     int start = idx;
     *size     = 0;
@@ -85,13 +233,13 @@ int grab_multiarg(int argc, char **argv, int *optind, int *size, double **b) {
 
     // Restart counter and initialize binning.
     idx = start;
-    (*b) = (double *) malloc((*size) * sizeof(**b));
+    (*arr) = (double *) malloc((*size) * sizeof(**arr));
 
     // Fill binning.
     int i = 0;
     while (idx < argc) {
         next = strdup(argv[idx++]);
-        if (is_number(next)) (*b)[i++] = atof(next);
+        if (is_number(next)) (*arr)[i++] = atof(next);
         else break;
     }
 
@@ -100,14 +248,20 @@ int grab_multiarg(int argc, char **argv, int *optind, int *size, double **b) {
     return 0;
 }
 
-// Grab filename from optarg.
-int grab_filename(char *optarg, char **file) {
-    *file = (char *) malloc(strlen(optarg) + 1);
-    strcpy(*file, optarg);
+/**
+ * Grab a string from an optarg.
+ *
+ * @param optarg: optarg variable from getopt.
+ * @param str:    string to which optarg will be copied.
+ * @return:       error code, which is always 0 (no error).
+ */
+int grab_str(char *optarg, char **str) {
+    *str = (char *) malloc(strlen(optarg) + 1);
+    strcpy(*str, optarg);
     return 0;
 }
 
-// Catch a y or n input.
+/** Catch a y (yes) or a n (no) from stdin. */
 bool catch_yn() {
     // TODO. Figure out how to catch no input so that this can be [Y/n].
     while (true) {
@@ -120,27 +274,34 @@ bool catch_yn() {
     }
 }
 
-// Catch a string within a list.
-int catch_string(const char * list[], int size) {
+/**
+ * Catch a string from stdin and find its location in an array of strings. If
+ *     string is not in list, ask the user again.
+ *
+ * @param arr:  array of strings.
+ * @param size: size of arr.
+ * @return:     location of string in stdin inside arr.
+ */
+int catch_string(const char *arr[], int size) {
     double x;
     while (true) {
         char str[32];
         printf(">>> ");
         scanf("%31s", str);
 
-        for (int i = 0; i < size; ++i) if (!strcmp(str, list[i])) x = i;
+        for (int i = 0; i < size; ++i) if (!strcmp(str, arr[i])) x = i;
         if (x != -1) break;
     }
 
     return x;
 }
 
-// Catch a long value from stdin.
+/** Catch a long value from stdin. */
 long catch_long() {
     long r;
     while (true) {
         char str[32];
-        char * endptr;
+        char *endptr;
         printf(">>> ");
         scanf("%31s", str);
         r = strtol(str, &endptr, 10);
@@ -151,7 +312,7 @@ long catch_long() {
     return r;
 }
 
-// Catch a double value from stdin.
+/** Catch a double value from stdin. */
 double catch_double() {
     double r;
     while (true) {

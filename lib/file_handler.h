@@ -20,12 +20,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <vector>
 #include "constants.h"
 
-int get_run_no(char *input_file, int *run_no_int);
-int get_beam_energy(int run_no, double *beam_energy);
-int get_sf_params(char *fname, double sf[NSECTORS][SF_NPARAMS][2]);
+int get_sf_params(char *filename, double sf[NSECTORS][SF_NPARAMS][2]);
 int get_binnings(FILE *f_in, long int *b_sizes, double **binnings,
         long int *pids_size);
 int get_acc_corr(FILE *f_in, long int pids_size, long int tsize, long int *pids,

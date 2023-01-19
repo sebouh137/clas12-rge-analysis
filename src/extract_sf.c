@@ -23,6 +23,7 @@
 #include "../lib/io_handler.h"
 #include "../lib/utilities.h"
 
+/** run() function of the program. Check usage() for details. */
 int run(char *in_file, char *work_dir, char *data_dir, bool use_fmt, int nevn,
         int run_no)
 {
@@ -32,7 +33,7 @@ int run(char *in_file, char *work_dir, char *data_dir, bool use_fmt, int nevn,
     char out_file[PATH_MAX];
     sprintf(out_file, "%s/sf_study_%06d.root", work_dir, run_no);
     TFile *f_out = TFile::Open(out_file, "RECREATE");
-    if (!f_out || f_out->IsZombie()) return 10;
+    if (!f_out || f_out->IsZombie()) return 8;
 
     // Create output data file.
     char t_file[PATH_MAX];
@@ -42,7 +43,7 @@ int run(char *in_file, char *work_dir, char *data_dir, bool use_fmt, int nevn,
 
     // Access input file.
     TFile *f_in = TFile::Open(in_file, "READ");
-    if (!f_in || f_in->IsZombie()) return 6;
+    if (!f_in || f_in->IsZombie()) return 10;
 
     // Create and organize histos and name arrays.
     std::map<const char *, TH1 *> histos;
@@ -89,7 +90,7 @@ int run(char *in_file, char *work_dir, char *data_dir, bool use_fmt, int nevn,
             int pi = -1;
             for (double p = SF_PMIN; p < SF_PMAX; p += SF_PSTEP) {
                 pi++;
-                char * tmp_str = Form("%s%d (%5.2f < p < %5.2f)", cal, si+1, p,
+                char *tmp_str = Form("%s%d (%5.2f < p < %5.2f)", cal, si+1, p,
                         p+SF_PSTEP);
                 sf1D_name_arr[ci][si][pi] = (char *) malloc(strlen(tmp_str)+1);
                 strncpy(sf1D_name_arr[ci][si][pi], tmp_str, strlen(tmp_str));
@@ -114,19 +115,8 @@ int run(char *in_file, char *work_dir, char *data_dir, bool use_fmt, int nevn,
             nevn, in_file);
     for (evn = 0; (evn < t->GetEntries()) && (nevn == -1 || evn < nevn); ++evn)
     {
-        if (evn >= evnsplitter) {
-            if (evn != 0) printf("\33[2K\r");
-            printf("[");
-            for (int i = 0; i <= 50; ++i) {
-                if (i <= divcntr/2) printf("=");
-                else                printf(" ");
-            }
-            printf("] %2d%%", divcntr);
-            fflush(stdout);
-            divcntr++;
-            evnsplitter = nevn == -1 ? (t->GetEntries() / 100) * divcntr :
-                    (nevn/100) * divcntr;
-        }
+        update_progress_bar(nevn == -1 ? t->GetEntries() : nevn, evn,
+                &evnsplitter, &divcntr);
 
         rp.get_entries(t, evn);
         rt.get_entries(t, evn);
@@ -174,7 +164,7 @@ int run(char *in_file, char *work_dir, char *data_dir, bool use_fmt, int nevn,
                 // Get sector.
                 int si = rc.sector->at(i) - 1;
                 if      (si == -1)                   continue;
-                else if (si < -1 || si > NSECTORS-1) return 8;
+                else if (si < -1 || si > NSECTORS-1) return 11;
 
                 // Get detector.
                 switch(rc.layer->at(i)) {
@@ -188,7 +178,7 @@ int run(char *in_file, char *work_dir, char *data_dir, bool use_fmt, int nevn,
                         sf_E[ECOU_IDX][si] += rc.energy->at(i);
                         break;
                     default:
-                        return 7;
+                        return 12;
                 }
             }
 
@@ -216,8 +206,6 @@ int run(char *in_file, char *work_dir, char *data_dir, bool use_fmt, int nevn,
             }
         }
     }
-    printf("\33[2K\r[==================================================] 100%%"
-           "\n");
 
     // Fit histograms.
     ci = -1;
@@ -234,7 +222,7 @@ int run(char *in_file, char *work_dir, char *data_dir, bool use_fmt, int nevn,
                 TH1 *EdivP = histos[sf1D_name_arr[ci][si][pi]];
 
                 // Form fit string name.
-                char * tmp_str = Form("%s%d (%5.2f < p < %5.2f) fit", cal, si+1,
+                char *tmp_str = Form("%s%d (%5.2f < p < %5.2f) fit", cal, si+1,
                         p, p+SF_PSTEP);
 
                 // Fit.
@@ -333,9 +321,10 @@ int run(char *in_file, char *work_dir, char *data_dir, bool use_fmt, int nevn,
     return 0;
 }
 
+/** Print usage and exit. */
 int usage() {
     fprintf(stderr,
-            "\nUsage: extract_sf [-hfn:w:d:] infile\n"
+            "\n\nUsage: extract_sf [-hfn:w:d:] infile\n"
             " * -h         : show this message and exit.\n"
             " * -f         : use FMT data. If unspecified, will use DC data.\n"
             " * -n nevents : number of events\n"
@@ -350,55 +339,59 @@ int usage() {
     return 1;
 }
 
+/** Print error number and provide a short description of the error. */
 int handle_err(int errcode) {
+    if (errcode > 1) fprintf(stderr, "Error %02d. ", errcode);
     switch (errcode) {
         case 0:
             return 0;
         case 1:
             break;
         case 2:
-            fprintf(stderr, "Error %02d. nevents should greater than 0.\n",
-                    errcode);
+            fprintf(stderr, "nevents should greater than 0.");
             break;
         case 3:
-            fprintf(stderr, "Error %02d. input file should be in root format."
-                            "\n", errcode);
+            fprintf(stderr, "No file name provided.");
             break;
         case 4:
-            fprintf(stderr, "Error %02d. input file does not exist!\n",
-                    errcode);
+            fprintf(stderr, "Input file should be in root format.");
             break;
         case 5:
-            fprintf(stderr, "Error %02d. No file name provided.\n", errcode);
+            fprintf(stderr, "Input file does not exist.");
             break;
         case 6:
-            fprintf(stderr, "Error %02d. input is not a valid ROOT file.\n",
-                    errcode);
+            fprintf(stderr, "Couldn't find dot position in filename.");
             break;
         case 7:
-            fprintf(stderr, "Error %02d. Invalid EC layer. Check bank "
-                            "integrity.\n", errcode);
+            fprintf(stderr, "Couldn't get run number from input file.");
             break;
         case 8:
-            fprintf(stderr, "Error %02d. A particle is in an invalid sector. "
-                            "Check bank integrity.\n", errcode);
+            fprintf(stderr, "Couldn't create output root file.");
             break;
         case 9:
-            fprintf(stderr, "Error %02d. Could not create sf_params file.\n",
-                    errcode);
+            fprintf(stderr, "Couldn't create output text file.");
             break;
         case 10:
-            fprintf(stderr, "Error %02d. Could not create sf_study file.\n",
-                    errcode);
+            fprintf(stderr, "Couldn't open input root file.");
+            break;
+        case 11:
+            fprintf(stderr, "Invalid particle sector. Check bank integrity.");
+            break;
+        case 12:
+            fprintf(stderr, "Invalid EC layer. Check bank integrity.");
             break;
         default:
-            fprintf(stderr, "Error code %d not implemented!\n", errcode);
+            fprintf(stderr, "Error code not implemented!\n");
             return 1;
     }
 
     return usage();
 }
 
+/**
+ * Handle arguments for make_ntuples using optarg. Error codes used are
+ *     explained in the handle_err() function.
+ */
 int handle_args(int argc, char **argv, char **in_file, char **work_dir,
         char **data_dir, bool *use_fmt, int *run_no, int *nevn)
 {
@@ -413,6 +406,7 @@ int handle_args(int argc, char **argv, char **in_file, char **work_dir,
                 break;
             case 'n':
                 *nevn = atoi(optarg);
+                if (*nevn <= 0) return 2;
                 break;
             case 'w':
                 *work_dir = (char *) malloc(strlen(optarg) + 1);
@@ -430,9 +424,6 @@ int handle_args(int argc, char **argv, char **in_file, char **work_dir,
         }
     }
 
-    // Check that nevents is valid and that atoi performed correctly.
-    if (*nevn == 0) return 2;
-
     // Define workdir if undefined.
     char tmpfile[PATH_MAX];
     sprintf(tmpfile, "%s", argv[0]);
@@ -448,11 +439,15 @@ int handle_args(int argc, char **argv, char **in_file, char **work_dir,
     }
 
     // Check positional argument.
-    if (*in_file == NULL) return 5;
+    if (*in_file == NULL) return 3;
 
-    return handle_root_filename(*in_file, run_no);
+    // Handle input filename.
+    int check = handle_root_filename(*in_file, run_no);
+    if (!check || check == 5) return 0;
+    else                      return check + 3; // Shift errcode.
 }
 
+/** Entry point of the program. */
 int main(int argc, char **argv) {
     // Handle arguments.
     char *in_file  = NULL;
