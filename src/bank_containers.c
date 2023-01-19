@@ -18,7 +18,7 @@
 // TODO. This file could use a lot of improvement using interfaces and smart
 //       array handling.
 // TODO. All strings here should be handled by `constants.h`.
-REC_Particle::REC_Particle() {
+Particle::Particle() {
     nrows   = 0;
     pid     = {};
     px      = {};
@@ -33,7 +33,7 @@ REC_Particle::REC_Particle() {
     chi2pid = {};
     status  = {};
 }
-REC_Particle::REC_Particle(TTree *t) {
+Particle::Particle(TTree *t) {
     pid     = nullptr; b_pid     = nullptr;
     px      = nullptr; b_px      = nullptr;
     py      = nullptr; b_py      = nullptr;
@@ -59,7 +59,7 @@ REC_Particle::REC_Particle(TTree *t) {
     t->SetBranchAddress("REC::Particle::chi2pid", &chi2pid, &b_chi2pid);
     t->SetBranchAddress("REC::Particle::status",  &status,  &b_status);
 }
-int REC_Particle::link_branches(TTree *t) {
+int Particle::link_branches(TTree *t) {
     t->Branch("REC::Particle::pid",     &pid);
     t->Branch("REC::Particle::px",      &px);
     t->Branch("REC::Particle::py",      &py);
@@ -74,7 +74,7 @@ int REC_Particle::link_branches(TTree *t) {
     t->Branch("REC::Particle::status",  &status);
     return 0;
 }
-int REC_Particle::set_nrows(int in_nrows) {
+int Particle::set_nrows(int in_nrows) {
     nrows = in_nrows;
     pid    ->resize(nrows);
     px     ->resize(nrows);
@@ -90,8 +90,8 @@ int REC_Particle::set_nrows(int in_nrows) {
     status ->resize(nrows);
     return 0;
 }
-int REC_Particle::get_nrows() {return nrows;}
-int REC_Particle::fill(hipo::bank b) {
+int Particle::get_nrows() {return nrows;}
+int Particle::fill(hipo::bank b) {
     set_nrows(b.getRows());
     for (int row = 0; row < nrows; ++row) {
         pid    ->at(row) = b.getInt  ("pid",     row);
@@ -109,7 +109,7 @@ int REC_Particle::fill(hipo::bank b) {
     }
     return 0;
 }
-int REC_Particle::get_entries(TTree *t, int idx) {
+int Particle::get_entries(TTree *t, int idx) {
     b_pid    ->GetEntry(t->LoadTree(idx));
     b_px     ->GetEntry(t->LoadTree(idx));
     b_py     ->GetEntry(t->LoadTree(idx));
@@ -125,7 +125,7 @@ int REC_Particle::get_entries(TTree *t, int idx) {
     return 0;
 }
 
-REC_Track::REC_Track() {
+Track::Track() {
     nrows  = 0;
     index  = {};
     pindex = {};
@@ -133,7 +133,7 @@ REC_Track::REC_Track() {
     ndf    = {};
     chi2   = {};
 }
-REC_Track::REC_Track(TTree *t) {
+Track::Track(TTree *t) {
     index  = nullptr; b_index  = nullptr;
     pindex = nullptr; b_pindex = nullptr;
     sector = nullptr; b_sector = nullptr;
@@ -145,7 +145,7 @@ REC_Track::REC_Track(TTree *t) {
     t->SetBranchAddress("REC::Track::ndf",    &ndf,    &b_ndf);
     t->SetBranchAddress("REC::Track::chi2",   &chi2,   &b_chi2);
 }
-int REC_Track::link_branches(TTree *t) {
+int Track::link_branches(TTree *t) {
     t->Branch("REC::Track::index",  &index);
     t->Branch("REC::Track::pindex", &pindex);
     t->Branch("REC::Track::sector", &sector);
@@ -153,7 +153,7 @@ int REC_Track::link_branches(TTree *t) {
     t->Branch("REC::Track::chi2",   &chi2);
     return 0;
 }
-int REC_Track::set_nrows(int in_nrows) {
+int Track::set_nrows(int in_nrows) {
     nrows = in_nrows;
     index ->resize(nrows);
     pindex->resize(nrows);
@@ -162,8 +162,8 @@ int REC_Track::set_nrows(int in_nrows) {
     chi2  ->resize(nrows);
     return 0;
 }
-int REC_Track::get_nrows() {return nrows;}
-int REC_Track::fill(hipo::bank b) {
+int Track::get_nrows() {return nrows;}
+int Track::fill(hipo::bank b) {
     set_nrows(b.getRows());
     for (int row = 0; row < nrows; ++row) {
         index ->at(row) = (int16_t) b.getShort("index",  row);
@@ -174,7 +174,7 @@ int REC_Track::fill(hipo::bank b) {
     }
     return 0;
 }
-int REC_Track::get_entries(TTree *t, int idx) {
+int Track::get_entries(TTree *t, int idx) {
     b_index ->GetEntry(t->LoadTree(idx));
     b_pindex->GetEntry(t->LoadTree(idx));
     b_sector->GetEntry(t->LoadTree(idx));
@@ -183,7 +183,7 @@ int REC_Track::get_entries(TTree *t, int idx) {
     return 0;
 }
 
-REC_Calorimeter::REC_Calorimeter() {
+Calorimeter::Calorimeter() {
     nrows = 0;
     pindex = {};
     layer  = {};
@@ -191,7 +191,7 @@ REC_Calorimeter::REC_Calorimeter() {
     energy = {};
     time   = {};
 }
-REC_Calorimeter::REC_Calorimeter(TTree *t) {
+Calorimeter::Calorimeter(TTree *t) {
     pindex = nullptr; b_pindex = nullptr;
     layer  = nullptr; b_layer  = nullptr;
     sector = nullptr; b_sector = nullptr;
@@ -203,7 +203,7 @@ REC_Calorimeter::REC_Calorimeter(TTree *t) {
     t->SetBranchAddress("REC::Calorimeter::energy", &energy, &b_energy);
     t->SetBranchAddress("REC::Calorimeter::time",   &time,   &b_time);
 }
-int REC_Calorimeter::link_branches(TTree *t) {
+int Calorimeter::link_branches(TTree *t) {
     t->Branch("REC::Calorimeter::pindex", &pindex);
     t->Branch("REC::Calorimeter::layer",  &layer);
     t->Branch("REC::Calorimeter::sector", &sector);
@@ -211,7 +211,7 @@ int REC_Calorimeter::link_branches(TTree *t) {
     t->Branch("REC::Calorimeter::time",   &time);
     return 0;
 }
-int REC_Calorimeter::set_nrows(int in_nrows) {
+int Calorimeter::set_nrows(int in_nrows) {
     nrows = in_nrows;
     pindex->resize(nrows);
     layer ->resize(nrows);
@@ -220,8 +220,8 @@ int REC_Calorimeter::set_nrows(int in_nrows) {
     time  ->resize(nrows);
     return 0;
 }
-int REC_Calorimeter::get_nrows() {return nrows;}
-int REC_Calorimeter::fill(hipo::bank b) {
+int Calorimeter::get_nrows() {return nrows;}
+int Calorimeter::fill(hipo::bank b) {
     set_nrows(b.getRows());
     for (int row = 0; row < nrows; ++row) {
         pindex->at(row) = (int16_t) b.getShort("pindex", row);
@@ -232,7 +232,7 @@ int REC_Calorimeter::fill(hipo::bank b) {
     }
     return 0;
 }
-int REC_Calorimeter::get_entries(TTree *t, int idx) {
+int Calorimeter::get_entries(TTree *t, int idx) {
     b_pindex->GetEntry(t->LoadTree(idx));
     b_layer ->GetEntry(t->LoadTree(idx));
     b_sector->GetEntry(t->LoadTree(idx));
@@ -241,14 +241,14 @@ int REC_Calorimeter::get_entries(TTree *t, int idx) {
     return 0;
 }
 
-REC_Scintillator::REC_Scintillator() {
+Scintillator::Scintillator() {
     nrows    = 0;
     pindex   = {};
     time     = {};
     detector = {};
     layer    = {};
 }
-REC_Scintillator::REC_Scintillator(TTree *t) {
+Scintillator::Scintillator(TTree *t) {
     pindex   = nullptr; b_pindex   = nullptr;
     time     = nullptr; b_time     = nullptr;
     detector = nullptr; b_detector = nullptr;
@@ -258,14 +258,14 @@ REC_Scintillator::REC_Scintillator(TTree *t) {
     t->SetBranchAddress("REC::Scintillator::detector", &detector, &b_detector);
     t->SetBranchAddress("REC::Scintillator::layer",    &layer,    &b_layer);
 }
-int REC_Scintillator::link_branches(TTree *t) {
+int Scintillator::link_branches(TTree *t) {
     t->Branch("REC::Scintillator::pindex",   &pindex);
     t->Branch("REC::Scintillator::time",     &time);
     t->Branch("REC::Scintillator::detector", &detector);
     t->Branch("REC::Scintillator::layer",    &layer);
     return 0;
 }
-int REC_Scintillator::set_nrows(int in_nrows) {
+int Scintillator::set_nrows(int in_nrows) {
     nrows = in_nrows;
     pindex  ->resize(nrows);
     time    ->resize(nrows);
@@ -273,8 +273,8 @@ int REC_Scintillator::set_nrows(int in_nrows) {
     layer   ->resize(nrows);
     return 0;
 }
-int REC_Scintillator::get_nrows() {return nrows;}
-int REC_Scintillator::fill(hipo::bank b) {
+int Scintillator::get_nrows() {return nrows;}
+int Scintillator::fill(hipo::bank b) {
     set_nrows(b.getRows());
     for (int row = 0; row < nrows; ++row) {
         pindex  ->at(row) = (int16_t) b.getShort("pindex", row);
@@ -284,7 +284,7 @@ int REC_Scintillator::fill(hipo::bank b) {
     }
     return 0;
 }
-int REC_Scintillator::get_entries(TTree *t, int idx) {
+int Scintillator::get_entries(TTree *t, int idx) {
     b_pindex  ->GetEntry(t->LoadTree(idx));
     b_time    ->GetEntry(t->LoadTree(idx));
     b_detector->GetEntry(t->LoadTree(idx));
@@ -292,13 +292,13 @@ int REC_Scintillator::get_entries(TTree *t, int idx) {
     return 0;
 }
 
-REC_Cherenkov::REC_Cherenkov() {
+Cherenkov::Cherenkov() {
     nrows    = 0;
     pindex   = {};
     detector = {};
     nphe     = {};
 }
-REC_Cherenkov::REC_Cherenkov(TTree *t) {
+Cherenkov::Cherenkov(TTree *t) {
     pindex   = nullptr; b_pindex   = nullptr;
     detector = nullptr; b_detector = nullptr;
     nphe     = nullptr; b_nphe     = nullptr;
@@ -306,21 +306,21 @@ REC_Cherenkov::REC_Cherenkov(TTree *t) {
     t->SetBranchAddress("REC::Cherenkov::detector", &detector, &b_detector);
     t->SetBranchAddress("REC::Cherenkov::nphe",     &nphe,     &b_nphe);
 }
-int REC_Cherenkov::link_branches(TTree *t) {
+int Cherenkov::link_branches(TTree *t) {
     t->Branch("REC::Cherenkov::pindex",   &pindex);
     t->Branch("REC::Cherenkov::detector", &detector);
     t->Branch("REC::Cherenkov::nphe",     &nphe);
     return 0;
 }
-int REC_Cherenkov::set_nrows(int in_nrows) {
+int Cherenkov::set_nrows(int in_nrows) {
     nrows = in_nrows;
     pindex  ->resize(nrows);
     detector->resize(nrows);
     nphe    ->resize(nrows);
     return 0;
 }
-int REC_Cherenkov::get_nrows() {return nrows;}
-int REC_Cherenkov::fill(hipo::bank b) {
+int Cherenkov::get_nrows() {return nrows;}
+int Cherenkov::fill(hipo::bank b) {
     set_nrows(b.getRows());
     for (int row = 0; row < nrows; ++row) {
         pindex  ->at(row) = (int16_t) b.getShort("pindex", row);
@@ -329,7 +329,7 @@ int REC_Cherenkov::fill(hipo::bank b) {
     }
     return 0;
 }
-int REC_Cherenkov::get_entries(TTree *t, int idx) {
+int Cherenkov::get_entries(TTree *t, int idx) {
     b_pindex  ->GetEntry(t->LoadTree(idx));
     b_detector->GetEntry(t->LoadTree(idx));
     b_nphe    ->GetEntry(t->LoadTree(idx));

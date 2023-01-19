@@ -102,9 +102,9 @@ int run(char *in_file, char *work_dir, char *data_dir, bool use_fmt, int nevn,
 
     // Create TTree and link bank_containers.
     TTree *t = f_in->Get<TTree>("Tree");
-    REC_Particle     rp(t);
-    REC_Track        rt(t);
-    REC_Calorimeter  rc(t);
+    Particle     rp(t);
+    Track        rt(t);
+    Calorimeter  rc(t);
     FMT_Tracks       ft(t);
 
     // Iterate through input file. Each TTree entry is one event.

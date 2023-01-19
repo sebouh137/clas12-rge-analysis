@@ -20,7 +20,7 @@
 #include "reader.h"
 
 /** Reconstructed particle "final" information. */
-class REC_Particle {
+class Particle {
 private:
     int nrows;
     int set_nrows(int in_nrows);
@@ -49,15 +49,15 @@ public:
     std::vector<Float_t>  *chi2pid; TBranch *b_chi2pid;
     // Detector collection particle passed.
     std::vector<Short_t>  *status;  TBranch *b_status;
-    REC_Particle();
-    REC_Particle(TTree *t);
+    Particle();
+    Particle(TTree *t);
     int get_nrows();
     int link_branches(TTree *t);
     int fill(hipo::bank b);
     int get_entries(TTree *t, int idx);
 };
 
-class REC_Track {
+class Track {
 private:
     int nrows;
     int set_nrows(int in_nrows);
@@ -67,15 +67,15 @@ public:
     std::vector<Short_t>  *sector;  TBranch *b_sector;
     std::vector<Short_t>  *ndf;     TBranch *b_ndf;
     std::vector<Float_t>  *chi2;    TBranch *b_chi2;
-    REC_Track();
-    REC_Track(TTree *t);
+    Track();
+    Track(TTree *t);
     int get_nrows();
     int link_branches(TTree *t);
     int fill(hipo::bank b);
     int get_entries(TTree *t, int idx);
 };
 
-class REC_Calorimeter {
+class Calorimeter {
 private:
     int nrows;
     int set_nrows(int in_nrows);
@@ -85,15 +85,15 @@ public:
     std::vector<Char_t>  *sector; TBranch *b_sector;
     std::vector<Float_t> *energy; TBranch *b_energy;
     std::vector<Float_t> *time;   TBranch *b_time;
-    REC_Calorimeter();
-    REC_Calorimeter(TTree *t);
+    Calorimeter();
+    Calorimeter(TTree *t);
     int get_nrows();
     int link_branches(TTree *t);
     int fill(hipo::bank b);
     int get_entries(TTree *t, int idx);
 };
 
-class REC_Scintillator {
+class Scintillator {
 private:
     int nrows;
     int set_nrows(int in_nrows);
@@ -102,15 +102,15 @@ public:
     std::vector<Float_t> *time;     TBranch *b_time;
     std::vector<Byte_t>  *detector; TBranch *b_detector;
     std::vector<Byte_t>  *layer;    TBranch *b_layer;
-    REC_Scintillator();
-    REC_Scintillator(TTree *t);
+    Scintillator();
+    Scintillator(TTree *t);
     int get_nrows();
     int link_branches(TTree *t);
     int fill(hipo::bank b);
     int get_entries(TTree *t, int idx);
 };
 
-class REC_Cherenkov {
+class Cherenkov {
 private:
     int nrows;
     int set_nrows(int in_nrows);
@@ -118,8 +118,8 @@ public:
     std::vector<Short_t> *pindex;   TBranch *b_pindex;
     std::vector<Byte_t>  *detector; TBranch *b_detector;
     std::vector<Float_t> *nphe;     TBranch *b_nphe;
-    REC_Cherenkov();
-    REC_Cherenkov(TTree *t);
+    Cherenkov();
+    Cherenkov(TTree *t);
     int get_nrows();
     int link_branches(TTree *t);
     int fill(hipo::bank b);

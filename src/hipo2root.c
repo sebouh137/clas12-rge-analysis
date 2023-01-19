@@ -29,11 +29,11 @@ int run(char *in_file, char *work_dir, int run_no, int nevn) {
 
     // Create tree for output file.
     TTree *tree = new TTree("Tree", "Tree");
-    REC_Particle     rprt; rprt.link_branches(tree);
-    REC_Track        rtrk; rtrk.link_branches(tree);
-    REC_Calorimeter  rcal; rcal.link_branches(tree);
-    REC_Cherenkov    rche; rche.link_branches(tree);
-    REC_Scintillator rsci; rsci.link_branches(tree);
+    Particle     rprt; rprt.link_branches(tree);
+    Track        rtrk; rtrk.link_branches(tree);
+    Calorimeter  rcal; rcal.link_branches(tree);
+    Cherenkov    rche; rche.link_branches(tree);
+    Scintillator rsci; rsci.link_branches(tree);
     FMT_Tracks       ftrk; ftrk.link_branches(tree);
 
     // Open input file and get hipo schemas.

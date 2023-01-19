@@ -30,13 +30,13 @@
  * In order of decreasing precision, the list of detectors are:
  *     FTOF1B > FTOF1A > FTOF2 > PCAL > ECIN > ECOU.
  *
- * @param rsci:  instance of the REC_Scintillator class.
- * @param rcal:  instance of the REC_Calorimeter class.
+ * @param rsci:  instance of the Scintillator class.
+ * @param rcal:  instance of the Calorimeter class.
  * @param pindex: particle index of the particle we're studying.
  * @return:       the most accurate TOF available in the scintillator and
  *                calorimeter banks.
  */
-double get_tof(REC_Scintillator rsci, REC_Calorimeter rcal, int pindex) {
+double get_tof(Scintillator rsci, Calorimeter rcal, int pindex) {
     int    most_precise_lyr = 0;
     double tof              = INFINITY;
     for (UInt_t i = 0; i < rsci.pindex->size(); ++i) {
@@ -123,11 +123,11 @@ int run(char *in_file, char *work_dir, char *data_dir, bool debug, int nevn,
     t_out[1] = new TNtuple(S_FMT, S_FMT, vars);
 
     // Associate banks to TTree.
-    REC_Particle     rpart(t_in);
-    REC_Track        rtrk (t_in);
-    REC_Calorimeter  rcal (t_in);
-    REC_Cherenkov    rche (t_in);
-    REC_Scintillator rsci (t_in);
+    Particle     rpart(t_in);
+    Track        rtrk (t_in);
+    Calorimeter  rcal (t_in);
+    Cherenkov    rche (t_in);
+    Scintillator rsci (t_in);
     FMT_Tracks       ftrk (t_in);
 
     // Counters for PID assignment quality assessment.
