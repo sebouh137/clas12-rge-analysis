@@ -25,7 +25,6 @@ Since simulation files don't have a run number, we use a convention for specifyi
 ```
 Usage: extract_sf [-hfn:w:d:] infile
  * -h         : show this message and exit.
- * -f         : use FMT data. If unspecified, will use DC data.
  * -n nevents : number of events
  * -w workdir : location where output root files are to be stored. Default
                 is root_io.

@@ -24,9 +24,7 @@
 #include "../lib/utilities.h"
 
 /** run() function of the program. Check usage() for details. */
-int run(char *in_file, char *work_dir, char *data_dir, bool use_fmt, int nevn,
-        int run_no)
-{
+int run(char *in_file, char *work_dir, char *data_dir, int nevn, int run_no) {
     gStyle->SetOptFit();
 
     // Create output root file.
@@ -105,7 +103,6 @@ int run(char *in_file, char *work_dir, char *data_dir, bool use_fmt, int nevn,
     Particle     rp(t);
     Track        rt(t);
     Calorimeter  rc(t);
-    FMT_Tracks       ft(t);
 
     // Iterate through input file. Each TTree entry is one event.
     int evn;
@@ -121,7 +118,6 @@ int run(char *in_file, char *work_dir, char *data_dir, bool use_fmt, int nevn,
         rp.get_entries(t, evn);
         rt.get_entries(t, evn);
         rc.get_entries(t, evn);
-        ft.get_entries(t, evn);
 
         // Filter events without the necessary banks.
         if (rp.vz->size() == 0 || rt.pindex->size() == 0 ||
@@ -129,33 +125,20 @@ int run(char *in_file, char *work_dir, char *data_dir, bool use_fmt, int nevn,
 
         for (UInt_t pos = 0; pos < rt.index->size(); ++pos) {
             // Get basic data from track and particle banks.
-            int index  = rt.index ->at(pos);
             int pindex = rt.pindex->at(pos);
 
-            // Get particle momentum from either FMT or DC.
-            double px, py, pz;
-            if (use_fmt) {
-                // Apply FMT cuts.
-                // Track reconstructed by FMT.
-                if (ft.pz->size() < 1)      continue;
-                // Track crossed 3 FMT layers.
-                if (ft.ndf->at(index) != 3) continue;
-
-                px = ft.px->at(index);
-                py = ft.py->at(index);
-                pz = ft.pz->at(index);
-            }
-            else {
-                px = rp.px->at(pindex);
-                py = rp.py->at(pindex);
-                pz = rp.pz->at(pindex);
-            }
+            // Get particle momentum.
+            double px = rp.px->at(pindex);
+            double py = rp.py->at(pindex);
+            double pz = rp.pz->at(pindex);
             double tot_P = calc_magnitude(px, py, pz);
 
             // Compute energy deposited in each calorimeter per sector.
             double sf_E[ncals][NSECTORS];
             for (int ci = 0; ci < ncals; ++ci) {
-                for (int si = 0; si < NSECTORS; ++si) sf_E[ci][si] = 0;
+                for (int si = 0; si < NSECTORS; ++si) {
+                    sf_E[ci][si] = 0;
+                }
             }
 
             for (UInt_t i = 0; i < rc.pindex->size(); ++i) {
@@ -183,8 +166,9 @@ int run(char *in_file, char *work_dir, char *data_dir, bool use_fmt, int nevn,
             }
 
             for (int ci = 0; ci < ncals-1; ++ci) {
-                for (int si = 0; si < NSECTORS; ++si)
+                for (int si = 0; si < NSECTORS; ++si) {
                     sf_E[CALS_IDX][si] += sf_E[ci][si];
+                }
             }
 
             // Get momentum bin.
@@ -192,7 +176,7 @@ int run(char *in_file, char *work_dir, char *data_dir, bool use_fmt, int nevn,
             int pi = -1;
             for (double p_cnt = SF_PMIN; p_cnt <= SF_PMAX; p_cnt += SF_PSTEP) {
                 if (tot_P < p_cnt) break;
-                pi++;
+                ++pi;
             }
 
             // Write to histograms.
@@ -324,9 +308,8 @@ int run(char *in_file, char *work_dir, char *data_dir, bool use_fmt, int nevn,
 /** Print usage and exit. */
 int usage() {
     fprintf(stderr,
-            "\n\nUsage: extract_sf [-hfn:w:d:] infile\n"
+            "\n\nUsage: extract_sf [-hn:w:d:] infile\n"
             " * -h         : show this message and exit.\n"
-            " * -f         : use FMT data. If unspecified, will use DC data.\n"
             " * -n nevents : number of events\n"
             " * -w workdir : location where output root files are to be "
             "stored. Default\n                is root_io.\n"
@@ -393,17 +376,14 @@ int handle_err(int errcode) {
  *     explained in the handle_err() function.
  */
 int handle_args(int argc, char **argv, char **in_file, char **work_dir,
-        char **data_dir, bool *use_fmt, int *run_no, int *nevn)
+        char **data_dir, int *run_no, int *nevn)
 {
     // Handle optional arguments.
     int opt;
-    while ((opt = getopt(argc, argv, "-hfn:w:d:")) != -1) {
+    while ((opt = getopt(argc, argv, "-hn:w:d:")) != -1) {
         switch (opt) {
             case 'h':
                 return 1;
-            case 'f':
-                *use_fmt = true;
-                break;
             case 'n':
                 *nevn = atoi(optarg);
                 if (*nevn <= 0) return 2;
@@ -453,16 +433,15 @@ int main(int argc, char **argv) {
     char *in_file  = NULL;
     char *work_dir = NULL;
     char *data_dir = NULL;
-    bool use_fmt   = false;
     int nevn       = -1;
     int run_no     = -1;
 
     int errcode = handle_args(argc, argv, &in_file, &work_dir, &data_dir,
-            &use_fmt, &run_no, &nevn);
+            &run_no, &nevn);
 
     // Run.
     if (errcode == 0)
-        errcode = run(in_file, work_dir, data_dir, use_fmt, nevn, run_no);
+        errcode = run(in_file, work_dir, data_dir, nevn, run_no);
 
     // Free up memory.
     if (in_file  != NULL) free(in_file);
