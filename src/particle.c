@@ -54,7 +54,7 @@ particle particle_init(Particle *rp, Track *rt, int pos, bool fmt) {
 
 /**
  * Initialize a new particle using data from the Particle and Track banks. This
- * function should only be called from this same file.
+ *     function should only be called from this same file.
  */
 particle particle_init(int charge, double beta, int sector, double vx,
         double vy, double vz, double px, double py, double pz)
@@ -139,8 +139,10 @@ int set_pid(particle *p, int recon_pid, int status, double tot_E,
     return 0;
 }
 
-// Check if a particle satisfies all requirements to be considered an electron
-//         or positron.
+/**
+ * Check if a particle satisfies all requirements to be considered an electron
+ *     or positron. Specific requirements can be seen on the function itself.
+ */
 bool is_electron(double tot_E, double pcal_E, double htcc_nphe, double p,
         double pars[SF_NPARAMS][2])
 {
@@ -163,11 +165,12 @@ bool is_electron(double tot_E, double pcal_E, double htcc_nphe, double p,
     return true;
 }
 
+/** Assign PID to a neutral particle. */
 int assign_neutral_pid(double tot_E, double beta) {
     return beta < NEUTRON_MAXBETA ? 2212 : (tot_E > 1e-9 ? 22 : 0);
 }
 
-// Compare momentum-computed beta with tof-computed beta.
+/** Compare beta computed from momentum with beta computed from TOF. */
 int best_pid_from_momentum(double p, double beta, int hypotheses[],
         int hypotheses_size)
 {
@@ -188,7 +191,7 @@ int best_pid_from_momentum(double p, double beta, int hypotheses[],
     return min_pid;
 }
 
-// Match PID hypothesis with available checks.
+/** Match PID hypothesis with available checks. */
 int match_pid(int hyp, bool r_match, int q, bool e, bool htcc_s, bool htcc_p) {
     switch(abs(hyp)) {
         case 11:
@@ -204,8 +207,10 @@ int match_pid(int hyp, bool r_match, int q, bool e, bool htcc_s, bool htcc_p) {
     return 0;
 }
 
-// Fill array to be stored in ntuples_%06d.root file. Array is of constant size
-// VAR_LIST_SIZE, and the order of variables can be seen in constants.h.
+/**
+ * Fill array to be stored in ntuples_%06d.root file. Array is of constant size
+ * VAR_LIST_SIZE, and the order of variables can be seen in constants.h.
+ */
 int fill_ntuples_arr(Float_t *arr, particle p, particle e, int run_no, int evn,
         int status, double beam_E, float chi2, float ndf, double pcal_E,
         double ecin_E, double ecou_E, double tof, double tre_tof)
