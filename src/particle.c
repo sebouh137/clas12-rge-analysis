@@ -30,35 +30,32 @@ particle particle_init() {
     return p;
 }
 
-// Initialize a new particle from the particle and track banks.
-particle particle_init(Particle *rp, Track *rt, int pos) {
-    int pindex = rt->pindex->at(pos); // pindex is always equal to pos!
+/** Initialize a new particle from the particle and track banks.
+  *   * rp  : pointer to the Particle class.
+  *   * rt  : pointer to the Track class.
+  *   * pos : position of the particle at the rt class.
+  *   * fmt : true if we're looking for particles that passed through DC+FMT,
+  *           false for particles that only passed through DC.
+  */
+particle particle_init(Particle *rp, Track *rt, int pos, bool fmt) {
+    // Get pindex from Track instance.
+    int pindex = rt->pindex->at(pos);
+
+    // Check if particle passed through FMT and process accordingly.
+    if (!fmt && false /* TODO. Add status cut. */) return particle_init();
+    if ( fmt && false /* TODO. Add status cut. */) return particle_init();
+
+    // Return a particle initialized with the correct data.
     return particle_init(rp->charge->at(pindex), rp->beta->at(pindex),
             rt->sector->at(pos), rp->vx->at(pindex), rp->vy->at(pindex),
             rp->vz->at(pindex),  rp->px->at(pindex), rp->py->at(pindex),
             rp->pz->at(pindex));
 }
 
-// Initialize a new particle from the particle, tracks, and FMT banks.
-particle particle_init(Particle *rp, Track *rt, FMT_Tracks *ft,
-        int pos)
-{
-    int index  = rt->index->at(pos);
-    int pindex = rt->pindex->at(pos); // pindex is always equal to pos!
-
-    // Apply FMT cuts.
-    // Track reconstructed by FMT.
-    if (ft->vz->size() < 1)               return particle_init();
-    // Track crossed 3 FMT layers.
-    if (ft->ndf->at(index) < FMTNLYRSCUT) return particle_init();
-
-    return particle_init(rp->charge->at(pindex), rp->beta->at(pindex),
-            rt->sector->at(pos), ft->vx->at(index), ft->vy->at(index),
-            ft->vz->at(index), ft->px->at(index), ft->py->at(index),
-            ft->pz->at(index));
-}
-
-// Initialize a new particle.
+/**
+ * Initialize a new particle using data from the Particle and Track banks. This
+ * function should only be called from this same file.
+ */
 particle particle_init(int charge, double beta, int sector, double vx,
         double vy, double vz, double px, double py, double pz)
 {
@@ -88,7 +85,7 @@ particle particle_init(int charge, double beta, int sector, double vx,
 
 // Set PID from all available information. This function mimics PIDMatch from
 //         the EB engine.
-int set_pid(particle * p, int recon_pid, int status, double tot_E,
+int set_pid(particle *p, int recon_pid, int status, double tot_E,
         double pcal_E, int htcc_nphe, int ltcc_nphe,
         double sf_params[SF_NPARAMS][2])
 {

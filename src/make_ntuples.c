@@ -128,7 +128,6 @@ int run(char *in_file, char *work_dir, char *data_dir, bool debug, int nevn,
     Calorimeter  rcal (t_in);
     Cherenkov    rche (t_in);
     Scintillator rsci (t_in);
-    FMT_Tracks       ftrk (t_in);
 
     // Counters for PID assignment quality assessment.
     int pid_n[NPIDS];
@@ -160,7 +159,6 @@ int run(char *in_file, char *work_dir, char *data_dir, bool debug, int nevn,
         rsci .get_entries(t_in, evn);
         rcal .get_entries(t_in, evn);
         rche .get_entries(t_in, evn);
-        ftrk .get_entries(t_in, evn);
 
         // Filter events without the necessary banks.
         if (rpart.vz->size() == 0 || rtrk.pindex->size() == 0) continue;
@@ -177,8 +175,8 @@ int run(char *in_file, char *work_dir, char *data_dir, bool debug, int nevn,
             int pindex = rtrk.pindex->at(pos);
 
             // Get reconstructed particle from DC and from FMT.
-            p_el[0] = particle_init(&rpart, &rtrk, pos);        // DC.
-            p_el[1] = particle_init(&rpart, &rtrk, &ftrk, pos); // FMT.
+            p_el[0] = particle_init(&rpart, &rtrk, pos, false); // DC.
+            p_el[1] = particle_init(&rpart, &rtrk, pos, true);  // FMT.
 
             // Get deposited energy.
             float pcal_E = 0; // PCAL total deposited energy.
@@ -259,8 +257,8 @@ int run(char *in_file, char *work_dir, char *data_dir, bool debug, int nevn,
 
             // Get reconstructed particle from DC and from FMT.
             particle p[2];
-            p[0] = particle_init(&rpart, &rtrk, pos);        // DC.
-            p[1] = particle_init(&rpart, &rtrk, &ftrk, pos); // FMT.
+            p[0] = particle_init(&rpart, &rtrk, pos, false); // DC.
+            p[1] = particle_init(&rpart, &rtrk, pos, true);  // FMT.
 
             // Get deposited energy.
             float pcal_E = 0; // PCAL total deposited energy.
