@@ -111,6 +111,7 @@ Pull requests are welcome. For major changes, open an issue first to discuss the
 **Pending tasks are**:
 - [ ] Apply acceptance correction.
 - [ ] Include GitHub tests.
+- [ ] Add an option to use `TimeBasedTrkg::*` and `FMT::*` banks instead of `REC::Particle` and `REC::Tracks` banks.
 - [ ] Add a main program (probably in bash) to call all other programs for working simplicity.
 - [ ] Improve `bank_containers` to be more generic.
 - [ ] Improve the use of constants thorough the code by using a dictionary or a similar structure.
