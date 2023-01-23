@@ -57,16 +57,19 @@ int run(char *in_filename, char *work_dir, int run_no, int event_max) {
     hipo::bank scintillator_bank(factory.getSchema("REC::Scintillator"));
 
     // Get stuff from hipo file and write to root file.
-    int event_no = 0;
-    while (reader.next() && (event_max == -1 || event_no < event_max)) {
-        ++event_no;
+    if (event_max == -1) event_max = reader.getEntries();
+    printf("Reading %d events from %s.\n", event_max, in_filename);
 
-        // Print number of events read so far.
-        if (event_no % 10000 == 0) {
-            if (event_no != 10000) printf("\33[2K\r");
-            printf("Read %8d events...", event_no);
-            fflush(stdout);
-        }
+    int event_no = 0;
+
+    // Counters for fancy progress bar.
+    int divcntr     = 0;
+    int evnsplitter = 0;
+
+    while (reader.next() && event_no < event_max) {
+        // Print fancy progress bar.
+        update_progress_bar(event_max, event_no, &evnsplitter, &divcntr);
+        ++event_no;
 
         // Read next event.
         reader.read(event);
