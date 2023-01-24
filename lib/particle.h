@@ -44,7 +44,9 @@ typedef struct {
 
 // particle functions.
 particle particle_init();
-particle particle_init(Particle *rp, Track *rt, int pos, bool fmt);
+particle particle_init(Particle *particle, Track *track, int pos);
+particle particle_init(Particle *particle, Track *track, FMT_Tracks *fmt_tracks,
+        int pos);
 particle particle_init(int charge, double beta, int sector, double vx,
         double vy, double vz, double px, double py, double pz);
 int set_pid(particle *p, int recon_pid, int status, double tot_E,

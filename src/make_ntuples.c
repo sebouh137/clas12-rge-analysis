@@ -196,6 +196,7 @@ int run(char *in_file, char *work_dir, char *data_dir, bool debug, int nevn,
     // Associate banks to TTree.
     Particle     b_particle    (t_in);
     Track        b_track       (t_in);
+    FMT_Tracks   b_fmt_tracks  (t_in);
     Calorimeter  b_calorimeter (t_in);
     Cherenkov    b_cherenkov   (t_in);
     Scintillator b_scintillator(t_in);
@@ -214,6 +215,7 @@ int run(char *in_file, char *work_dir, char *data_dir, bool debug, int nevn,
         // Get entries from input file.
         b_particle    .get_entries(t_in, evn);
         b_track       .get_entries(t_in, evn);
+        b_fmt_tracks  .get_entries(t_in, evn);
         b_scintillator.get_entries(t_in, evn);
         b_calorimeter .get_entries(t_in, evn);
         b_cherenkov   .get_entries(t_in, evn);
@@ -231,15 +233,8 @@ int run(char *in_file, char *work_dir, char *data_dir, bool debug, int nevn,
             int pindex = b_track.pindex->at(pos);
 
             // Get reconstructed particle from DC and from FMT.
-            // NOTE. As of 2023-01-24, the REC::Track bank doesn't contain any
-            //       FMT detector data due to a lack of a final decision from
-            //       RG-F and/or RG-M. This *will probably* change in the
-            //       future, so this part of the code will need to be updated so
-            //       as to get all vertex data from the REC::Track bank. In the
-            //       meantime, we use the REC::Traj bank to get the vertex as
-            //       seen by the FMT detector.
-            p_el[0] = particle_init(&b_particle, &b_track, pos, true);  // DC.
-            p_el[1] = particle_init(&b_particle, &b_track, pos, false); // FMT.
+            p_el[0] = particle_init(&b_particle, &b_track, pos);
+            p_el[1] = particle_init(&b_particle, &b_track, &b_fmt_tracks, pos);
 
             // Get deposited energy in PCAL, ECIN, and ECOU.
             float pcal_E, ecin_E, ecou_E;
@@ -306,8 +301,8 @@ int run(char *in_file, char *work_dir, char *data_dir, bool debug, int nevn,
 
             // Get reconstructed particle from DC and from FMT.
             particle p[2];
-            p[0] = particle_init(&b_particle, &b_track, pos, false); // DC.
-            p[1] = particle_init(&b_particle, &b_track, pos, true);  // FMT.
+            p[0] = particle_init(&b_particle, &b_track, pos);
+            p[1] = particle_init(&b_particle, &b_track, &b_fmt_tracks, pos);
 
             // Get deposited energy in PCAL, ECIN, and ECOU.
             float pcal_E, ecin_E, ecou_E;

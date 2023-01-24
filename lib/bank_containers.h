@@ -143,27 +143,32 @@ public:
     int get_entries(TTree *t, int idx);
 };
 
-class Traj {
+class FMT_Tracks {
 private:
     int nrows;
     int set_nrows(int in_nrows);
 public:
-    // Row number in the particle bank.
-    std::vector<Short_t> *pindex;   TBranch *b_pindex;
-    // DetectorID as defined in org.jlab.detector.DetectorType.
-    std::vector<Byte_t>  *detector; TBranch *b_detector;
-    // x-position (cm) of the track at the detector surface.
-    std::vector<Float_t> *x;        TBranch *b_x;
-    // y-position (cm) of the track at the detector surface.
-    std::vector<Float_t> *y;        TBranch *b_y;
-    // z-position (cm) of the track at the detector surface.
-    std::vector<Float_t> *z;        TBranch *b_z;
-    Traj();
-    Traj(TTree *t);
+    // index of the track in the DC bank.
+    std::vector<Short_t> *index; TBranch *b_index;
+    // number of degrees of freedom of the fit.
+    std::vector<Int_t>   *ndf;   TBranch *b_ndf;
+    // Vertex x-position to the DOCA to the beam.
+    std::vector<Float_t> *vx;    TBranch *b_vx;
+    // Vertex y-position of the DOCA to the beam.
+    std::vector<Float_t> *vy;    TBranch *b_vy;
+    // Vertex z-position of the DOCA to the beam.
+    std::vector<Float_t> *vz;    TBranch *b_vz;
+    // 3-momentum x-coordinate to the DOCA.
+    std::vector<Float_t> *px;    TBranch *b_px;
+    // 3-momentum y-coordinate of the DOCA.
+    std::vector<Float_t> *py;    TBranch *b_py;
+    // 3-momentum z-coordinate of the DOCA.
+    std::vector<Float_t> *pz;    TBranch *b_pz;
+    FMT_Tracks();
+    FMT_Tracks(TTree *t);
     int get_nrows();
     int link_branches(TTree *t);
     int fill(hipo::bank b);
     int get_entries(TTree *t, int idx);
 };
-
 #endif

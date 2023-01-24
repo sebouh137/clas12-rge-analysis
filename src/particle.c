@@ -30,26 +30,49 @@ particle particle_init() {
     return p;
 }
 
-/** Initialize a new particle from the particle and track banks.
-  *   * rp  : pointer to the Particle class.
-  *   * rt  : pointer to the Track class.
-  *   * pos : position of the particle at the rt class.
-  *   * fmt : true if we're looking for particles that passed through DC+FMT,
-  *           false for particles that only passed through DC.
+/**
+  * Initialize a new DC-tracked particle from the REC::Particle and REC::TRACK
+  *     banks.
+  *
+  * @param particle   : pointer to the Particle class.
+  * @param track      : pointer to the Track class to get DC tracking data.
+  * @param pos        : position of the particle at the track class.
   */
-particle particle_init(Particle *rp, Track *rt, int pos, bool fmt) {
-    // Get pindex from Track instance.
-    int pindex = rt->pindex->at(pos);
+particle particle_init(Particle *particle, Track *track, int pos) {
+    int pindex = track->pindex->at(pos);
+    return particle_init(particle->charge->at(pindex),
+            particle->beta->at(pindex), track->sector->at(pos),
+            particle->vx->at(pindex), particle->vy->at(pindex),
+            particle->vz->at(pindex), particle->px->at(pindex),
+            particle->py->at(pindex), particle->pz->at(pindex));
+}
 
-    // Check if particle passed through FMT and process accordingly.
-    if (!fmt && false /* TODO. Add status cut. */) return particle_init();
-    if ( fmt && false /* TODO. Add status cut. */) return particle_init();
+/**
+  * Initialize a new DC+FMT-tracked particle from the REC::Particle, REC::TRACK,
+  *     and FMT::Tracks banks.
+  *
+  * @param particle   : pointer to the Particle class.
+  * @param track      : pointer to the Track class to get DC tracking data.
+  * @param fmt_tracks : pointer to the FMT_Tracks class to get FMT tracks.
+  * @param pos        : position of the particle at the track class.
+  */
+particle particle_init(Particle *particle, Track *track, FMT_Tracks *fmt_tracks,
+        int pos)
+{
+    int index  = track->index->at(pos);
+    int pindex = track->pindex->at(pos); // pindex is always equal to pos!
 
-    // Return a particle initialized with the correct data.
-    return particle_init(rp->charge->at(pindex), rp->beta->at(pindex),
-            rt->sector->at(pos), rp->vx->at(pindex), rp->vy->at(pindex),
-            rp->vz->at(pindex),  rp->px->at(pindex), rp->py->at(pindex),
-            rp->pz->at(pindex));
+    // Apply FMT cuts.
+    // Track reconstructed by FMT.
+    if (fmt_tracks->vz->size() < 1)               return particle_init();
+    // Track crossed 3 FMT layers.
+    if (fmt_tracks->ndf->at(index) < FMTNLYRSCUT) return particle_init();
+
+    return particle_init(particle->charge->at(pindex),
+            particle->beta->at(pindex), track->sector->at(pos),
+            fmt_tracks->vx->at(index), fmt_tracks->vy->at(index),
+            fmt_tracks->vz->at(index), fmt_tracks->px->at(index),
+            fmt_tracks->py->at(index), fmt_tracks->pz->at(index));
 }
 
 /**
