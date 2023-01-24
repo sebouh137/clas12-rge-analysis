@@ -190,6 +190,9 @@ int run(char *in_file, char *work_dir, char *data_dir, bool debug, int nevn,
     t_out[0] = new TNtuple(S_DC,  S_DC,  vars);
     t_out[1] = new TNtuple(S_FMT, S_FMT, vars);
 
+    // Change nevn to number of entries if it is equal to -1.
+    if (nevn == -1) nevn = t_in->GetEntries();
+
     // Associate banks to TTree.
     Particle     b_particle    (t_in);
     Track        b_track       (t_in);
@@ -198,19 +201,15 @@ int run(char *in_file, char *work_dir, char *data_dir, bool debug, int nevn,
     Scintillator b_scintillator(t_in);
 
     // Iterate through input file. Each TTree entry is one event.
-    printf("Reading %lld events from %s.\n", nevn == -1 ? t_in->GetEntries() :
-            nevn, in_file);
+    printf("Reading %d events from %s.\n", nevn, in_file);
 
     // Counters for fancy progress bar.
     int divcntr     = 0;
     int evnsplitter = 0;
 
-    for (int evn = 0; (evn < t_in->GetEntries()) && (nevn == -1 || evn < nevn);
-            ++evn)
-    {
+    for (int evn = 0; evn < nevn; ++evn) {
         // Print fancy progress bar.
-        if (!debug) update_progress_bar(nevn == -1 ? t_in->GetEntries() : nevn,
-                evn, &evnsplitter, &divcntr);
+        if (!debug) update_progress_bar(nevn, evn, &evnsplitter, &divcntr);
 
         // Get entries from input file.
         b_particle    .get_entries(t_in, evn);
@@ -222,15 +221,12 @@ int run(char *in_file, char *work_dir, char *data_dir, bool debug, int nevn,
         // Filter events without the necessary banks.
         if (b_particle.vz->size() == 0 || b_track.pindex->size() == 0) continue;
 
-        // Find trigger electron's TOF.
-        float tre_tof =
-                get_tof(b_scintillator, b_calorimeter, b_track.pindex->at(0));
-
         // Check existence of trigger electron
         particle p_el[2];
         bool    trigger_exist  = false;
         UInt_t  trigger_pos    = -1;
         int     trigger_pindex = -1;
+        float   trigger_tof    = -1.;
         for (UInt_t pos = 0; pos < b_track.index->size(); ++pos) {
             int pindex = b_track.pindex->at(pos);
 
@@ -280,14 +276,14 @@ int run(char *in_file, char *work_dir, char *data_dir, bool debug, int nevn,
 
                 Float_t arr[VAR_LIST_SIZE];
                 fill_ntuples_arr(arr, p_el[pi], p_el[pi], run_no, evn, status,
-                        beam_E, chi2, ndf, pcal_E, ecin_E, ecou_E, tof,
-                        tre_tof);
+                        beam_E, chi2, ndf, pcal_E, ecin_E, ecou_E, tof, tof);
 
                 t_out[pi]->Fill(arr);
             }
             if (trigger_exist) {
                 trigger_pindex = pindex;
                 trigger_pos    = pos;
+                trigger_tof    = tof;
                 break;
             }
         }
@@ -347,7 +343,7 @@ int run(char *in_file, char *work_dir, char *data_dir, bool debug, int nevn,
                 Float_t arr[VAR_LIST_SIZE];
                 fill_ntuples_arr(arr, p[pi], p_el[pi], run_no, evn, status,
                         beam_E, chi2, ndf, pcal_E, ecin_E, ecou_E, tof,
-                        tre_tof);
+                        trigger_tof);
 
                 t_out[pi]->Fill(arr);
             }
