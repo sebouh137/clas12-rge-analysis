@@ -335,3 +335,61 @@ int Cherenkov::get_entries(TTree *t, int idx) {
     b_nphe    ->GetEntry(t->LoadTree(idx));
     return 0;
 }
+
+Traj::Traj() {
+    nrows    = 0;
+    pindex   = {};
+    detector = {};
+    x        = {};
+    y        = {};
+    z        = {};
+}
+Traj::Traj(TTree *t) {
+    pindex   = nullptr; b_pindex   = nullptr;
+    detector = nullptr; b_detector = nullptr;
+    x        = nullptr; b_x        = nullptr;
+    y        = nullptr; b_y        = nullptr;
+    z        = nullptr; b_z        = nullptr;
+    t->SetBranchAddress("REC::Traj::pindex",   &pindex,   &b_pindex);
+    t->SetBranchAddress("REC::Traj::detector", &detector, &b_detector);
+    t->SetBranchAddress("REC::Traj::x",        &x,        &b_x);
+    t->SetBranchAddress("REC::Traj::y",        &y,        &b_y);
+    t->SetBranchAddress("REC::Traj::z",        &z,        &b_z);
+}
+int Traj::link_branches(TTree *t) {
+    t->Branch("REC::Traj::pindex",   &pindex);
+    t->Branch("REC::Traj::detector", &detector);
+    t->Branch("REC::Traj::x",        &x);
+    t->Branch("REC::Traj::y",        &y);
+    t->Branch("REC::Traj::z",        &z);
+    return 0;
+}
+int Traj::set_nrows(int in_nrows) {
+    nrows = in_nrows;
+    pindex  ->resize(nrows);
+    detector->resize(nrows);
+    x       ->resize(nrows);
+    y       ->resize(nrows);
+    z       ->resize(nrows);
+    return 0;
+}
+int Traj::get_nrows() {return nrows;}
+int Traj::fill(hipo::bank b) {
+    set_nrows(b.getRows());
+    for (int row = 0; row < nrows; ++row) {
+        pindex  ->at(row) = (int16_t) b.getShort("pindex",   row);
+        detector->at(row) = (int8_t)  b.getByte ("detector", row);
+        x       ->at(row) = (float_t) b.getFloat("x",        row);
+        y       ->at(row) = (float_t) b.getFloat("y",        row);
+        z       ->at(row) = (float_t) b.getFloat("z",        row);
+    }
+    return 0;
+}
+int Traj::get_entries(TTree *t, int idx) {
+    b_pindex  ->GetEntry(t->LoadTree(idx));
+    b_detector->GetEntry(t->LoadTree(idx));
+    b_x       ->GetEntry(t->LoadTree(idx));
+    b_y       ->GetEntry(t->LoadTree(idx));
+    b_z       ->GetEntry(t->LoadTree(idx));
+    return 0;
+}

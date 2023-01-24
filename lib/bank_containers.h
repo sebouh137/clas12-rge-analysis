@@ -143,4 +143,27 @@ public:
     int get_entries(TTree *t, int idx);
 };
 
+class Traj {
+private:
+    int nrows;
+    int set_nrows(int in_nrows);
+public:
+    // Row number in the particle bank.
+    std::vector<Short_t> *pindex;   TBranch *b_pindex;
+    // DetectorID as defined in org.jlab.detector.DetectorType.
+    std::vector<Byte_t>  *detector; TBranch *b_detector;
+    // x-position (cm) of the track at the detector surface.
+    std::vector<Float_t> *x;        TBranch *b_x;
+    // y-position (cm) of the track at the detector surface.
+    std::vector<Float_t> *y;        TBranch *b_y;
+    // z-position (cm) of the track at the detector surface.
+    std::vector<Float_t> *z;        TBranch *b_z;
+    Traj();
+    Traj(TTree *t);
+    int get_nrows();
+    int link_branches(TTree *t);
+    int fill(hipo::bank b);
+    int get_entries(TTree *t, int idx);
+};
+
 #endif
