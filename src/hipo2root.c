@@ -31,6 +31,7 @@ int run(char *in_filename, char *work_dir, int run_no, int event_max) {
     TTree *tree = new TTree("Tree", "Tree");
     Particle     particle;
     Track        track;
+    Traj         traj;
     Calorimeter  calorimeter;
     Cherenkov    cherenkov;
     Scintillator scintillator;
@@ -38,6 +39,7 @@ int run(char *in_filename, char *work_dir, int run_no, int event_max) {
     // Link bank container to tree branches.
     particle    .link_branches(tree);
     track       .link_branches(tree);
+    traj        .link_branches(tree);
     calorimeter .link_branches(tree);
     cherenkov   .link_branches(tree);
     scintillator.link_branches(tree);
@@ -52,6 +54,7 @@ int run(char *in_filename, char *work_dir, int run_no, int event_max) {
     hipo::event event;
     hipo::bank particle_bank    (factory.getSchema("REC::Particle"));
     hipo::bank track_bank       (factory.getSchema("REC::Track"));
+    hipo::bank traj_bank        (factory.getSchema("REC::Traj"));
     hipo::bank calorimeter_bank (factory.getSchema("REC::Calorimeter"));
     hipo::bank cherenkov_bank   (factory.getSchema("REC::Cherenkov"));
     hipo::bank scintillator_bank(factory.getSchema("REC::Scintillator"));
@@ -77,6 +80,7 @@ int run(char *in_filename, char *work_dir, int run_no, int event_max) {
         // Get bank structures from hipo event.
         event.getStructure(particle_bank);
         event.getStructure(track_bank);
+        event.getStructure(traj_bank);
         event.getStructure(calorimeter_bank);
         event.getStructure(cherenkov_bank);
         event.getStructure(scintillator_bank);
@@ -84,6 +88,7 @@ int run(char *in_filename, char *work_dir, int run_no, int event_max) {
         // Fill banks from hipo event.
         particle    .fill(particle_bank);
         track       .fill(track_bank);
+        traj        .fill(traj_bank);
         calorimeter .fill(calorimeter_bank);
         cherenkov   .fill(cherenkov_bank);
         scintillator.fill(scintillator_bank);
@@ -91,6 +96,7 @@ int run(char *in_filename, char *work_dir, int run_no, int event_max) {
         // Write to tree *if* event is not empty.
         int total_nrows = particle.get_nrows() +
                           track.get_nrows() +
+                          traj.get_nrows() +
                           calorimeter.get_nrows() +
                           cherenkov.get_nrows() +
                           scintillator.get_nrows();
