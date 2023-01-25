@@ -92,11 +92,13 @@ int run(char *gen_file, char *sim_file, char *data_dir, int *bsizes,
         double **binnings, bool use_fmt, bool in_deg)
 {
     // Open input files and load TTrees.
+    printf("\nOpening generated events file...\n");
     TFile *t_in = TFile::Open(gen_file, "READ");
     if (!t_in || t_in->IsZombie()) return 10;
     TNtuple *thrown = t_in->Get<TNtuple>("ntuple_thrown");
     if (thrown == NULL) return 11;
 
+    printf("Opening simulated events file...\n");
     TFile *s_in = TFile::Open(sim_file, "READ");
     if (!s_in || s_in->IsZombie()) return 12;
     TTree *simul = use_fmt ? s_in->Get<TTree>("fmt") : s_in->Get<TTree>("dc");
@@ -122,10 +124,12 @@ int run(char *gen_file, char *sim_file, char *data_dir, int *bsizes,
 
     // Get list of PIDs.
     // NOTE. We assume that we'll deal with at most 256 PIDs.
+    printf("Getting list of PIDs from generated file...\n");
     Float_t s_pid;
     double pidlist[256];
     int pidlist_size = 0;
     thrown->SetBranchAddress(S_PID, &s_pid);
+
     for (int evn = 0; evn < thrown->GetEntries(); ++evn) {
         thrown->GetEntry(evn);
         bool found = false;
@@ -151,12 +155,14 @@ int run(char *gen_file, char *sim_file, char *data_dir, int *bsizes,
 
     for (int pi = 0; pi < pidlist_size; ++pi) {
         int pid = (int) pidlist[pi];
-        printf("Working on PID %5d...", pid);
+        printf("Working on PID %5d...\n", pid);
         fflush(stdout);
 
         int t_evn[nbins];
         int s_evn[nbins];
+        printf("  Counting thrown events...\n");
         count_events(t_evn, thrown, pid, nbins, bsizes, binnings, in_deg);
+        printf("  Counting simulated events...\n");
         count_events(s_evn, simul,  pid, nbins, bsizes, binnings, false);
 
         // Compute and save acceptance ratios.
@@ -166,7 +172,7 @@ int run(char *gen_file, char *sim_file, char *data_dir, int *bsizes,
             fprintf(t_out, "%.12f ", acc);
         }
         fprintf(t_out, "\n");
-        printf(" Done!\n");
+        printf("  Done!\n");
     }
 
     // Clean up after ourselves.
