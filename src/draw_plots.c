@@ -21,14 +21,8 @@
 #include "../lib/utilities.h"
 
 // TODO. Do acceptance correction.
-
-// TODO. Check what happens with the acceptance of different particles (like pi+
-//       and pi-) when you reverse the magnetic fields.
-// TODO. Check if we can run high luminosity with reverse fields.
-// TODO. Check if RG-F or RG-M ran with reverse field.
 // TODO. See what happens to low-momentum particles inside CLAS12 through
 //       simulation and see if they are reconstructed.
-
 // TODO. Evaluate **acceptance** in diferent regions.
 // TODO. Separate in vz bins. Start from -40 to 40 cm, 4-cm bins.
 
@@ -373,10 +367,10 @@ int run(char *in_file, char *acc_file, char *work_dir, int run_no) {
     // Apply SIDIS cuts, checking which event numbers should be skipped.
     int nevents = -1;
     // Count number of events.
-    for (int evn = 0; evn < t->GetEntries(); ++evn) {
-        update_progress_bar(t->GetEntries(), evn, &evnsplitter, &divcntr);
+    for (int entry = 0; entry < t->GetEntries(); ++entry) {
+        update_progress_bar(t->GetEntries(), entry, &evnsplitter, &divcntr);
 
-        t->GetEntry(evn);
+        t->GetEntry(entry);
         if (vars[A_EVENTNO] > nevents) nevents = (int) (vars[A_EVENTNO]+0.5);
     }
 
@@ -384,13 +378,13 @@ int run(char *in_file, char *acc_file, char *work_dir, int run_no) {
     divcntr     = 0;
     evnsplitter = 0;
 
-    bool valid_event[nevents];
+    bool *valid_event = (bool *) malloc(nevents * sizeof(bool));
     Float_t current_evn = -1;
     bool no_tre_pass, Q2_pass, W2_pass, zh_pass;
-    for (int evn = 0; evn < t->GetEntries(); ++evn) {
-        update_progress_bar(t->GetEntries(), evn, &evnsplitter, &divcntr);
+    for (int entry = 0; entry < t->GetEntries(); ++entry) {
+        update_progress_bar(t->GetEntries(), entry, &evnsplitter, &divcntr);
 
-        t->GetEntry(evn);
+        t->GetEntry(entry);
         if (vars[A_EVENTNO] != current_evn) {
             current_evn = vars[A_EVENTNO];
             valid_event[(int) (vars[A_EVENTNO]+0.5)] = false;
@@ -438,9 +432,9 @@ int run(char *in_file, char *acc_file, char *work_dir, int run_no) {
 
     // Run through events.
     printf("Processing plots...\n");
-    for (int evn = 0; evn < t->GetEntries(); ++evn) {
-        update_progress_bar(t->GetEntries(), evn, &evnsplitter, &divcntr);
-        t->GetEntry(evn);
+    for (int entry = 0; entry < t->GetEntries(); ++entry) {
+        update_progress_bar(t->GetEntries(), entry, &evnsplitter, &divcntr);
+        t->GetEntry(entry);
 
         // Apply particle cuts.
         if (p_charge != INT_MAX) {
@@ -531,6 +525,8 @@ int run(char *in_file, char *acc_file, char *work_dir, int run_no) {
     // === CLEAN-UP ============================================================
     f_in ->Close();
     f_out->Close();
+
+    free(valid_event);
 
     if (acc_file != NULL) {
         for (int bi = 0; bi < 5; ++bi) free(binnings[bi]);

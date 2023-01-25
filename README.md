@@ -25,7 +25,6 @@ Since simulation files don't have a run number, we use a convention for specifyi
 ```
 Usage: extract_sf [-hfn:w:d:] infile
  * -h         : show this message and exit.
- * -f         : use FMT data. If unspecified, will use DC data.
  * -n nevents : number of events
  * -w workdir : location where output root files are to be stored. Default
                 is root_io.
@@ -111,6 +110,7 @@ Pull requests are welcome. For major changes, open an issue first to discuss the
 **Pending tasks are**:
 - [ ] Apply acceptance correction.
 - [ ] Include GitHub tests.
+- [ ] Add an option to use `TimeBasedTrkg::*` and `FMT::*` banks instead of `REC::Particle` and `REC::Tracks` banks.
 - [ ] Add a main program (probably in bash) to call all other programs for working simplicity.
 - [ ] Improve `bank_containers` to be more generic.
 - [ ] Improve the use of constants thorough the code by using a dictionary or a similar structure.

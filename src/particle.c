@@ -30,35 +30,55 @@ particle particle_init() {
     return p;
 }
 
-// Initialize a new particle from the particle and track banks.
-particle particle_init(REC_Particle *rp, REC_Track *rt, int pos) {
-    int pindex = rt->pindex->at(pos); // pindex is always equal to pos!
-    return particle_init(rp->charge->at(pindex), rp->beta->at(pindex),
-            rt->sector->at(pos), rp->vx->at(pindex), rp->vy->at(pindex),
-            rp->vz->at(pindex),  rp->px->at(pindex), rp->py->at(pindex),
-            rp->pz->at(pindex));
+/**
+  * Initialize a new DC-tracked particle from the REC::Particle and REC::TRACK
+  *     banks.
+  *
+  * @param particle   : pointer to the Particle class.
+  * @param track      : pointer to the Track class to get DC tracking data.
+  * @param pos        : position of the particle at the track class.
+  */
+particle particle_init(Particle *particle, Track *track, int pos) {
+    int pindex = track->pindex->at(pos);
+    return particle_init(particle->charge->at(pindex),
+            particle->beta->at(pindex), track->sector->at(pos),
+            particle->vx->at(pindex), particle->vy->at(pindex),
+            particle->vz->at(pindex), particle->px->at(pindex),
+            particle->py->at(pindex), particle->pz->at(pindex));
 }
 
-// Initialize a new particle from the particle, tracks, and FMT banks.
-particle particle_init(REC_Particle *rp, REC_Track *rt, FMT_Tracks *ft,
+/**
+  * Initialize a new DC+FMT-tracked particle from the REC::Particle, REC::TRACK,
+  *     and FMT::Tracks banks.
+  *
+  * @param particle   : pointer to the Particle class.
+  * @param track      : pointer to the Track class to get DC tracking data.
+  * @param fmt_tracks : pointer to the FMT_Tracks class to get FMT tracks.
+  * @param pos        : position of the particle at the track class.
+  */
+particle particle_init(Particle *particle, Track *track, FMT_Tracks *fmt_tracks,
         int pos)
 {
-    int index  = rt->index->at(pos);
-    int pindex = rt->pindex->at(pos); // pindex is always equal to pos!
+    int index  = track->index->at(pos);
+    int pindex = track->pindex->at(pos); // pindex is always equal to pos!
 
     // Apply FMT cuts.
     // Track reconstructed by FMT.
-    if (ft->vz->size() < 1)               return particle_init();
+    if (fmt_tracks->vz->size() < 1)               return particle_init();
     // Track crossed 3 FMT layers.
-    if (ft->ndf->at(index) < FMTNLYRSCUT) return particle_init();
+    if (fmt_tracks->ndf->at(index) < FMTNLYRSCUT) return particle_init();
 
-    return particle_init(rp->charge->at(pindex), rp->beta->at(pindex),
-            rt->sector->at(pos), ft->vx->at(index), ft->vy->at(index),
-            ft->vz->at(index), ft->px->at(index), ft->py->at(index),
-            ft->pz->at(index));
+    return particle_init(particle->charge->at(pindex),
+            particle->beta->at(pindex), track->sector->at(pos),
+            fmt_tracks->vx->at(index), fmt_tracks->vy->at(index),
+            fmt_tracks->vz->at(index), fmt_tracks->px->at(index),
+            fmt_tracks->py->at(index), fmt_tracks->pz->at(index));
 }
 
-// Initialize a new particle.
+/**
+ * Initialize a new particle using data from the Particle and Track banks. This
+ *     function should only be called from this same file.
+ */
 particle particle_init(int charge, double beta, int sector, double vx,
         double vy, double vz, double px, double py, double pz)
 {
@@ -88,7 +108,7 @@ particle particle_init(int charge, double beta, int sector, double vx,
 
 // Set PID from all available information. This function mimics PIDMatch from
 //         the EB engine.
-int set_pid(particle * p, int recon_pid, int status, double tot_E,
+int set_pid(particle *p, int recon_pid, int status, double tot_E,
         double pcal_E, int htcc_nphe, int ltcc_nphe,
         double sf_params[SF_NPARAMS][2])
 {
@@ -142,8 +162,10 @@ int set_pid(particle * p, int recon_pid, int status, double tot_E,
     return 0;
 }
 
-// Check if a particle satisfies all requirements to be considered an electron
-//         or positron.
+/**
+ * Check if a particle satisfies all requirements to be considered an electron
+ *     or positron. Specific requirements can be seen on the function itself.
+ */
 bool is_electron(double tot_E, double pcal_E, double htcc_nphe, double p,
         double pars[SF_NPARAMS][2])
 {
@@ -166,11 +188,12 @@ bool is_electron(double tot_E, double pcal_E, double htcc_nphe, double p,
     return true;
 }
 
+/** Assign PID to a neutral particle. */
 int assign_neutral_pid(double tot_E, double beta) {
     return beta < NEUTRON_MAXBETA ? 2212 : (tot_E > 1e-9 ? 22 : 0);
 }
 
-// Compare momentum-computed beta with tof-computed beta.
+/** Compare beta computed from momentum with beta computed from TOF. */
 int best_pid_from_momentum(double p, double beta, int hypotheses[],
         int hypotheses_size)
 {
@@ -191,7 +214,7 @@ int best_pid_from_momentum(double p, double beta, int hypotheses[],
     return min_pid;
 }
 
-// Match PID hypothesis with available checks.
+/** Match PID hypothesis with available checks. */
 int match_pid(int hyp, bool r_match, int q, bool e, bool htcc_s, bool htcc_p) {
     switch(abs(hyp)) {
         case 11:
@@ -207,8 +230,10 @@ int match_pid(int hyp, bool r_match, int q, bool e, bool htcc_s, bool htcc_p) {
     return 0;
 }
 
-// Fill array to be stored in ntuples_%06d.root file. Array is of constant size
-// VAR_LIST_SIZE, and the order of variables can be seen in constants.h.
+/**
+ * Fill array to be stored in ntuples_%06d.root file. Array is of constant size
+ * VAR_LIST_SIZE, and the order of variables can be seen in constants.h.
+ */
 int fill_ntuples_arr(Float_t *arr, particle p, particle e, int run_no, int evn,
         int status, double beam_E, float chi2, float ndf, double pcal_E,
         double ecin_E, double ecou_E, double tof, double tre_tof)

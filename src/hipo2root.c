@@ -19,7 +19,7 @@
 #include "../lib/bank_containers.h"
 
 /** run() function of the program. Check usage() for details. */
-int run(char *in_file, char *work_dir, int run_no, int nevn) {
+int run(char *in_filename, char *work_dir, int run_no, int event_max) {
     // Create output file.
     char out_file[PATH_MAX];
     sprintf(out_file, "%s/banks_%06d.root", work_dir, run_no);
@@ -27,56 +27,88 @@ int run(char *in_file, char *work_dir, int run_no, int nevn) {
     TFile *f = TFile::Open(out_file, "RECREATE");
     f->SetCompressionAlgorithm(ROOT::kLZ4);
 
-    // Create tree for output file.
+    // Create tree for output file and bank containers to read hipo file.
     TTree *tree = new TTree("Tree", "Tree");
-    REC_Particle     rprt; rprt.link_branches(tree);
-    REC_Track        rtrk; rtrk.link_branches(tree);
-    REC_Calorimeter  rcal; rcal.link_branches(tree);
-    REC_Cherenkov    rche; rche.link_branches(tree);
-    REC_Scintillator rsci; rsci.link_branches(tree);
-    FMT_Tracks       ftrk; ftrk.link_branches(tree);
+    Particle     particle;
+    Track        track;
+    FMT_Tracks   fmt_tracks;
+    Calorimeter  calorimeter;
+    Cherenkov    cherenkov;
+    Scintillator scintillator;
+
+    // Link bank container to tree branches.
+    particle    .link_branches(tree);
+    track       .link_branches(tree);
+    fmt_tracks  .link_branches(tree);
+    calorimeter .link_branches(tree);
+    cherenkov   .link_branches(tree);
+    scintillator.link_branches(tree);
 
     // Open input file and get hipo schemas.
     hipo::reader reader;
-    reader.open(in_file);
+    reader.open(in_filename);
 
     hipo::dictionary factory;
     reader.readDictionary(factory);
 
-    hipo::bank rprt_b(factory.getSchema("REC::Particle"));
-    hipo::bank rtrk_b(factory.getSchema("REC::Track"));
-    hipo::bank rcal_b(factory.getSchema("REC::Calorimeter"));
-    hipo::bank rche_b(factory.getSchema("REC::Cherenkov"));
-    hipo::bank rsci_b(factory.getSchema("REC::Scintillator"));
-    hipo::bank ftrk_b(factory.getSchema("FMT::Tracks"));
     hipo::event event;
+    hipo::bank particle_bank    (factory.getSchema("REC::Particle"));
+    hipo::bank track_bank       (factory.getSchema("REC::Track"));
+    hipo::bank fmt_tracks_bank  (factory.getSchema("FMT::Tracks"));
+    hipo::bank calorimeter_bank (factory.getSchema("REC::Calorimeter"));
+    hipo::bank cherenkov_bank   (factory.getSchema("REC::Cherenkov"));
+    hipo::bank scintillator_bank(factory.getSchema("REC::Scintillator"));
 
     // Get stuff from hipo file and write to root file.
-    int evn = 0;
-    while (reader.next() && (nevn == -1 || evn < nevn)) {
-        evn++;
-        if (evn % 10000 == 0) {
-            if (evn != 10000) printf("\33[2K\r");
-            printf("Read %8d events...", evn);
-            fflush(stdout);
-        }
+    if (event_max == -1) event_max = reader.getEntries();
+    printf("Reading %d events from %s.\n", event_max, in_filename);
+
+    int event_no = 0;
+
+    // Counters for fancy progress bar.
+    int divcntr     = 0;
+    int evnsplitter = 0;
+
+    while (reader.next() && event_no < event_max) {
+        // Print fancy progress bar.
+        update_progress_bar(event_max, event_no, &evnsplitter, &divcntr);
+        ++event_no;
+
+        // Read next event.
         reader.read(event);
 
-        event.getStructure(rprt_b); rprt.fill(rprt_b);
-        event.getStructure(rtrk_b); rtrk.fill(rtrk_b);
-        event.getStructure(rcal_b); rcal.fill(rcal_b);
-        event.getStructure(rche_b); rche.fill(rche_b);
-        event.getStructure(rsci_b); rsci.fill(rsci_b);
-        event.getStructure(ftrk_b); ftrk.fill(ftrk_b);
-        if (rprt.get_nrows() + rtrk.get_nrows() + rcal.get_nrows() +
-                rche.get_nrows() + rsci.get_nrows() + ftrk.get_nrows() > 0)
-            tree->Fill();
-    }
-    printf("\33[2K\rRead %8d events... Done!\n", evn);
+        // Get bank structures from hipo event.
+        event.getStructure(particle_bank);
+        event.getStructure(track_bank);
+        event.getStructure(fmt_tracks_bank);
+        event.getStructure(calorimeter_bank);
+        event.getStructure(cherenkov_bank);
+        event.getStructure(scintillator_bank);
 
-    // Clean up.
+        // Fill banks from hipo event.
+        particle    .fill(particle_bank);
+        track       .fill(track_bank);
+        fmt_tracks  .fill(fmt_tracks_bank);
+        calorimeter .fill(calorimeter_bank);
+        cherenkov   .fill(cherenkov_bank);
+        scintillator.fill(scintillator_bank);
+
+        // Write to tree *if* event is not empty.
+        int total_nrows = particle.get_nrows() +
+                          track.get_nrows() +
+                          fmt_tracks.get_nrows() +
+                          calorimeter.get_nrows() +
+                          cherenkov.get_nrows() +
+                          scintillator.get_nrows();
+
+        if (total_nrows > 0) tree->Fill();
+    }
+    printf("\33[2K\rRead %8d events... Done!\n", event_no);
+
+    // Write to root tree and clean up after ourselves.
     tree->Write();
     f->Close();
+
     return 0;
 }
 
@@ -140,8 +172,8 @@ int handle_err(int errcode) {
  * Handle arguments for hipo2root using optarg. Error codes used are explained
  *     in the handle_err() function.
  */
-int handle_args(int argc, char **argv, char **in_file, char **work_dir,
-        int *run_no, int *nevents)
+int handle_args(int argc, char **argv, char **in_filename, char **work_dir,
+        int *run_no, int *event_max)
 {
     // Handle arguments.
     int opt;
@@ -150,16 +182,16 @@ int handle_args(int argc, char **argv, char **in_file, char **work_dir,
             case 'h':
                 return 1;
             case 'n':
-                *nevents = atoi(optarg);
-                if (*nevents <= 0) return 2; // Check if nevents is valid.
+                *event_max = atoi(optarg);
+                if (*event_max <= 0) return 2; // Check if event_max is valid.
                 break;
             case 'w':
                 *work_dir = (char *) malloc(strlen(optarg) + 1);
                 strcpy(*work_dir, optarg);
                 break;
             case 1:
-                *in_file = (char *) malloc(strlen(optarg) + 1);
-                strcpy(*in_file, optarg);
+                *in_filename = (char *) malloc(strlen(optarg) + 1);
+                strcpy(*in_filename, optarg);
                 break;
             default:
                 return 3;
@@ -173,9 +205,9 @@ int handle_args(int argc, char **argv, char **in_file, char **work_dir,
     }
 
     // Check that a positional argument was given.
-    if (*in_file == NULL) return 4;
+    if (*in_filename == NULL) return 4;
 
-    int check = handle_hipo_filename(*in_file, run_no);
+    int check = handle_hipo_filename(*in_filename, run_no);
     if (check) return check + 4; // Shift errcode.
 
     return 0;
@@ -184,19 +216,20 @@ int handle_args(int argc, char **argv, char **in_file, char **work_dir,
 /** Entry point of hipo2root. Check usage() for details. */
 int main(int argc, char **argv) {
     // Handle arguments.
-    char *in_file  = NULL;
-    char *work_dir = NULL;
-    int  run_no    = -1;
-    int  nevn      = -1;
+    char *in_filename = NULL;
+    char *work_dir    = NULL;
+    int  run_no       = -1;
+    int  event_max    = -1;
 
-    int errcode = handle_args(argc, argv, &in_file, &work_dir, &run_no, &nevn);
+    int errcode = handle_args(argc, argv, &in_filename, &work_dir, &run_no,
+            &event_max);
 
     // Run.
-    if (errcode == 0) errcode = run(in_file, work_dir, run_no, nevn);
+    if (errcode == 0) errcode = run(in_filename, work_dir, run_no, event_max);
 
     // Free up memory.
-    if (in_file  != NULL) free(in_file);
-    if (work_dir != NULL) free(work_dir);
+    if (in_filename != NULL) free(in_filename);
+    if (work_dir    != NULL) free(work_dir);
 
     // Return errcode.
     return handle_err(errcode);

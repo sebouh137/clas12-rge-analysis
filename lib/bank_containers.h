@@ -20,7 +20,7 @@
 #include "reader.h"
 
 /** Reconstructed particle "final" information. */
-class REC_Particle {
+class Particle {
 private:
     int nrows;
     int set_nrows(int in_nrows);
@@ -49,77 +49,94 @@ public:
     std::vector<Float_t>  *chi2pid; TBranch *b_chi2pid;
     // Detector collection particle passed.
     std::vector<Short_t>  *status;  TBranch *b_status;
-    REC_Particle();
-    REC_Particle(TTree *t);
+    Particle();
+    Particle(TTree *t);
     int get_nrows();
     int link_branches(TTree *t);
     int fill(hipo::bank b);
     int get_entries(TTree *t, int idx);
 };
 
-class REC_Track {
+class Track {
 private:
     int nrows;
     int set_nrows(int in_nrows);
 public:
+    // Index of the track in the specific detector bank.
     std::vector<Short_t>  *index;   TBranch *b_index;
+    // Row number in the particle bank track is associated with.
     std::vector<Short_t>  *pindex;  TBranch *b_pindex;
+    // Sector of the track.
     std::vector<Short_t>  *sector;  TBranch *b_sector;
+    // Number of degrees of freedom in track fitting.
     std::vector<Short_t>  *ndf;     TBranch *b_ndf;
+    // Chi2 (or quality) of the track fitting.
     std::vector<Float_t>  *chi2;    TBranch *b_chi2;
-    REC_Track();
-    REC_Track(TTree *t);
+    Track();
+    Track(TTree *t);
     int get_nrows();
     int link_branches(TTree *t);
     int fill(hipo::bank b);
     int get_entries(TTree *t, int idx);
 };
 
-class REC_Calorimeter {
+class Calorimeter {
 private:
     int nrows;
     int set_nrows(int in_nrows);
 public:
+    // Row number in the particle bank.
     std::vector<Short_t> *pindex; TBranch *b_pindex;
+    // Layer ID, as defined in org.jlab.detector.base.DetectorLayer.
     std::vector<Char_t>  *layer;  TBranch *b_layer;
+    // Sector of the detector hit.
     std::vector<Char_t>  *sector; TBranch *b_sector;
+    // Energy (GeV) associated with the hit.
     std::vector<Float_t> *energy; TBranch *b_energy;
+    // Time (ns) associated with the hit.
     std::vector<Float_t> *time;   TBranch *b_time;
-    REC_Calorimeter();
-    REC_Calorimeter(TTree *t);
+    Calorimeter();
+    Calorimeter(TTree *t);
     int get_nrows();
     int link_branches(TTree *t);
     int fill(hipo::bank b);
     int get_entries(TTree *t, int idx);
 };
 
-class REC_Scintillator {
+class Scintillator {
 private:
     int nrows;
     int set_nrows(int in_nrows);
 public:
+    // Row number in the particle bank.
     std::vector<Short_t> *pindex;   TBranch *b_pindex;
+    // Time (ns) associated with the hit.
     std::vector<Float_t> *time;     TBranch *b_time;
+    // Detector ID, as defined in org.jlab.detector.base.DetectorType.
     std::vector<Byte_t>  *detector; TBranch *b_detector;
+    // Layer ID, as defined in org.jlab.detector.base.DetectorLayer.
     std::vector<Byte_t>  *layer;    TBranch *b_layer;
-    REC_Scintillator();
-    REC_Scintillator(TTree *t);
+    Scintillator();
+    Scintillator(TTree *t);
     int get_nrows();
     int link_branches(TTree *t);
     int fill(hipo::bank b);
     int get_entries(TTree *t, int idx);
 };
 
-class REC_Cherenkov {
+class Cherenkov {
 private:
     int nrows;
     int set_nrows(int in_nrows);
 public:
+    // Row number in the particle bank associated with the hit.
     std::vector<Short_t> *pindex;   TBranch *b_pindex;
+    // Detector ID, as defined in org.jlab.detector.base.DetectorType.
     std::vector<Byte_t>  *detector; TBranch *b_detector;
+    // Number of photoelectrons from Cherenkov radiation.
     std::vector<Float_t> *nphe;     TBranch *b_nphe;
-    REC_Cherenkov();
-    REC_Cherenkov(TTree *t);
+    Cherenkov();
+    Cherenkov(TTree *t);
     int get_nrows();
     int link_branches(TTree *t);
     int fill(hipo::bank b);
@@ -154,5 +171,4 @@ public:
     int fill(hipo::bank b);
     int get_entries(TTree *t, int idx);
 };
-
 #endif

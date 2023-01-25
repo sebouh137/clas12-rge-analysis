@@ -30,59 +30,127 @@
  * In order of decreasing precision, the list of detectors are:
  *     FTOF1B > FTOF1A > FTOF2 > PCAL > ECIN > ECOU.
  *
- * @param rsci:  instance of the REC_Scintillator class.
- * @param rcal:  instance of the REC_Calorimeter class.
- * @param pindex: particle index of the particle we're studying.
- * @return:       the most accurate TOF available in the scintillator and
- *                calorimeter banks.
+ * @param scintillator: instance of the Scintillator class.
+ * @param calorimeter:  instance of the Calorimeter class.
+ * @param pindex:       particle index of the particle we're studying.
+ * @return:             the most accurate TOF available in the scintillator and
+ *                      calorimeter banks.
  */
-double get_tof(REC_Scintillator rsci, REC_Calorimeter rcal, int pindex) {
+double get_tof(Scintillator scintillator, Calorimeter calorimeter, int pindex)
+{
     int    most_precise_lyr = 0;
     double tof              = INFINITY;
-    for (UInt_t i = 0; i < rsci.pindex->size(); ++i) {
+    for (UInt_t i = 0; i < scintillator.pindex->size(); ++i) {
         // Filter out incorrect pindex and hits not from FTOF.
-        if (rsci.pindex->at(i) != pindex || rsci.detector->at(i) != FTOF_ID)
+        if (scintillator.pindex->at(i) != pindex
+                || scintillator.detector->at(i) != FTOF_ID)
             continue;
-        if (rsci.layer->at(i) == FTOF1B_LYR) {
+        if (scintillator.layer->at(i) == FTOF1B_LYR) {
             most_precise_lyr = FTOF1B_LYR;
-            tof = rsci.time->at(i);
+            tof = scintillator.time->at(i);
             break; // Things won't get better than this.
         }
-        else if (rsci.layer->at(i) == FTOF1A_LYR) {
+        else if (scintillator.layer->at(i) == FTOF1A_LYR) {
             if (most_precise_lyr == FTOF1A_LYR) continue;
             most_precise_lyr = FTOF1A_LYR;
-            tof = rsci.time->at(i);
+            tof = scintillator.time->at(i);
         }
-        else if (rsci.layer->at(i) == FTOF2_LYR) {
+        else if (scintillator.layer->at(i) == FTOF2_LYR) {
             // We already have a similar or better hit.
             if (most_precise_lyr != 0) continue;
             most_precise_lyr = FTOF2_LYR;
-            tof = rsci.time->at(i);
+            tof = scintillator.time->at(i);
         }
     }
-    if (most_precise_lyr == 0) { // No hits from FTOF, let's try ECAL.
-        for (UInt_t i = 0; i < rcal.pindex->size(); ++i) {
-            // Filter out incorrect pindex.
-            if (rcal.pindex->at(i) != pindex) continue;
-            if (rcal.layer->at(i) == PCAL_LYR) {
-                most_precise_lyr = 10 + PCAL_LYR;
-                tof = rcal.time->at(i);
-                break; // Things won't get better than this.
-            }
-            else if (rcal.layer->at(i) == ECIN_LYR) {
-                if (most_precise_lyr == 10 + ECIN_LYR) continue;
-                most_precise_lyr = 10 + ECIN_LYR;
-                tof = rcal.time->at(i);
-            }
-            else if (rcal.layer->at(i) == ECOU_LYR) {
-                if (most_precise_lyr != 0) continue;
-                most_precise_lyr = 10 + ECOU_LYR;
-                tof = rcal.time->at(i);
-            }
+
+    if (most_precise_lyr != 0) return tof;
+    // No hits from FTOF, let's try ECAL.
+    for (UInt_t i = 0; i < calorimeter.pindex->size(); ++i) {
+        // Filter out incorrect pindex.
+        if (calorimeter.pindex->at(i) != pindex) continue;
+        if (calorimeter.layer->at(i) == PCAL_LYR) {
+            most_precise_lyr = 10 + PCAL_LYR;
+            tof = calorimeter.time->at(i);
+            break; // Things won't get better than this.
+        }
+        else if (calorimeter.layer->at(i) == ECIN_LYR) {
+            if (most_precise_lyr == 10 + ECIN_LYR) continue;
+            most_precise_lyr = 10 + ECIN_LYR;
+            tof = calorimeter.time->at(i);
+        }
+        else if (calorimeter.layer->at(i) == ECOU_LYR) {
+            if (most_precise_lyr != 0) continue;
+            most_precise_lyr = 10 + ECOU_LYR;
+            tof = calorimeter.time->at(i);
         }
     }
 
     return tof;
+}
+
+/**
+ * Get deposited energy for particle with pindex from PCAL, ECIN, and ECOU.
+ *
+ * @param calorimeter: instance of the Calorimeter class.
+ * @param pindex:      particle index of the particle we're studying
+ * @param pcal_E:      pointer to float to which we'll write the PCAL energy.
+ * @param ecin_E:      pointer to float to which we'll write the ECIN energy.
+ * @param ecou_E:      pointer to float to which we'll write the ECOU energy.
+ * @return             error code. 0 if successful, 1 otherwise. The function
+ *                     only returns 1 if there's an invalid layer in the
+ *                     Calorimeter instance, suggesting corruption or a change
+ *                     in the REC::Calorimeter bank.
+ */
+int get_deposited_energy(Calorimeter calorimeter, int pindex, float *pcal_E,
+        float *ecin_E, float *ecou_E)
+{
+    *pcal_E = 0;
+    *ecin_E = 0;
+    *ecou_E = 0;
+
+    for (UInt_t i = 0; i < calorimeter.pindex->size(); ++i) {
+        if (calorimeter.pindex->at(i) != pindex) continue;
+        int lyr = (int) calorimeter.layer->at(i);
+
+        if      (lyr == PCAL_LYR) *pcal_E += calorimeter.energy->at(i);
+        else if (lyr == ECIN_LYR) *ecin_E += calorimeter.energy->at(i);
+        else if (lyr == ECOU_LYR) *ecou_E += calorimeter.energy->at(i);
+        else return 1;
+    }
+
+    return 0;
+}
+
+/**
+ * Count number of photoelectrons deposited on HTCC and LTCC detectors.
+ *
+ * @param cherenkov: Instance of the Cherenkov class.
+ * @param pindex:    particle index of the particle we're studying.
+ * @param htcc_nphe: pointer to int where we'll write the number of
+ *                   photoelectrons deposited on HTCC.
+ * @param ltcc_nphe: pointer to int where we'll write the number of
+ *                   photoelectrons deposited on LTCC.
+ * @return           error code. 0 if successful, 1 otherwise. The function only
+ *                   returns 1 if there's an invalid detector ID in the
+ *                   Cherenkov instance, suggesting data corruption or a change
+ *                   in the REC::Cherenkov bank.
+ */
+int count_photoelectrons(Cherenkov cherenkov, int pindex, int *htcc_nphe,
+        int *ltcc_nphe)
+{
+    *htcc_nphe = 0;
+    *ltcc_nphe = 0;
+
+    for (UInt_t i = 0; i < cherenkov.pindex->size(); ++i) {
+        if (cherenkov.pindex->at(i) != pindex) continue;
+
+        int detector = cherenkov.detector->at(i);
+        if      (detector == HTCC_ID) *htcc_nphe += cherenkov.nphe->at(i);
+        else if (detector == LTCC_ID) *ltcc_nphe += cherenkov.nphe->at(i);
+        else return 1;
+    }
+
+    return 0;
 }
 
 /** run() function of the program. Check usage() for details. */
@@ -122,103 +190,77 @@ int run(char *in_file, char *work_dir, char *data_dir, bool debug, int nevn,
     t_out[0] = new TNtuple(S_DC,  S_DC,  vars);
     t_out[1] = new TNtuple(S_FMT, S_FMT, vars);
 
-    // Associate banks to TTree.
-    REC_Particle     rpart(t_in);
-    REC_Track        rtrk (t_in);
-    REC_Calorimeter  rcal (t_in);
-    REC_Cherenkov    rche (t_in);
-    REC_Scintillator rsci (t_in);
-    FMT_Tracks       ftrk (t_in);
+    // Change nevn to number of entries if it is equal to -1.
+    if (nevn == -1) nevn = t_in->GetEntries();
 
-    // Counters for PID assignment quality assessment.
-    int pid_n[NPIDS];
-    int pid_qa[NPIDS][NPIDS];
-    if (debug) {
-        for (int i = 0; i < NPIDS; ++i) pid_n[i] = 0;
-        for (int i = 0; i < NPIDS; ++i)
-            for (int j = 0; j < NPIDS; ++j) pid_qa[i][j] = 0;
-    }
+    // Associate banks to TTree.
+    Particle     b_particle    (t_in);
+    Track        b_track       (t_in);
+    FMT_Tracks   b_fmt_tracks  (t_in);
+    Calorimeter  b_calorimeter (t_in);
+    Cherenkov    b_cherenkov   (t_in);
+    Scintillator b_scintillator(t_in);
 
     // Iterate through input file. Each TTree entry is one event.
-    printf("Reading %lld events from %s.\n", nevn == -1 ? t_in->GetEntries() :
-            nevn, in_file);
+    printf("Reading %d events from %s.\n", nevn, in_file);
 
     // Counters for fancy progress bar.
     int divcntr     = 0;
     int evnsplitter = 0;
 
-    for (int evn = 0; (evn < t_in->GetEntries()) && (nevn == -1 || evn < nevn);
-            ++evn)
-    {
+    for (int evn = 0; evn < nevn; ++evn) {
         // Print fancy progress bar.
-        if (!debug) update_progress_bar(nevn == -1 ? t_in->GetEntries() : nevn,
-                evn, &evnsplitter, &divcntr);
+        if (!debug) update_progress_bar(nevn, evn, &evnsplitter, &divcntr);
 
         // Get entries from input file.
-        rpart.get_entries(t_in, evn);
-        rtrk .get_entries(t_in, evn);
-        rsci .get_entries(t_in, evn);
-        rcal .get_entries(t_in, evn);
-        rche .get_entries(t_in, evn);
-        ftrk .get_entries(t_in, evn);
+        b_particle    .get_entries(t_in, evn);
+        b_track       .get_entries(t_in, evn);
+        b_fmt_tracks  .get_entries(t_in, evn);
+        b_scintillator.get_entries(t_in, evn);
+        b_calorimeter .get_entries(t_in, evn);
+        b_cherenkov   .get_entries(t_in, evn);
 
         // Filter events without the necessary banks.
-        if (rpart.vz->size() == 0 || rtrk.pindex->size() == 0) continue;
-
-        // Find trigger electron's TOF.
-        float tre_tof = get_tof(rsci, rcal, rtrk.pindex->at(0));
+        if (b_particle.vz->size() == 0 || b_track.pindex->size() == 0) continue;
 
         // Check existence of trigger electron
         particle p_el[2];
         bool    trigger_exist  = false;
         UInt_t  trigger_pos    = -1;
         int     trigger_pindex = -1;
-        for (UInt_t pos = 0; pos < rtrk.index->size(); ++pos) {
-            int pindex = rtrk.pindex->at(pos);
+        float   trigger_tof    = -1.;
+        for (UInt_t pos = 0; pos < b_track.index->size(); ++pos) {
+            int pindex = b_track.pindex->at(pos);
 
             // Get reconstructed particle from DC and from FMT.
-            p_el[0] = particle_init(&rpart, &rtrk, pos);        // DC.
-            p_el[1] = particle_init(&rpart, &rtrk, &ftrk, pos); // FMT.
+            p_el[0] = particle_init(&b_particle, &b_track, pos);
+            p_el[1] = particle_init(&b_particle, &b_track, &b_fmt_tracks, pos);
 
-            // Get deposited energy.
-            float pcal_E = 0; // PCAL total deposited energy.
-            float ecin_E = 0; // EC inner total deposited energy.
-            float ecou_E = 0; // EC outer total deposited energy.
-            for (UInt_t i = 0; i < rcal.pindex->size(); ++i) {
-                if (rcal.pindex->at(i) != pindex) continue;
-                int lyr = (int) rcal.layer->at(i);
-
-                if      (lyr == PCAL_LYR) pcal_E += rcal.energy->at(i);
-                else if (lyr == ECIN_LYR) ecin_E += rcal.energy->at(i);
-                else if (lyr == ECOU_LYR) ecou_E += rcal.energy->at(i);
-                else return 13;
-            }
+            // Get deposited energy in PCAL, ECIN, and ECOU.
+            float pcal_E, ecin_E, ecou_E;
+            if (get_deposited_energy(b_calorimeter, pindex, &pcal_E, &ecin_E,
+                                     &ecou_E)
+            ) return 13;
 
             // Get Cherenkov counters data.
-            int htcc_nphe = 0; // Number of photoelectrons deposited in htcc.
-            int ltcc_nphe = 0; // Number of photoelectrons deposited in ltcc.
-            for (UInt_t i = 0; i < rche.pindex->size(); ++i) {
-                if (rche.pindex->at(i) == pindex) {
-                    int detector = rche.detector->at(i);
-                    if      (detector == HTCC_ID) htcc_nphe += rche.nphe->at(i);
-                    else if (detector == LTCC_ID) ltcc_nphe += rche.nphe->at(i);
-                    else return 14;
-                }
-            }
+            int htcc_nphe, ltcc_nphe;
+            if (count_photoelectrons(b_cherenkov, pindex, &htcc_nphe,
+                                     &ltcc_nphe)
+            ) return 14;
 
-            // Get TOF.
-            float tof = get_tof(rsci, rcal, pindex);
+            // Get time of flight.
+            float tof = get_tof(b_scintillator, b_calorimeter, pindex);
 
             // Get miscellaneous data.
-            int status = rpart.status->at(pindex);
-            float chi2 = rtrk.chi2   ->at(pos);
-            float ndf  = rtrk.ndf    ->at(pos);
+            int status = b_particle.status->at(pindex);
+            float chi2 = b_track.chi2     ->at(pos);
+            float ndf  = b_track.ndf      ->at(pos);
 
             // Assign PID.
             for (int pi = 0; pi < 2; ++pi) {
-                set_pid(&(p_el[pi]), rpart.pid->at(pindex), status,
+                set_pid(&(p_el[pi]), b_particle.pid->at(pindex), status,
                         pcal_E + ecin_E + ecou_E, pcal_E, htcc_nphe, ltcc_nphe,
-                        sf_params[rtrk.sector->at(pos)]);
+                        sf_params[b_track.sector->at(pos)]);
             }
 
             // Fill TNtuples with trigger electron information.
@@ -229,14 +271,14 @@ int run(char *in_file, char *work_dir, char *data_dir, bool debug, int nevn,
 
                 Float_t arr[VAR_LIST_SIZE];
                 fill_ntuples_arr(arr, p_el[pi], p_el[pi], run_no, evn, status,
-                        beam_E, chi2, ndf, pcal_E, ecin_E, ecou_E, tof,
-                        tre_tof);
+                        beam_E, chi2, ndf, pcal_E, ecin_E, ecou_E, tof, tof);
 
                 t_out[pi]->Fill(arr);
             }
             if (trigger_exist) {
                 trigger_pindex = pindex;
                 trigger_pos    = pos;
+                trigger_tof    = tof;
                 break;
             }
         }
@@ -248,69 +290,45 @@ int run(char *in_file, char *work_dir, char *data_dir, bool debug, int nevn,
         }
 
         // Processing particles.
-        for (UInt_t pos = 0; pos < rtrk.index->size(); ++pos) {
+        for (UInt_t pos = 0; pos < b_track.index->size(); ++pos) {
             // Currently pindex is always equal to pos, but this is not a given
             //     in the future of reconstruction development. Better safe than
             //     sorry!
-            int pindex = rtrk.pindex->at(pos);
+            int pindex = b_track.pindex->at(pos);
 
             // Avoid double-counting the trigger electron.
             if (trigger_pindex == pindex && trigger_pos == pos) continue;
 
             // Get reconstructed particle from DC and from FMT.
             particle p[2];
-            p[0] = particle_init(&rpart, &rtrk, pos);        // DC.
-            p[1] = particle_init(&rpart, &rtrk, &ftrk, pos); // FMT.
+            p[0] = particle_init(&b_particle, &b_track, pos);
+            p[1] = particle_init(&b_particle, &b_track, &b_fmt_tracks, pos);
 
-            // Get deposited energy.
-            float pcal_E = 0; // PCAL total deposited energy.
-            float ecin_E = 0; // EC inner total deposited energy.
-            float ecou_E = 0; // EC outer total deposited energy.
-            for (UInt_t i = 0; i < rcal.pindex->size(); ++i) {
-                if (rcal.pindex->at(i) != pindex) continue;
-                int lyr = (int) rcal.layer->at(i);
-
-                if      (lyr == PCAL_LYR) pcal_E += rcal.energy->at(i);
-                else if (lyr == ECIN_LYR) ecin_E += rcal.energy->at(i);
-                else if (lyr == ECOU_LYR) ecou_E += rcal.energy->at(i);
-                else return 13;
-            }
+            // Get deposited energy in PCAL, ECIN, and ECOU.
+            float pcal_E, ecin_E, ecou_E;
+            if (get_deposited_energy(b_calorimeter, pindex, &pcal_E, &ecin_E,
+                                     &ecou_E)
+            ) return 13;
 
             // Get Cherenkov counters data.
-            int htcc_nphe = 0; // Number of photoelectrons deposited in htcc.
-            int ltcc_nphe = 0; // Number of photoelectrons deposited in ltcc.
-            for (UInt_t i = 0; i < rche.pindex->size(); ++i) {
-                if (rche.pindex->at(i) == pindex) {
-                    int detector = rche.detector->at(i);
-                    if      (detector == HTCC_ID) htcc_nphe += rche.nphe->at(i);
-                    else if (detector == LTCC_ID) ltcc_nphe += rche.nphe->at(i);
-                    else return 14;
-                }
-            }
+            int htcc_nphe, ltcc_nphe;
+            if (count_photoelectrons(b_cherenkov, pindex, &htcc_nphe,
+                                     &ltcc_nphe)
+            ) return 14;
 
             // Get TOF.
-            float tof = get_tof(rsci, rcal, pindex);
+            float tof = get_tof(b_scintillator, b_calorimeter, pindex);
 
             // Get miscellaneous data.
-            int status = rpart.status->at(pindex);
-            float chi2 = rtrk.chi2   ->at(pos);
-            float ndf  = rtrk.ndf    ->at(pos);
+            int status = b_particle.status->at(pindex);
+            float chi2 = b_track.chi2     ->at(pos);
+            float ndf  = b_track.ndf      ->at(pos);
 
             // Assign PID.
             for (int pi = 0; pi < 2; ++pi) {
-                set_pid(&(p[pi]), rpart.pid->at(pindex), status,
+                set_pid(&(p[pi]), b_particle.pid->at(pindex), status,
                         pcal_E + ecin_E + ecou_E, pcal_E, htcc_nphe, ltcc_nphe,
-                        sf_params[rtrk.sector->at(pos)]);
-            }
-
-            // Test PID assignment precision.
-            if (debug
-                    && PID_QA.find(abs(rpart.pid->at(pindex))) != PID_QA.end()
-                    && PID_QA.find(abs(p[0].pid)) != PID_QA.end())
-            {
-                pid_n[PID_QA.at(abs(rpart.pid->at(pindex)))]++;
-                pid_qa[PID_QA.at(abs(rpart.pid->at(pindex)))]
-                        [PID_QA.at(abs(p[0].pid))]++;
+                        sf_params[b_track.sector->at(pos)]);
             }
 
             // Fill TNtuples.
@@ -320,29 +338,11 @@ int run(char *in_file, char *work_dir, char *data_dir, bool debug, int nevn,
                 Float_t arr[VAR_LIST_SIZE];
                 fill_ntuples_arr(arr, p[pi], p_el[pi], run_no, evn, status,
                         beam_E, chi2, ndf, pcal_E, ecin_E, ecou_E, tof,
-                        tre_tof);
+                        trigger_tof);
 
                 t_out[pi]->Fill(arr);
             }
         }
-    }
-
-    if (debug) {
-        printf("\nparticle identification matrix:\n        e     pi    K     "
-               "p     n     gamma\n");
-        for (int i = 0; i < NPIDS; ++i) {
-            if (i == 0) printf("    e  ");
-            if (i == 1) printf("   pi  ");
-            if (i == 2) printf("    K  ");
-            if (i == 3) printf("    p  ");
-            if (i == 4) printf("    n  ");
-            if (i == 5) printf("gamma  ");
-            for (int j = 0; j < NPIDS; ++j) {
-                printf("%5.2f ", ((double) pid_qa[j][i])/((double) pid_n[j]));
-            }
-            printf("\n");
-        }
-        printf("\n");
     }
 
     // Write to output file.

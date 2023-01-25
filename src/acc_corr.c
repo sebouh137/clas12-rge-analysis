@@ -121,16 +121,18 @@ int run(char *gen_file, char *sim_file, char *data_dir, int *bsizes,
     }
 
     // Get list of PIDs.
+    // NOTE. We assume that we'll deal with at most 256 PIDs.
     Float_t s_pid;
-    double pidlist[256]; // We assume that we'll deal with less than 256 PIDs.
+    double pidlist[256];
     int pidlist_size = 0;
     thrown->SetBranchAddress(S_PID, &s_pid);
     for (int evn = 0; evn < thrown->GetEntries(); ++evn) {
         thrown->GetEntry(evn);
         bool found = false;
         for (int pi = 0; pi < pidlist_size; ++pi) {
-            if (pidlist[pi] - 0.5 <= s_pid && s_pid <= pidlist[pi] + 0.5)
+            if (pidlist[pi] - 0.5 <= s_pid && s_pid <= pidlist[pi] + 0.5) {
                 found = true;
+            }
         }
         if (found) continue;
         pidlist[pidlist_size] = s_pid;
