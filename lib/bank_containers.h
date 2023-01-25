@@ -166,6 +166,7 @@ public:
     std::vector<Float_t> *pz;    TBranch *b_pz;
     FMT_Tracks();
     FMT_Tracks(TTree *t);
+    int link_tree(TTree *t);
     int get_nrows();
     int link_branches(TTree *t);
     int fill(hipo::bank b);

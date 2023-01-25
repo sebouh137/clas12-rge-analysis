@@ -364,6 +364,25 @@ FMT_Tracks::FMT_Tracks(TTree *t) {
     t->SetBranchAddress("FMT::Tracks::py",    &py,    &b_py);
     t->SetBranchAddress("FMT::Tracks::pz",    &pz,    &b_pz);
 }
+int FMT_Tracks::link_tree(TTree *t) {
+    index = nullptr; b_index = nullptr;
+    ndf   = nullptr; b_ndf   = nullptr;
+    vx    = nullptr; b_vx    = nullptr;
+    vy    = nullptr; b_vy    = nullptr;
+    vz    = nullptr; b_vz    = nullptr;
+    px    = nullptr; b_px    = nullptr;
+    py    = nullptr; b_py    = nullptr;
+    pz    = nullptr; b_pz    = nullptr;
+    t->SetBranchAddress("FMT::Tracks::index", &index, &b_index);
+    t->SetBranchAddress("FMT::Tracks::ndf",   &ndf,   &b_ndf);
+    t->SetBranchAddress("FMT::Tracks::vx",    &vx,    &b_vx);
+    t->SetBranchAddress("FMT::Tracks::vy",    &vy,    &b_vy);
+    t->SetBranchAddress("FMT::Tracks::vz",    &vz,    &b_vz);
+    t->SetBranchAddress("FMT::Tracks::px",    &px,    &b_px);
+    t->SetBranchAddress("FMT::Tracks::py",    &py,    &b_py);
+    t->SetBranchAddress("FMT::Tracks::pz",    &pz,    &b_pz);
+    return 0;
+}
 int FMT_Tracks::link_branches(TTree *t) {
     t->Branch("FMT::Tracks::index", &index);
     t->Branch("FMT::Tracks::ndf",   &ndf);

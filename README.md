@@ -85,6 +85,7 @@ Usage: make_ntuples [-hDn:w:d:] infile
  * -h         : show this message and exit.
  * -D         : activate debug mode.
  * -n nevents : number of events.
+ * -f         : set this to true to process FMT::Tracks bank.
  * -w workdir : location where output root files are to be stored. Default
                 is root_io.
  * -d datadir : location where sampling fraction files are located. Default is
