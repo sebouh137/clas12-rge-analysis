@@ -188,7 +188,7 @@ int usage() {
             " * -n ...     : nu bins.\n"
             " * -z ...     : z_h bins.\n"
             " * -p ...     : Pt2 bins.\n"
-            " * -f ...     : phi_PQ bins (in radians).\n"
+            " * -f ...     : phi_PQ bins (in degrees).\n"
             " * -g genfile : generated events ROOT file.\n"
             " * -s simfile : simulated events ROOT file.\n"
             " * -d datadir : location where sampling fraction files are "
@@ -315,6 +315,10 @@ int handle_args(int argc, char **argv, char **gen_file, char **sim_file,
     // Check that all arrays have *at least* two values.
     for (int bi = 0; bi < 5; ++bi) if (bsizes[bi] == -1) return 2;
     for (int bi = 0; bi < 5; ++bi) if (bsizes[bi] < 2)   return 3;
+
+    // Convert phi_PQ binning to radians.
+    for (int bbi = 0; bbi < bsizes[4]; ++bbi)
+        binnings[4][bbi] = to_rad(binnings[4][bbi]);
 
     // Define datadir if undefined.
     if (*data_dir == NULL) {
