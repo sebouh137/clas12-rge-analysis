@@ -10,8 +10,9 @@ First, set the environment variable `HIPO` to the location where hipo is install
 ## Usage
 ### hipo2root
 ```
-Usage: hipo2root [-hn:w:] infile
+Usage: hipo2root [-hfn:w:] infile
  * -h         : show this message and exit.
+ * -f         : set this to true to process FMT::Tracks bank.
  * -n nevents : number of events.
  * -w workdir : location where output root files are to be stored. Default
                 is root_io.
