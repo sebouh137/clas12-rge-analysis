@@ -167,7 +167,9 @@ int find_idx(long dbins, long depth, Float_t var[], long bx[], double rx[][2],
 }
 
 /** run() function of the program. Check usage() for details. */
-int run(char *in_file, char *acc_file, char *work_dir, int run_no) {
+int run(char *in_file, char *acc_file, char *work_dir, int run_no,
+        int entry_max)
+{
     // Open input file.
     TFile *f_in  = TFile::Open(in_file, "READ");
     if (!f_in || f_in->IsZombie()) return 8;
@@ -361,14 +363,15 @@ int run(char *in_file, char *acc_file, char *work_dir, int run_no) {
     // === APPLY CUTS ==========================================================
     printf("\nOpening file...\n");
     // Counters for fancy progress bar.
+    if (entry_max == -1) entry_max = t->GetEntries();
     int divcntr     = 0;
     int evnsplitter = 0;
 
     // Apply SIDIS cuts, checking which event numbers should be skipped.
     int nevents = -1;
     // Count number of events.
-    for (int entry = 0; entry < t->GetEntries(); ++entry) {
-        update_progress_bar(t->GetEntries(), entry, &evnsplitter, &divcntr);
+    for (int entry = 0; entry < entry_max; ++entry) {
+        update_progress_bar(entry_max, entry, &evnsplitter, &divcntr);
 
         t->GetEntry(entry);
         if (vars[A_EVENTNO] > nevents) nevents = (int) (vars[A_EVENTNO]+0.5);
@@ -381,8 +384,8 @@ int run(char *in_file, char *acc_file, char *work_dir, int run_no) {
     bool *valid_event = (bool *) malloc(nevents * sizeof(bool));
     Float_t current_evn = -1;
     bool no_tre_pass, Q2_pass, W2_pass, zh_pass;
-    for (int entry = 0; entry < t->GetEntries(); ++entry) {
-        update_progress_bar(t->GetEntries(), entry, &evnsplitter, &divcntr);
+    for (int entry = 0; entry < entry_max; ++entry) {
+        update_progress_bar(entry_max, entry, &evnsplitter, &divcntr);
 
         t->GetEntry(entry);
         if (vars[A_EVENTNO] != current_evn) {
@@ -432,8 +435,8 @@ int run(char *in_file, char *acc_file, char *work_dir, int run_no) {
 
     // Run through events.
     printf("Processing plots...\n");
-    for (int entry = 0; entry < t->GetEntries(); ++entry) {
-        update_progress_bar(t->GetEntries(), entry, &evnsplitter, &divcntr);
+    for (int entry = 0; entry < entry_max; ++entry) {
+        update_progress_bar(entry_max, entry, &evnsplitter, &divcntr);
         t->GetEntry(entry);
 
         // Apply particle cuts.
@@ -542,14 +545,15 @@ int run(char *in_file, char *acc_file, char *work_dir, int run_no) {
 /** Print usage and exit. */
 int usage() {
     fprintf(stderr,
-            "\n\nUsage: draw_plots [-ha:w:] infile\n"
-            " * -h         : show this message and exit.\n"
-            " * -a accfile : apply acceptance correction using acc_file.\n"
-            " * -w workdir : location where output root files are to be "
-            "stored. Default\n                is root_io.\n"
-            " * infile     : input file produced by make_ntuples.\n\n"
+            "\n\nUsage: draw_plots [-hn:a:w:] infile\n"
+            " * -h          : show this message and exit.\n"
+            " * -n nentries : number of entries to process.\n"
+            " * -a accfile  : apply acceptance correction using acc_file.\n"
+            " * -w workdir  : location where output root files are to be "
+            "stored. Default\n                 is root_io.\n"
+            " * infile      : input file produced by make_ntuples.\n\n"
             "    Draw plots from a ROOT file built from make_ntuples. File "
-            "should be named\n    <text>run_no.root.\n\n"
+            "should be named\n     <text>run_no.root.\n\n"
     );
 
     return 1;
@@ -588,6 +592,9 @@ int handle_err(int errcode) {
             fprintf(stderr, "Acceptance correction text file couldn't be "
                             "opened.");
             break;
+        case 10:
+            fprintf(stderr, "Number of entries should be greater than 0.");
+            break;
         default:
             fprintf(stderr, "Error code not implemented!\n");
             return 1;
@@ -601,14 +608,18 @@ int handle_err(int errcode) {
  *     explained in the handle_err() function.
  */
 int handle_args(int argc, char **argv, char **in_file, char **acc_file,
-        char **work_dir, int *run_no)
+        char **work_dir, int *run_no, int *entry_max)
 {
     // Handle arguments.
     int opt;
-    while ((opt = getopt(argc, argv, "-ha:w:")) != -1) {
+    while ((opt = getopt(argc, argv, "-hn:a:w:")) != -1) {
         switch (opt) {
             case 'h':
                 return 1;
+            case 'n':
+                *entry_max = atoi(optarg);
+                if (*entry_max <= 0) return 10; // Check if entry_max is valid.
+                break;
             case 'a':
                 *acc_file = (char *) malloc(strlen(optarg) + 1);
                 strcpy(*acc_file, optarg);
@@ -646,13 +657,14 @@ int main(int argc, char **argv) {
     char *acc_file = NULL;
     char *work_dir = NULL;
     int run_no     = -1;
+    int entry_max  = -1;
 
     int errcode = handle_args(argc, argv, &in_file, &acc_file, &work_dir,
-            &run_no);
+            &run_no, &entry_max);
 
     // Run.
     if (errcode == 0)
-        errcode = run(in_file, acc_file, work_dir, run_no);
+        errcode = run(in_file, acc_file, work_dir, run_no, entry_max);
 
     // Free up memory.
     if (in_file  != NULL) free(in_file);

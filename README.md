@@ -96,12 +96,13 @@ Generate ntuples relevant to SIDIS analysis based on the reconstructed variables
 
 ### draw_plots
 ```
-Usage: draw_plots [-ha:w:] infile
- * -h         : show this message and exit.
- * -a accfile : apply acceptance correction using acc_file.
- * -w workdir : location where output root files are to be stored. Default
-                is root_io.
- * infile     : input file produced by make_ntuples.
+Usage: draw_plots [-hn:a:w:] infile
+ * -h          : show this message and exit.
+ * -n nentries : number of entries to process.
+ * -a accfile  : apply acceptance correction using acc_file.
+ * -w workdir  : location where output root files are to be stored. Default
+                 is root_io.
+ * infile      : input file produced by make_ntuples.
 ```
 
 Draw plots from a ROOT file built from `make_ntuples`. File should be named <text>run_no.root. This tool is built for those who don't enjoy using root too much, and should be able to perform most basic tasks needed in SIDIS analysis.
