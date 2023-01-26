@@ -19,7 +19,7 @@
 #include <TFile.h>
 
 // --- Define macro constants here. ----------------------------------------- //
-const char *INPUT_FILENAME  = "../root_io/plots_012933_dc_pid-211.root";
+const char *INPUT_FILENAME  = "../root_io/plots_012933_dc_pid-211_bins_vz.root";
 const char *OUTPUT_FILENAME = "../root_io/vz_acceptance.root";
 const int NPLOTS = 5;
 const std::map<int, const char *> PLOT_NAMES {
@@ -39,18 +39,18 @@ int add_tcanvas(std::vector<TCanvas *> *c, const char *n) {
 }
 
 /** Run the program. */
-int draw_canvas() {
+int draw_vz_canvas() {
     printf("Running... ");
     fflush(stdout);
 
     // Open input file.
     TFile *file_in = TFile::Open(INPUT_FILENAME, "READ");
     if (!file_in || file_in->IsZombie()) {
-        fprintf(stderr, "Input file is not a valid root file.\n\n");
+        fprintf(stderr, "\nInput file is not a valid root file.\n\n");
         return 1;
     }
 
-    // Create TCanvases
+    // Create TCanvases.
     std::vector<TCanvas *> canvases;
     for (int i = 0; i < NPLOTS; ++i) {
         add_tcanvas(&canvases, PLOT_NAMES.at(i));

@@ -182,7 +182,7 @@ int update_progress_bar(int nevn, int evn, int *evnsplitter, int *divcntr) {
     double length = 50.; // Length of the progress bar.
 
     // Only update if necessary.
-    if (*evnsplitter == -1 || evn < *evnsplitter) return 0;
+    if (evn != nevn-1 && (*evnsplitter == -1 || evn < *evnsplitter)) return 0;
 
     // Clear line if a previous bar has been printed.
     if (evn != 0) printf("\33[2K\r");
