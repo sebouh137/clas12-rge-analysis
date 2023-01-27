@@ -466,6 +466,11 @@ int run(char *in_file, char *acc_file, char *work_dir, int run_no,
         // Apply DIS cuts.
         if (dis_cuts && !valid_event[(int) (vars[A_EVENTNO]+0.5)]) continue;
 
+        // Remove DIS vars = 0.
+        if (vars[A_Q2] == 0 || vars[A_NU] == 0 || vars[A_ZH] == 0 ||
+                vars[A_PT2] == 0 || vars[A_PHIPQ] == 0)
+            continue;
+
         // Prepare binning vars.
         Float_t b_vars[dbins];
         for (long bdi = 0; bdi < dbins; ++bdi) b_vars[bdi] = vars[bvx[bdi]];
