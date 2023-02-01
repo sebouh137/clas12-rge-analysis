@@ -180,10 +180,11 @@ int run(char *in_filename, char *acc_filename, char *work_dir, int run_no,
     double **binnings;
     long int pids_size;
     long int *pids;
-    double **acc_corr;
+    int **n_thrown;
+    int **n_simul;
     if (acc_filename != NULL) {
         int errcode = read_acc_corr_file(acc_filename, b_sizes, &binnings,
-                &pids_size, &nbins, &pids, &acc_corr);
+                &pids_size, &nbins, &pids, &n_thrown, &n_simul);
         if (errcode != 0) return 9;
     }
 
@@ -508,8 +509,12 @@ int run(char *in_filename, char *acc_filename, char *work_dir, int run_no,
         for (int bi = 0; bi < 5; ++bi) free(binnings[bi]);
         free(binnings);
         free(pids);
-        for (int pi = 0; pi < pids_size; ++pi) free(acc_corr[pi]);
-        free(acc_corr);
+        for (int pi = 0; pi < pids_size; ++pi) {
+            free(n_thrown[pi]);
+            free(n_simul[pi]);
+        }
+        free(n_thrown);
+        free(n_simul);
     }
 
     return 0;

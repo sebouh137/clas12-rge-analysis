@@ -78,22 +78,29 @@ int get_binnings(FILE *f_in, long int *b_sizes, double **binnings,
  * @param pids_size: number of PIDs to process, as found in get_binnings().
  * @param nbins:     total number of bins.
  * @param pids:      array of PIDs to process.
- * @param acc_corr:  2-dimensional array containing the acceptance correction
+ * @param n_thrown:  2-dimensional array containing the number of thrown events
+ *                   for each bin, for each PID.
+ * @param n_simul:   2-dimensional array containing the number of simul events
  *                   for each bin, for each PID.
  * @return:          success code (0).
  */
 int get_acc_corr(FILE *f_in, long int pids_size, long int nbins, long int *pids,
-        double **acc_corr)
+        int **n_thrown, int **n_simul)
 {
     // Get PIDs.
     for (int pi = 0; pi < pids_size; ++pi) fscanf(f_in, "%ld ", &(pids[pi]));
 
     // Get acceptance correction.
     for (int pi = 0; pi < pids_size; ++pi) {
-        acc_corr[pi] = (double *) malloc(nbins * sizeof(*acc_corr[pi]));
-        for (int bii = 0; bii < nbins; ++ bii) {
-            fscanf(f_in, "%lf ", &(acc_corr[pi][bii]));
-        }
+        // Get number of thrown events.
+        n_thrown[pi] = (int *) malloc(nbins * sizeof(*n_thrown[pi]));
+        for (int bii = 0; bii < nbins; ++bii)
+            fscanf(f_in, "%d ", &(n_thrown[pi][bii]));
+
+        // Get number of simulated events.
+        n_simul[pi]  = (int *) malloc(nbins * sizeof(*n_simul[pi]));
+        for (int bii = 0; bii < nbins; ++bii)
+            fscanf(f_in, "%d ", &(n_simul[pi][bii]));
     }
 
     return 0;
@@ -117,15 +124,17 @@ int get_acc_corr(FILE *f_in, long int pids_size, long int nbins, long int *pids,
  * @param nbins:        int where we'll write the total number of bins.
  * @param pids:         pointer to an array where we'll write the list of PIDs
  *                      in the acceptance correction file.
- * @param acc_corr:     pointer to a 2-dimensional array where we'll write the
- *                      acceptance correction for each bin, for each PID.
+ * @param n_thrown:     pointer to a 2-dimensional array where we'll write the
+ *                      number of thrown events in each bin for each PID.
+ * @param n_simul:      pointer to a 2-dimensional array where we'll write the
+ *                      number of simulated events in each bin for each PID.
  * @return: errcode:
  *            * 0: Function performed correctly.
  *            * 1: Failed to access acceptance correction file.
  */
 int read_acc_corr_file(char *acc_filename, long int b_sizes[5],
         double ***binnings, long int *pids_size, long int *nbins,
-        long int **pids, double ***acc_corr)
+        long int **pids, int ***n_thrown, int ***n_simul)
 {
     // Access file.
     if (access(acc_filename, F_OK) != 0) return 1;
@@ -139,12 +148,13 @@ int read_acc_corr_file(char *acc_filename, long int b_sizes[5],
     *nbins = 1;
     for (int bi = 0; bi < 5; ++bi) *nbins *= b_sizes[bi] - 1;
 
-    // Malloc list of pids and first dimension of pids and acc_corr.
+    // Malloc list of pids and first dimension of pids and events.
     *pids = (long int *) malloc(*pids_size * sizeof(**pids));
-    *acc_corr = (double **) malloc(*pids_size * sizeof(**acc_corr));
+    *n_thrown = (int **) malloc(*pids_size * sizeof(**n_thrown));
+    *n_simul  = (int **) malloc(*pids_size * sizeof(**n_simul));
 
     // Get pids and acc_corr from acceptance correction file.
-    get_acc_corr(acc_file, *pids_size, *nbins, *pids, *acc_corr);
+    get_acc_corr(acc_file, *pids_size, *nbins, *pids, *n_thrown, *n_simul);
 
     // Clean up.
     fclose(acc_file);
