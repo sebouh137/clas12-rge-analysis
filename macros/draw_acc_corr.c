@@ -16,6 +16,8 @@
 #include "../lib/file_handler.h"
 
 // --- Define macro constants here. ----------------------------------------- //
+// Set this to 1 to get some debug information.
+const int DEBUG = 0;
 // acc_corr.txt produced by acc_corr.
 const char *INPUT_FILENAME  = "../data/acc_corr.txt";
 // Root file where we'll write the plots.
@@ -38,32 +40,34 @@ int main() {
     }
 
     // Read acceptance correction from file.
-    long int b_sizes[5]; // NOTE. All good!
-    double **binnings;   // NOTE. All good!
+    long int b_sizes[5];
+    double **binnings;
     long int pids_size;
     long int nbins;
     long int *pids;
     double **acc_corr;
 
-    printf("\n");
     read_acc_corr_file(input_filename, b_sizes, &binnings, &pids_size, &nbins,
             &pids, &acc_corr);
 
-    for (int bi = 0; bi < 5; ++bi) {
-        printf("binning[%02d] (%ld): [", bi, b_sizes[bi]);
-        for (int bii = 0; bii < b_sizes[bi]; ++bii)
+    // Print read acceptance correction data for debugging purposes.
+    if (DEBUG) {
+        for (int bi = 0; bi < 5; ++bi) {
+            printf("binning[%02d] (%ld): [", bi, b_sizes[bi]);
+            for (int bii = 0; bii < b_sizes[bi]; ++bii)
             printf("%5.2lf, ", binnings[bi][bii]);
-        printf("\b\b]\n");
+            printf("\b\b]\n");
+        }
+        printf("pids_size = %ld\n", pids_size);
+        printf("nbins     = %ld\n", nbins);
+        printf("pids[%ld] = [", pids_size);
+        for (int pi = 0; pi < pids_size; ++pi) {
+            printf("%ld ", pids[pi]);
+        }
+        printf("\b\b]\n\n");
     }
-    printf("pids_size = %ld\n", pids_size);
-    printf("nbins     = %ld\n", nbins);
-    printf("pids[%ld] = [", pids_size);
-    for (int pi = 0; pi < pids_size; ++pi) {
-        printf("%ld ", pids[pi]);
-    }
-    printf("\b\b]\n\n");
 
-    // Clean up.
+    // Clean up after ourselves.
     for (int bi = 0; bi < 5; ++bi) free(binnings[bi]);
     free(binnings);
     free(pids);
