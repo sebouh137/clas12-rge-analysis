@@ -24,6 +24,7 @@ const int PID = -211;
 const char *INPUT_FILENAME  = "../data/acc_corr.txt";
 // Root file where we'll write the plots.
 const char *OUTPUT_FILENAME = "";
+const int NPLOTS = 5;
 const std::map<int, const char *> PLOT_NAMES {
     // {0, "Q2"}, {1, "#nu"}, {2, "z_{h}"}, {3, "Pt2"}, {4, "#phi_{PQ}"}
     {0, "Q2"}, {1, "nu"}, {2, "zh"}, {3, "Pt2"}, {4, "phiPQ"}
@@ -47,10 +48,10 @@ int main() {
     long int pids_size;
     long int nbins;
     long int *pids;
-    double **acc_corr;
-
+    int **n_thrown;
+    int **n_simul;
     read_acc_corr_file(input_filename, bs, &binnings, &pids_size, &nbins,
-            &pids, &acc_corr);
+            &pids, &n_thrown, &n_simul);
 
     // Get place of PID in *pids.
     int pid_pos = -1;
@@ -62,9 +63,9 @@ int main() {
 
     printf("pid_pos = %d\n", pid_pos);
 
-    // Print read acceptance correction data for debugging purposes.
     if (DEBUG) {
-        for (int bi = 0; bi < 5; ++bi) {
+        // Print read acceptance correction data.
+        for (int bi = 0; bi < NPLOTS; ++bi) {
             printf("binning[%d] (%02ld): [", bi, bs[bi]);
             for (int bii = 0; bii < bs[bi]; ++bii)
             printf("%5.2lf, ", binnings[bi][bii]);
@@ -80,46 +81,76 @@ int main() {
     }
 
     // TODO. Plot.
-    int q2_bi = 0;
-    long int bin_size = bs[q2_bi];
-    // Define x[n] and y[n].
-    double x_pos[bin_size - 1];
-    double x_length[bin_size - 1];
-    double y[bin_size - 1];
-    for (int bii = 0; bii < bin_size - 1; ++bii) {
-        x_pos[bii]    = (binnings[q2_bi][bii+1] + binnings[q2_bi][bii])/2;
-        x_length[bii] = (binnings[q2_bi][bii+1] - binnings[q2_bi][bii])/2;
-        y[bii] = 0;
-    }
+    for (int var_idx = 0; var_idx < NPLOTS; ++var_idx) {
+        // var_idx represents the variable we're processing, in the order
+        //     defined in PLOT_NAMES[].
+        long int bin_size = bs[var_idx];
 
-    // Fill y.
-    for (int q2_i = 0; q2_i < bs[0]-1; ++q2_i) {
-        for (int nu_i = 0; nu_i < bs[1]-1; ++nu_i) {
-            for (int zh_i = 0; zh_i < bs[2]-1; ++zh_i) {
-                for (int pt2_i = 0; pt2_i < bs[3]-1; ++pt2_i) {
-                    for (int phiPQ_i = 0; phiPQ_i < bs[4]-1; ++phiPQ_i) {
-                        y[q2_i] += acc_corr[pid_pos][
-                            q2_i   * ((bs[1]-1)*(bs[2]-1)*(bs[3]-1)*(bs[4]-1)) +
-                            nu_i   * ((bs[2]-1)*(bs[3]-1)*(bs[4]-1)) +
-                            zh_i   * ((bs[3]-1)*(bs[4]-1)) +
-                            pt2_i  * ((bs[4]-1)) +
-                            phiPQ_i
-                        ];
+        // Define x and y.
+        double x_pos[bin_size - 1];
+        double x_length[bin_size - 1];
+        int y_thrown[bin_size - 1];
+        int y_simul[bin_size - 1];
+        for (int bii = 0; bii < bin_size - 1; ++bii) {
+            x_pos[bii]    = (binnings[var_idx][bii+1]+binnings[var_idx][bii])/2;
+            x_length[bii] = (binnings[var_idx][bii+1]-binnings[var_idx][bii])/2;
+            y_thrown[bii] = 0;
+            y_simul[bii]  = 0;
+        }
+
+        // Fill y. NOTE. This is a very sub-optimal and ugly approach, but it
+        //     gets the job done -- and this is just a macro anyway.
+        for (int i0 = 0; i0 < bs[0]-1; ++i0) {
+            for (int i1 = 0; i1 < bs[1]-1; ++i1) {
+                for (int i2 = 0; i2 < bs[2]-1; ++i2) {
+                    for (int i3 = 0; i3 < bs[3]-1; ++i3) {
+                        for (int i4 = 0; i4 < bs[4]-1; ++i4) {
+                            // Find 1D bin position from 5 indices.
+                            int bin_pos =
+                                i0 * ((bs[1]-1)*(bs[2]-1)*(bs[3]-1)*(bs[4]-1)) +
+                                i1 * ((bs[2]-1)*(bs[3]-1)*(bs[4]-1)) +
+                                i2 * ((bs[3]-1)*(bs[4]-1)) +
+                                i3 * ((bs[4]-1)) +
+                                i4;
+
+                            // Find which ID should be updated.
+                            int sel_idx;
+                            switch(var_idx) {
+                                case 0: sel_idx = i0; break;
+                                case 1: sel_idx = i1; break;
+                                case 2: sel_idx = i2; break;
+                                case 3: sel_idx = i3; break;
+                                case 4: sel_idx = i4; break;
+                            }
+
+                            // Increase appropiate counters.
+                            y_thrown[sel_idx] += n_thrown[pid_pos][bin_pos];
+                            y_simul [sel_idx] += n_simul [pid_pos][bin_pos];
+                        }
                     }
                 }
             }
         }
-    }
 
-    for (int i = 0; i < 2; ++i) printf("y[%d] = %8.5f\n", i, y[i]);
-    // for (int bi = 0; bi < 5; ++bi) {}
+        if (DEBUG) {
+            // Print counting results.
+            printf("%6s thrown  simul\n", PLOT_NAMES.at(var_idx));
+            for (int i = 0; i < bs[var_idx]-1; ++i)
+            printf("       %08d %08d\n", y_thrown[i], y_simul[i]);
+            printf("\n");
+        }
+    }
 
     // Clean up after ourselves.
     for (int bi = 0; bi < 5; ++bi) free(binnings[bi]);
     free(binnings);
     free(pids);
-    for (int pi = 0; pi < pids_size; ++pi) free(acc_corr[pi]);
-    free(acc_corr);
+    for (int pi = 0; pi < pids_size; ++pi) {
+        free(n_thrown[pi]);
+        free(n_simul[pi]);
+    }
+    free(n_thrown);
+    free(n_simul);
 
     return 0;
 }
