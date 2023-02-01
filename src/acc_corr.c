@@ -149,29 +149,28 @@ int run(char *gen_file, char *sim_file, char *data_dir, int *bsizes,
         fprintf(t_out, "%d ", (int) pidlist[pi]);
     fprintf(t_out, "\n");
 
-    // Count # of thrown and simulated events in each bin.
+    // Get number of bins.
     int nbins = 1;
     for (int bi = 0; bi < 5; ++bi) nbins *= bsizes[bi] - 1;
 
+    // Count and write number of thrown and simulated events in each bin.
     for (int pi = 0; pi < pidlist_size; ++pi) {
         int pid = (int) pidlist[pi];
         printf("Working on PID %5d...\n", pid);
         fflush(stdout);
 
         int t_evn[nbins];
-        int s_evn[nbins];
         printf("  Counting thrown events...\n");
         count_events(t_evn, thrown, pid, nbins, bsizes, binnings, in_deg);
+        for (int i = 0; i < nbins; ++i) fprintf(t_out, "%d ", t_evn[i]);
+        fprintf(t_out, "\n");
+
+        int s_evn[nbins];
         printf("  Counting simulated events...\n");
         count_events(s_evn, simul,  pid, nbins, bsizes, binnings, false);
-
-        // Compute and save acceptance ratios.
-        for (int i = 0; i < nbins; ++i) {
-            double acc = (double)s_evn[i] / (double)t_evn[i];
-            if (std::fpclassify(acc) != FP_NORMAL || acc > 1) acc = 0;
-            fprintf(t_out, "%.12f ", acc);
-        }
+        for (int i = 0; i < nbins; ++i) fprintf(t_out, "%d ", s_evn[i]);
         fprintf(t_out, "\n");
+
         printf("  Done!\n");
     }
 
