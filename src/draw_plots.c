@@ -167,11 +167,11 @@ int find_idx(long dbins, long depth, Float_t var[], long bx[], double rx[][2],
 }
 
 /** run() function of the program. Check usage() for details. */
-int run(char *in_file, char *acc_file, char *work_dir, int run_no,
+int run(char *in_filename, char *acc_filename, char *work_dir, int run_no,
         int entry_max)
 {
     // Open input file.
-    TFile *f_in  = TFile::Open(in_file, "READ");
+    TFile *f_in  = TFile::Open(in_filename, "READ");
     if (!f_in || f_in->IsZombie()) return 8;
 
     // Get acceptance correction
@@ -181,43 +181,10 @@ int run(char *in_file, char *acc_file, char *work_dir, int run_no,
     long int pids_size;
     long int *pids;
     double **acc_corr;
-
-    if (acc_file != NULL) {
-        if (access(acc_file, F_OK) != 0) return 9;
-        FILE *ac_file = fopen(acc_file, "r");
-
-        binnings = (double **) malloc(5 * sizeof(*binnings));
-        get_binnings(ac_file, b_sizes, binnings, &pids_size);
-
-        nbins = 1;
-        for (int bi = 0; bi < 5; ++bi) nbins *= b_sizes[bi] - 1;
-
-        for (int bi = 0; bi < 5; ++bi) {
-            printf("binning[%ld]: [", b_sizes[bi]);
-            for (int bii = 0; bii < b_sizes[bi]; ++bii)
-                printf("%lf, ", binnings[bi][bii]);
-            printf("\b\b]\n");
-        }
-
-        pids = (long int *) malloc(pids_size * sizeof(*pids));
-        acc_corr = (double **) malloc(pids_size * sizeof(*acc_corr));
-
-        get_acc_corr(ac_file, pids_size, nbins, pids, acc_corr);
-
-        printf("pids[%ld] = [", pids_size);
-        for (int pi = 0; pi < pids_size; ++pi) {
-            printf("%ld ", pids[pi]);
-        }
-        printf("\b\b]\n");
-
-        for (int pi = 0; pi < pids_size; ++pi) {
-            printf("acc_corr[%ld]: [", nbins);
-            for (int bii = 0; bii < nbins; ++bii)
-                printf("%lf ", acc_corr[pi][bii]);
-            printf("\b\b]\n");
-        }
-
-        fclose(ac_file);
+    if (acc_filename != NULL) {
+        int errcode = read_acc_corr_file(acc_filename, b_sizes, &binnings,
+                &pids_size, &nbins, &pids, &acc_corr);
+        if (errcode != 0) return 9;
     }
 
     // NOTE. This function could receive a few arguments to speed IO up.
@@ -272,8 +239,8 @@ int run(char *in_file, char *acc_file, char *work_dir, int run_no,
     // bool custom_cuts = catch_yn();
 
     // === BINNING SETUP =======================================================
-    // TODO. If acc_file != NULL, limit binning in Q2, nu, z_h, Pt2, and phi_PQ
-    //       to acceptance correction bins.
+    // TODO. If acc_filename != NULL, limit binning in Q2, nu, z_h, Pt2, and
+    //       phi_PQ to acceptance correction bins.
     printf("\nNumber of dimensions for binning?\n");
     long   dbins = catch_long();
     int    bvx[dbins];
@@ -282,7 +249,8 @@ int run(char *in_file, char *acc_file, char *work_dir, int run_no,
     long   bbx[dbins];
     for (long bdi = 0; bdi < dbins; ++bdi) {
         // variable.
-        printf("\nDefine var for bin in dimension %ld. Available vars:\n[", bdi);
+        printf("\nDefine var for bin in dimension %ld. Available vars:\n[",
+                bdi);
         for (int vi = 0; vi < VAR_LIST_SIZE; ++vi)
             printf("%s, ", R_VAR_LIST[vi]);
         printf("\b\b]\n");
@@ -536,7 +504,7 @@ int run(char *in_file, char *acc_file, char *work_dir, int run_no,
 
     free(valid_event);
 
-    if (acc_file != NULL) {
+    if (acc_filename != NULL) {
         for (int bi = 0; bi < 5; ++bi) free(binnings[bi]);
         free(binnings);
         free(pids);
@@ -553,7 +521,7 @@ int usage() {
             "\n\nUsage: draw_plots [-hn:a:w:] infile\n"
             " * -h          : show this message and exit.\n"
             " * -n nentries : number of entries to process.\n"
-            " * -a accfile  : apply acceptance correction using acc_file.\n"
+            " * -a accfile  : apply acceptance correction using acc_filename.\n"
             " * -w workdir  : location where output root files are to be "
             "stored. Default\n                 is root_io.\n"
             " * infile      : input file produced by make_ntuples.\n\n"
@@ -612,7 +580,7 @@ int handle_err(int errcode) {
  * Handle arguments for make_ntuples using optarg. Error codes used are
  *     explained in the handle_err() function.
  */
-int handle_args(int argc, char **argv, char **in_file, char **acc_file,
+int handle_args(int argc, char **argv, char **in_filename, char **acc_filename,
         char **work_dir, int *run_no, int *entry_max)
 {
     // Handle arguments.
@@ -626,15 +594,15 @@ int handle_args(int argc, char **argv, char **in_file, char **acc_file,
                 if (*entry_max <= 0) return 10; // Check if entry_max is valid.
                 break;
             case 'a':
-                *acc_file = (char *) malloc(strlen(optarg) + 1);
-                strcpy(*acc_file, optarg);
+                *acc_filename = (char *) malloc(strlen(optarg) + 1);
+                strcpy(*acc_filename, optarg);
                 break;
             case 'w':
                 *work_dir = (char *) malloc(strlen(optarg) + 1);
                 strcpy(*work_dir, optarg);
             case 1:
-                *in_file = (char *) malloc(strlen(optarg) + 1);
-                strcpy(*in_file, optarg);
+                *in_filename = (char *) malloc(strlen(optarg) + 1);
+                strcpy(*in_filename, optarg);
                 break;
             default:
                 return 2;
@@ -648,9 +616,9 @@ int handle_args(int argc, char **argv, char **in_file, char **acc_file,
     }
 
     // Check positional argument.
-    if (*in_file == NULL) return 3;
+    if (*in_filename == NULL) return 3;
 
-    int check = handle_root_filename(*in_file, run_no);
+    int check = handle_root_filename(*in_filename, run_no);
     if (!check || check == 5) return 0;
     else                      return check + 3; // Shift errcode.
 }
@@ -658,22 +626,22 @@ int handle_args(int argc, char **argv, char **in_file, char **acc_file,
 /** Entry point of the program. */
 int main(int argc, char **argv) {
     // Handle arguments.
-    char *in_file  = NULL;
-    char *acc_file = NULL;
+    char *in_filename  = NULL;
+    char *acc_filename = NULL;
     char *work_dir = NULL;
     int run_no     = -1;
     int entry_max  = -1;
 
-    int errcode = handle_args(argc, argv, &in_file, &acc_file, &work_dir,
-            &run_no, &entry_max);
+    int errcode = handle_args(argc, argv, &in_filename, &acc_filename,
+            &work_dir, &run_no, &entry_max);
 
     // Run.
     if (errcode == 0)
-        errcode = run(in_file, acc_file, work_dir, run_no, entry_max);
+        errcode = run(in_filename, acc_filename, work_dir, run_no, entry_max);
 
     // Free up memory.
-    if (in_file  != NULL) free(in_file);
-    if (acc_file != NULL) free(acc_file);
+    if (in_filename  != NULL) free(in_filename);
+    if (acc_filename != NULL) free(acc_filename);
     if (work_dir != NULL) free(work_dir);
 
     // Return errcode.

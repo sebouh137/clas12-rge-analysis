@@ -27,5 +27,8 @@ int get_binnings(FILE *f_in, long int *b_sizes, double **binnings,
         long int *pids_size);
 int get_acc_corr(FILE *f_in, long int pids_size, long int tsize, long int *pids,
         double **acc_corr);
+int read_acc_corr_file(char *acc_filename, long int b_sizes[5],
+        double ***binnings, long int *pids_size, long int *nbins,
+        long int **pids, double ***acc_corr);
 
 #endif

@@ -86,15 +86,68 @@ int get_acc_corr(FILE *f_in, long int pids_size, long int nbins, long int *pids,
         double **acc_corr)
 {
     // Get PIDs.
-    for (int pi = 0; pi < pids_size; ++pi)
-        fscanf(f_in, "%ld ", &(pids[pi]));
+    for (int pi = 0; pi < pids_size; ++pi) fscanf(f_in, "%ld ", &(pids[pi]));
 
     // Get acceptance correction.
     for (int pi = 0; pi < pids_size; ++pi) {
         acc_corr[pi] = (double *) malloc(nbins * sizeof(*acc_corr[pi]));
-        for (int bii = 0; bii < nbins; ++ bii)
+        for (int bii = 0; bii < nbins; ++ bii) {
             fscanf(f_in, "%lf ", &(acc_corr[pi][bii]));
+        }
     }
+
+    return 0;
+}
+
+/**
+ * Read acc_corr.txt file to get the acceptance correction for each bin for each
+ *     PID. Acceptance correction for a particular PID is stored in an array
+ *     instead of a 5D array to avoid writing it as *******acc_corr, in addition
+ *     to simplicity in access. To access the array, think of it as a 5D array
+ *     in the shape acc_corr[Q2 bin][nu bin][zh bin][PT2 bin][phiPQ bin],
+ *     multiplying each entry by the appropiate size.
+ *
+ * @param acc_filename: char array with the filename containing the acceptance
+ *                      correction to be processed.
+ * @param b_sizes:      array that we'll fill with the size of each of the 5
+ *                      binnings.
+ * @param binnings:     pointer to a 2-dimensional array that we'll fill with
+ *                      the bin walls for each binning.
+ * @param pids_size:    int where we'll write the number of PIDs in the file.
+ * @param nbins:        int where we'll write the total number of bins.
+ * @param pids:         pointer to an array where we'll write the list of PIDs
+ *                      in the acceptance correction file.
+ * @param acc_corr:     pointer to a 2-dimensional array where we'll write the
+ *                      acceptance correction for each bin, for each PID.
+ * @return: errcode:
+ *            * 0: Function performed correctly.
+ *            * 1: Failed to access acceptance correction file.
+ */
+int read_acc_corr_file(char *acc_filename, long int b_sizes[5],
+        double ***binnings, long int *pids_size, long int *nbins,
+        long int **pids, double ***acc_corr)
+{
+    // Access file.
+    if (access(acc_filename, F_OK) != 0) return 1;
+    FILE *acc_file = fopen(acc_filename, "r");
+
+    // Get b_sizes, binnings, and pids_size.
+    *binnings = (double **) malloc(5 * sizeof(**binnings));
+    get_binnings(acc_file, b_sizes, *binnings, pids_size);
+
+    // Compute total number of bins.
+    *nbins = 1;
+    for (int bi = 0; bi < 5; ++bi) *nbins *= b_sizes[bi] - 1;
+
+    // Malloc list of pids and first dimension of pids and acc_corr.
+    *pids = (long int *) malloc(*pids_size * sizeof(**pids));
+    *acc_corr = (double **) malloc(*pids_size * sizeof(**acc_corr));
+
+    // Get pids and acc_corr from acceptance correction file.
+    get_acc_corr(acc_file, *pids_size, *nbins, *pids, *acc_corr);
+
+    // Clean up.
+    fclose(acc_file);
 
     return 0;
 }
