@@ -13,7 +13,10 @@
 //
 // You can see a copy of the GNU Lesser Public License under the LICENSE file.
 
-#include "../lib/file_handler.h"
+#include <vector>
+#include <map>
+#include "TCanvas.h"
+#include "TGraphErrors.h"
 
 // --- Define macro constants here. ----------------------------------------- //
 // Set this to 1 to get some debug information.
@@ -31,7 +34,100 @@ const std::map<int, const char *> PLOT_NAMES {
 };
 
 // --- Macro code begins here ----------------------------------------------- //
-int main() {
+/**
+ * Read binning data from text file and fill binning sizes array, binnings
+ *     array, and an array of PID list sizes. Copied from file_handler because
+ *     tracking dependencies with ROOT is a bitch.
+ */
+int get_binnings(FILE *f_in, long int *b_sizes, double **binnings,
+        long int *pids_size)
+{
+    // Get binning sizes.
+    for (int bi = 0; bi < 5; ++bi) fscanf(f_in, "%ld ", &(b_sizes[bi]));
+
+    // Get binnings.
+    for (int bi = 0; bi < 5; ++bi) {
+        binnings[bi] = (double *) malloc(b_sizes[bi] * sizeof(*binnings[bi]));
+        for (int bii = 0; bii < b_sizes[bi]; ++bii)
+            fscanf(f_in, "%lf ", &(binnings[bi][bii]));
+    }
+
+    // Get # of pids.
+    fscanf(f_in, "%ld", pids_size);
+
+    return 0;
+}
+
+/**
+ * Read acceptance correction data from text file and fill PIDs list and
+ *     accceptance correction array. Copied from file_handler because tracking
+ *     dependencies with ROOT is a bitch.
+ */
+int get_acc_corr(FILE *f_in, long int pids_size, long int nbins,
+        long int *pids, int **n_thrown, int **n_simul)
+{
+    // Get PIDs.
+    for (int pi = 0; pi < pids_size; ++pi) fscanf(f_in, "%ld ", &(pids[pi]));
+
+    // Get acceptance correction.
+    for (int pi = 0; pi < pids_size; ++pi) {
+        // Get number of thrown events.
+        n_thrown[pi] = (int *) malloc(nbins * sizeof(*n_thrown[pi]));
+        for (int bii = 0; bii < nbins; ++bii)
+            fscanf(f_in, "%d ", &(n_thrown[pi][bii]));
+
+        // Get number of simulated events.
+        n_simul[pi]  = (int *) malloc(nbins * sizeof(*n_simul[pi]));
+        for (int bii = 0; bii < nbins; ++bii)
+            fscanf(f_in, "%d ", &(n_simul[pi][bii]));
+    }
+
+    return 0;
+}
+
+/**
+ * Read acc_corr.txt file to get the acceptance correction for each bin for each
+ *     PID. Copied from file_handler because tracking dependencies with ROOT is a
+ *     bitch.
+ */
+int read_acc_corr_file(char *acc_filename, long int b_sizes[5],
+        double ***binnings, long int *pids_size, long int *nbins,
+        long int **pids, int ***n_thrown, int ***n_simul)
+{
+    // Access file.
+    if (access(acc_filename, F_OK) != 0) return 1;
+    FILE *acc_file = fopen(acc_filename, "r");
+
+    // Get b_sizes, binnings, and pids_size.
+    *binnings = (double **) malloc(5 * sizeof(**binnings));
+    get_binnings(acc_file, b_sizes, *binnings, pids_size);
+
+    // Compute total number of bins.
+    *nbins = 1;
+    for (int bi = 0; bi < 5; ++bi) *nbins *= b_sizes[bi] - 1;
+
+    // Malloc list of pids and first dimension of pids and events.
+    *pids = (long int *) malloc(*pids_size * sizeof(**pids));
+    *n_thrown = (int **) malloc(*pids_size * sizeof(**n_thrown));
+    *n_simul  = (int **) malloc(*pids_size * sizeof(**n_simul));
+
+    // Get pids and acc_corr from acceptance correction file.
+    get_acc_corr(acc_file, *pids_size, *nbins, *pids, *n_thrown, *n_simul);
+
+    // Clean up.
+    fclose(acc_file);
+
+    return 0;
+}
+
+/** Add TCanvas with name n to std::vector<TCanvas *> c. */
+int add_tcanvas(std::vector<TCanvas *> *c, const char *n) {
+    c->push_back(new TCanvas(n, n, 1600, 900));
+    return 0;
+}
+
+/** Run the macro. */
+int draw_acc_corr() {
     printf("Running... ");
     fflush(stdout);
 
@@ -123,7 +219,7 @@ int main() {
                                 case 4: sel_idx = i4; break;
                             }
 
-                            // Increase appropiate counters.
+                            // Increment appropiate counters.
                             y_thrown[sel_idx] += n_thrown[pid_pos][bin_pos];
                             y_simul [sel_idx] += n_simul [pid_pos][bin_pos];
                         }
