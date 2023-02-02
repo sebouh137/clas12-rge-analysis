@@ -16,17 +16,19 @@
 #include <vector>
 #include <map>
 #include "TCanvas.h"
+#include "TFile.h"
 #include "TGraphErrors.h"
 
 // --- Define macro constants here. ----------------------------------------- //
 // Set this to 1 to get some debug information.
-const int DEBUG = 1;
+const int DEBUG = 0;
 // Set to the PID to plot acceptance correction from.
 const int PID = -211;
 // acc_corr.txt produced by acc_corr.
 const char *INPUT_FILENAME  = "../data/acc_corr.txt";
 // Root file where we'll write the plots.
-const char *OUTPUT_FILENAME = "";
+const char *OUTPUT_FILENAME = "../root_io/acc_corr.root";
+// Map containing the variables we're working with.
 const int NPLOTS = 5;
 const std::map<int, const char *> PLOT_NAMES {
     // {0, "Q2"}, {1, "#nu"}, {2, "z_{h}"}, {3, "Pt2"}, {4, "#phi_{PQ}"}
@@ -153,14 +155,13 @@ int draw_acc_corr() {
     int pid_pos = -1;
     for (int pi = 0; pi < pids_size; ++pi) if (PID == pids[pi]) pid_pos = pi;
     if (pid_pos == -1) {
-        printf("PID %d not found in %s! Exiting...\n", PID, input_filename);
+        printf("\nPID %d not found in %s! Exiting...\n", PID, input_filename);
         return 1;
     }
 
-    printf("pid_pos = %d\n", pid_pos);
-
     if (DEBUG) {
         // Print read acceptance correction data.
+        printf("\n");
         for (int bi = 0; bi < NPLOTS; ++bi) {
             printf("binning[%d] (%02ld): [", bi, bs[bi]);
             for (int bii = 0; bii < bs[bi]; ++bii)
@@ -176,7 +177,11 @@ int draw_acc_corr() {
         printf("\b\b]\n\n");
     }
 
-    // TODO. Plot.
+    // Create TCanvases.
+    std::vector<TCanvas *> canvases;
+    for (int i = 0; i < NPLOTS; ++i) add_tcanvas(&canvases, PLOT_NAMES.at(i));
+
+    // Count variables and add them to the corresponding TGraphErrors.
     for (int var_idx = 0; var_idx < NPLOTS; ++var_idx) {
         // var_idx represents the variable we're processing, in the order
         //     defined in PLOT_NAMES[].
@@ -187,11 +192,14 @@ int draw_acc_corr() {
         double x_length[bin_size - 1];
         int y_thrown[bin_size - 1];
         int y_simul[bin_size - 1];
+        double y_err[bin_size - 1];
         for (int bii = 0; bii < bin_size - 1; ++bii) {
             x_pos[bii]    = (binnings[var_idx][bii+1]+binnings[var_idx][bii])/2;
             x_length[bii] = (binnings[var_idx][bii+1]-binnings[var_idx][bii])/2;
+            // x_length[bii] = 0;
             y_thrown[bii] = 0;
             y_simul[bii]  = 0;
+            y_err[bii]    = 0.; // Dummy variable.
         }
 
         // Fill y. NOTE. This is a very sub-optimal and ugly approach, but it
@@ -235,7 +243,40 @@ int draw_acc_corr() {
             printf("       %08d %08d\n", y_thrown[i], y_simul[i]);
             printf("\n");
         }
+
+        // Create a copy of n_thrown and n_simul as doubles.
+        double y_thrown_dbl[bin_size - 1];
+        double y_simul_dbl [bin_size - 1];
+        for (int bii = 0; bii < bin_size - 1; ++bii) {
+            y_thrown_dbl[bii] = (double) y_thrown[bii];
+            y_simul_dbl[bii]  = (double) y_simul[bii];
+        }
+
+        // Write results to plots.
+        canvases.at(var_idx)->cd();
+
+        // Write TGraphErrors for thrown events.
+        TGraphErrors *graph_thrown = new TGraphErrors(
+                bs[var_idx]-1, x_pos, y_thrown_dbl, x_length, y_err
+        );
+        graph_thrown->SetTitle(Form("%s (thrown)", PLOT_NAMES.at(var_idx)));
+        graph_thrown->SetMarkerColor(kRed);
+        graph_thrown->SetMarkerStyle(21);
+        graph_thrown->Draw("");
+
+        // Write TGraphErrors for simulated events.
+        TGraphErrors *graph_simul = new TGraphErrors(
+                bs[var_idx]-1, x_pos, y_simul_dbl, x_length, y_err
+        );
+        graph_simul->SetTitle(Form("%s (simul)", PLOT_NAMES.at(var_idx)));
+        graph_simul->SetMarkerColor(kBlue);
+        graph_simul->SetMarkerStyle(21);
+        graph_simul->Draw("same");
     }
+
+    // Write to file.
+    TFile *file_out = TFile::Open(OUTPUT_FILENAME, "RECREATE");
+    for (TCanvas *canvas : canvases) canvas->Write();
 
     // Clean up after ourselves.
     for (int bi = 0; bi < 5; ++bi) free(binnings[bi]);
@@ -247,6 +288,8 @@ int draw_acc_corr() {
     }
     free(n_thrown);
     free(n_simul);
+    file_out->Close();
+    printf("Done!\n");
 
     return 0;
 }

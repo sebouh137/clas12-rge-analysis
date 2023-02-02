@@ -156,7 +156,7 @@ int run(char *gen_file, char *sim_file, char *data_dir, int *bsizes,
     // Count and write number of thrown and simulated events in each bin.
     for (int pi = 0; pi < pidlist_size; ++pi) {
         int pid = (int) pidlist[pi];
-        printf("Working on PID %5d...\n", pid);
+        printf("Working on PID %5d (%2d/%2d)...\n", pid, pi, pidlist_size);
         fflush(stdout);
 
         int t_evn[nbins];
