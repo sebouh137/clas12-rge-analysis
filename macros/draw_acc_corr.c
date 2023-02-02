@@ -254,6 +254,7 @@ int draw_acc_corr() {
 
         // Write results to plots.
         canvases.at(var_idx)->cd();
+        gStyle->SetOptTitle(kFALSE);
 
         // Write TGraphErrors for thrown events.
         TGraphErrors *graph_thrown = new TGraphErrors(
@@ -262,6 +263,7 @@ int draw_acc_corr() {
         graph_thrown->SetTitle(Form("%s (thrown)", PLOT_NAMES.at(var_idx)));
         graph_thrown->SetMarkerColor(kRed);
         graph_thrown->SetMarkerStyle(21);
+        graph_thrown->SetMinimum(0.);
         graph_thrown->Draw("");
 
         // Write TGraphErrors for simulated events.
@@ -272,6 +274,8 @@ int draw_acc_corr() {
         graph_simul->SetMarkerColor(kBlue);
         graph_simul->SetMarkerStyle(21);
         graph_simul->Draw("same");
+
+        gPad->BuildLegend();
     }
 
     // Write to file.
