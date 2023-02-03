@@ -254,7 +254,7 @@ int draw_acc_corr() {
 
         // Write results to plots.
         canvases.at(var_idx)->cd();
-        gStyle->SetOptTitle(kFALSE);
+        gStyle->SetOptTitle(0);
 
         // Write TGraphErrors for thrown events.
         TGraphErrors *graph_thrown = new TGraphErrors(
@@ -264,7 +264,7 @@ int draw_acc_corr() {
         graph_thrown->SetMarkerColor(kRed);
         graph_thrown->SetMarkerStyle(21);
         graph_thrown->SetMinimum(0.);
-        graph_thrown->Draw("");
+        graph_thrown->Draw("AP");
 
         // Write TGraphErrors for simulated events.
         TGraphErrors *graph_simul = new TGraphErrors(
@@ -273,9 +273,17 @@ int draw_acc_corr() {
         graph_simul->SetTitle(Form("%s (simul)", PLOT_NAMES.at(var_idx)));
         graph_simul->SetMarkerColor(kBlue);
         graph_simul->SetMarkerStyle(21);
-        graph_simul->Draw("same");
+        graph_simul->Draw("sameP");
 
+        // Add legend.
         gPad->BuildLegend();
+
+        // Add title.
+        TPaveLabel *pavel_label = new TPaveLabel(
+                0.6, 0.9, 0.3, 1.0, PLOT_NAMES.at(var_idx), "brNDC");
+        pavel_label->SetBorderSize(0);
+        pavel_label->SetFillColor(gStyle->GetTitleFillColor());
+        pavel_label->Draw();
     }
 
     // Write to file.
