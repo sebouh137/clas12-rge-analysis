@@ -73,6 +73,13 @@ extern const int    STD_VX[STDPLT_LIST_SIZE][2];
 extern const double STD_RX[STDPLT_LIST_SIZE][2][2];
 extern const long   STD_BX[STDPLT_LIST_SIZE][2];
 
+// Acceptance corrected plots.
+#define ACCPLT_LIST_SIZE 5
+extern const int    ACC_PX[ACCPLT_LIST_SIZE];
+extern const int    ACC_VX[ACCPLT_LIST_SIZE][2];
+extern const double ACC_RX[ACCPLT_LIST_SIZE][2][2];
+extern const long   ACC_BX[ACCPLT_LIST_SIZE][2];
+
 // All variables.
 #define S_PARTICLE "particle"
 #define VAR_LIST_SIZE 33

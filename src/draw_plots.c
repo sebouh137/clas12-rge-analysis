@@ -175,16 +175,19 @@ int run(char *in_filename, char *acc_filename, char *work_dir, int run_no,
     if (!f_in || f_in->IsZombie()) return 8;
 
     // Get acceptance correction
-    long int b_sizes[5];
-    long int nbins;
-    double **binnings;
-    long int pids_size;
-    long int *pids;
-    int **n_thrown;
-    int **n_simul;
+    bool accplt = false;
+    long int acc_b_sizes[5];
+    long int acc_nbins;
+    double **acc_binnings;
+    long int acc_pids_size;
+    long int *acc_pids;
+    int **acc_n_thrown;
+    int **acc_n_simul;
     if (acc_filename != NULL) {
-        int errcode = read_acc_corr_file(acc_filename, b_sizes, &binnings,
-                &pids_size, &nbins, &pids, &n_thrown, &n_simul);
+        accplt = true;
+        int errcode = read_acc_corr_file(acc_filename, acc_b_sizes,
+                &acc_binnings, &acc_pids_size, &acc_nbins, &acc_pids,
+                &acc_n_thrown, &acc_n_simul);
         if (errcode != 0) return 9;
     }
 
@@ -235,13 +238,13 @@ int run(char *in_filename, char *acc_filename, char *work_dir, int run_no,
         dis_cuts      = true;
     }
 
-    // TODO.
-    // printf("\nApply any custom cut? [y/n]\n");
-    // bool custom_cuts = catch_yn();
+    // TODO. Apply custom cuts.
 
     // === BINNING SETUP =======================================================
-    // TODO. If acc_filename != NULL, limit binning in Q2, nu, z_h, Pt2, and
+
+    // TODO. If accplt == true, limit binning in Q2, nu, z_h, Pt2, and
     //       phi_PQ to acceptance correction bins.
+
     printf("\nNumber of dimensions for binning?\n");
     long   dbins = catch_long();
     int    bvx[dbins];
@@ -274,8 +277,14 @@ int run(char *in_filename, char *acc_filename, char *work_dir, int run_no,
 
     // === PLOT SETUP ==========================================================
     // Number of plots.
-    printf("\nDefine number of plots (Set to 0 to draw standard plots).\n");
-    long pn = catch_long();
+    long pn;
+    if (accplt) {
+        pn = ACCPLT_LIST_SIZE;
+    }
+    else {
+        printf("\nDefine number of plots (Set to 0 to draw standard plots).\n");
+        pn = catch_long();
+    }
 
     bool stdplt = false;
     if (pn == 0) {
@@ -287,7 +296,7 @@ int run(char *in_filename, char *acc_filename, char *work_dir, int run_no,
     int    vx[pn][2];
     double rx[pn][2][2];
     long   bx[pn][2];
-    for (long pi = 0; pi < pn && !stdplt; ++pi) {
+    for (long pi = 0; pi < pn && !stdplt && !accplt; ++pi) {
         // Check if we are to make a 1D or 2D plot.
         printf("\nPlot %ld type? [", pi);
         for (int vi = 0; vi < PLOT_LIST_SIZE; ++vi)
@@ -321,6 +330,12 @@ int run(char *in_filename, char *acc_filename, char *work_dir, int run_no,
         memcpy(vx, STD_VX, sizeof vx);
         memcpy(rx, STD_RX, sizeof rx);
         memcpy(bx, STD_BX, sizeof bx);
+    }
+    if (accplt) { // Setup acceptance corrected plots.
+        memcpy(px, ACC_PX, sizeof px);
+        memcpy(vx, ACC_VX, sizeof vx);
+        memcpy(rx, ACC_RX, sizeof rx);
+        memcpy(bx, ACC_BX, sizeof bx); // Will be rebinned later!
     }
 
     // === NTUPLES SETUP =======================================================
@@ -399,6 +414,10 @@ int run(char *in_filename, char *acc_filename, char *work_dir, int run_no,
         }
     }
 
+    if (accplt) {
+        // TODO. Rebin everything based on acc_binnings.
+    }
+
     divcntr     = 0;
     evnsplitter = 0;
 
@@ -471,6 +490,7 @@ int run(char *in_filename, char *acc_filename, char *work_dir, int run_no,
 
     // === APPLY ACCEPTANCE CORRECTION =========================================
     // TODO...
+    // p_pid: PID of the selected particle.
 
     // === WRITE TO OUTPUT FILE ================================================
     // Create output file.
@@ -505,16 +525,16 @@ int run(char *in_filename, char *acc_filename, char *work_dir, int run_no,
 
     free(valid_event);
 
-    if (acc_filename != NULL) {
-        for (int bi = 0; bi < 5; ++bi) free(binnings[bi]);
-        free(binnings);
-        free(pids);
-        for (int pi = 0; pi < pids_size; ++pi) {
-            free(n_thrown[pi]);
-            free(n_simul[pi]);
+    if (accplt) {
+        for (int bi = 0; bi < 5; ++bi) free(acc_binnings[bi]);
+        free(acc_binnings);
+        free(acc_pids);
+        for (int pi = 0; pi < acc_pids_size; ++pi) {
+            free(acc_n_thrown[pi]);
+            free(acc_n_simul[pi]);
         }
-        free(n_thrown);
-        free(n_simul);
+        free(acc_n_thrown);
+        free(acc_n_simul);
     }
 
     return 0;
