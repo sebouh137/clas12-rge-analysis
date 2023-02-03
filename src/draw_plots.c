@@ -414,10 +414,6 @@ int run(char *in_filename, char *acc_filename, char *work_dir, int run_no,
         }
     }
 
-    if (accplt) {
-        // TODO. Rebin everything based on acc_binnings.
-    }
-
     divcntr     = 0;
     evnsplitter = 0;
 
@@ -488,9 +484,34 @@ int run(char *in_filename, char *acc_filename, char *work_dir, int run_no,
         }
     }
 
+    if (accplt) {
+        printf("\n\n\n\n");
+        for (int i = 0; i < acc_b_sizes[0]; ++i) {
+            printf("acc_binnings[0][%02d] = %5.2f\n", i, acc_binnings[0][i]);
+        }
+        printf("\n\n\n\n");
+    }
+
+    // If we're doing acceptance plots, rebin everything.
+    TH1 *plt_rebin[pn][plt_size];
+    for (int plt_bi = 0; plt_bi < plt_size && accplt; ++plt_bi) {
+        for (int pi = 0; pi < pn; ++pi) {
+            // TODO. Plot name needs to include bin!
+            plt_rebin[pi][plt_bi] = (TH1F *) plt[pi][plt_bi]->Rebin(
+                    acc_b_sizes[pi],
+                    Form("%s (acceptance corrected)", S_VAR_LIST[vx[pi][0]]),
+                    acc_binnings[pi]
+            );
+        }
+    }
+
     // === APPLY ACCEPTANCE CORRECTION =========================================
     // TODO...
     // p_pid: PID of the selected particle.
+
+    // TODO. Calculate acceptance correction in each bin from n_thrown and
+    //       n_simul for each of the 5 variables.
+    // TODO. Multiply each plot by its corresponding acceptance correction.
 
     // === WRITE TO OUTPUT FILE ================================================
     // Create output file.
@@ -514,7 +535,8 @@ int run(char *in_filename, char *acc_filename, char *work_dir, int run_no,
         f_out->cd(dir);
 
         // Write plot(s).
-        for (int pi = 0; pi < pn; ++pi) plt[pi][plti]->Write();
+        for (int pi = 0; pi < pn && !accplt; ++pi) plt[pi][plti]->Write();
+        for (int pi = 0; pi < pn && accplt;  ++pi) plt_rebin[pi][plti]->Write();
     }
 
     printf("Done! Check out plots at %s.\n\n", out_file);
