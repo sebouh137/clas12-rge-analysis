@@ -196,7 +196,6 @@ int draw_acc_corr() {
         for (int bii = 0; bii < bin_size - 1; ++bii) {
             x_pos[bii]    = (binnings[var_idx][bii+1]+binnings[var_idx][bii])/2;
             x_length[bii] = (binnings[var_idx][bii+1]-binnings[var_idx][bii])/2;
-            // x_length[bii] = 0;
             y_thrown[bii] = 0;
             y_simul[bii]  = 0;
             y_err[bii]    = 0.; // Dummy variable.
