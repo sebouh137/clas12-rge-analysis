@@ -27,139 +27,180 @@
 // TODO. Separate in vz bins. Start from -40 to 40 cm, 4-cm bins.
 
 /**
- * Assign name to plots, recursively going through binnings.
+ * Assign title to plots, recursively going through binnings. The title that
+ *     will be given to the plots is <title> (<bin 1>) (<bin 2>) ... (<bin n>),
+ *     where <title> is the base title given by the plot_title parameter.
  *
- * @param plt:        List of plots to be named.
- * @param name:       Base for the name given to the plot. The final name will
- *                    be "<name> (<bin 1>) (<bin 2>) ... (<bin n>)".
- * @param nx:         Variable name for the x axis..
- * @param ny:         Variable name for the y axis.
- * @param idx:        Index in the plot array of the plot to be named. When
- *                    calling the function, should be 0.
- * @param dbins:      Binning dimension. Needed to compute how deep the
- *                    recursion should go before stopping.
- * @param depth:      How deep along the number of bins we are. When calling the
- *                    function, this should always be 0.
- * @param px:         Dimensionality of plot. Set to 1 for 1d plot, 2 for 2d.
- * @param bx:         2-dimensional array containing the number of bins for each
- *                    axis for each plot.
- * @param rx:         2-dimensional array containing the range for each axis for
- *                    each plot.
- * @param bvx:        Array of variables for binning for each plot.
- * @param bbx:        Array with number of dimensions for binning for each
- *                    binning.
- * @param brx:        2-dimensional array with lower and upper limits for each
- *                    binning variable.
- * @param b_interval: Array with size of each bin for each binning.
- * @return:           Error code. Currently, can only return 0 (success).
+ *     TARGET VARIABLE.
+ * @param plot_arr:    Array of plots to be created.
+ *
+ *     INTERNAL PARAMETERS.
+ * @param dim_bins:    Binning dimension. Needed to compute how deep the
+ *                     recursion should go before stopping.
+ * @param idx:         Index in the plot array of the plot to be created. When
+ *                     calling the function, this should be set to 0.
+ * @param depth:       How deep along the number of bins we are. When calling
+ *                     the function, this should be set to 0.
+ *
+ *     STRINGS.
+ * @param plot_title:  Base for the title given to the plot.
+ * @param x_var:       Variable name for the x axis.
+ * @param y_var:       Variable name for the y axis.
+ *
+ *     PLOT PARAMETERS.
+ * @param plot_type:   Dimensionality of plot. Set to 1 for a 1d plot, 2 for 2d.
+ * @param plot_nbins:  2-dimensional array containing the number of bins for
+ *                     each axis for each plot.
+ * @param plot_range:  2-dimensional array containing the range for each axis
+ *                     for each plot.
+ *
+ *     BINNING PARAMETERS.
+ * @param bin_vars:    Array of variables for binning for each plot.
+ * @param bin_nbins:   Array with number of dimensions for binning for each
+ *                     binning.
+ * @param bin_range:   2-dimensional array with lower and upper limits for each
+ *                     binning variable.
+ * @param bin_binsize: Array with size of each bin for each binning.
+ *
+ * @return:            Error code. Currently, can only return 0 (success).
  */
-int name_plt(TH1 *plt[], TString *name, const char *nx, const char *ny,
-        int *idx, long dbins, long depth, int px, long bx[], double rx[][2],
-        int bvx[], long bbx[], double brx[][2], double b_interval[])
+int create_plots(TH1 *plot_arr[], long dim_bins, int *idx, long depth,
+        TString *plot_title, const char *x_var, const char *y_var,
+        int plot_type, long plot_nbins[], double plot_range[][2],
+        int bin_vars[], long bin_nbins[], double bin_range[][2],
+        double bin_binsize[])
 {
-    if (depth == dbins) {
+    if (depth == dim_bins) {
         // Create plot and increase index.
-        if (px == 0) plt[*idx] =
-                new TH1F(*name, Form("%s;%s", name->Data(), nx), bx[0],
-                         rx[0][0], rx[0][1]);
-        if (px == 1) plt[*idx] =
-                new TH2F(*name, Form("%s;%s;%s", name->Data(), nx, ny), bx[0],
-                         rx[0][0], rx[0][1], bx[1], rx[1][0], rx[1][1]);
+        if (plot_type == 0) {
+            plot_arr[*idx] = new TH1F(*plot_title,
+                    Form("%s;%s", plot_title->Data(), x_var),
+                    plot_nbins[0], plot_range[0][0], plot_range[0][1]
+            );
+
+        }
+        if (plot_type == 1) {
+            plot_arr[*idx] = new TH2F(*plot_title,
+                    Form("%s;%s;%s", plot_title->Data(), x_var, y_var),
+                    plot_nbins[0], plot_range[0][0], plot_range[0][1],
+                    plot_nbins[1], plot_range[1][0], plot_range[1][1]
+            );
+        }
         ++(*idx);
         return 0;
     }
 
-    for (int bbi = 0; bbi < bbx[depth]; ++bbi) {
+    for (int bbi = 0; bbi < bin_nbins[depth]; ++bbi) {
         // Find limits.
-        double b_low  = brx[depth][0] + b_interval[depth]* bbi;
-        double b_high = brx[depth][0] + b_interval[depth]*(bbi+1);
+        double b_low  = bin_range[depth][0] + bin_binsize[depth]* bbi;
+        double b_high = bin_range[depth][0] + bin_binsize[depth]*(bbi+1);
 
-        // Append bin limits to name.
-        TString name_cpy = name->Copy();
-        name_cpy.Append(Form(" (%s: %6.2f, %6.2f)", S_VAR_LIST[bvx[depth]],
+        // Append bin limits to title.
+        TString name_cpy = plot_title->Copy();
+        name_cpy.Append(Form(" (%s: %6.2f, %6.2f)", S_VAR_LIST[bin_vars[depth]],
                              b_low, b_high));
 
-        // Continue down the line.
-        name_plt(plt, &name_cpy, nx, ny, idx, dbins, depth+1, px, bx, rx, bvx,
-                 bbx, brx, b_interval);
+        // Continue down the recursive line...
+        create_plots(
+                plot_arr, dim_bins, idx, depth+1, &name_cpy, x_var, y_var,
+                plot_type, plot_nbins, plot_range, bin_vars, bin_nbins,
+                bin_range, bin_binsize
+        );
     }
 
     return 0;
 }
 
 /**
- * Find name of bin by recursively going through binnings and appending their
- *     range to the name.
+ * Find title of bin by recursively going through binnings and appending their
+ *     range to the title.
  *
- * @param name:            Name to which we append each bin.
- * @param plt_size:        Number of "versions" of a plot, depending on number
- *                         of bins.
- * @param idx:             Index in the plot array of the plot to be named. When
- *                         calling the function, should be 0.
- * @param dbins:           Binning dimension. Needed to compute how deep the
+ *     TARGET VARIABLE.
+ * @param plot_title:      Title of the plot to which we'll append each bin.
+ *
+ *     INTERNAL PARAMETERS.
+ * @param dim_bins:        Binning dimension. Needed to compute how deep the
  *                         recursion should go before stopping.
+ * @param idx:             Index in the plot array of the plot to be created.
+ *                         When calling the function, this should be set to 0.
  * @param depth:           How deep along the number of bins we are. When
- *                         calling the function, this should always be 0.
- * @param prev_dim_factor: Dimension factor
- * @param vx:              Array of variables for binning for each plot.
- * @param bx:              Array with number of dimensions for binning for each
+ *                         calling the function, this should be set to 0.
+ * @param prev_dim_factor: Dimension factor of the previous binning in the
+ *                         recursion.
+ *
+ *     BINNING PARAMETERS.
+ * @param nplots:          Number of TH1F and TH2F plots, depends on number of
+ *                         bins.
+ * @param vars:        Array of variables for binning for each plot.
+ * @param nbins:       Array with number of dimensions for binning for each
  *                         binning.
- * @param rx:              2-dimensional array with lower and upper limits for
+ * @param range:       2-dimensional array with lower and upper limits for
  *                         each binning variable.
- * @param interval:        Array with size of each bin for each binning.
- * @return:                Success code (0).
+ * @param binsize:     Array with size of each bin for each binning.
+ *
+ * @return:                Error code. Currently, can only return 0 (success).
  */
-int find_bin(TString *name, int plt_size, int idx, long dbins, long depth,
-        int prev_dim_factor, int vx[], long bx[], double rx[][2],
-        double interval[])
+int find_bin(TString *plot_title,
+        long dim_bins, int idx, long depth, int prev_dim_factor,
+        int nplots, int vars[], long nbins[], double range[][2],
+        double binsize[])
 {
-    if (depth == dbins) return 0;
+    if (depth == dim_bins) return 0;
 
     // Find index in array (for this dimension).
     int dim_factor = 1;
-    for (int di = depth+1; di < dbins; ++di) dim_factor *= bx[di];
+    for (int di = depth+1; di < dim_bins; ++di) dim_factor *= nbins[di];
     int bi = (idx%prev_dim_factor)/dim_factor;
 
     // Get limits.
-    double low  = rx[depth][0] + interval[depth]* bi;
-    double high = rx[depth][0] + interval[depth]*(bi+1);
+    double low  = range[depth][0] + binsize[depth]* bi;
+    double high = range[depth][0] + binsize[depth]*(bi+1);
 
-    // Append dir to name.
-    name->Append(Form("%s (%6.2f, %6.2f)/", S_VAR_LIST[vx[depth]], low, high));
+    // Append dir to title.
+    plot_title->Append(Form("%s (%6.2f, %6.2f)/", S_VAR_LIST[vars[depth]],
+            low, high));
 
-    return find_bin(name, plt_size, idx, dbins, depth+1, dim_factor, vx, bx, rx,
-            interval);
+    return find_bin(
+            plot_title, dim_bins, idx, depth+1, dim_factor,
+            nplots, vars, nbins, range, binsize
+    );
 }
 
 /**
  * Find index of plot in array, recursively going through binnings.
  *
- * @param dbins:    Binning dimension. Needed to compute how deep the recursion
+ *     INTERNAL PARAMETERS.
+ * @param dim_bins: Binning dimension. Needed to compute how deep the recursion
  *                  should go before stopping.
  * @param depth:    How deep along the number of bins we are. When calling the
  *                  function, this should always be 0.
+ *
+ *     BINNINGS PAREMETERS.
  * @param var:      Binning variables.
- * @param bx:       Array with number of dimensions for binning for each
+ * @param nbins:    Array with number of dimensions for binning for each
  *                  binning.
- * @param rx:       2-dimensional array with lower and upper limits for each
+ * @param range:    2-dimensional array with lower and upper limits for each
  *                  binning variable.
- * @param interval: Array with size of each bin for each binning.
+ * @param binsize:  Array with size of each bin for each binning.
+ *
+ * @return:         Index of the bin we're looking for. Returns -1 if variable
+ *                  is not within binning range.
  */
-int find_idx(long dbins, long depth, Float_t var[], long bx[], double rx[][2],
-        double interval[])
+int find_idx(long dim_bins, long depth, Float_t var[], long nbins[],
+        double range[][2], double binsize[])
 {
-    if (depth == dbins) return 0;
-    for (int bi = 0; bi < bx[depth]; ++bi) {
+    if (depth == dim_bins) return 0;
+    for (int bi = 0; bi < nbins[depth]; ++bi) {
         // Define bin limits.
-        double low  = rx[depth][0] + interval[depth]* bi;
-        double high = rx[depth][0] + interval[depth]*(bi+1);
+        double low  = range[depth][0] + binsize[depth]* bi;
+        double high = range[depth][0] + binsize[depth]*(bi+1);
 
         // Find bin for var.
         if (low < var[depth] && var[depth] < high) {
             int dim_factor = 1;
-            for (int di = depth+1; di < dbins; ++di) dim_factor *= bx[di];
+            for (int di = depth+1; di < dim_bins; ++di) dim_factor *= nbins[di];
             return bi*dim_factor +
-                    find_idx(dbins, depth+1, var, bx, rx, interval);
+                    find_idx(dim_bins, depth+1, var, nbins, range, binsize);
         }
     }
 
@@ -176,7 +217,7 @@ int run(char *in_filename, char *acc_filename, char *work_dir, int run_no,
 
     // Get acceptance correction
     bool accplt = false;
-    long int acc_b_sizes[5];
+    long int acc_binsizes[5];
     long int acc_nbins;
     double **acc_binnings;
     long int acc_pids_size;
@@ -185,7 +226,7 @@ int run(char *in_filename, char *acc_filename, char *work_dir, int run_no,
     int **acc_n_simul;
     if (acc_filename != NULL) {
         accplt = true;
-        int errcode = read_acc_corr_file(acc_filename, acc_b_sizes,
+        int errcode = read_acc_corr_file(acc_filename, acc_binsizes,
                 &acc_binnings, &acc_pids_size, &acc_nbins, &acc_pids,
                 &acc_n_thrown, &acc_n_simul);
         if (errcode != 0) return 9;
@@ -246,33 +287,33 @@ int run(char *in_filename, char *acc_filename, char *work_dir, int run_no,
     //       phi_PQ to acceptance correction bins.
 
     printf("\nNumber of dimensions for binning?\n");
-    long   dbins = catch_long();
-    int    bvx[dbins];
-    double brx[dbins][2];
-    double b_interval[dbins];
-    long   bbx[dbins];
-    for (long bdi = 0; bdi < dbins; ++bdi) {
+    long   dim_bins = catch_long();
+    int    bin_vars[dim_bins];
+    double bin_range[dim_bins][2];
+    double bin_binsize[dim_bins];
+    long   bin_nbins[dim_bins];
+    for (long bdi = 0; bdi < dim_bins; ++bdi) {
         // variable.
         printf("\nDefine var for bin in dimension %ld. Available vars:\n[",
                 bdi);
         for (int vi = 0; vi < VAR_LIST_SIZE; ++vi)
             printf("%s, ", R_VAR_LIST[vi]);
         printf("\b\b]\n");
-        bvx[bdi] = catch_string(R_VAR_LIST, VAR_LIST_SIZE);
+        bin_vars[bdi] = catch_string(R_VAR_LIST, VAR_LIST_SIZE);
 
         // range.
         for (int ri = 0; ri < 2; ++ri) {
             printf("\nDefine %s limit for bin in dimension %ld:\n",
                     RAN_LIST[ri], bdi);
-            brx[bdi][ri] = catch_double();
+            bin_range[bdi][ri] = catch_double();
         }
 
         // nbins.
         printf("\nDefine number of bins for bin in dimension %ld:\n", bdi);
-        bbx[bdi] = catch_long();
+        bin_nbins[bdi] = catch_long();
 
-        // binning interval.
-        b_interval[bdi] = (brx[bdi][1] - brx[bdi][0])/bbx[bdi];
+        // binning bin size.
+        bin_binsize[bdi] = (bin_range[bdi][1]-bin_range[bdi][0])/bin_nbins[bdi];
     }
 
     // === PLOT SETUP ==========================================================
@@ -292,50 +333,51 @@ int run(char *in_filename, char *acc_filename, char *work_dir, int run_no,
         pn     = STDPLT_LIST_SIZE;
     }
 
-    int    px[pn];
-    int    vx[pn][2];
-    double rx[pn][2][2];
-    long   bx[pn][2];
+    int    plot_type[pn];
+    int    plot_vars[pn][2];
+    double plot_range[pn][2][2];
+    long   plot_nbins[pn][2];
     for (long pi = 0; pi < pn && !stdplt && !accplt; ++pi) {
         // Check if we are to make a 1D or 2D plot.
         printf("\nPlot %ld type? [", pi);
         for (int vi = 0; vi < PLOT_LIST_SIZE; ++vi)
             printf("%s, ", PLOT_LIST[vi]);
         printf("\b\b]:\n");
-        px[pi] = catch_string(PLOT_LIST, PLOT_LIST_SIZE);
+        plot_type[pi] = catch_string(PLOT_LIST, PLOT_LIST_SIZE);
 
-        for (int di = 0; di < px[pi]+1; ++di) {
+        for (int di = 0; di < plot_type[pi]+1; ++di) {
             // Check variable(s) to be plotted.
             printf("\nDefine var to be plotted on the %s axis. Available "
                    "vars:\n[", DIM_LIST[di]);
             for (int vi = 0; vi < VAR_LIST_SIZE; ++vi)
                 printf("%s, ", R_VAR_LIST[vi]);
             printf("\b\b]\n");
-            vx[pi][di] = catch_string(R_VAR_LIST, VAR_LIST_SIZE);
+            plot_vars[pi][di] = catch_string(R_VAR_LIST, VAR_LIST_SIZE);
 
             // Define ranges.
             for (int ri = 0; ri < 2; ++ri) {
                 printf("\nDefine %s limit for %s axis:\n",
                         RAN_LIST[ri], DIM_LIST[di]);
-                rx[pi][di][ri] = catch_double();
+                plot_range[pi][di][ri] = catch_double();
             }
 
             // Define number of bins in plot.
             printf("\nDefine number of bins for %s axis:\n", DIM_LIST[di]);
-            bx[pi][di] = catch_long();
+            plot_nbins[pi][di] = catch_long();
         }
     }
     if (stdplt) { // Setup standard plots.
-        memcpy(px, STD_PX, sizeof px);
-        memcpy(vx, STD_VX, sizeof vx);
-        memcpy(rx, STD_RX, sizeof rx);
-        memcpy(bx, STD_BX, sizeof bx);
+        memcpy(plot_type, STD_PX, sizeof plot_type);
+        memcpy(plot_vars, STD_VX, sizeof plot_vars);
+        memcpy(plot_range, STD_RX, sizeof plot_range);
+        memcpy(plot_nbins, STD_BX, sizeof plot_nbins);
     }
     if (accplt) { // Setup acceptance corrected plots.
-        memcpy(px, ACC_PX, sizeof px);
-        memcpy(vx, ACC_VX, sizeof vx);
-        memcpy(rx, ACC_RX, sizeof rx);
-        memcpy(bx, ACC_BX, sizeof bx); // Will be rebinned later!
+        memcpy(plot_type, ACC_PX, sizeof plot_type);
+        memcpy(plot_vars, ACC_VX, sizeof plot_vars);
+        memcpy(plot_range, ACC_RX, sizeof plot_range);
+        memcpy(plot_nbins, ACC_BX, sizeof plot_nbins);
+        // NOTE. plot_nbins is given by acc_nbins and acc_binnings!
     }
 
     // === NTUPLES SETUP =======================================================
@@ -393,24 +435,31 @@ int run(char *in_filename, char *acc_filename, char *work_dir, int run_no,
 
     // === PLOT ================================================================
     // Create plots, separated by n-dimensional binning.
-    long plt_size = 1;
-    for (int bdi = 0; bdi < dbins; ++bdi) plt_size *= bbx[bdi];
+    long nplots = 1;
+    for (int bdi = 0; bdi < dim_bins; ++bdi) nplots *= bin_nbins[bdi];
 
-    TH1 *plt[pn][plt_size];
+    TH1 *plot_arr[pn][nplots];
     for (int pi = 0; pi < pn; ++pi) {
-        TString name;
+        TString plot_title;
         int idx = 0;
-        if (px[pi] == 0) {
-            name = Form("%s", S_VAR_LIST[vx[pi][0]]);
-            name_plt(plt[pi], &name, S_VAR_LIST[vx[pi][0]], "", &idx, dbins, 0,
-                     px[pi], bx[pi], rx[pi], bvx, bbx, brx, b_interval);
+        if (plot_type[pi] == 0) { // 1D plot.
+            plot_title = Form("%s", S_VAR_LIST[plot_vars[pi][0]]);
+            create_plots(
+                    plot_arr[pi], dim_bins, &idx, 0, &plot_title,
+                    S_VAR_LIST[plot_vars[pi][0]], "",
+                    plot_type[pi], plot_nbins[pi], plot_range[pi],
+                    bin_vars, bin_nbins, bin_range, bin_binsize
+            );
         }
-        if (px[pi] == 1) {
-            name = Form("%s vs %s", S_VAR_LIST[vx[pi][0]],
-                    S_VAR_LIST[vx[pi][1]]);
-            name_plt(plt[pi], &name, S_VAR_LIST[vx[pi][0]],
-                    S_VAR_LIST[vx[pi][1]], &idx, dbins, 0, px[pi], bx[pi],
-                    rx[pi], bvx, bbx, brx, b_interval);
+        if (plot_type[pi] == 1) { // 2D plot.
+            plot_title = Form("%s vs %s", S_VAR_LIST[plot_vars[pi][0]],
+                    S_VAR_LIST[plot_vars[pi][1]]);
+            create_plots(
+                    plot_arr[pi], dim_bins, &idx, 0, &plot_title,
+                    S_VAR_LIST[plot_vars[pi][0]], S_VAR_LIST[plot_vars[pi][1]],
+                    plot_type[pi], plot_nbins[pi], plot_range[pi],
+                    bin_vars, bin_nbins, bin_range, bin_binsize
+            );
         }
     }
 
@@ -456,54 +505,48 @@ int run(char *in_filename, char *acc_filename, char *work_dir, int run_no,
             continue;
 
         // Prepare binning vars.
-        Float_t b_vars[dbins];
-        for (long bdi = 0; bdi < dbins; ++bdi) b_vars[bdi] = vars[bvx[bdi]];
+        Float_t bin_vars_idx[dim_bins];
+        for (long bdi = 0; bdi < dim_bins; ++bdi)
+            bin_vars_idx[bdi] = vars[bin_vars[bdi]];
 
         // Fills plots.
         for (int pi = 0; pi < pn; ++pi) {
             // SIDIS variables only make sense for some particles.
             bool sidis_pass = true;
-            for (int di = 0; di < px[pi]+1; ++di) {
+            for (int di = 0; di < plot_type[pi]+1; ++di) {
                 for (int li = 0; li < DIS_LIST_SIZE; ++li) {
-                    if (!strcmp(R_VAR_LIST[vx[pi][di]], DIS_LIST[li]) &&
-                            vars[vx[pi][di]] < 1e-9)
+                    if (!strcmp(R_VAR_LIST[plot_vars[pi][di]], DIS_LIST[li]) &&
+                            vars[plot_vars[pi][di]] < 1e-9)
                         sidis_pass = false;
                 }
             }
             if (!sidis_pass) continue;
 
             // Find corresponding bin.
-            int idx = find_idx(dbins, 0, b_vars, bbx, brx, b_interval);
+            int idx = find_idx(
+                    dim_bins, 0, bin_vars_idx, bin_nbins, bin_range, bin_binsize
+            );
             if (idx == -1) continue;
 
             // Fill histogram.
-            if (px[pi] == 0)
-                plt[pi][idx]->Fill(vars[vx[pi][0]]);
-            if (px[pi] == 1)
-                plt[pi][idx]->Fill(vars[vx[pi][0]], vars[vx[pi][1]]);
+            if (plot_type[pi] == 0) {
+                plot_arr[pi][idx]->Fill(vars[plot_vars[pi][0]]);
+            }
+            if (plot_type[pi] == 1) {
+                plot_arr[pi][idx]->Fill(
+                        vars[plot_vars[pi][0]], vars[plot_vars[pi][1]]
+                );
+            }
         }
     }
 
-    if (accplt) {
-        printf("\n\n\n\n");
-        for (int i = 0; i < acc_b_sizes[0]; ++i) {
-            printf("acc_binnings[0][%02d] = %5.2f\n", i, acc_binnings[0][i]);
-        }
-        printf("\n\n\n\n");
-    }
-
-    // If we're doing acceptance plots, rebin everything.
-    TH1 *plt_rebin[pn][plt_size];
-    for (int plt_bi = 0; plt_bi < plt_size && accplt; ++plt_bi) {
-        for (int pi = 0; pi < pn; ++pi) {
-            // TODO. Plot name needs to include bin!
-            plt_rebin[pi][plt_bi] = (TH1F *) plt[pi][plt_bi]->Rebin(
-                    acc_b_sizes[pi],
-                    Form("%s (acceptance corrected)", S_VAR_LIST[vx[pi][0]]),
-                    acc_binnings[pi]
-            );
-        }
-    }
+    // if (accplt) {
+    //     printf("\n\n\n\n");
+    //     for (int i = 0; i < acc_binsizes[0]; ++i) {
+    //         printf("acc_binnings[0][%02d] = %5.2f\n", i, acc_binnings[0][i]);
+    //     }
+    //     printf("\n\n\n\n");
+    // }
 
     // === APPLY ACCEPTANCE CORRECTION =========================================
     // TODO...
@@ -526,17 +569,17 @@ int run(char *in_filename, char *acc_filename, char *work_dir, int run_no,
     TFile *f_out = TFile::Open(out_file, "RECREATE");
 
     // Write plots to output file.
-    for (int plti = 0; plti < plt_size; ++plti) {
+    for (int plti = 0; plti < nplots; ++plti) {
         // Find dir.
         TString dir;
-        find_bin(&dir, plt_size, plti, dbins, 0, INT_MAX, bvx, bbx, brx,
-                 b_interval);
+        find_bin(&dir, dim_bins, plti, 0, INT_MAX, nplots, bin_vars, bin_nbins,
+                bin_range, bin_binsize);
+
         f_out->mkdir(dir);
         f_out->cd(dir);
 
         // Write plot(s).
-        for (int pi = 0; pi < pn && !accplt; ++pi) plt[pi][plti]->Write();
-        for (int pi = 0; pi < pn && accplt;  ++pi) plt_rebin[pi][plti]->Write();
+        for (int pi = 0; pi < pn; ++pi) plot_arr[pi][plti]->Write();
     }
 
     printf("Done! Check out plots at %s.\n\n", out_file);
