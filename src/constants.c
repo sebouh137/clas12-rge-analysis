@@ -148,14 +148,6 @@ const int ACC_VX[ACCPLT_LIST_SIZE][2] = {
         {A_Q2,-1},         {A_NU,-1},         {A_ZH,-1},
         {A_PT2,-1},        {A_PHIPQ,-1},
 };
-const double ACC_RX[ACCPLT_LIST_SIZE][2][2] = {
-        {{ 0,12},{-1,-1}}, {{ 0,12},{-1,-1}}, {{ 0, 1},{-1,-1}},
-        {{ 0, 2},{-1,-1}}, {{ -M_PI,M_PI},{-1,-1}},
-};
-const long ACC_BX[ACCPLT_LIST_SIZE][2] = {
-        {400, -1},         {400, -1},         {400, -1},
-        {400, -1},         {400, -1},
-};
 
 // Sampling fraction constant arrays.
 const char *CALNAME[4] = {

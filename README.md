@@ -112,6 +112,7 @@ Pull requests are welcome. For major changes, open an issue first to discuss the
 
 **Pending tasks are**:
 - [ ] Apply acceptance correction.
+- [ ] Implement variable bin sizes for every variable and binning.
 - [ ] Include GitHub tests.
 - [ ] Add an option to use `TimeBasedTrkg::*` and `FMT::*` banks instead of `REC::Particle` and `REC::Tracks` banks.
 - [ ] Add a main program (probably in bash) to call all other programs for working simplicity.

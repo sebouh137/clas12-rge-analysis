@@ -111,6 +111,53 @@ int create_plots(TH1 *plot_arr[], long dim_bins, int *idx, long depth,
     return 0;
 }
 
+/** Copy of above function for acceptance corrected plots. */
+int create_acc_corr_plots(TH1 *plot_arr[], long dim_bins, int *idx, long depth,
+        TString *plot_title, const char *x_var, const char *y_var,
+        int plot_type, long int plot_nbins, double plot_edges[],
+        int bin_vars[], long bin_nbins[], double bin_range[][2],
+        double bin_binsize[])
+{
+    printf("\n\nplot_edges: ");
+    for (int bi = 0; bi < plot_nbins; ++bi) printf("%5.2f ", plot_edges[bi]);
+    printf("\n\n");
+
+    if (depth == dim_bins) {
+        // Create plot and increase index.
+        if (plot_type == 0) {
+            plot_arr[*idx] = new TH1F(*plot_title,
+                    Form("%s;%s", plot_title->Data(), x_var),
+                    plot_nbins-1, plot_edges
+            );
+        }
+        if (plot_type == 1) {
+            return 1; // NOTE. Not available yet.
+        }
+        ++(*idx);
+        return 0;
+    }
+
+    for (int bbi = 0; bbi < bin_nbins[depth]; ++bbi) {
+        // Find limits.
+        double b_low  = bin_range[depth][0] + bin_binsize[depth]* bbi;
+        double b_high = bin_range[depth][0] + bin_binsize[depth]*(bbi+1);
+
+        // Append bin limits to title.
+        TString name_cpy = plot_title->Copy();
+        name_cpy.Append(Form(" (%s: %6.2f, %6.2f)", S_VAR_LIST[bin_vars[depth]],
+                             b_low, b_high));
+
+        // Continue down the recursive line...
+        create_acc_corr_plots(
+                plot_arr, dim_bins, idx, depth+1, &name_cpy, x_var, y_var,
+                plot_type, plot_nbins, plot_edges, bin_vars, bin_nbins,
+                bin_range, bin_binsize
+        );
+    }
+
+    return 0;
+}
+
 /**
  * Find title of bin by recursively going through binnings and appending their
  *     range to the title.
@@ -216,18 +263,18 @@ int run(char *in_filename, char *acc_filename, char *work_dir, int run_no,
     if (!f_in || f_in->IsZombie()) return 8;
 
     // Get acceptance correction
-    bool accplt = false;
-    long int acc_binsizes[5];
+    bool acc_plot = false;
+    long int acc_nedges[5];
     long int acc_nbins;
-    double **acc_binnings;
+    double **acc_edges;
     long int acc_pids_size;
     long int *acc_pids;
     int **acc_n_thrown;
     int **acc_n_simul;
     if (acc_filename != NULL) {
-        accplt = true;
-        int errcode = read_acc_corr_file(acc_filename, acc_binsizes,
-                &acc_binnings, &acc_pids_size, &acc_nbins, &acc_pids,
+        acc_plot = true;
+        int errcode = read_acc_corr_file(acc_filename, acc_nedges,
+                &acc_edges, &acc_pids_size, &acc_nbins, &acc_pids,
                 &acc_n_thrown, &acc_n_simul);
         if (errcode != 0) return 9;
     }
@@ -283,8 +330,9 @@ int run(char *in_filename, char *acc_filename, char *work_dir, int run_no,
 
     // === BINNING SETUP =======================================================
 
-    // TODO. If accplt == true, limit binning in Q2, nu, z_h, Pt2, and
+    // TODO. If acc_plot == true, limit binning in Q2, nu, z_h, Pt2, and
     //       phi_PQ to acceptance correction bins.
+    // TODO. Change bin_range to bin_edges for variable bin sizes.
 
     printf("\nNumber of dimensions for binning?\n");
     long   dim_bins = catch_long();
@@ -294,8 +342,7 @@ int run(char *in_filename, char *acc_filename, char *work_dir, int run_no,
     long   bin_nbins[dim_bins];
     for (long bdi = 0; bdi < dim_bins; ++bdi) {
         // variable.
-        printf("\nDefine var for bin in dimension %ld. Available vars:\n[",
-                bdi);
+        printf("\nDefine var for bin in dimension %ld. Available vars:\n[",bdi);
         for (int vi = 0; vi < VAR_LIST_SIZE; ++vi)
             printf("%s, ", R_VAR_LIST[vi]);
         printf("\b\b]\n");
@@ -317,9 +364,11 @@ int run(char *in_filename, char *acc_filename, char *work_dir, int run_no,
     }
 
     // === PLOT SETUP ==========================================================
+    // TODO. Change plot_range to plot_edges to get variable bin sizes.
+
     // Number of plots.
     long pn;
-    if (accplt) {
+    if (acc_plot) {
         pn = ACCPLT_LIST_SIZE;
     }
     else {
@@ -327,9 +376,9 @@ int run(char *in_filename, char *acc_filename, char *work_dir, int run_no,
         pn = catch_long();
     }
 
-    bool stdplt = false;
+    bool std_plot = false;
     if (pn == 0) {
-        stdplt = true;
+        std_plot = true;
         pn     = STDPLT_LIST_SIZE;
     }
 
@@ -337,7 +386,7 @@ int run(char *in_filename, char *acc_filename, char *work_dir, int run_no,
     int    plot_vars[pn][2];
     double plot_range[pn][2][2];
     long   plot_nbins[pn][2];
-    for (long pi = 0; pi < pn && !stdplt && !accplt; ++pi) {
+    for (long pi = 0; pi < pn && !std_plot && !acc_plot; ++pi) {
         // Check if we are to make a 1D or 2D plot.
         printf("\nPlot %ld type? [", pi);
         for (int vi = 0; vi < PLOT_LIST_SIZE; ++vi)
@@ -366,18 +415,17 @@ int run(char *in_filename, char *acc_filename, char *work_dir, int run_no,
             plot_nbins[pi][di] = catch_long();
         }
     }
-    if (stdplt) { // Setup standard plots.
-        memcpy(plot_type, STD_PX, sizeof plot_type);
-        memcpy(plot_vars, STD_VX, sizeof plot_vars);
+    if (std_plot) { // Setup standard plots.
+        memcpy(plot_type,  STD_PX, sizeof plot_type);
+        memcpy(plot_vars,  STD_VX, sizeof plot_vars);
         memcpy(plot_range, STD_RX, sizeof plot_range);
         memcpy(plot_nbins, STD_BX, sizeof plot_nbins);
     }
-    if (accplt) { // Setup acceptance corrected plots.
-        memcpy(plot_type, ACC_PX, sizeof plot_type);
-        memcpy(plot_vars, ACC_VX, sizeof plot_vars);
-        memcpy(plot_range, ACC_RX, sizeof plot_range);
-        memcpy(plot_nbins, ACC_BX, sizeof plot_nbins);
-        // NOTE. plot_nbins is given by acc_nbins and acc_binnings!
+    if (acc_plot) { // Setup acceptance corrected plots.
+        memcpy(plot_type,  ACC_PX, sizeof plot_type);
+        memcpy(plot_vars,  ACC_VX, sizeof plot_vars);
+        // NOTE. plot_nbins is given by acc_nbins. Then, each bin size is given
+        //       by acc_edges!
     }
 
     // === NTUPLES SETUP =======================================================
@@ -442,6 +490,16 @@ int run(char *in_filename, char *acc_filename, char *work_dir, int run_no,
     for (int pi = 0; pi < pn; ++pi) {
         TString plot_title;
         int idx = 0;
+        if (acc_plot) { // Acceptance corrected plots have variable bin sizes.
+            plot_title = Form("%s", S_VAR_LIST[plot_vars[pi][0]]);
+            create_acc_corr_plots(
+                    plot_arr[pi], dim_bins, &idx, 0, &plot_title,
+                    S_VAR_LIST[plot_vars[pi][0]], "",
+                    plot_type[pi], acc_nedges[pi], acc_edges[pi],
+                    bin_vars, bin_nbins, bin_range, bin_binsize
+            );
+            continue;
+        }
         if (plot_type[pi] == 0) { // 1D plot.
             plot_title = Form("%s", S_VAR_LIST[plot_vars[pi][0]]);
             create_plots(
@@ -540,21 +598,13 @@ int run(char *in_filename, char *acc_filename, char *work_dir, int run_no,
         }
     }
 
-    // if (accplt) {
-    //     printf("\n\n\n\n");
-    //     for (int i = 0; i < acc_binsizes[0]; ++i) {
-    //         printf("acc_binnings[0][%02d] = %5.2f\n", i, acc_binnings[0][i]);
-    //     }
-    //     printf("\n\n\n\n");
-    // }
-
     // === APPLY ACCEPTANCE CORRECTION =========================================
     // TODO...
     // p_pid: PID of the selected particle.
 
     // TODO. Calculate acceptance correction in each bin from n_thrown and
     //       n_simul for each of the 5 variables.
-    // TODO. Multiply each plot by its corresponding acceptance correction.
+    // TODO. Multiply each plot bin by its corresponding acceptance correction.
 
     // === WRITE TO OUTPUT FILE ================================================
     // Create output file.
@@ -590,9 +640,9 @@ int run(char *in_filename, char *acc_filename, char *work_dir, int run_no,
 
     free(valid_event);
 
-    if (accplt) {
-        for (int bi = 0; bi < 5; ++bi) free(acc_binnings[bi]);
-        free(acc_binnings);
+    if (acc_plot) {
+        for (int bi = 0; bi < 5; ++bi) free(acc_edges[bi]);
+        free(acc_edges);
         free(acc_pids);
         for (int pi = 0; pi < acc_pids_size; ++pi) {
             free(acc_n_thrown[pi]);
