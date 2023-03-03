@@ -254,7 +254,7 @@ int find_idx(long dim_bins, long depth, Float_t var[], long nbins[],
 
 /** run() function of the program. Check usage() for details. */
 int run(char *in_filename, char *acc_filename, char *work_dir, int run_no,
-        int entry_max)
+        int entry_max, bool apply_acc_corr)
 {
     // Open input file.
     TFile *f_in  = TFile::Open(in_filename, "READ");
@@ -620,7 +620,10 @@ int run(char *in_filename, char *acc_filename, char *work_dir, int run_no,
     };
 
     // Interate through plot variables and bins.
-    for (int plot_i = 0; plot_i < plot_arr_size && acc_plot; ++plot_i) {
+    for (int plot_i = 0;
+            plot_i < plot_arr_size && acc_plot && apply_acc_corr;
+            ++plot_i)
+    {
         for (int bin_i = 0; bin_i < bin_arr_size; ++bin_i) {
             // Integrate through other variables.
             int y_thrown[bn[plot_i]];
@@ -744,6 +747,8 @@ int usage() {
             " * -h          : show this message and exit.\n"
             " * -n nentries : number of entries to process.\n"
             " * -a accfile  : apply acceptance correction using acc_filename.\n"
+            " * -A          : get acceptance correction plots without applying "
+            "acceptance\n                 correction. Requires -a to be set.\n"
             " * -w workdir  : location where output root files are to be "
             "stored. Default\n                 is root_io.\n"
             " * infile      : input file produced by make_ntuples.\n\n"
@@ -794,6 +799,10 @@ int handle_err(int errcode) {
             fprintf(stderr, "There's no acceptance correction data for the "
                             "selected PID.");
             break;
+        case 12:
+            fprintf(stderr, "Option -A is only valid if an acceptance "
+                            "correction file is specified using -a.");
+            break;
         default:
             fprintf(stderr, "Error code not implemented!\n");
             return 1;
@@ -807,11 +816,11 @@ int handle_err(int errcode) {
  *     explained in the handle_err() function.
  */
 int handle_args(int argc, char **argv, char **in_filename, char **acc_filename,
-        char **work_dir, int *run_no, int *entry_max)
+        char **work_dir, int *run_no, int *entry_max, bool *apply_acc_corr)
 {
     // Handle arguments.
     int opt;
-    while ((opt = getopt(argc, argv, "-hn:a:w:")) != -1) {
+    while ((opt = getopt(argc, argv, "-hn:a:Aw:")) != -1) {
         switch (opt) {
             case 'h':
                 return 1;
@@ -822,6 +831,9 @@ int handle_args(int argc, char **argv, char **in_filename, char **acc_filename,
             case 'a':
                 *acc_filename = (char *) malloc(strlen(optarg) + 1);
                 strcpy(*acc_filename, optarg);
+                break;
+            case 'A':
+                *apply_acc_corr = false;
                 break;
             case 'w':
                 *work_dir = (char *) malloc(strlen(optarg) + 1);
@@ -841,6 +853,9 @@ int handle_args(int argc, char **argv, char **in_filename, char **acc_filename,
         sprintf(*work_dir, "%s/../root_io", dirname(argv[0]));
     }
 
+    // -A is only valid if -a is also specified.
+    if (*apply_acc_corr == false && *acc_filename == NULL) return 12;
+
     // Check positional argument.
     if (*in_filename == NULL) return 3;
 
@@ -857,13 +872,16 @@ int main(int argc, char **argv) {
     char *work_dir = NULL;
     int run_no     = -1;
     int entry_max  = -1;
+    bool apply_acc_corr = true;
 
     int errcode = handle_args(argc, argv, &in_filename, &acc_filename,
-            &work_dir, &run_no, &entry_max);
+            &work_dir, &run_no, &entry_max, &apply_acc_corr);
 
     // Run.
-    if (errcode == 0)
-        errcode = run(in_filename, acc_filename, work_dir, run_no, entry_max);
+    if (errcode == 0) {
+        errcode = run(in_filename, acc_filename, work_dir, run_no, entry_max,
+                      apply_acc_corr);
+    }
 
     // Free up memory.
     if (in_filename  != NULL) free(in_filename);
