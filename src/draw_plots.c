@@ -692,10 +692,10 @@ int run(char *in_filename, char *acc_filename, char *work_dir, int run_no,
 
     // === WRITE TO OUTPUT FILE ================================================
     // Create output file.
-    char out_file[PATH_MAX];
-    sprintf(out_file, "%s/plots_%06d.root", work_dir, run_no);
+    char out_filename[PATH_MAX];
+    sprintf(out_filename, "%s/plots_%06d.root", work_dir, run_no);
 
-    TFile *f_out = TFile::Open(out_file, "RECREATE");
+    TFile *f_out = TFile::Open(out_filename, "RECREATE");
 
     // Write plots to output file.
     for (int bin_i = 0; bin_i < bin_arr_size; ++bin_i) {
@@ -712,7 +712,7 @@ int run(char *in_filename, char *acc_filename, char *work_dir, int run_no,
             plot_arr[plot_i][bin_i]->Write();
     }
 
-    printf("Done! Check out plots at %s.\n\n", out_file);
+    printf("Done! Check out plots at %s.\n\n", out_filename);
 
     // === CLEAN-UP ============================================================
     f_in ->Close();
