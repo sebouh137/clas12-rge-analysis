@@ -693,12 +693,7 @@ int run(char *in_filename, char *acc_filename, char *work_dir, int run_no,
     // === WRITE TO OUTPUT FILE ================================================
     // Create output file.
     char out_file[PATH_MAX];
-    if (plot_pid == INT_MAX)
-        sprintf(out_file, "%s/plots_%06d_%s_%s.root", work_dir, run_no,
-                TRK_LIST[plot_tracker], PART_LIST[plot_particle]);
-    else
-        sprintf(out_file, "%s/plots_%06d_%s_pid%d.root", work_dir, run_no,
-                TRK_LIST[plot_tracker], plot_pid);
+    sprintf(out_file, "%s/plots_%06d.root", work_dir, run_no);
 
     TFile *f_out = TFile::Open(out_file, "RECREATE");
 
