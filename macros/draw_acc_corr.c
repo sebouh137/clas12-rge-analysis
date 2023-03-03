@@ -226,6 +226,8 @@ int draw_acc_corr() {
                                 case 4: sel_idx = i4; break;
                             }
 
+                            printf("bin_pos = %d\n", bin_pos);
+
                             // Increment appropriate counters.
                             y_thrown[sel_idx] += n_thrown[pid_pos][bin_pos];
                             y_simul [sel_idx] += n_simul [pid_pos][bin_pos];
