@@ -463,7 +463,9 @@ int run(char *in_filename, char *acc_filename, char *work_dir, int run_no,
     printf("\nOpening file...\n");
 
     // Counters for fancy progress bar.
-    if (entry_max == -1) entry_max = ntuple->GetEntries();
+    if (entry_max == -1 || entry_max > ntuple->GetEntries()) {
+        entry_max = ntuple->GetEntries();
+    }
     int divcntr     = 0;
     int evnsplitter = 0;
 
