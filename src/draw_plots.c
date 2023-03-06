@@ -281,12 +281,13 @@ int run(char *in_filename, char *acc_filename, char *work_dir, int run_no,
     //       Pre-configured cuts, binnings, and corrections would be nice.
     // TODO. Prepare corrections (acceptance, radiative, Feynman, etc...).
 
-    // === CUT SETUP ===========================================================
+    // === TRACKER SELECTION ===================================================
     printf("\nUse DC or FMT data? [");
     for (int ti = 0; ti < TRK_LIST_SIZE; ++ti) printf("%s, ", TRK_LIST[ti]);
     printf("\b\b]\n");
     int plot_tracker = catch_string(TRK_LIST, TRK_LIST_SIZE);
 
+    // === PARTICLE SELECTION ==================================================
     printf("\nWhat particle should be plotted? Available cuts:\n[");
     for (int part_i = 0; part_i < PART_LIST_SIZE; ++part_i)
         printf("%s, ", PART_LIST[part_i]);
@@ -307,6 +308,8 @@ int run(char *in_filename, char *acc_filename, char *work_dir, int run_no,
         plot_pid = catch_long();
     }
 
+    // Find selected particle PID in acceptance correction data. If not found,
+    //     return an error.
     int acc_pid_idx = INT_MAX;
     if (acc_plot) {
         // Find index of plot_pid in acc_pids.
@@ -316,6 +319,7 @@ int run(char *in_filename, char *acc_filename, char *work_dir, int run_no,
         if (acc_pid_idx == INT_MAX) return 11;
     }
 
+    // === SELECT CUTS =========================================================
     bool general_cuts  = false;
     bool geometry_cuts = false;
     bool dis_cuts      = false;
@@ -336,7 +340,7 @@ int run(char *in_filename, char *acc_filename, char *work_dir, int run_no,
 
     // TODO. Apply custom cuts.
 
-    // === BINNING SETUP =======================================================
+    // === SETUP BINNING =======================================================
 
     // TODO. If acc_plot == true, limit binning in Q2, nu, z_h, Pt2, and
     //       phi_PQ to acceptance correction bins.
@@ -348,37 +352,42 @@ int run(char *in_filename, char *acc_filename, char *work_dir, int run_no,
     double bin_range[dim_bins][2];
     double bin_binsize[dim_bins];
     long   bin_nbins[dim_bins];
-    for (long bdi = 0; bdi < dim_bins; ++bdi) {
+    for (long bin_dim_i = 0; bin_dim_i < dim_bins; ++bin_dim_i) {
         // variable.
-        printf("\nDefine var for bin in dimension %ld. Available vars:\n[",bdi);
+        printf("\nDefine var for bin in dimension %ld. Available vars:\n[",
+                bin_dim_i);
         for (int var_i = 0; var_i < VAR_LIST_SIZE; ++var_i)
             printf("%s, ", R_VAR_LIST[var_i]);
         printf("\b\b]\n");
-        bin_vars[bdi] = catch_string(R_VAR_LIST, VAR_LIST_SIZE);
+        bin_vars[bin_dim_i] = catch_string(R_VAR_LIST, VAR_LIST_SIZE);
 
         // range.
         for (int range_i = 0; range_i < 2; ++range_i) {
             printf("\nDefine %s limit for bin in dimension %ld:\n",
-                    RAN_LIST[range_i], bdi);
-            bin_range[bdi][range_i] = catch_double();
+                    RAN_LIST[range_i], bin_dim_i);
+            bin_range[bin_dim_i][range_i] = catch_double();
         }
 
         // nbins.
-        printf("\nDefine number of bins for bin in dimension %ld:\n", bdi);
-        bin_nbins[bdi] = catch_long();
+        printf("\nDefine number of bins for bin in dimension %ld:\n",
+                bin_dim_i);
+        bin_nbins[bin_dim_i] = catch_long();
 
         // binning bin size.
-        bin_binsize[bdi] = (bin_range[bdi][1]-bin_range[bdi][0])/bin_nbins[bdi];
+        bin_binsize[bin_dim_i] =
+                (bin_range[bin_dim_i][1] - bin_range[bin_dim_i][0]) /
+                bin_nbins[bin_dim_i];
     }
 
-    // === PLOT SETUP ==========================================================
+    // === SETUP PLOT ==========================================================
     // TODO. Change plot_range to plot_edges to get variable bin sizes.
 
     // Number of plots.
     long plot_arr_size;
-    if (acc_plot) {
-        plot_arr_size = ACCPLT_LIST_SIZE;
-    }
+
+    // If acceptance correction is being made, only acceptance corrected
+    //     variables (Q2, nu, zh, Pt2, and phiPQ) can be plotted.
+    if (acc_plot) plot_arr_size = ACCPLT_LIST_SIZE;
     else {
         printf("\nDefine number of plots (Set to 0 to draw standard plots).\n");
         plot_arr_size = catch_long();
@@ -427,20 +436,24 @@ int run(char *in_filename, char *acc_filename, char *work_dir, int run_no,
             plot_nbins[plot_i][dim_i] = catch_long();
         }
     }
-    if (std_plot) { // Setup standard plots.
+
+    // Setup standard plots.
+    if (std_plot) {
         memcpy(plot_type,  STD_PX, sizeof plot_type);
         memcpy(plot_vars,  STD_VX, sizeof plot_vars);
         memcpy(plot_range, STD_RX, sizeof plot_range);
         memcpy(plot_nbins, STD_BX, sizeof plot_nbins);
     }
-    if (acc_plot) { // Setup acceptance corrected plots.
+
+    // Setup acceptance corrected plots.
+    if (acc_plot) {
         memcpy(plot_type,  ACC_PX, sizeof plot_type);
         memcpy(plot_vars,  ACC_VX, sizeof plot_vars);
         // NOTE. plot_nbins is given by acc_nbins. Then, each bin size is given
-        //       by acc_edges!
+        //       by acc_edges.
     }
 
-    // === NTUPLES SETUP =======================================================
+    // === SETUP NTUPLES =======================================================
     TNtuple *ntuple = (TNtuple *) f_in->Get(plot_tracker == 0 ? S_DC : S_FMT);
     Float_t vars[VAR_LIST_SIZE];
     for (int var_i = 0; var_i < VAR_LIST_SIZE; ++var_i)
@@ -448,6 +461,7 @@ int run(char *in_filename, char *acc_filename, char *work_dir, int run_no,
 
     // === APPLY CUTS ==========================================================
     printf("\nOpening file...\n");
+
     // Counters for fancy progress bar.
     if (entry_max == -1) entry_max = ntuple->GetEntries();
     int divcntr     = 0;
@@ -458,11 +472,11 @@ int run(char *in_filename, char *acc_filename, char *work_dir, int run_no,
     // Count number of events.
     for (int entry = 0; entry < entry_max; ++entry) {
         update_progress_bar(entry_max, entry, &evnsplitter, &divcntr);
-
         ntuple->GetEntry(entry);
         if (vars[A_EVENTNO] > nevents) nevents = (int) (vars[A_EVENTNO]+0.5);
     }
 
+    // Apply previously setup cuts.
     printf("Applying cuts...\n");
     divcntr     = 0;
     evnsplitter = 0;
@@ -470,6 +484,10 @@ int run(char *in_filename, char *acc_filename, char *work_dir, int run_no,
     bool *valid_event = (bool *) malloc(nevents * sizeof(bool));
     Float_t current_evn = -1;
     bool no_tre_pass, Q2_pass, W2_pass, zh_pass;
+
+    // Since each entry is a particle, there are potentially many entries for
+    //     one event. Then, we need to check beforehand which events are valid
+    //     so that we can skip those when plotting.
     for (int entry = 0; entry < entry_max; ++entry) {
         update_progress_bar(entry_max, entry, &evnsplitter, &divcntr);
 
@@ -496,7 +514,9 @@ int run(char *in_filename, char *acc_filename, char *work_dir, int run_no,
     // === PLOT ================================================================
     // Create plots, separated by n-dimensional binning.
     long bin_arr_size = 1;
-    for (int bdi = 0; bdi < dim_bins; ++bdi) bin_arr_size *= bin_nbins[bdi];
+    for (int bin_dim_i = 0; bin_dim_i < dim_bins; ++bin_dim_i) {
+        bin_arr_size *= bin_nbins[bin_dim_i];
+    }
 
     TH1 *plot_arr[plot_arr_size][bin_arr_size];
     for (int plot_i = 0; plot_i < plot_arr_size; ++plot_i) {
@@ -577,8 +597,9 @@ int run(char *in_filename, char *acc_filename, char *work_dir, int run_no,
 
         // Prepare binning vars.
         Float_t bin_vars_idx[dim_bins];
-        for (long bdi = 0; bdi < dim_bins; ++bdi)
-            bin_vars_idx[bdi] = vars[bin_vars[bdi]];
+        for (long bin_dim_i = 0; bin_dim_i < dim_bins; ++bin_dim_i) {
+            bin_vars_idx[bin_dim_i] = vars[bin_vars[bin_dim_i]];
+        }
 
         // Fills plots.
         for (int plot_i = 0; plot_i < plot_arr_size; ++plot_i) {
