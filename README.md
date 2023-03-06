@@ -107,6 +107,13 @@ Usage: draw_plots [-hn:a:w:] infile
 
 Draw plots from a ROOT file built from `make_ntuples`. File should be named <text>run_no.root. This tool is built for those who don't enjoy using root too much, and should be able to perform most basic tasks needed in SIDIS analysis.
 
+## Debugging
+As always, debugging ROOT code is terrible. If you want to use Valgrind, run it as follows to hide (some of) of ROOT's terrible memory management practices:
+
+```
+valgrind --num-callers=30 --suppressions=$ROOTSYS/etc/valgrind-root.supp
+```
+
 ## Contributing
 Pull requests are welcome. For major changes, open an issue first to discuss the changes and figure out a work plan before putting serious work into them.
 

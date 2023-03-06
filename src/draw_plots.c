@@ -254,7 +254,7 @@ int find_idx(long dim_bins, long depth, Float_t var[], long nbins[],
 
 /** run() function of the program. Check usage() for details. */
 int run(char *in_filename, char *acc_filename, char *work_dir, int run_no,
-        int entry_max, bool apply_acc_corr)
+        int nentries, bool apply_acc_corr)
 {
     // Open input file.
     TFile *f_in  = TFile::Open(in_filename, "READ");
@@ -463,8 +463,8 @@ int run(char *in_filename, char *acc_filename, char *work_dir, int run_no,
     printf("\nOpening file...\n");
 
     // Counters for fancy progress bar.
-    if (entry_max == -1 || entry_max > ntuple->GetEntries()) {
-        entry_max = ntuple->GetEntries();
+    if (nentries == -1 || nentries > ntuple->GetEntries()) {
+        nentries = ntuple->GetEntries();
     }
     int divcntr     = 0;
     int evnsplitter = 0;
@@ -472,14 +472,14 @@ int run(char *in_filename, char *acc_filename, char *work_dir, int run_no,
     // Apply SIDIS cuts, checking which event numbers should be skipped.
     int nevents = -1;
     // Count number of events.
-    for (int entry = 0; entry < entry_max; ++entry) {
-        update_progress_bar(entry_max, entry, &evnsplitter, &divcntr);
+    for (int entry = 0; entry < nentries; ++entry) {
+        update_progress_bar(nentries, entry, &evnsplitter, &divcntr);
         ntuple->GetEntry(entry);
         if (vars[A_EVENTNO] > nevents) nevents = (int) (vars[A_EVENTNO]+0.5);
     }
 
     // Apply previously setup cuts.
-    printf("Applying cuts...\n");
+    if (dis_cuts) printf("Applying cuts...\n");
     divcntr     = 0;
     evnsplitter = 0;
 
@@ -487,11 +487,18 @@ int run(char *in_filename, char *acc_filename, char *work_dir, int run_no,
     Float_t current_evn = -1;
     bool no_tre_pass, Q2_pass, W2_pass, zh_pass;
 
+    // Fill valid_event array with false bools in case the next for loop doesn't
+    //     fill every entry in it.
+    for (int event = 0; event < nevents && dis_cuts; ++event) {
+        valid_event[event] = false;
+    }
+
     // Since each entry is a particle, there are potentially many entries for
     //     one event. Then, we need to check beforehand which events are valid
-    //     so that we can skip those when plotting.
-    for (int entry = 0; entry < entry_max; ++entry) {
-        update_progress_bar(entry_max, entry, &evnsplitter, &divcntr);
+    //     so that we can skip those when plotting. It is only necessary to do
+    //     this if we're applying DIS cuts.
+    for (int entry = 0; entry < nentries && dis_cuts; ++entry) {
+        update_progress_bar(nentries, entry, &evnsplitter, &divcntr);
 
         ntuple->GetEntry(entry);
         if (vars[A_EVENTNO] != current_evn) {
@@ -561,8 +568,8 @@ int run(char *in_filename, char *acc_filename, char *work_dir, int run_no,
 
     // Run through events.
     printf("Processing plots...\n");
-    for (int entry = 0; entry < entry_max; ++entry) {
-        update_progress_bar(entry_max, entry, &evnsplitter, &divcntr);
+    for (int entry = 0; entry < nentries; ++entry) {
+        update_progress_bar(nentries, entry, &evnsplitter, &divcntr);
         ntuple->GetEntry(entry);
 
         // Apply particle cuts.
@@ -611,8 +618,9 @@ int run(char *in_filename, char *acc_filename, char *work_dir, int run_no,
                 for (int list_i = 0; list_i < DIS_LIST_SIZE; ++list_i) {
                     if (!strcmp(R_VAR_LIST[plot_vars[plot_i][dim_i]],
                             DIS_LIST[list_i]) &&
-                            vars[plot_vars[plot_i][dim_i]] < 1e-9)
+                            vars[plot_vars[plot_i][dim_i]] < 1e-9) {
                         sidis_pass = false;
+                    }
                 }
             }
             if (!sidis_pass) continue;
@@ -834,7 +842,7 @@ int handle_err(int errcode) {
  *     explained in the handle_err() function.
  */
 int handle_args(int argc, char **argv, char **in_filename, char **acc_filename,
-        char **work_dir, int *run_no, int *entry_max, bool *apply_acc_corr)
+        char **work_dir, int *run_no, int *nentries, bool *apply_acc_corr)
 {
     // Handle arguments.
     int opt;
@@ -843,8 +851,8 @@ int handle_args(int argc, char **argv, char **in_filename, char **acc_filename,
             case 'h':
                 return 1;
             case 'n':
-                *entry_max = atoi(optarg);
-                if (*entry_max <= 0) return 10; // Check if entry_max is valid.
+                *nentries = atoi(optarg);
+                if (*nentries <= 0) return 10; // Check if nentries is valid.
                 break;
             case 'a':
                 *acc_filename = (char *) malloc(strlen(optarg) + 1);
@@ -889,15 +897,15 @@ int main(int argc, char **argv) {
     char *acc_filename = NULL;
     char *work_dir = NULL;
     int run_no     = -1;
-    int entry_max  = -1;
+    int nentries  = -1;
     bool apply_acc_corr = true;
 
     int errcode = handle_args(argc, argv, &in_filename, &acc_filename,
-            &work_dir, &run_no, &entry_max, &apply_acc_corr);
+            &work_dir, &run_no, &nentries, &apply_acc_corr);
 
     // Run.
     if (errcode == 0) {
-        errcode = run(in_filename, acc_filename, work_dir, run_no, entry_max,
+        errcode = run(in_filename, acc_filename, work_dir, run_no, nentries,
                       apply_acc_corr);
     }
 
