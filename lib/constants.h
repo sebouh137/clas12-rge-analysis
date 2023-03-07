@@ -250,14 +250,15 @@ extern const double PLIMITSARR[SF_NPARAMS][2]; // Momentum limits for 1D SF fit.
 #define ECOU_LYR    7 // EC outer layer id.
 
 // General Cuts.
-#define FMTNLYRSCUT   3 // # of FMT layers required to accept track.
-#define Q2CUT         1 // Q2 of particle must be over this value.
-#define W2CUT         4 // W2 of particle must be over this value.
-#define ZHCUT         1 // zh of particle must be below this value.
-#define CHI2NDFCUT   15 // Chi2/NDF must be below this value.
-#define VXVYCUT       4 // sqrt(vx^2 + vy^2) must be below this value.
-#define VZLOWCUT    -40 // vz must be above this value.
-#define VZHIGHCUT    40 // vz must be below this.
+#define FMTNLYRSCUT   3    // # of FMT layers required to accept track.
+#define Q2CUT         1.   // Q2 of particle must be over this value.
+#define W2CUT         4.   // W2 of particle must be over this value.
+#define ZHCUT         1.   // zh of particle must be below this value.
+#define YBCUT         0.85 // Yb of particle must be below this value.
+#define CHI2NDFCUT   15    // Chi2/NDF must be below this value.
+#define VXVYCUT       4    // sqrt(vx^2 + vy^2) must be below this value.
+#define VZLOWCUT    -40    // vz must be above this value.
+#define VZHIGHCUT    40    // vz must be below this.
 
 // PID Cuts. Most numbers come from `/calibration/eb/` from the CCDB.
 #define NPIDS           6     // # of (signless) PIDs program is capable of

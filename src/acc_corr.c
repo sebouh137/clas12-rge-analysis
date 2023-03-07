@@ -33,63 +33,84 @@ int find_pos(double v, double *b, int size) {
  * Count number of events in a tree for each bin, for a given pid. The number of
  *     bins is equal to the multiplication of the size-1 of each binning.
  *
- * @param evn_cnt:  array of integers that count events in each bin.
- * @param tree:     TTree containing the data we're to process.
- * @param pid:      pid of the particle for which we're counting events.
- * @param nbins:    number of bins, or size of the evn_cnt array.
- * @param bsizes:   size of each binning, should be an array of size 5.
- * @param binnings: 2-dimensional array of binnings.
- * @param in_deg:   boolean telling us if thrown events are in degrees --
- *                  default is radians.
- * @return:         success code (0).
+ * @param file:   file where we'll write the output data.
+ * @param tree:   TTree containing the data we're to process.
+ * @param pid:    pid of the particle for which we're counting events.
+ * @param nbins:  array containing number of bins.
+ * @param edges:  2-dimensional array of edges.
+ * @param in_deg: boolean telling us if thrown events are in degrees --
+ *                default is radians.
+ * @return:       success code (0).
  */
-int count_events(int *evn_cnt, TTree *tree, int pid, int nbins, int *bsizes,
-        double **binnings, bool in_deg)
+int count_events(FILE *file, TTree *tree, int pid, int *nbins, double **edges,
+        bool in_deg)
 {
-    for (int i = 0; i < nbins; ++i) evn_cnt[i] = 0;
+    // Store total number of bins for simplicity.
+    int tnbins = 1;
+    for (int i = 0; i < 5; ++i) tnbins *= nbins[i];
+
+    // Create and initialize evn_cnt.
+    int evn_cnt[nbins[0]][nbins[1]][nbins[2]][nbins[3]][nbins[4]];
+    int *iterator = &evn_cnt[0][0][0][0][0];
+    for (int i = 0; i < tnbins; ++i) {
+        *iterator = 0;
+        ++iterator;
+    }
 
     Float_t s_pid;
-    Float_t s_binning[5] = {0, 0, 0, 0, 0};
+    // Float_t s_pid, s_W2, s_Yb;
+    Float_t s_bin[5] = {0, 0, 0, 0, 0};
     tree->SetBranchAddress(S_PID,   &s_pid);
-    tree->SetBranchAddress(S_Q2,    &(s_binning[0]));
-    tree->SetBranchAddress(S_NU,    &(s_binning[1]));
-    tree->SetBranchAddress(S_ZH,    &(s_binning[2]));
-    tree->SetBranchAddress(S_PT2,   &(s_binning[3]));
-    tree->SetBranchAddress(S_PHIPQ, &(s_binning[4]));
+    tree->SetBranchAddress(S_Q2,    &(s_bin[0]));
+    tree->SetBranchAddress(S_NU,    &(s_bin[1]));
+    tree->SetBranchAddress(S_ZH,    &(s_bin[2]));
+    tree->SetBranchAddress(S_PT2,   &(s_bin[3]));
+    tree->SetBranchAddress(S_PHIPQ, &(s_bin[4]));
+    // tree->SetBranchAddress(S_W2,    &s_W2);
+    // tree->SetBranchAddress(S_YB,    &s_Yb); // TODO. PENDING.
+
     for (int evn = 0; evn < tree->GetEntries(); ++evn) {
         tree->GetEntry(evn);
+
+        // Only count the selected PID.
         if (pid-0.5 < s_pid && s_pid < pid+0.5) continue;
 
-        // Find position of event.
+        // Apply DIS cuts. NOTE. PENDING.
+        // if (s_bin[0] < Q2CUT) continue; // Q2 > 1
+        // if (s_W2 < W2CUT)         continue; // W2 > 4
+        // if (s_Yb > YBCUT)         continue; // Yb < 0.85
+
+        // Find position of event. TODO. CHECK THIS LOGIC IN DETAIL.
         int idx[5];
-        bool kill = false;
+        bool kill = false; // If kill is true, var falls outside of bin range.
         for (int bi = 0; bi < 5 && !kill; ++bi) {
             if (bi == 4 && in_deg)
-                idx[bi] = find_pos(to_rad(s_binning[bi]), binnings[bi],
-                        bsizes[bi]-1);
+                idx[bi] = find_pos(to_rad(s_bin[bi]), edges[bi], nbins[bi]);
             else
-                idx[bi] = find_pos(s_binning[bi], binnings[bi], bsizes[bi]-1);
+                idx[bi] = find_pos(s_bin[bi], edges[bi], nbins[bi]);
 
             if (idx[bi] < 0) kill = true;
         }
         if (kill) continue;
 
         // Increase counter.
-        ++evn_cnt[
-                idx[0]*(bsizes[1]-1)*(bsizes[2]-1)*(bsizes[3]-1)*(bsizes[4]-1) +
-                idx[1]*(bsizes[2]-1)*(bsizes[3]-1)*(bsizes[4]-1) +
-                idx[2]*(bsizes[3]-1)*(bsizes[4]-1) +
-                idx[3]*(bsizes[4]-1) +
-                idx[4]
-        ];
+        ++evn_cnt[idx[0]][idx[1]][idx[2]][idx[3]][idx[4]];
     }
+
+    // Write evn_cnt to file.
+    iterator = &evn_cnt[0][0][0][0][0];
+    for (int i = 0; i < tnbins; ++i) {
+        fprintf(file, "%d ", *iterator);
+        ++iterator;
+    }
+    fprintf(file, "\n");
 
     return 0;
 }
 
 /** run() function of the program. Check usage() for details. */
-int run(char *gen_file, char *sim_file, char *data_dir, int *bsizes,
-        double **binnings, bool use_fmt, bool in_deg)
+int run(char *gen_file, char *sim_file, char *data_dir, int *nedges,
+        double **edges, bool use_fmt, bool in_deg)
 {
     // Open input files and load TTrees.
     printf("\nOpening generated events file...\n");
@@ -110,14 +131,14 @@ int run(char *gen_file, char *sim_file, char *data_dir, int *bsizes,
     if (!access(out_file, F_OK)) return 14;
     FILE *t_out = fopen(out_file, "w");
 
-    // Write binning bsizes to output file.
-    for (int bi = 0; bi < 5; ++bi) fprintf(t_out, "%d ", bsizes[bi]);
+    // Write binning nedges to output file.
+    for (int bi = 0; bi < 5; ++bi) fprintf(t_out, "%d ", nedges[bi]);
     fprintf(t_out, "\n");
 
-    // Write binnings to output file.
+    // Write edges to output file.
     for (int bi = 0; bi < 5; ++bi) {
-        for (int bii = 0; bii < bsizes[bi]; ++bii) {
-            fprintf(t_out, "%12.9f ", binnings[bi][bii]);
+        for (int bii = 0; bii < nedges[bi]; ++bii) {
+            fprintf(t_out, "%12.9f ", edges[bi][bii]);
         }
         fprintf(t_out, "\n");
     }
@@ -130,18 +151,23 @@ int run(char *gen_file, char *sim_file, char *data_dir, int *bsizes,
     int pidlist_size = 0;
     thrown->SetBranchAddress(S_PID, &s_pid);
 
-    for (int evn = 0; evn < thrown->GetEntries(); ++evn) {
-        thrown->GetEntry(evn);
-        bool found = false;
-        for (int pi = 0; pi < pidlist_size; ++pi) {
-            if (pidlist[pi] - 0.5 <= s_pid && s_pid <= pidlist[pi] + 0.5) {
-                found = true;
-            }
-        }
-        if (found) continue;
-        pidlist[pidlist_size] = s_pid;
-        ++pidlist_size;
-    }
+    // --+ TEMPORARY CODE +-----------------------------------------------------
+    // for (int evn = 0; evn < thrown->GetEntries(); ++evn) {
+    //     thrown->GetEntry(evn);
+    //     bool found = false;
+    //     for (int pi = 0; pi < pidlist_size; ++pi) {
+    //         if (pidlist[pi] - 0.5 <= s_pid && s_pid <= pidlist[pi] + 0.5) {
+    //             found = true;
+    //         }
+    //     }
+    //     if (found) continue;
+    //     pidlist[pidlist_size] = s_pid;
+    //     ++pidlist_size;
+    // }
+
+    pidlist_size = 1;
+    pidlist[0] = -211;
+    // --+ TEMPORARY CODE +-----------------------------------------------------
 
     // Write list of PIDs to output file.
     fprintf(t_out, "%d\n", pidlist_size);
@@ -150,26 +176,20 @@ int run(char *gen_file, char *sim_file, char *data_dir, int *bsizes,
     fprintf(t_out, "\n");
 
     // Get number of bins.
-    int nbins = 1;
-    for (int bi = 0; bi < 5; ++bi) nbins *= bsizes[bi] - 1;
+    int nbins[5];
+    for (int bin_dim_i = 0; bin_dim_i < 5; ++bin_dim_i)
+        nbins[bin_dim_i] = nedges[bin_dim_i] - 1;
 
     // Count and write number of thrown and simulated events in each bin.
     for (int pi = 0; pi < pidlist_size; ++pi) {
         int pid = (int) pidlist[pi];
         printf("Working on PID %5d (%2d/%2d)...\n", pid, pi, pidlist_size);
-        fflush(stdout);
 
-        int t_evn[nbins];
         printf("  Counting thrown events...\n");
-        count_events(t_evn, thrown, pid, nbins, bsizes, binnings, in_deg);
-        for (int i = 0; i < nbins; ++i) fprintf(t_out, "%d ", t_evn[i]);
-        fprintf(t_out, "\n");
+        count_events(t_out, thrown, pid, nbins, edges, in_deg);
 
-        int s_evn[nbins];
         printf("  Counting simulated events...\n");
-        count_events(s_evn, simul,  pid, nbins, bsizes, binnings, false);
-        for (int i = 0; i < nbins; ++i) fprintf(t_out, "%d ", s_evn[i]);
-        fprintf(t_out, "\n");
+        count_events(s_evn, simul,  pid, nbins, nedges, edges, false);
 
         printf("  Done!\n");
     }
@@ -178,8 +198,8 @@ int run(char *gen_file, char *sim_file, char *data_dir, int *bsizes,
     t_in->Close();
     s_in->Close();
     fclose(t_out);
-    for (int bi = 0; bi < 5; ++bi) free(binnings[bi]);
-    free(binnings);
+    for (int bi = 0; bi < 5; ++bi) free(edges[bi]);
+    free(edges);
 
     return 0;
 }
@@ -221,10 +241,10 @@ int handle_err(int errcode) {
         case 1:
             break;
         case 2:
-            fprintf(stderr, "All binnings should be specified.");
+            fprintf(stderr, "All edges should be specified.");
             break;
         case 3:
-            fprintf(stderr, "All binnings should have *at least* two values -- "
+            fprintf(stderr, "All edges should have *at least* two values -- "
                             "a minimum and a maximum.");
             break;
         case 4:
@@ -272,7 +292,7 @@ int handle_err(int errcode) {
  *     explained in the handle_err() function.
  */
 int handle_args(int argc, char **argv, char **gen_file, char **sim_file,
-        char **data_dir, int *bsizes, double **binnings, bool *use_fmt,
+        char **data_dir, int *nedges, double **edges, bool *use_fmt,
         bool *in_deg)
 {
     // Handle arguments.
@@ -282,19 +302,19 @@ int handle_args(int argc, char **argv, char **gen_file, char **sim_file,
         case 'h':
             return 1;
         case 'q':
-            grab_multiarg(argc, argv, &optind, &(bsizes[0]), &(binnings[0]));
+            grab_multiarg(argc, argv, &optind, &(nedges[0]), &(edges[0]));
             break;
         case 'n':
-            grab_multiarg(argc, argv, &optind, &(bsizes[1]), &(binnings[1]));
+            grab_multiarg(argc, argv, &optind, &(nedges[1]), &(edges[1]));
             break;
         case 'z':
-            grab_multiarg(argc, argv, &optind, &(bsizes[2]), &(binnings[2]));
+            grab_multiarg(argc, argv, &optind, &(nedges[2]), &(edges[2]));
             break;
         case 'p':
-            grab_multiarg(argc, argv, &optind, &(bsizes[3]), &(binnings[3]));
+            grab_multiarg(argc, argv, &optind, &(nedges[3]), &(edges[3]));
             break;
         case 'f':
-            grab_multiarg(argc, argv, &optind, &(bsizes[4]), &(binnings[4]));
+            grab_multiarg(argc, argv, &optind, &(nedges[4]), &(edges[4]));
             break;
         case 'g':
             grab_str(optarg, gen_file);
@@ -318,12 +338,12 @@ int handle_args(int argc, char **argv, char **gen_file, char **sim_file,
     }
 
     // Check that all arrays have *at least* two values.
-    for (int bi = 0; bi < 5; ++bi) if (bsizes[bi] == -1) return 2;
-    for (int bi = 0; bi < 5; ++bi) if (bsizes[bi] < 2)   return 3;
+    for (int bi = 0; bi < 5; ++bi) if (nedges[bi] == -1) return 2;
+    for (int bi = 0; bi < 5; ++bi) if (nedges[bi] < 2)   return 3;
 
     // Convert phi_PQ binning to radians.
-    for (int bbi = 0; bbi < bsizes[4]; ++bbi)
-        binnings[4][bbi] = to_rad(binnings[4][bbi]);
+    for (int bbi = 0; bbi < nedges[4]; ++bbi)
+        edges[4][bbi] = to_rad(edges[4][bbi]);
 
     // Define datadir if undefined.
     if (*data_dir == NULL) {
@@ -352,16 +372,16 @@ int main(int argc, char **argv) {
     char *data_dir = NULL;
     bool use_fmt   = false;
     bool in_deg    = false;
-    int bsizes[5]  = {-1, -1, -1, -1, -1};
-    double **binnings;
+    int nedges[5]  = {-1, -1, -1, -1, -1};
+    double **edges;
 
-    binnings = (double **) malloc(5 * sizeof(*binnings));
+    edges = (double **) malloc(5 * sizeof(*edges));
     int errcode = handle_args(argc, argv, &gen_file, &sim_file, &data_dir,
-            bsizes, binnings, &use_fmt, &in_deg);
+            nedges, edges, &use_fmt, &in_deg);
 
     // Run.
     if (errcode == 0)
-        errcode = run(gen_file, sim_file, data_dir, bsizes, binnings, use_fmt,
+        errcode = run(gen_file, sim_file, data_dir, nedges, edges, use_fmt,
                 in_deg);
 
     // Free up memory.

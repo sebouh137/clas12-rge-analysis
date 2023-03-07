@@ -31,8 +31,8 @@ const char *OUTPUT_FILENAME = "../root_io/acc_corr.root";
 // Map containing the variables we're working with.
 const int NPLOTS = 5;
 const std::map<int, const char *> PLOT_NAMES {
-    // {0, "Q2"}, {1, "#nu"}, {2, "z_{h}"}, {3, "Pt2"}, {4, "#phi_{PQ}"}
-    {0, "Q2"}, {1, "nu"}, {2, "zh"}, {3, "Pt2"}, {4, "phiPQ"}
+    {0, "Q2"}, {1, "#nu"}, {2, "z_{h}"}, {3, "Pt2"}, {4, "#phi_{PQ}"}
+    // {0, "Q2"}, {1, "nu"}, {2, "zh"}, {3, "Pt2"}, {4, "phiPQ"}
 };
 
 // --- Macro code begins here ----------------------------------------------- //
@@ -89,8 +89,8 @@ int get_acc_corr(FILE *f_in, long int pids_size, long int nbins,
 
 /**
  * Read acc_corr.txt file to get the acceptance correction for each bin for each
- *     PID. Copied from file_handler because tracking dependencies with ROOT is a
- *     bitch.
+ *     PID. Copied from file_handler because tracking dependencies with ROOT is
+ *     a bitch.
  */
 int read_acc_corr_file(char *acc_filename, long int b_sizes[5],
         double ***binnings, long int *pids_size, long int *nbins,
@@ -128,12 +128,15 @@ int add_tcanvas(std::vector<TCanvas *> *c, const char *n) {
     return 0;
 }
 
+// TODO. ADD DIS CUTS.
+// TODO. FIX WEIRD BUG.
+
 /** Run the macro. */
 int draw_acc_corr() {
     printf("Running... ");
     fflush(stdout);
 
-    // Copy INPUT_FILENAME to char*.
+    // Copy INPUT_FILENAME to char *.
     char input_filename[128];
     for (int i = 0; i <= strlen(INPUT_FILENAME); ++i) {
         if (i == strlen(INPUT_FILENAME)) input_filename[i] = '\0';
@@ -225,8 +228,6 @@ int draw_acc_corr() {
                                 case 3: sel_idx = i3; break;
                                 case 4: sel_idx = i4; break;
                             }
-
-                            printf("bin_pos = %d\n", bin_pos);
 
                             // Increment appropriate counters.
                             y_thrown[sel_idx] += n_thrown[pid_pos][bin_pos];
