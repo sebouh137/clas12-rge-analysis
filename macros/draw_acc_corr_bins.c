@@ -518,23 +518,21 @@ int run(char *in_file, char *acc_file, char *work_dir, int run_no,
     TFile *f_out = TFile::Open(out_file, "RECREATE");
 
     // --- CUSTOM CODE ---------------------------------------------------------
-    int Q2_BINS_SIZE = 9;
+    int Q2_BINS_SIZE = 10;
     double q2_bins[Q2_BINS_SIZE] =
-            {1.0, 1.4, 1.6, 1.8, 2.0, 2.25, 2.6, 3.1, 4.0, 11.0};
-    int NU_BINS_SIZE = 10;
+            {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
+    int NU_BINS_SIZE = 8;
     double nu_bins[NU_BINS_SIZE] =
-            {2.0, 3.7, 4.4, 5.0, 5.6, 6.2, 6.8, 7.5, 8.2, 8.9, 10.1};
-    int PT2_BINS_SIZE = 8;
+            {2, 3, 4, 5, 6, 7, 8, 9, 10};
+    int PT2_BINS_SIZE = 10;
     double pt2_bins[PT2_BINS_SIZE] =
-            {0.00, 0.06, 0.10, 0.14, 0.18, 0.24, 0.34, 0.60, 2.00};
-    int ZH_BINS_SIZE = 11;
+            {0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6, 1.8, 2.0};
+    int ZH_BINS_SIZE = 10;
     double zh_bins[ZH_BINS_SIZE] =
-            {0.00, 0.11, 0.14, 0.17, 0.20, 0.23, 0.27, 0.32, 0.39, 0.50, 0.70,
-             1.00};
-    int PHIPQ_BINS_SIZE = 12;
+            {0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0};
+    int PHIPQ_BINS_SIZE = 9;
     double phipq_bins[PHIPQ_BINS_SIZE] =
-            {-180, -165, -150, -127.5, -105, -75, 0, 75, 105, 127.5, 150, 165,
-             180};
+            {-180, -140, -100, -60, -20, 20, 60, 100, 140, 180};
     // -------------------------------------------------------------------------
 
     // Write plots to output file.

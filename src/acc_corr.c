@@ -76,6 +76,9 @@ int count_entries(FILE *file, TTree *tree, int pid, int *nbins, double **edges,
         // Only count the selected PID.
         if (pid-0.5 < s_pid && s_pid < pid+0.5) continue;
 
+        // Remove kinematic variables == 0.
+        for (int s_i = 0; s_i < 5; ++s_i) if (s_bin[s_i] == 0) continue;
+
         // Apply DIS cuts.
         if (s_bin[0] < Q2CUT) continue; // Q2 > 1.
         if (!simul && s_W  < WCUT)  continue; // W  > 2.
