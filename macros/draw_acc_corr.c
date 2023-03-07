@@ -24,8 +24,9 @@
 const int DEBUG = 0;
 // Set to the PID to plot acceptance correction from.
 const int PID = -211;
-// acc_corr.txt produced by acc_corr.
-const char *INPUT_FILENAME  = "../data/acc_corr_dc.txt";
+// acc_corr.txt files produced by acc_corr.
+const char *DC_FILENAME  = "../data/acc_corr_dc.txt";
+const char *FMT_FILENAME = "../data/acc_corr_fmt.txt";
 // Root file where we'll write the plots.
 const char *OUTPUT_FILENAME = "../root_io/acc_corr.root";
 // Map containing the variables we're working with.
@@ -128,37 +129,55 @@ int add_tcanvas(std::vector<TCanvas *> *c, const char *n) {
     return 0;
 }
 
-// TODO. ADD DIS CUTS.
-// TODO. FIX WEIRD BUG.
+/** Copy const char * to char *. */
+int copy_filename(char *tgt, const char *src) {
+    for (int i = 0; i <= strlen(src); ++i) {
+        if (i == strlen(src)) tgt[i] = '\0';
+        else                  tgt[i] = src[i];
+    }
+
+    return 0;
+}
 
 /** Run the macro. */
 int draw_acc_corr() {
-    printf("Running... ");
-    fflush(stdout);
+    // printf("Running... ");
+    // fflush(stdout);
 
-    // Copy INPUT_FILENAME to char *.
-    char input_filename[128];
-    for (int i = 0; i <= strlen(INPUT_FILENAME); ++i) {
-        if (i == strlen(INPUT_FILENAME)) input_filename[i] = '\0';
-        else input_filename[i] = INPUT_FILENAME[i];
-    }
+    // Copy filenames to char *.
+    char dc_filename[128];
+    char fmt_filename[128];
+    copy_filename(dc_filename,  DC_FILENAME);
+    copy_filename(fmt_filename, FMT_FILENAME);
 
-    // Read acceptance correction from file.
+    // Read DC acceptance correction.
     long int bs[5];
     double **binnings;
     long int pids_size;
     long int nbins;
     long int *pids;
     int **n_thrown;
-    int **n_simul;
-    read_acc_corr_file(input_filename, bs, &binnings, &pids_size, &nbins,
-            &pids, &n_thrown, &n_simul);
+    int **n_simul_dc;
+    int **n_simul_fmt;
+    read_acc_corr_file(dc_filename, bs, &binnings, &pids_size, &nbins,
+        &pids, &n_thrown, &n_simul_dc);
+
+    // Free everything but n_simul_dc.
+    for (int bi = 0; bi < 5; ++bi) free(binnings[bi]);
+    free(binnings);
+    free(pids);
+    for (int pi = 0; pi < pids_size; ++pi) free(n_thrown[pi]);
+    free(n_thrown);
+
+    // Read FMT acceptance correction.
+    read_acc_corr_file(fmt_filename, bs, &binnings, &pids_size, &nbins, &pids,
+            &n_thrown, &n_simul_fmt);
 
     // Get place of PID in *pids.
     int pid_pos = -1;
     for (int pi = 0; pi < pids_size; ++pi) if (PID == pids[pi]) pid_pos = pi;
     if (pid_pos == -1) {
-        printf("\nPID %d not found in %s! Exiting...\n", PID, input_filename);
+        printf("\nPID %d not found in %s! Exiting...\n", PID, dc_filename);
         return 1;
     }
 
@@ -194,14 +213,16 @@ int draw_acc_corr() {
         double x_pos[bin_size - 1];
         double x_length[bin_size - 1];
         int y_thrown[bin_size - 1];
-        int y_simul[bin_size - 1];
+        int y_simul_dc[bin_size - 1];
+        int y_simul_fmt[bin_size - 1];
         double y_err[bin_size - 1];
         for (int bii = 0; bii < bin_size - 1; ++bii) {
             x_pos[bii]    = (binnings[var_idx][bii+1]+binnings[var_idx][bii])/2;
             x_length[bii] = (binnings[var_idx][bii+1]-binnings[var_idx][bii])/2;
             y_thrown[bii] = 0;
-            y_simul[bii]  = 0;
-            y_err[bii]    = 0.; // Dummy variable.
+            y_simul_dc[bii]  = 0;
+            y_simul_fmt[bii] = 0;
+            y_err[bii]       = 0.; // Dummy variable.
         }
 
         // Fill y. NOTE. This is a very sub-optimal and ugly approach, but it
@@ -231,7 +252,10 @@ int draw_acc_corr() {
 
                             // Increment appropriate counters.
                             y_thrown[sel_idx] += n_thrown[pid_pos][bin_pos];
-                            y_simul [sel_idx] += n_simul [pid_pos][bin_pos];
+                            y_simul_dc[sel_idx]
+                                    += n_simul_dc[pid_pos][bin_pos];
+                            y_simul_fmt[sel_idx]
+                                    += n_simul_fmt[pid_pos][bin_pos];
                         }
                     }
                 }
@@ -240,18 +264,21 @@ int draw_acc_corr() {
 
         if (DEBUG) {
             // Print counting results.
-            printf("%6s thrown  simul\n", PLOT_NAMES.at(var_idx));
+            printf("%6s thrown  simul dc simul fmt\n", PLOT_NAMES.at(var_idx));
             for (int i = 0; i < bs[var_idx]-1; ++i)
-            printf("       %08d %08d\n", y_thrown[i], y_simul[i]);
+            printf("       %08d %08d %08d\n",
+                    y_thrown[i], y_simul_dc[i], y_simul_fmt[i]);
             printf("\n");
         }
 
-        // Create a copy of n_thrown and n_simul as doubles.
+        // Create a copy of n_thrown, n_simul_dc, and n_simul_fmt as doubles.
         double y_thrown_dbl[bin_size - 1];
-        double y_simul_dbl [bin_size - 1];
+        double y_simul_dc_dbl[bin_size - 1];
+        double y_simul_fmt_dbl[bin_size - 1];
         for (int bii = 0; bii < bin_size - 1; ++bii) {
             y_thrown_dbl[bii] = (double) y_thrown[bii];
-            y_simul_dbl[bii]  = (double) y_simul[bii];
+            y_simul_dc_dbl[bii] = (double) y_simul_dc[bii];
+            y_simul_fmt_dbl[bii] = (double) y_simul_fmt[bii];
         }
 
         // Write results to plots.
@@ -268,14 +295,23 @@ int draw_acc_corr() {
         graph_thrown->SetMinimum(0.);
         graph_thrown->Draw("AP");
 
-        // Write TGraphErrors for simulated events.
-        TGraphErrors *graph_simul = new TGraphErrors(
-                bs[var_idx]-1, x_pos, y_simul_dbl, x_length, y_err
+        // Write TGraphErrors for DC events.
+        TGraphErrors *graph_simul_dc = new TGraphErrors(
+                bs[var_idx]-1, x_pos, y_simul_dc_dbl, x_length, y_err
         );
-        graph_simul->SetTitle(Form("%s (simul)", PLOT_NAMES.at(var_idx)));
-        graph_simul->SetMarkerColor(kBlue);
-        graph_simul->SetMarkerStyle(21);
-        graph_simul->Draw("sameP");
+        graph_simul_dc->SetTitle(Form("%s (DC)", PLOT_NAMES.at(var_idx)));
+        graph_simul_dc->SetMarkerColor(kBlue);
+        graph_simul_dc->SetMarkerStyle(21);
+        graph_simul_dc->Draw("sameP");
+
+        // Write TGraphErrors for FMT events.
+        TGraphErrors *graph_simul_fmt = new TGraphErrors(
+                bs[var_idx]-1, x_pos, y_simul_fmt_dbl, x_length, y_err
+        );
+        graph_simul_fmt->SetTitle(Form("%s (FMT)", PLOT_NAMES.at(var_idx)));
+        graph_simul_fmt->SetMarkerColor(kGreen);
+        graph_simul_fmt->SetMarkerStyle(21);
+        graph_simul_fmt->Draw("sameP");
 
         // Add legend.
         gPad->BuildLegend();
@@ -298,10 +334,12 @@ int draw_acc_corr() {
     free(pids);
     for (int pi = 0; pi < pids_size; ++pi) {
         free(n_thrown[pi]);
-        free(n_simul[pi]);
+        free(n_simul_dc[pi]);
+        free(n_simul_fmt[pi]);
     }
     free(n_thrown);
-    free(n_simul);
+    free(n_simul_dc);
+    free(n_simul_fmt);
     file_out->Close();
     printf("Done!\n");
 
