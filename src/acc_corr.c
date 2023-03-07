@@ -40,10 +40,12 @@ int find_pos(double v, double *b, int size) {
  * @param edges:  2-dimensional array of edges.
  * @param in_deg: boolean telling us if thrown events are in degrees -- default
  *                is radians.
+ * @param simul:  boolean. False if we're processing thrown data, true if it's
+ *                simulated data.
  * @return:       success code (0).
  */
 int count_entries(FILE *file, TTree *tree, int pid, int *nbins, double **edges,
-        bool in_deg)
+        bool in_deg, bool simul)
 {
     // Store total number of bins for simplicity.
     int tnbins = 1;
@@ -57,16 +59,16 @@ int count_entries(FILE *file, TTree *tree, int pid, int *nbins, double **edges,
         ++iterator;
     }
 
-    Float_t s_pid, s_W, s_y;
+    Float_t s_pid, s_W, s_W2;
     Float_t s_bin[5] = {0, 0, 0, 0, 0};
     tree->SetBranchAddress(S_PID,   &s_pid);
-    tree->SetBranchAddress("W",    &s_W);
-    tree->SetBranchAddress("y",    &s_y);
     tree->SetBranchAddress(S_Q2,    &(s_bin[0]));
     tree->SetBranchAddress(S_NU,    &(s_bin[1]));
     tree->SetBranchAddress(S_ZH,    &(s_bin[2]));
     tree->SetBranchAddress(S_PT2,   &(s_bin[3]));
     tree->SetBranchAddress(S_PHIPQ, &(s_bin[4]));
+    if (!simul) tree->SetBranchAddress("W",  &s_W);
+    if (simul)  tree->SetBranchAddress("W2", &s_W2);
 
     for (int evn = 0; evn < tree->GetEntries(); ++evn) {
         tree->GetEntry(evn);
@@ -76,8 +78,9 @@ int count_entries(FILE *file, TTree *tree, int pid, int *nbins, double **edges,
 
         // Apply DIS cuts.
         if (s_bin[0] < Q2CUT) continue; // Q2 > 1.
-        if (s_W      < WCUT)  continue; // W2 > 4 (W > 2).
-        if (s_y      > YBCUT) continue; // Yb < 0.85.
+        if (!simul && s_W  < WCUT)  continue; // W  > 2.
+        if (simul  && s_W2 < W2CUT) continue; // W2 > 4.
+        // if (s_y      > YBCUT) continue; // TODO. Yb < 0.85.
 
         // Find position of event.
         if (in_deg) s_bin[4] = to_rad(s_bin[4]);
@@ -177,10 +180,10 @@ int run(char *gen_file, char *sim_file, char *data_dir, int *nedges,
         printf("Working on PID %5d (%2d/%2d)...\n", pid, pi+1, pidlist_size);
 
         printf("  Counting thrown events...\n");
-        count_entries(t_out, thrown, pid, nbins, edges, in_deg);
+        count_entries(t_out, thrown, pid, nbins, edges, in_deg, false);
 
         printf("  Counting simulated events...\n");
-        count_entries(t_out, simul,  pid, nbins, edges, false);
+        count_entries(t_out, simul,  pid, nbins, edges, false, true);
 
         printf("  Done!\n");
     }
