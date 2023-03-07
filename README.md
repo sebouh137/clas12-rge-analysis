@@ -114,14 +114,15 @@ As always, debugging ROOT code is terrible. If you want to use Valgrind, run it 
 valgrind --num-callers=30 --suppressions=$ROOTSYS/etc/valgrind-root.supp
 ```
 
+Keep in mind that opening any `TFile` will give you about 140 lines of memory management errors.
+
 ## Contributing
 Pull requests are welcome. For major changes, open an issue first to discuss the changes and figure out a work plan before putting serious work into them.
 
 **Pending tasks are**:
-- [ ] Apply acceptance correction.
+- [x] Apply acceptance correction.
 - [ ] Implement variable bin sizes for every variable and binning.
-- [ ] Include GitHub tests.
-- [ ] Add an option to use `TimeBasedTrkg::*` and `FMT::*` banks instead of `REC::Particle` and `REC::Tracks` banks.
+- [ ] Include GitHub tests -- I've no clue on how to do this with ROOT + HIPO.
 - [ ] Add a main program (probably in bash) to call all other programs for working simplicity.
 - [ ] Improve `bank_containers` to be more generic.
 - [ ] Improve the use of constants thorough the code by using a dictionary or a similar structure.

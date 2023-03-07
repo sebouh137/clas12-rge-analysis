@@ -42,7 +42,7 @@ int find_pos(double v, double *b, int size) {
  *                default is radians.
  * @return:       success code (0).
  */
-int count_events(FILE *file, TTree *tree, int pid, int *nbins, double **edges,
+int count_entries(FILE *file, TTree *tree, int pid, int *nbins, double **edges,
         bool in_deg)
 {
     // Store total number of bins for simplicity.
@@ -81,14 +81,11 @@ int count_events(FILE *file, TTree *tree, int pid, int *nbins, double **edges,
         // if (s_Yb > YBCUT)         continue; // Yb < 0.85
 
         // Find position of event. TODO. CHECK THIS LOGIC IN DETAIL.
+        if (in_deg) s_bin[4] = to_rad(s_bin[4]);
         int idx[5];
         bool kill = false; // If kill is true, var falls outside of bin range.
         for (int bi = 0; bi < 5 && !kill; ++bi) {
-            if (bi == 4 && in_deg)
-                idx[bi] = find_pos(to_rad(s_bin[bi]), edges[bi], nbins[bi]);
-            else
-                idx[bi] = find_pos(s_bin[bi], edges[bi], nbins[bi]);
-
+            idx[bi] = find_pos(s_bin[bi], edges[bi], nbins[bi]);
             if (idx[bi] < 0) kill = true;
         }
         if (kill) continue;
@@ -151,23 +148,18 @@ int run(char *gen_file, char *sim_file, char *data_dir, int *nedges,
     int pidlist_size = 0;
     thrown->SetBranchAddress(S_PID, &s_pid);
 
-    // --+ TEMPORARY CODE +-----------------------------------------------------
-    // for (int evn = 0; evn < thrown->GetEntries(); ++evn) {
-    //     thrown->GetEntry(evn);
-    //     bool found = false;
-    //     for (int pi = 0; pi < pidlist_size; ++pi) {
-    //         if (pidlist[pi] - 0.5 <= s_pid && s_pid <= pidlist[pi] + 0.5) {
-    //             found = true;
-    //         }
-    //     }
-    //     if (found) continue;
-    //     pidlist[pidlist_size] = s_pid;
-    //     ++pidlist_size;
-    // }
-
-    pidlist_size = 1;
-    pidlist[0] = -211;
-    // --+ TEMPORARY CODE +-----------------------------------------------------
+    for (int evn = 0; evn < thrown->GetEntries(); ++evn) {
+        thrown->GetEntry(evn);
+        bool found = false;
+        for (int pi = 0; pi < pidlist_size; ++pi) {
+            if (pidlist[pi] - 0.5 <= s_pid && s_pid <= pidlist[pi] + 0.5) {
+                found = true;
+            }
+        }
+        if (found) continue;
+        pidlist[pidlist_size] = s_pid;
+        ++pidlist_size;
+    }
 
     // Write list of PIDs to output file.
     fprintf(t_out, "%d\n", pidlist_size);
@@ -186,10 +178,10 @@ int run(char *gen_file, char *sim_file, char *data_dir, int *nedges,
         printf("Working on PID %5d (%2d/%2d)...\n", pid, pi, pidlist_size);
 
         printf("  Counting thrown events...\n");
-        count_events(t_out, thrown, pid, nbins, edges, in_deg);
+        count_entries(t_out, thrown, pid, nbins, edges, in_deg);
 
         printf("  Counting simulated events...\n");
-        count_events(s_evn, simul,  pid, nbins, nedges, edges, false);
+        count_entries(t_out, simul,  pid, nbins, edges, false);
 
         printf("  Done!\n");
     }
@@ -244,8 +236,8 @@ int handle_err(int errcode) {
             fprintf(stderr, "All edges should be specified.");
             break;
         case 3:
-            fprintf(stderr, "All edges should have *at least* two values -- "
-                            "a minimum and a maximum.");
+            fprintf(stderr, "All edges should have *at least* two values -- a "
+                            "minimum and a maximum.");
             break;
         case 4:
             fprintf(stderr, "Generated file must be specified.");

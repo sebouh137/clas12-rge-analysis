@@ -25,7 +25,7 @@ const int DEBUG = 0;
 // Set to the PID to plot acceptance correction from.
 const int PID = -211;
 // acc_corr.txt produced by acc_corr.
-const char *INPUT_FILENAME  = "../data/acc_corr.txt";
+const char *INPUT_FILENAME  = "../data/acc_corr_dc.txt";
 // Root file where we'll write the plots.
 const char *OUTPUT_FILENAME = "../root_io/acc_corr.root";
 // Map containing the variables we're working with.
