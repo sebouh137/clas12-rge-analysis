@@ -38,8 +38,8 @@ int find_pos(double v, double *b, int size) {
  * @param pid:    pid of the particle for which we're counting events.
  * @param nbins:  array containing number of bins.
  * @param edges:  2-dimensional array of edges.
- * @param in_deg: boolean telling us if thrown events are in degrees --
- *                default is radians.
+ * @param in_deg: boolean telling us if thrown events are in degrees -- default
+ *                is radians.
  * @return:       success code (0).
  */
 int count_entries(FILE *file, TTree *tree, int pid, int *nbins, double **edges,
@@ -57,17 +57,16 @@ int count_entries(FILE *file, TTree *tree, int pid, int *nbins, double **edges,
         ++iterator;
     }
 
-    Float_t s_pid;
-    // Float_t s_pid, s_W2, s_Yb;
+    Float_t s_pid, s_W, s_y;
     Float_t s_bin[5] = {0, 0, 0, 0, 0};
     tree->SetBranchAddress(S_PID,   &s_pid);
+    tree->SetBranchAddress("W",    &s_W);
+    tree->SetBranchAddress("y",    &s_y);
     tree->SetBranchAddress(S_Q2,    &(s_bin[0]));
     tree->SetBranchAddress(S_NU,    &(s_bin[1]));
     tree->SetBranchAddress(S_ZH,    &(s_bin[2]));
     tree->SetBranchAddress(S_PT2,   &(s_bin[3]));
     tree->SetBranchAddress(S_PHIPQ, &(s_bin[4]));
-    // tree->SetBranchAddress(S_W2,    &s_W2);
-    // tree->SetBranchAddress(S_YB,    &s_Yb); // TODO. PENDING.
 
     for (int evn = 0; evn < tree->GetEntries(); ++evn) {
         tree->GetEntry(evn);
@@ -75,12 +74,12 @@ int count_entries(FILE *file, TTree *tree, int pid, int *nbins, double **edges,
         // Only count the selected PID.
         if (pid-0.5 < s_pid && s_pid < pid+0.5) continue;
 
-        // Apply DIS cuts. NOTE. PENDING.
-        // if (s_bin[0] < Q2CUT) continue; // Q2 > 1
-        // if (s_W2 < W2CUT)         continue; // W2 > 4
-        // if (s_Yb > YBCUT)         continue; // Yb < 0.85
+        // Apply DIS cuts.
+        if (s_bin[0] < Q2CUT) continue; // Q2 > 1.
+        if (s_W      < WCUT)  continue; // W2 > 4 (W > 2).
+        if (s_y      > YBCUT) continue; // Yb < 0.85.
 
-        // Find position of event. TODO. CHECK THIS LOGIC IN DETAIL.
+        // Find position of event.
         if (in_deg) s_bin[4] = to_rad(s_bin[4]);
         int idx[5];
         bool kill = false; // If kill is true, var falls outside of bin range.
@@ -175,7 +174,7 @@ int run(char *gen_file, char *sim_file, char *data_dir, int *nedges,
     // Count and write number of thrown and simulated events in each bin.
     for (int pi = 0; pi < pidlist_size; ++pi) {
         int pid = (int) pidlist[pi];
-        printf("Working on PID %5d (%2d/%2d)...\n", pid, pi, pidlist_size);
+        printf("Working on PID %5d (%2d/%2d)...\n", pid, pi+1, pidlist_size);
 
         printf("  Counting thrown events...\n");
         count_entries(t_out, thrown, pid, nbins, edges, in_deg);
