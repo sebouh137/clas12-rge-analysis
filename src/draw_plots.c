@@ -253,8 +253,8 @@ int find_idx(long dim_bins, long depth, Float_t var[], long nbins[],
 }
 
 /** run() function of the program. Check usage() for details. */
-int run(char *in_filename, char *acc_filename, char *work_dir, int run_no,
-        int nentries, bool apply_acc_corr)
+int run(char *in_filename, char *out_filename, char *acc_filename,
+        char *work_dir, int run_no, int nentries, bool apply_acc_corr)
 {
     // Open input file.
     TFile *f_in  = TFile::Open(in_filename, "READ");
@@ -723,10 +723,8 @@ int run(char *in_filename, char *acc_filename, char *work_dir, int run_no,
 
     // === WRITE TO OUTPUT FILE ================================================
     // Create output file.
-    char out_filename[PATH_MAX];
-    sprintf(out_filename, "%s/plots_%06d.root", work_dir, run_no);
-
     TFile *f_out = TFile::Open(out_filename, "RECREATE");
+    if (!f_out || f_out->IsZombie()) return 13;
 
     // Write plots to output file.
     for (int bin_i = 0; bin_i < bin_arr_size; ++bin_i) {
@@ -769,9 +767,11 @@ int run(char *in_filename, char *acc_filename, char *work_dir, int run_no,
 /** Print usage and exit. */
 int usage() {
     fprintf(stderr,
-            "\n\nUsage: draw_plots [-hn:a:w:] infile\n"
+            "\n\nUsage: draw_plots [-hn:o:a:w:] infile\n"
             " * -h          : show this message and exit.\n"
             " * -n nentries : number of entries to process.\n"
+            " * -o outfile  : output file name. Default is plots_<run_no>.root."
+            "\n"
             " * -a accfile  : apply acceptance correction using acc_filename.\n"
             " * -A          : get acceptance correction plots without applying "
             "acceptance\n                 correction. Requires -a to be set.\n"
@@ -829,6 +829,9 @@ int handle_err(int errcode) {
             fprintf(stderr, "Option -A is only valid if an acceptance "
                             "correction file is specified using -a.");
             break;
+        case 13:
+            fprintf(stderr, "Failed to create output file.");
+            break;
         default:
             fprintf(stderr, "Error code not implemented!\n");
             return 1;
@@ -841,18 +844,24 @@ int handle_err(int errcode) {
  * Handle arguments for make_ntuples using optarg. Error codes used are
  *     explained in the handle_err() function.
  */
-int handle_args(int argc, char **argv, char **in_filename, char **acc_filename,
-        char **work_dir, int *run_no, int *nentries, bool *apply_acc_corr)
+int handle_args(int argc, char **argv, char **in_filename, char **out_filename,
+        char **acc_filename, char **work_dir, int *run_no, int *nentries,
+        bool *apply_acc_corr)
 {
     // Handle arguments.
     int opt;
-    while ((opt = getopt(argc, argv, "-hn:a:Aw:")) != -1) {
+    char *tmp_out_filename = NULL;
+    while ((opt = getopt(argc, argv, "-hn:o:a:Aw:")) != -1) {
         switch (opt) {
             case 'h':
                 return 1;
             case 'n':
                 *nentries = atoi(optarg);
                 if (*nentries <= 0) return 10; // Check if nentries is valid.
+                break;
+            case 'o':
+                tmp_out_filename = (char *) malloc(strlen(optarg) + 1);
+                strcpy(tmp_out_filename, optarg);
                 break;
             case 'a':
                 *acc_filename = (char *) malloc(strlen(optarg) + 1);
@@ -885,32 +894,47 @@ int handle_args(int argc, char **argv, char **in_filename, char **acc_filename,
     // Check positional argument.
     if (*in_filename == NULL) return 3;
 
+    // Check input filename validity and write run number to run_no.
     int check = handle_root_filename(*in_filename, run_no);
-    if (!check || check == 5) return 0;
-    else                      return check + 3; // Shift errcode.
+    if (check && check != 5) return check + 3; // Shift errcode.
+
+    // Define tmp output filename if undefined.
+    if (tmp_out_filename == NULL) {
+        tmp_out_filename = (char *) malloc(PATH_MAX);
+        sprintf(tmp_out_filename, "plots_%06d.root", *run_no);
+    }
+
+    // Define final output filename, including work_dir.
+    *out_filename = (char *) malloc(PATH_MAX);
+    sprintf(*out_filename, "%s/%s", *work_dir, tmp_out_filename);
+    free(tmp_out_filename);
+
+    return 0;
 }
 
 /** Entry point of the program. */
 int main(int argc, char **argv) {
     // Handle arguments.
     char *in_filename  = NULL;
+    char *out_filename = NULL;
     char *acc_filename = NULL;
     char *work_dir = NULL;
     int run_no     = -1;
     int nentries  = -1;
     bool apply_acc_corr = true;
 
-    int errcode = handle_args(argc, argv, &in_filename, &acc_filename,
-            &work_dir, &run_no, &nentries, &apply_acc_corr);
+    int errcode = handle_args(argc, argv, &in_filename, &out_filename,
+            &acc_filename, &work_dir, &run_no, &nentries, &apply_acc_corr);
 
     // Run.
     if (errcode == 0) {
-        errcode = run(in_filename, acc_filename, work_dir, run_no, nentries,
-                      apply_acc_corr);
+        errcode = run(in_filename, out_filename, acc_filename, work_dir, run_no,
+                      nentries, apply_acc_corr);
     }
 
     // Free up memory.
     if (in_filename  != NULL) free(in_filename);
+    if (out_filename != NULL) free(out_filename);
     if (acc_filename != NULL) free(acc_filename);
     if (work_dir != NULL) free(work_dir);
 
