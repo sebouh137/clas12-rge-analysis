@@ -27,139 +27,225 @@
 // TODO. Separate in vz bins. Start from -40 to 40 cm, 4-cm bins.
 
 /**
- * Assign name to plots, recursively going through binnings.
+ * Assign title to plots, recursively going through binnings. The title that
+ *     will be given to the plots is <title> (<bin 1>) (<bin 2>) ... (<bin n>),
+ *     where <title> is the base title given by the plot_title parameter.
  *
- * @param plt:        List of plots to be named.
- * @param name:       Base for the name given to the plot. The final name will
- *                    be "<name> (<bin 1>) (<bin 2>) ... (<bin n>)".
- * @param nx:         Variable name for the x axis..
- * @param ny:         Variable name for the y axis.
- * @param idx:        Index in the plot array of the plot to be named. When
- *                    calling the function, should be 0.
- * @param dbins:      Binning dimension. Needed to compute how deep the
- *                    recursion should go before stopping.
- * @param depth:      How deep along the number of bins we are. When calling the
- *                    function, this should always be 0.
- * @param px:         Dimensionality of plot. Set to 1 for 1d plot, 2 for 2d.
- * @param bx:         2-dimensional array containing the number of bins for each
- *                    axis for each plot.
- * @param rx:         2-dimensional array containing the range for each axis for
- *                    each plot.
- * @param bvx:        Array of variables for binning for each plot.
- * @param bbx:        Array with number of dimensions for binning for each
- *                    binning.
- * @param brx:        2-dimensional array with lower and upper limits for each
- *                    binning variable.
- * @param b_interval: Array with size of each bin for each binning.
- * @return:           Error code. Currently, can only return 0 (success).
+ *     TARGET VARIABLE.
+ * @param plot_arr:    Array of plots to be created.
+ *
+ *     INTERNAL PARAMETERS.
+ * @param dim_bins:    Binning dimension. Needed to compute how deep the
+ *                     recursion should go before stopping.
+ * @param idx:         Index in the plot array of the plot to be created. When
+ *                     calling the function, this should be set to 0.
+ * @param depth:       How deep along the number of bins we are. When calling
+ *                     the function, this should be set to 0.
+ *
+ *     STRINGS.
+ * @param plot_title:  Base for the title given to the plot.
+ * @param x_var:       Variable name for the x axis.
+ * @param y_var:       Variable name for the y axis.
+ *
+ *     PLOT PARAMETERS.
+ * @param plot_type:   Dimensionality of plot. Set to 1 for a 1d plot, 2 for 2d.
+ * @param plot_nbins:  2-dimensional array containing the number of bins for
+ *                     each axis for each plot.
+ * @param plot_range:  2-dimensional array containing the range for each axis
+ *                     for each plot.
+ *
+ *     BINNING PARAMETERS.
+ * @param bin_vars:    Array of variables for binning for each plot.
+ * @param bin_nbins:   Array with number of dimensions for binning for each
+ *                     binning.
+ * @param bin_range:   2-dimensional array with lower and upper limits for each
+ *                     binning variable.
+ * @param bin_binsize: Array with size of each bin for each binning.
+ *
+ * @return:            Error code. Currently, can only return 0 (success).
  */
-int name_plt(TH1 *plt[], TString *name, const char *nx, const char *ny,
-        int *idx, long dbins, long depth, int px, long bx[], double rx[][2],
-        int bvx[], long bbx[], double brx[][2], double b_interval[])
+int create_plots(TH1 *plot_arr[], long dim_bins, int *idx, long depth,
+        TString *plot_title, const char *x_var, const char *y_var,
+        int plot_type, long plot_nbins[], double plot_range[][2],
+        int bin_vars[], long bin_nbins[], double bin_range[][2],
+        double bin_binsize[])
 {
-    if (depth == dbins) {
+    if (depth == dim_bins) {
         // Create plot and increase index.
-        if (px == 0) plt[*idx] =
-                new TH1F(*name, Form("%s;%s", name->Data(), nx), bx[0],
-                         rx[0][0], rx[0][1]);
-        if (px == 1) plt[*idx] =
-                new TH2F(*name, Form("%s;%s;%s", name->Data(), nx, ny), bx[0],
-                         rx[0][0], rx[0][1], bx[1], rx[1][0], rx[1][1]);
+        if (plot_type == 0) {
+            plot_arr[*idx] = new TH1F(*plot_title,
+                    Form("%s;%s", plot_title->Data(), x_var),
+                    plot_nbins[0], plot_range[0][0], plot_range[0][1]
+            );
+
+        }
+        if (plot_type == 1) {
+            plot_arr[*idx] = new TH2F(*plot_title,
+                    Form("%s;%s;%s", plot_title->Data(), x_var, y_var),
+                    plot_nbins[0], plot_range[0][0], plot_range[0][1],
+                    plot_nbins[1], plot_range[1][0], plot_range[1][1]
+            );
+        }
         ++(*idx);
         return 0;
     }
 
-    for (int bbi = 0; bbi < bbx[depth]; ++bbi) {
+    for (int bbi = 0; bbi < bin_nbins[depth]; ++bbi) {
         // Find limits.
-        double b_low  = brx[depth][0] + b_interval[depth]* bbi;
-        double b_high = brx[depth][0] + b_interval[depth]*(bbi+1);
+        double b_low  = bin_range[depth][0] + bin_binsize[depth]* bbi;
+        double b_high = bin_range[depth][0] + bin_binsize[depth]*(bbi+1);
 
-        // Append bin limits to name.
-        TString name_cpy = name->Copy();
-        name_cpy.Append(Form(" (%s: %6.2f, %6.2f)", S_VAR_LIST[bvx[depth]],
+        // Append bin limits to title.
+        TString name_cpy = plot_title->Copy();
+        name_cpy.Append(Form(" (%s: %6.2f, %6.2f)", S_VAR_LIST[bin_vars[depth]],
                              b_low, b_high));
 
-        // Continue down the line.
-        name_plt(plt, &name_cpy, nx, ny, idx, dbins, depth+1, px, bx, rx, bvx,
-                 bbx, brx, b_interval);
+        // Continue down the recursive line...
+        create_plots(
+                plot_arr, dim_bins, idx, depth+1, &name_cpy, x_var, y_var,
+                plot_type, plot_nbins, plot_range, bin_vars, bin_nbins,
+                bin_range, bin_binsize
+        );
+    }
+
+    return 0;
+}
+
+/** Copy of above function for acceptance corrected plots. */
+int create_acc_corr_plots(TH1 *plot_arr[], long dim_bins, int *idx, long depth,
+        TString *plot_title, const char *x_var, const char *y_var,
+        int plot_type, long int plot_nbins, double plot_edges[],
+        int bin_vars[], long bin_nbins[], double bin_range[][2],
+        double bin_binsize[])
+{
+    if (depth == dim_bins) {
+        // Create plot and increase index.
+        if (plot_type == 0) {
+            plot_arr[*idx] = new TH1F(*plot_title,
+                    Form("%s;%s", plot_title->Data(), x_var),
+                    plot_nbins-1, plot_edges
+            );
+        }
+        if (plot_type == 1) {
+            return 1; // NOTE. Not available yet.
+        }
+        ++(*idx);
+        return 0;
+    }
+
+    for (int bbi = 0; bbi < bin_nbins[depth]; ++bbi) {
+        // Find limits.
+        double b_low  = bin_range[depth][0] + bin_binsize[depth]* bbi;
+        double b_high = bin_range[depth][0] + bin_binsize[depth]*(bbi+1);
+
+        // Append bin limits to title.
+        TString name_cpy = plot_title->Copy();
+        name_cpy.Append(Form(" (%s: %6.2f, %6.2f)", S_VAR_LIST[bin_vars[depth]],
+                             b_low, b_high));
+
+        // Continue down the recursive line...
+        create_acc_corr_plots(
+                plot_arr, dim_bins, idx, depth+1, &name_cpy, x_var, y_var,
+                plot_type, plot_nbins, plot_edges, bin_vars, bin_nbins,
+                bin_range, bin_binsize
+        );
     }
 
     return 0;
 }
 
 /**
- * Find name of bin by recursively going through binnings and appending their
- *     range to the name.
+ * Find title of bin by recursively going through binnings and appending their
+ *     range to the title.
  *
- * @param name:            Name to which we append each bin.
- * @param plt_size:        Number of "versions" of a plot, depending on number
- *                         of bins.
- * @param idx:             Index in the plot array of the plot to be named. When
- *                         calling the function, should be 0.
- * @param dbins:           Binning dimension. Needed to compute how deep the
+ *     TARGET VARIABLE.
+ * @param plot_title:      Title of the plot to which we'll append each bin.
+ *
+ *     INTERNAL PARAMETERS.
+ * @param dim_bins:        Binning dimension. Needed to compute how deep the
  *                         recursion should go before stopping.
+ * @param idx:             Index in the plot array of the plot to be created.
+ *                         When calling the function, this should be set to 0.
  * @param depth:           How deep along the number of bins we are. When
- *                         calling the function, this should always be 0.
- * @param prev_dim_factor: Dimension factor
- * @param vx:              Array of variables for binning for each plot.
- * @param bx:              Array with number of dimensions for binning for each
+ *                         calling the function, this should be set to 0.
+ * @param prev_dim_factor: Dimension factor of the previous binning in the
+ *                         recursion.
+ *
+ *     BINNING PARAMETERS.
+ * @param nplots:          Number of TH1F and TH2F plots, depends on number of
+ *                         bins.
+ * @param vars:        Array of variables for binning for each plot.
+ * @param nbins:       Array with number of dimensions for binning for each
  *                         binning.
- * @param rx:              2-dimensional array with lower and upper limits for
+ * @param range:       2-dimensional array with lower and upper limits for
  *                         each binning variable.
- * @param interval:        Array with size of each bin for each binning.
- * @return:                Success code (0).
+ * @param binsize:     Array with size of each bin for each binning.
+ *
+ * @return:                Error code. Currently, can only return 0 (success).
  */
-int find_bin(TString *name, int plt_size, int idx, long dbins, long depth,
-        int prev_dim_factor, int vx[], long bx[], double rx[][2],
-        double interval[])
+int find_bin(TString *plot_title,
+        long dim_bins, int idx, long depth, int prev_dim_factor,
+        int nplots, int vars[], long nbins[], double range[][2],
+        double binsize[])
 {
-    if (depth == dbins) return 0;
+    if (depth == dim_bins) return 0;
 
     // Find index in array (for this dimension).
     int dim_factor = 1;
-    for (int di = depth+1; di < dbins; ++di) dim_factor *= bx[di];
+    for (int depth_i = depth+1; depth_i < dim_bins; ++depth_i)
+        dim_factor *= nbins[depth_i];
     int bi = (idx%prev_dim_factor)/dim_factor;
 
     // Get limits.
-    double low  = rx[depth][0] + interval[depth]* bi;
-    double high = rx[depth][0] + interval[depth]*(bi+1);
+    double low  = range[depth][0] + binsize[depth]* bi;
+    double high = range[depth][0] + binsize[depth]*(bi+1);
 
-    // Append dir to name.
-    name->Append(Form("%s (%6.2f, %6.2f)/", S_VAR_LIST[vx[depth]], low, high));
+    // Append dir to title.
+    plot_title->Append(Form("%s (%6.2f, %6.2f)/", S_VAR_LIST[vars[depth]],
+            low, high));
 
-    return find_bin(name, plt_size, idx, dbins, depth+1, dim_factor, vx, bx, rx,
-            interval);
+    return find_bin(
+            plot_title, dim_bins, idx, depth+1, dim_factor,
+            nplots, vars, nbins, range, binsize
+    );
 }
 
 /**
  * Find index of plot in array, recursively going through binnings.
  *
- * @param dbins:    Binning dimension. Needed to compute how deep the recursion
+ *     INTERNAL PARAMETERS.
+ * @param dim_bins: Binning dimension. Needed to compute how deep the recursion
  *                  should go before stopping.
  * @param depth:    How deep along the number of bins we are. When calling the
  *                  function, this should always be 0.
+ *
+ *     BINNINGS PAREMETERS.
  * @param var:      Binning variables.
- * @param bx:       Array with number of dimensions for binning for each
+ * @param nbins:    Array with number of dimensions for binning for each
  *                  binning.
- * @param rx:       2-dimensional array with lower and upper limits for each
+ * @param range:    2-dimensional array with lower and upper limits for each
  *                  binning variable.
- * @param interval: Array with size of each bin for each binning.
+ * @param binsize:  Array with size of each bin for each binning.
+ *
+ * @return:         Index of the bin we're looking for. Returns -1 if variable
+ *                  is not within binning range.
  */
-int find_idx(long dbins, long depth, Float_t var[], long bx[], double rx[][2],
-        double interval[])
+int find_idx(long dim_bins, long depth, Float_t var[], long nbins[],
+        double range[][2], double binsize[])
 {
-    if (depth == dbins) return 0;
-    for (int bi = 0; bi < bx[depth]; ++bi) {
+    if (depth == dim_bins) return 0;
+    for (int bi = 0; bi < nbins[depth]; ++bi) {
         // Define bin limits.
-        double low  = rx[depth][0] + interval[depth]* bi;
-        double high = rx[depth][0] + interval[depth]*(bi+1);
+        double low  = range[depth][0] + binsize[depth]* bi;
+        double high = range[depth][0] + binsize[depth]*(bi+1);
 
         // Find bin for var.
         if (low < var[depth] && var[depth] < high) {
             int dim_factor = 1;
-            for (int di = depth+1; di < dbins; ++di) dim_factor *= bx[di];
+            for (int depth_i = depth+1; depth_i < dim_bins; ++depth_i)
+                dim_factor *= nbins[depth_i];
             return bi*dim_factor +
-                    find_idx(dbins, depth+1, var, bx, rx, interval);
+                    find_idx(dim_bins, depth+1, var, nbins, range, binsize);
         }
     }
 
@@ -167,86 +253,73 @@ int find_idx(long dbins, long depth, Float_t var[], long bx[], double rx[][2],
 }
 
 /** run() function of the program. Check usage() for details. */
-int run(char *in_file, char *acc_file, char *work_dir, int run_no) {
+int run(char *in_filename, char *out_filename, char *acc_filename,
+        char *work_dir, int run_no, int nentries, bool apply_acc_corr)
+{
     // Open input file.
-    TFile *f_in  = TFile::Open(in_file, "READ");
+    TFile *f_in  = TFile::Open(in_filename, "READ");
     if (!f_in || f_in->IsZombie()) return 8;
 
     // Get acceptance correction
-    long int b_sizes[5];
-    long int nbins;
-    double **binnings;
-    long int pids_size;
-    long int *pids;
-    double **acc_corr;
-
-    if (acc_file != NULL) {
-        if (access(acc_file, F_OK) != 0) return 9;
-        FILE *ac_file = fopen(acc_file, "r");
-
-        binnings = (double **) malloc(5 * sizeof(*binnings));
-        get_binnings(ac_file, b_sizes, binnings, &pids_size);
-
-        nbins = 1;
-        for (int bi = 0; bi < 5; ++bi) nbins *= b_sizes[bi] - 1;
-
-        for (int bi = 0; bi < 5; ++bi) {
-            printf("binning[%ld]: [", b_sizes[bi]);
-            for (int bii = 0; bii < b_sizes[bi]; ++bii)
-                printf("%lf, ", binnings[bi][bii]);
-            printf("\b\b]\n");
-        }
-
-        pids = (long int *) malloc(pids_size * sizeof(*pids));
-        acc_corr = (double **) malloc(pids_size * sizeof(*acc_corr));
-
-        get_acc_corr(ac_file, pids_size, nbins, pids, acc_corr);
-
-        printf("pids[%ld] = [", pids_size);
-        for (int pi = 0; pi < pids_size; ++pi) {
-            printf("%ld ", pids[pi]);
-        }
-        printf("\b\b]\n");
-
-        for (int pi = 0; pi < pids_size; ++pi) {
-            printf("acc_corr[%ld]: [", nbins);
-            for (int bii = 0; bii < nbins; ++bii)
-                printf("%lf ", acc_corr[pi][bii]);
-            printf("\b\b]\n");
-        }
-
-        fclose(ac_file);
+    bool acc_plot = false;
+    long int acc_nedges[5];
+    long int acc_nbins;
+    double **acc_edges;
+    long int acc_npids;
+    long int *acc_pids;
+    int **acc_n_thrown;
+    int **acc_n_simul;
+    if (acc_filename != NULL) {
+        acc_plot = true;
+        int errcode = read_acc_corr_file(acc_filename, acc_nedges,
+                &acc_edges, &acc_npids, &acc_nbins, &acc_pids,
+                &acc_n_thrown, &acc_n_simul);
+        if (errcode != 0) return 9;
     }
 
     // NOTE. This function could receive a few arguments to speed IO up.
     //       Pre-configured cuts, binnings, and corrections would be nice.
     // TODO. Prepare corrections (acceptance, radiative, Feynman, etc...).
 
-    // === CUT SETUP ===========================================================
+    // === TRACKER SELECTION ===================================================
     printf("\nUse DC or FMT data? [");
     for (int ti = 0; ti < TRK_LIST_SIZE; ++ti) printf("%s, ", TRK_LIST[ti]);
     printf("\b\b]\n");
-    int trk = catch_string(TRK_LIST, TRK_LIST_SIZE);
+    int plot_tracker = catch_string(TRK_LIST, TRK_LIST_SIZE);
 
+    // === PARTICLE SELECTION ==================================================
     printf("\nWhat particle should be plotted? Available cuts:\n[");
-    for (int pi = 0; pi < PART_LIST_SIZE; ++pi) printf("%s, ", PART_LIST[pi]);
+    for (int part_i = 0; part_i < PART_LIST_SIZE; ++part_i)
+        printf("%s, ", PART_LIST[part_i]);
     printf("\b\b]\n");
-    int part = catch_string(PART_LIST, PART_LIST_SIZE);
-    int p_charge = INT_MAX;
-    int p_pid    = INT_MAX;
-    if      (part == A_PPOS) p_charge =  1;
-    else if (part == A_PNEU) p_charge =  0;
-    else if (part == A_PNEG) p_charge = -1;
-    else if (part == A_PPID) {
+    int plot_particle = catch_string(PART_LIST, PART_LIST_SIZE);
+    int plot_charge = INT_MAX;
+    int plot_pid    = INT_MAX;
+    if      (plot_particle == A_PPOS) plot_charge =  1;
+    else if (plot_particle == A_PNEU) plot_charge =  0;
+    else if (plot_particle == A_PNEG) plot_charge = -1;
+    else if (plot_particle == A_PPID) {
         printf("\nSelect PID from:\n");
         for (std::map<int, const char*>::const_iterator it = PID_NAME.begin();
                 it != PID_NAME.end(); ++it)
         {
             printf("  * %5d (%s).\n", it->first, it->second);
         }
-        p_pid = catch_long();
+        plot_pid = catch_long();
     }
 
+    // Find selected particle PID in acceptance correction data. If not found,
+    //     return an error.
+    int acc_pid_idx = INT_MAX;
+    if (acc_plot) {
+        // Find index of plot_pid in acc_pids.
+        for (int pid_i = 0; pid_i < acc_npids; ++pid_i) {
+            if (acc_pids[pid_i] == plot_pid) acc_pid_idx = pid_i;
+        }
+        if (acc_pid_idx == INT_MAX) return 11;
+    }
+
+    // === SELECT CUTS =========================================================
     bool general_cuts  = false;
     bool geometry_cuts = false;
     bool dis_cuts      = false;
@@ -265,126 +338,169 @@ int run(char *in_file, char *acc_file, char *work_dir, int run_no) {
         dis_cuts      = true;
     }
 
-    // TODO.
-    // printf("\nApply any custom cut? [y/n]\n");
-    // bool custom_cuts = catch_yn();
+    // TODO. Apply custom cuts.
 
-    // === BINNING SETUP =======================================================
-    // TODO. If acc_file != NULL, limit binning in Q2, nu, z_h, Pt2, and phi_PQ
-    //       to acceptance correction bins.
+    // === SETUP BINNING =======================================================
+
+    // TODO. If acc_plot == true, limit binning in Q2, nu, z_h, Pt2, and
+    //       phi_PQ to acceptance correction bins.
+    // TODO. Change bin_range to bin_edges for variable bin sizes.
+
     printf("\nNumber of dimensions for binning?\n");
-    long   dbins = catch_long();
-    int    bvx[dbins];
-    double brx[dbins][2];
-    double b_interval[dbins];
-    long   bbx[dbins];
-    for (long bdi = 0; bdi < dbins; ++bdi) {
+    long   dim_bins = catch_long();
+    int    bin_vars[dim_bins];
+    double bin_range[dim_bins][2];
+    double bin_binsize[dim_bins];
+    long   bin_nbins[dim_bins];
+    for (long bin_dim_i = 0; bin_dim_i < dim_bins; ++bin_dim_i) {
         // variable.
-        printf("\nDefine var for bin in dimension %ld. Available vars:\n[", bdi);
-        for (int vi = 0; vi < VAR_LIST_SIZE; ++vi)
-            printf("%s, ", R_VAR_LIST[vi]);
+        printf("\nDefine var for bin in dimension %ld. Available vars:\n[",
+                bin_dim_i);
+        for (int var_i = 0; var_i < VAR_LIST_SIZE; ++var_i)
+            printf("%s, ", R_VAR_LIST[var_i]);
         printf("\b\b]\n");
-        bvx[bdi] = catch_string(R_VAR_LIST, VAR_LIST_SIZE);
+        bin_vars[bin_dim_i] = catch_string(R_VAR_LIST, VAR_LIST_SIZE);
 
         // range.
-        for (int ri = 0; ri < 2; ++ri) {
+        for (int range_i = 0; range_i < 2; ++range_i) {
             printf("\nDefine %s limit for bin in dimension %ld:\n",
-                    RAN_LIST[ri], bdi);
-            brx[bdi][ri] = catch_double();
+                    RAN_LIST[range_i], bin_dim_i);
+            bin_range[bin_dim_i][range_i] = catch_double();
         }
 
         // nbins.
-        printf("\nDefine number of bins for bin in dimension %ld:\n", bdi);
-        bbx[bdi] = catch_long();
+        printf("\nDefine number of bins for bin in dimension %ld:\n",
+                bin_dim_i);
+        bin_nbins[bin_dim_i] = catch_long();
 
-        // binning interval.
-        b_interval[bdi] = (brx[bdi][1] - brx[bdi][0])/bbx[bdi];
+        // binning bin size.
+        bin_binsize[bin_dim_i] =
+                (bin_range[bin_dim_i][1] - bin_range[bin_dim_i][0]) /
+                bin_nbins[bin_dim_i];
     }
 
-    // === PLOT SETUP ==========================================================
+    // === SETUP PLOT ==========================================================
+    // TODO. Change plot_range to plot_edges to get variable bin sizes.
+
     // Number of plots.
-    printf("\nDefine number of plots (Set to 0 to draw standard plots).\n");
-    long pn = catch_long();
+    long plot_arr_size;
 
-    bool stdplt = false;
-    if (pn == 0) {
-        stdplt = true;
-        pn     = STDPLT_LIST_SIZE;
+    // If acceptance correction is being made, only acceptance corrected
+    //     variables (Q2, nu, zh, Pt2, and phiPQ) can be plotted.
+    if (acc_plot) plot_arr_size = ACCPLT_LIST_SIZE;
+    else {
+        printf("\nDefine number of plots (Set to 0 to draw standard plots).\n");
+        plot_arr_size = catch_long();
     }
 
-    int    px[pn];
-    int    vx[pn][2];
-    double rx[pn][2][2];
-    long   bx[pn][2];
-    for (long pi = 0; pi < pn && !stdplt; ++pi) {
-        // Check if we are to make a 1D or 2D plot.
-        printf("\nPlot %ld type? [", pi);
-        for (int vi = 0; vi < PLOT_LIST_SIZE; ++vi)
-            printf("%s, ", PLOT_LIST[vi]);
-        printf("\b\b]:\n");
-        px[pi] = catch_string(PLOT_LIST, PLOT_LIST_SIZE);
+    bool std_plot = false;
+    if (plot_arr_size == 0) {
+        std_plot = true;
+        plot_arr_size = STDPLT_LIST_SIZE;
+    }
 
-        for (int di = 0; di < px[pi]+1; ++di) {
+    int    plot_type[plot_arr_size];
+    int    plot_vars[plot_arr_size][2];
+    double plot_range[plot_arr_size][2][2];
+    long   plot_nbins[plot_arr_size][2];
+    for (
+            long plot_i = 0;
+            plot_i < plot_arr_size && !std_plot && !acc_plot;
+            ++plot_i
+    ) {
+        // Check if we are to make a 1D or 2D plot.
+        printf("\nPlot %ld type? [", plot_i);
+        for (int var_i = 0; var_i < PLOT_LIST_SIZE; ++var_i)
+            printf("%s, ", PLOT_LIST[var_i]);
+        printf("\b\b]:\n");
+        plot_type[plot_i] = catch_string(PLOT_LIST, PLOT_LIST_SIZE);
+
+        for (int dim_i = 0; dim_i < plot_type[plot_i]+1; ++dim_i) {
             // Check variable(s) to be plotted.
             printf("\nDefine var to be plotted on the %s axis. Available "
-                   "vars:\n[", DIM_LIST[di]);
-            for (int vi = 0; vi < VAR_LIST_SIZE; ++vi)
-                printf("%s, ", R_VAR_LIST[vi]);
+                   "vars:\n[", DIM_LIST[dim_i]);
+            for (int var_i = 0; var_i < VAR_LIST_SIZE; ++var_i)
+                printf("%s, ", R_VAR_LIST[var_i]);
             printf("\b\b]\n");
-            vx[pi][di] = catch_string(R_VAR_LIST, VAR_LIST_SIZE);
+            plot_vars[plot_i][dim_i] = catch_string(R_VAR_LIST, VAR_LIST_SIZE);
 
             // Define ranges.
-            for (int ri = 0; ri < 2; ++ri) {
+            for (int range_i = 0; range_i < 2; ++range_i) {
                 printf("\nDefine %s limit for %s axis:\n",
-                        RAN_LIST[ri], DIM_LIST[di]);
-                rx[pi][di][ri] = catch_double();
+                        RAN_LIST[range_i], DIM_LIST[dim_i]);
+                plot_range[plot_i][dim_i][range_i] = catch_double();
             }
 
             // Define number of bins in plot.
-            printf("\nDefine number of bins for %s axis:\n", DIM_LIST[di]);
-            bx[pi][di] = catch_long();
+            printf("\nDefine number of bins for %s axis:\n", DIM_LIST[dim_i]);
+            plot_nbins[plot_i][dim_i] = catch_long();
         }
     }
-    if (stdplt) { // Setup standard plots.
-        memcpy(px, STD_PX, sizeof px);
-        memcpy(vx, STD_VX, sizeof vx);
-        memcpy(rx, STD_RX, sizeof rx);
-        memcpy(bx, STD_BX, sizeof bx);
+
+    // Setup standard plots.
+    if (std_plot) {
+        memcpy(plot_type,  STD_PX, sizeof plot_type);
+        memcpy(plot_vars,  STD_VX, sizeof plot_vars);
+        memcpy(plot_range, STD_RX, sizeof plot_range);
+        memcpy(plot_nbins, STD_BX, sizeof plot_nbins);
     }
 
-    // === NTUPLES SETUP =======================================================
-    TNtuple *t = (TNtuple *) f_in->Get(trk == 0 ? S_DC : S_FMT);
+    // Setup acceptance corrected plots.
+    if (acc_plot) {
+        memcpy(plot_type,  ACC_PX, sizeof plot_type);
+        memcpy(plot_vars,  ACC_VX, sizeof plot_vars);
+        // NOTE. plot_nbins is given by acc_nbins. Then, each bin size is given
+        //       by acc_edges.
+    }
+
+    // === SETUP NTUPLES =======================================================
+    TNtuple *ntuple = (TNtuple *) f_in->Get(plot_tracker == 0 ? S_DC : S_FMT);
     Float_t vars[VAR_LIST_SIZE];
-    for (int vi = 0; vi < VAR_LIST_SIZE; ++vi)
-        t->SetBranchAddress(S_VAR_LIST[vi], &vars[vi]);
+    for (int var_i = 0; var_i < VAR_LIST_SIZE; ++var_i)
+        ntuple->SetBranchAddress(S_VAR_LIST[var_i], &vars[var_i]);
 
     // === APPLY CUTS ==========================================================
     printf("\nOpening file...\n");
+
     // Counters for fancy progress bar.
+    if (nentries == -1 || nentries > ntuple->GetEntries()) {
+        nentries = ntuple->GetEntries();
+    }
     int divcntr     = 0;
     int evnsplitter = 0;
 
     // Apply SIDIS cuts, checking which event numbers should be skipped.
     int nevents = -1;
     // Count number of events.
-    for (int entry = 0; entry < t->GetEntries(); ++entry) {
-        update_progress_bar(t->GetEntries(), entry, &evnsplitter, &divcntr);
-
-        t->GetEntry(entry);
+    for (int entry = 0; entry < nentries; ++entry) {
+        update_progress_bar(nentries, entry, &evnsplitter, &divcntr);
+        ntuple->GetEntry(entry);
         if (vars[A_EVENTNO] > nevents) nevents = (int) (vars[A_EVENTNO]+0.5);
     }
 
-    printf("Applying cuts...\n");
+    // Apply previously setup cuts.
+    if (dis_cuts) printf("Applying cuts...\n");
     divcntr     = 0;
     evnsplitter = 0;
 
     bool *valid_event = (bool *) malloc(nevents * sizeof(bool));
     Float_t current_evn = -1;
     bool no_tre_pass, Q2_pass, W2_pass, zh_pass;
-    for (int entry = 0; entry < t->GetEntries(); ++entry) {
-        update_progress_bar(t->GetEntries(), entry, &evnsplitter, &divcntr);
 
-        t->GetEntry(entry);
+    // Fill valid_event array with false bools in case the next for loop doesn't
+    //     fill every entry in it.
+    for (int event = 0; event < nevents && dis_cuts; ++event) {
+        valid_event[event] = false;
+    }
+
+    // Since each entry is a particle, there are potentially many entries for
+    //     one event. Then, we need to check beforehand which events are valid
+    //     so that we can skip those when plotting. It is only necessary to do
+    //     this if we're applying DIS cuts.
+    for (int entry = 0; entry < nentries && dis_cuts; ++entry) {
+        update_progress_bar(nentries, entry, &evnsplitter, &divcntr);
+
+        ntuple->GetEntry(entry);
         if (vars[A_EVENTNO] != current_evn) {
             current_evn = vars[A_EVENTNO];
             valid_event[(int) (vars[A_EVENTNO]+0.5)] = false;
@@ -406,24 +522,44 @@ int run(char *in_file, char *acc_file, char *work_dir, int run_no) {
 
     // === PLOT ================================================================
     // Create plots, separated by n-dimensional binning.
-    long plt_size = 1;
-    for (int bdi = 0; bdi < dbins; ++bdi) plt_size *= bbx[bdi];
+    long bin_arr_size = 1;
+    for (int bin_dim_i = 0; bin_dim_i < dim_bins; ++bin_dim_i) {
+        bin_arr_size *= bin_nbins[bin_dim_i];
+    }
 
-    TH1 *plt[pn][plt_size];
-    for (int pi = 0; pi < pn; ++pi) {
-        TString name;
+    TH1 *plot_arr[plot_arr_size][bin_arr_size];
+    for (int plot_i = 0; plot_i < plot_arr_size; ++plot_i) {
+        TString plot_title;
         int idx = 0;
-        if (px[pi] == 0) {
-            name = Form("%s", S_VAR_LIST[vx[pi][0]]);
-            name_plt(plt[pi], &name, S_VAR_LIST[vx[pi][0]], "", &idx, dbins, 0,
-                     px[pi], bx[pi], rx[pi], bvx, bbx, brx, b_interval);
+        if (acc_plot) { // Acceptance corrected plots have variable bin sizes.
+            plot_title = Form("%s", S_VAR_LIST[plot_vars[plot_i][0]]);
+            create_acc_corr_plots(
+                    plot_arr[plot_i], dim_bins, &idx, 0, &plot_title,
+                    S_VAR_LIST[plot_vars[plot_i][0]], "",
+                    plot_type[plot_i], acc_nedges[plot_i], acc_edges[plot_i],
+                    bin_vars, bin_nbins, bin_range, bin_binsize
+            );
+            continue;
         }
-        if (px[pi] == 1) {
-            name = Form("%s vs %s", S_VAR_LIST[vx[pi][0]],
-                    S_VAR_LIST[vx[pi][1]]);
-            name_plt(plt[pi], &name, S_VAR_LIST[vx[pi][0]],
-                    S_VAR_LIST[vx[pi][1]], &idx, dbins, 0, px[pi], bx[pi],
-                    rx[pi], bvx, bbx, brx, b_interval);
+        if (plot_type[plot_i] == 0) { // 1D plot.
+            plot_title = Form("%s", S_VAR_LIST[plot_vars[plot_i][0]]);
+            create_plots(
+                    plot_arr[plot_i], dim_bins, &idx, 0, &plot_title,
+                    S_VAR_LIST[plot_vars[plot_i][0]], "",
+                    plot_type[plot_i], plot_nbins[plot_i], plot_range[plot_i],
+                    bin_vars, bin_nbins, bin_range, bin_binsize
+            );
+        }
+        if (plot_type[plot_i] == 1) { // 2D plot.
+            plot_title = Form("%s vs %s", S_VAR_LIST[plot_vars[plot_i][0]],
+                    S_VAR_LIST[plot_vars[plot_i][1]]);
+            create_plots(
+                    plot_arr[plot_i], dim_bins, &idx, 0, &plot_title,
+                    S_VAR_LIST[plot_vars[plot_i][0]],
+                    S_VAR_LIST[plot_vars[plot_i][1]],
+                    plot_type[plot_i], plot_nbins[plot_i], plot_range[plot_i],
+                    bin_vars, bin_nbins, bin_range, bin_binsize
+            );
         }
     }
 
@@ -432,17 +568,17 @@ int run(char *in_file, char *acc_file, char *work_dir, int run_no) {
 
     // Run through events.
     printf("Processing plots...\n");
-    for (int entry = 0; entry < t->GetEntries(); ++entry) {
-        update_progress_bar(t->GetEntries(), entry, &evnsplitter, &divcntr);
-        t->GetEntry(entry);
+    for (int entry = 0; entry < nentries; ++entry) {
+        update_progress_bar(nentries, entry, &evnsplitter, &divcntr);
+        ntuple->GetEntry(entry);
 
         // Apply particle cuts.
-        if (p_charge != INT_MAX) {
-            if (p_charge ==  1 && !(vars[A_CHARGE] >  0)) continue;
-            if (p_charge ==  0 && !(vars[A_CHARGE] == 0)) continue;
-            if (p_charge == -1 && !(vars[A_CHARGE] <  0)) continue;
+        if (plot_charge != INT_MAX) {
+            if (plot_charge ==  1 && !(vars[A_CHARGE] >  0)) continue;
+            if (plot_charge ==  0 && !(vars[A_CHARGE] == 0)) continue;
+            if (plot_charge == -1 && !(vars[A_CHARGE] <  0)) continue;
         }
-        if (p_pid != INT_MAX && vars[A_PID] != p_pid) continue;
+        if (plot_pid != INT_MAX && vars[A_PID] != plot_pid) continue;
 
         // Apply geometry cuts.
         if (geometry_cuts) {
@@ -463,64 +599,149 @@ int run(char *in_file, char *acc_file, char *work_dir, int run_no) {
         // Apply DIS cuts.
         if (dis_cuts && !valid_event[(int) (vars[A_EVENTNO]+0.5)]) continue;
 
+        // Remove DIS vars = 0.
+        if (vars[A_Q2] == 0 || vars[A_NU] == 0 || vars[A_ZH] == 0 ||
+                vars[A_PT2] == 0 || vars[A_PHIPQ] == 0)
+            continue;
+
         // Prepare binning vars.
-        Float_t b_vars[dbins];
-        for (long bdi = 0; bdi < dbins; ++bdi) b_vars[bdi] = vars[bvx[bdi]];
+        Float_t bin_vars_idx[dim_bins];
+        for (long bin_dim_i = 0; bin_dim_i < dim_bins; ++bin_dim_i) {
+            bin_vars_idx[bin_dim_i] = vars[bin_vars[bin_dim_i]];
+        }
 
         // Fills plots.
-        for (int pi = 0; pi < pn; ++pi) {
+        for (int plot_i = 0; plot_i < plot_arr_size; ++plot_i) {
             // SIDIS variables only make sense for some particles.
             bool sidis_pass = true;
-            for (int di = 0; di < px[pi]+1; ++di) {
-                for (int li = 0; li < DIS_LIST_SIZE; ++li) {
-                    if (!strcmp(R_VAR_LIST[vx[pi][di]], DIS_LIST[li]) &&
-                            vars[vx[pi][di]] < 1e-9)
+            for (int dim_i = 0; dim_i < plot_type[plot_i]+1; ++dim_i) {
+                for (int list_i = 0; list_i < DIS_LIST_SIZE; ++list_i) {
+                    if (!strcmp(R_VAR_LIST[plot_vars[plot_i][dim_i]],
+                            DIS_LIST[list_i]) &&
+                            vars[plot_vars[plot_i][dim_i]] < 1e-9) {
                         sidis_pass = false;
+                    }
                 }
             }
             if (!sidis_pass) continue;
 
             // Find corresponding bin.
-            int idx = find_idx(dbins, 0, b_vars, bbx, brx, b_interval);
+            int idx = find_idx(
+                    dim_bins, 0, bin_vars_idx, bin_nbins, bin_range, bin_binsize
+            );
             if (idx == -1) continue;
 
             // Fill histogram.
-            if (px[pi] == 0)
-                plt[pi][idx]->Fill(vars[vx[pi][0]]);
-            if (px[pi] == 1)
-                plt[pi][idx]->Fill(vars[vx[pi][0]], vars[vx[pi][1]]);
+            if (plot_type[plot_i] == 0) {
+                plot_arr[plot_i][idx]->Fill(vars[plot_vars[plot_i][0]]);
+            }
+            if (plot_type[plot_i] == 1) {
+                plot_arr[plot_i][idx]->Fill(
+                        vars[plot_vars[plot_i][0]], vars[plot_vars[plot_i][1]]
+                );
+            }
         }
     }
 
     // === APPLY ACCEPTANCE CORRECTION =========================================
-    // TODO...
+    // Array for storing number of bins (for simplicity).
+    int bn[5] = {
+            (int) acc_nedges[0]-1, (int) acc_nedges[1]-1, (int) acc_nedges[2]-1,
+            (int) acc_nedges[3]-1, (int) acc_nedges[4]-1
+    };
+
+    // Interate through plot variables and bins.
+    for (int plot_i = 0;
+            plot_i < plot_arr_size && acc_plot && apply_acc_corr;
+            ++plot_i)
+    {
+        for (int bin_i = 0; bin_i < bin_arr_size; ++bin_i) {
+            // Integrate through other variables.
+            int y_thrown[bn[plot_i]];
+            int y_simul [bn[plot_i]];
+            for (int acc_bin_i = 0; acc_bin_i < bn[plot_i]; ++acc_bin_i) {
+                y_thrown[acc_bin_i] = 0;
+                y_simul [acc_bin_i] = 0;
+            }
+
+            // Go through each of the five acceptance correction bins.
+            for (int i0 = 0; i0 < acc_nedges[0]-1; ++i0) {
+                for (int i1 = 0; i1 < acc_nedges[1]-1; ++i1) {
+                    for (int i2 = 0; i2 < acc_nedges[2]-1; ++i2) {
+                        for (int i3 = 0; i3 < acc_nedges[3]-1; ++i3) {
+                            for (int i4 = 0; i4 < acc_nedges[4]-1; ++i4) {
+                                // Find 1D bin position from 5 indices.
+                                int bin_pos =
+                                        i0 * (bn[1]*bn[2]*bn[3]*bn[4]) +
+                                        i1 * (bn[2]*bn[3]*bn[4]) +
+                                        i2 * (bn[3]*bn[4]) +
+                                        i3 * (bn[4]) +
+                                        i4;
+
+                                // Find which ID should be updated.
+                                // NOTE. This assumes the order of variables of
+                                //       ACC_VX to be Q2, nu, zh, pt2, phiPQ.
+                                //       If that changes, this should change
+                                //       too.
+                                int sel_idx;
+                                switch(plot_i) {
+                                    case 0: sel_idx = i0; break;
+                                    case 1: sel_idx = i1; break;
+                                    case 2: sel_idx = i2; break;
+                                    case 3: sel_idx = i3; break;
+                                    case 4: sel_idx = i4; break;
+                                }
+
+                                // Increment appropriate counters.
+                                y_thrown[sel_idx] +=
+                                        acc_n_thrown[acc_pid_idx][bin_pos];
+                                y_simul[sel_idx] +=
+                                        acc_n_simul[acc_pid_idx][bin_pos];
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Compute acceptance correction factor.
+            double acc_corr_factor[bn[plot_i]];
+            for (int acc_bin_i = 0; acc_bin_i < bn[plot_i]; ++acc_bin_i) {
+                acc_corr_factor[acc_bin_i] =
+                        (double) y_thrown[acc_bin_i] /
+                        (double) y_simul[acc_bin_i];
+            }
+
+            // Multiply each plot bin by its corresponding correction factor.
+            for (int plt_bin_i = 1; plt_bin_i <= bn[plot_i]; ++plt_bin_i) {
+                double bin = plot_arr[plot_i][bin_i]->GetBinContent(plt_bin_i);
+                plot_arr[plot_i][bin_i]->SetBinContent(
+                        plt_bin_i, bin * acc_corr_factor[plt_bin_i-1]
+                );
+            }
+        }
+    }
 
     // === WRITE TO OUTPUT FILE ================================================
     // Create output file.
-    char out_file[PATH_MAX];
-    if (p_pid == INT_MAX)
-        sprintf(out_file, "%s/plots_%06d_%s_%s.root", work_dir, run_no,
-                TRK_LIST[trk], PART_LIST[part]);
-    else
-        sprintf(out_file, "%s/plots_%06d_%s_pid%d.root", work_dir, run_no,
-                TRK_LIST[trk], p_pid);
-
-    TFile *f_out = TFile::Open(out_file, "RECREATE");
+    TFile *f_out = TFile::Open(out_filename, "RECREATE");
+    if (!f_out || f_out->IsZombie()) return 13;
 
     // Write plots to output file.
-    for (int plti = 0; plti < plt_size; ++plti) {
+    for (int bin_i = 0; bin_i < bin_arr_size; ++bin_i) {
         // Find dir.
         TString dir;
-        find_bin(&dir, plt_size, plti, dbins, 0, INT_MAX, bvx, bbx, brx,
-                 b_interval);
+        find_bin(&dir, dim_bins, bin_i, 0, INT_MAX, bin_arr_size, bin_vars,
+                bin_nbins, bin_range, bin_binsize);
+
         f_out->mkdir(dir);
         f_out->cd(dir);
 
         // Write plot(s).
-        for (int pi = 0; pi < pn; ++pi) plt[pi][plti]->Write();
+        for (int plot_i = 0; plot_i < plot_arr_size; ++plot_i)
+            plot_arr[plot_i][bin_i]->Write();
     }
 
-    printf("Done! Check out plots at %s.\n\n", out_file);
+    printf("Done! Check out plots at %s.\n\n", out_filename);
 
     // === CLEAN-UP ============================================================
     f_in ->Close();
@@ -528,12 +749,16 @@ int run(char *in_file, char *acc_file, char *work_dir, int run_no) {
 
     free(valid_event);
 
-    if (acc_file != NULL) {
-        for (int bi = 0; bi < 5; ++bi) free(binnings[bi]);
-        free(binnings);
-        free(pids);
-        for (int pi = 0; pi < pids_size; ++pi) free(acc_corr[pi]);
-        free(acc_corr);
+    if (acc_plot) {
+        for (int bi = 0; bi < 5; ++bi) free(acc_edges[bi]);
+        free(acc_edges);
+        free(acc_pids);
+        for (int plot_i = 0; plot_i < acc_npids; ++plot_i) {
+            free(acc_n_thrown[plot_i]);
+            free(acc_n_simul[plot_i]);
+        }
+        free(acc_n_thrown);
+        free(acc_n_simul);
     }
 
     return 0;
@@ -542,14 +767,19 @@ int run(char *in_file, char *acc_file, char *work_dir, int run_no) {
 /** Print usage and exit. */
 int usage() {
     fprintf(stderr,
-            "\n\nUsage: draw_plots [-ha:w:] infile\n"
-            " * -h         : show this message and exit.\n"
-            " * -a accfile : apply acceptance correction using acc_file.\n"
-            " * -w workdir : location where output root files are to be "
-            "stored. Default\n                is root_io.\n"
-            " * infile     : input file produced by make_ntuples.\n\n"
+            "\n\nUsage: draw_plots [-hn:o:a:w:] infile\n"
+            " * -h          : show this message and exit.\n"
+            " * -n nentries : number of entries to process.\n"
+            " * -o outfile  : output file name. Default is plots_<run_no>.root."
+            "\n"
+            " * -a accfile  : apply acceptance correction using acc_filename.\n"
+            " * -A          : get acceptance correction plots without applying "
+            "acceptance\n                 correction. Requires -a to be set.\n"
+            " * -w workdir  : location where output root files are to be "
+            "stored. Default\n                 is root_io.\n"
+            " * infile      : input file produced by make_ntuples.\n\n"
             "    Draw plots from a ROOT file built from make_ntuples. File "
-            "should be named\n    <text>run_no.root.\n\n"
+            "should be named\n     <text>run_no.root.\n\n"
     );
 
     return 1;
@@ -588,6 +818,20 @@ int handle_err(int errcode) {
             fprintf(stderr, "Acceptance correction text file couldn't be "
                             "opened.");
             break;
+        case 10:
+            fprintf(stderr, "Number of entries should be greater than 0.");
+            break;
+        case 11:
+            fprintf(stderr, "There's no acceptance correction data for the "
+                            "selected PID.");
+            break;
+        case 12:
+            fprintf(stderr, "Option -A is only valid if an acceptance "
+                            "correction file is specified using -a.");
+            break;
+        case 13:
+            fprintf(stderr, "Failed to create output file.");
+            break;
         default:
             fprintf(stderr, "Error code not implemented!\n");
             return 1;
@@ -600,25 +844,38 @@ int handle_err(int errcode) {
  * Handle arguments for make_ntuples using optarg. Error codes used are
  *     explained in the handle_err() function.
  */
-int handle_args(int argc, char **argv, char **in_file, char **acc_file,
-        char **work_dir, int *run_no)
+int handle_args(int argc, char **argv, char **in_filename, char **out_filename,
+        char **acc_filename, char **work_dir, int *run_no, int *nentries,
+        bool *apply_acc_corr)
 {
     // Handle arguments.
     int opt;
-    while ((opt = getopt(argc, argv, "-ha:w:")) != -1) {
+    char *tmp_out_filename = NULL;
+    while ((opt = getopt(argc, argv, "-hn:o:a:Aw:")) != -1) {
         switch (opt) {
             case 'h':
                 return 1;
+            case 'n':
+                *nentries = atoi(optarg);
+                if (*nentries <= 0) return 10; // Check if nentries is valid.
+                break;
+            case 'o':
+                tmp_out_filename = (char *) malloc(strlen(optarg) + 1);
+                strcpy(tmp_out_filename, optarg);
+                break;
             case 'a':
-                *acc_file = (char *) malloc(strlen(optarg) + 1);
-                strcpy(*acc_file, optarg);
+                *acc_filename = (char *) malloc(strlen(optarg) + 1);
+                strcpy(*acc_filename, optarg);
+                break;
+            case 'A':
+                *apply_acc_corr = false;
                 break;
             case 'w':
                 *work_dir = (char *) malloc(strlen(optarg) + 1);
                 strcpy(*work_dir, optarg);
             case 1:
-                *in_file = (char *) malloc(strlen(optarg) + 1);
-                strcpy(*in_file, optarg);
+                *in_filename = (char *) malloc(strlen(optarg) + 1);
+                strcpy(*in_filename, optarg);
                 break;
             default:
                 return 2;
@@ -631,32 +888,54 @@ int handle_args(int argc, char **argv, char **in_file, char **acc_file,
         sprintf(*work_dir, "%s/../root_io", dirname(argv[0]));
     }
 
-    // Check positional argument.
-    if (*in_file == NULL) return 3;
+    // -A is only valid if -a is also specified.
+    if (*apply_acc_corr == false && *acc_filename == NULL) return 12;
 
-    int check = handle_root_filename(*in_file, run_no);
-    if (!check || check == 5) return 0;
-    else                      return check + 3; // Shift errcode.
+    // Check positional argument.
+    if (*in_filename == NULL) return 3;
+
+    // Check input filename validity and write run number to run_no.
+    int check = handle_root_filename(*in_filename, run_no);
+    if (check && check != 5) return check + 3; // Shift errcode.
+
+    // Define tmp output filename if undefined.
+    if (tmp_out_filename == NULL) {
+        tmp_out_filename = (char *) malloc(PATH_MAX);
+        sprintf(tmp_out_filename, "plots_%06d.root", *run_no);
+    }
+
+    // Define final output filename, including work_dir.
+    *out_filename = (char *) malloc(PATH_MAX);
+    sprintf(*out_filename, "%s/%s", *work_dir, tmp_out_filename);
+    free(tmp_out_filename);
+
+    return 0;
 }
 
 /** Entry point of the program. */
 int main(int argc, char **argv) {
     // Handle arguments.
-    char *in_file  = NULL;
-    char *acc_file = NULL;
+    char *in_filename  = NULL;
+    char *out_filename = NULL;
+    char *acc_filename = NULL;
     char *work_dir = NULL;
     int run_no     = -1;
+    int nentries  = -1;
+    bool apply_acc_corr = true;
 
-    int errcode = handle_args(argc, argv, &in_file, &acc_file, &work_dir,
-            &run_no);
+    int errcode = handle_args(argc, argv, &in_filename, &out_filename,
+            &acc_filename, &work_dir, &run_no, &nentries, &apply_acc_corr);
 
     // Run.
-    if (errcode == 0)
-        errcode = run(in_file, acc_file, work_dir, run_no);
+    if (errcode == 0) {
+        errcode = run(in_filename, out_filename, acc_filename, work_dir, run_no,
+                      nentries, apply_acc_corr);
+    }
 
     // Free up memory.
-    if (in_file  != NULL) free(in_file);
-    if (acc_file != NULL) free(acc_file);
+    if (in_filename  != NULL) free(in_filename);
+    if (out_filename != NULL) free(out_filename);
+    if (acc_filename != NULL) free(acc_filename);
     if (work_dir != NULL) free(work_dir);
 
     // Return errcode.

@@ -19,7 +19,9 @@
 #include "../lib/bank_containers.h"
 
 /** run() function of the program. Check usage() for details. */
-int run(char *in_filename, char *work_dir, int run_no, int event_max) {
+int run(char *in_filename, char *work_dir, bool use_fmt, int run_no,
+        int event_max)
+{
     // Create output file.
     char out_file[PATH_MAX];
     sprintf(out_file, "%s/banks_%06d.root", work_dir, run_no);
@@ -31,18 +33,18 @@ int run(char *in_filename, char *work_dir, int run_no, int event_max) {
     TTree *tree = new TTree("Tree", "Tree");
     Particle     particle;
     Track        track;
-    FMT_Tracks   fmt_tracks;
     Calorimeter  calorimeter;
     Cherenkov    cherenkov;
     Scintillator scintillator;
+    FMT_Tracks   fmt_tracks;
 
     // Link bank container to tree branches.
     particle    .link_branches(tree);
     track       .link_branches(tree);
-    fmt_tracks  .link_branches(tree);
     calorimeter .link_branches(tree);
     cherenkov   .link_branches(tree);
     scintillator.link_branches(tree);
+    if (use_fmt) fmt_tracks.link_branches(tree);
 
     // Open input file and get hipo schemas.
     hipo::reader reader;
@@ -54,10 +56,11 @@ int run(char *in_filename, char *work_dir, int run_no, int event_max) {
     hipo::event event;
     hipo::bank particle_bank    (factory.getSchema("REC::Particle"));
     hipo::bank track_bank       (factory.getSchema("REC::Track"));
-    hipo::bank fmt_tracks_bank  (factory.getSchema("FMT::Tracks"));
     hipo::bank calorimeter_bank (factory.getSchema("REC::Calorimeter"));
     hipo::bank cherenkov_bank   (factory.getSchema("REC::Cherenkov"));
     hipo::bank scintillator_bank(factory.getSchema("REC::Scintillator"));
+    hipo::bank fmt_tracks_bank;
+    if (use_fmt) fmt_tracks_bank = factory.getSchema("FMT::Tracks");
 
     // Get stuff from hipo file and write to root file.
     if (event_max == -1) event_max = reader.getEntries();
@@ -80,26 +83,26 @@ int run(char *in_filename, char *work_dir, int run_no, int event_max) {
         // Get bank structures from hipo event.
         event.getStructure(particle_bank);
         event.getStructure(track_bank);
-        event.getStructure(fmt_tracks_bank);
         event.getStructure(calorimeter_bank);
         event.getStructure(cherenkov_bank);
         event.getStructure(scintillator_bank);
+        if (use_fmt) event.getStructure(fmt_tracks_bank);
 
         // Fill banks from hipo event.
         particle    .fill(particle_bank);
         track       .fill(track_bank);
-        fmt_tracks  .fill(fmt_tracks_bank);
         calorimeter .fill(calorimeter_bank);
         cherenkov   .fill(cherenkov_bank);
         scintillator.fill(scintillator_bank);
+        if (use_fmt) fmt_tracks.fill(fmt_tracks_bank);
 
         // Write to tree *if* event is not empty.
         int total_nrows = particle.get_nrows() +
                           track.get_nrows() +
-                          fmt_tracks.get_nrows() +
                           calorimeter.get_nrows() +
                           cherenkov.get_nrows() +
                           scintillator.get_nrows();
+        if (use_fmt) total_nrows += fmt_tracks.get_nrows();
 
         if (total_nrows > 0) tree->Fill();
     }
@@ -115,8 +118,9 @@ int run(char *in_filename, char *work_dir, int run_no, int event_max) {
 /** Print usage and exit. */
 int usage() {
     fprintf(stderr,
-            "\n\nUsage: hipo2root [-hn:w:] infile\n"
+            "\n\nUsage: hipo2root [-hfn:w:] infile\n"
             " * -h         : show this message and exit.\n"
+            " * -f         : set this to true to process FMT::Tracks bank.\n"
             " * -n nevents : number of events.\n"
             " * -w workdir : location where output root files are to be "
             "stored. Default\n                is root_io.\n"
@@ -173,14 +177,17 @@ int handle_err(int errcode) {
  *     in the handle_err() function.
  */
 int handle_args(int argc, char **argv, char **in_filename, char **work_dir,
-        int *run_no, int *event_max)
+        bool *use_fmt, int *run_no, int *event_max)
 {
     // Handle arguments.
     int opt;
-    while ((opt = getopt(argc, argv, "-hn:w:")) != -1) {
+    while ((opt = getopt(argc, argv, "-hfn:w:")) != -1) {
         switch (opt) {
             case 'h':
                 return 1;
+            case 'f':
+                *use_fmt = true;
+                break;
             case 'n':
                 *event_max = atoi(optarg);
                 if (*event_max <= 0) return 2; // Check if event_max is valid.
@@ -218,14 +225,16 @@ int main(int argc, char **argv) {
     // Handle arguments.
     char *in_filename = NULL;
     char *work_dir    = NULL;
+    bool use_fmt      = false;
     int  run_no       = -1;
     int  event_max    = -1;
 
-    int errcode = handle_args(argc, argv, &in_filename, &work_dir, &run_no,
-            &event_max);
+    int errcode = handle_args(argc, argv, &in_filename, &work_dir, &use_fmt,
+            &run_no, &event_max);
 
     // Run.
-    if (errcode == 0) errcode = run(in_filename, work_dir, run_no, event_max);
+    if (errcode == 0)
+        errcode = run(in_filename, work_dir, use_fmt, run_no, event_max);
 
     // Free up memory.
     if (in_filename != NULL) free(in_filename);

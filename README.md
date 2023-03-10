@@ -10,8 +10,9 @@ First, set the environment variable `HIPO` to the location where hipo is install
 ## Usage
 ### hipo2root
 ```
-Usage: hipo2root [-hn:w:] infile
+Usage: hipo2root [-hfn:w:] infile
  * -h         : show this message and exit.
+ * -f         : set this to true to process FMT::Tracks bank.
  * -n nevents : number of events.
  * -w workdir : location where output root files are to be stored. Default
                 is root_io.
@@ -84,6 +85,7 @@ Usage: make_ntuples [-hDn:w:d:] infile
  * -h         : show this message and exit.
  * -D         : activate debug mode.
  * -n nevents : number of events.
+ * -f         : set this to true to process FMT::Tracks bank.
  * -w workdir : location where output root files are to be stored. Default
                 is root_io.
  * -d datadir : location where sampling fraction files are located. Default is
@@ -94,23 +96,33 @@ Generate ntuples relevant to SIDIS analysis based on the reconstructed variables
 
 ### draw_plots
 ```
-Usage: draw_plots [-ha:w:] infile
- * -h         : show this message and exit.
- * -a accfile : apply acceptance correction using acc_file.
- * -w workdir : location where output root files are to be stored. Default
-                is root_io.
- * infile     : input file produced by make_ntuples.
+Usage: draw_plots [-hn:a:w:] infile
+ * -h          : show this message and exit.
+ * -n nentries : number of entries to process.
+ * -a accfile  : apply acceptance correction using acc_file.
+ * -w workdir  : location where output root files are to be stored. Default
+                 is root_io.
+ * infile      : input file produced by make_ntuples.
 ```
 
 Draw plots from a ROOT file built from `make_ntuples`. File should be named <text>run_no.root. This tool is built for those who don't enjoy using root too much, and should be able to perform most basic tasks needed in SIDIS analysis.
+
+## Debugging
+As always, debugging ROOT code is terrible. If you want to use Valgrind, run it as follows to hide (some of) of ROOT's terrible memory management practices:
+
+```
+valgrind --num-callers=30 --suppressions=$ROOTSYS/etc/valgrind-root.supp
+```
+
+Keep in mind that opening any `TFile` will give you about 140 lines of memory management errors.
 
 ## Contributing
 Pull requests are welcome. For major changes, open an issue first to discuss the changes and figure out a work plan before putting serious work into them.
 
 **Pending tasks are**:
-- [ ] Apply acceptance correction.
-- [ ] Include GitHub tests.
-- [ ] Add an option to use `TimeBasedTrkg::*` and `FMT::*` banks instead of `REC::Particle` and `REC::Tracks` banks.
+- [x] Apply acceptance correction.
+- [ ] Implement variable bin sizes for every variable and binning.
+- [ ] Include GitHub tests -- I've no clue on how to do this with ROOT + HIPO.
 - [ ] Add a main program (probably in bash) to call all other programs for working simplicity.
 - [ ] Improve `bank_containers` to be more generic.
 - [ ] Improve the use of constants thorough the code by using a dictionary or a similar structure.

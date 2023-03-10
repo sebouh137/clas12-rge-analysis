@@ -129,7 +129,7 @@ const int STD_VX[STDPLT_LIST_SIZE][2] = {
 const double STD_RX[STDPLT_LIST_SIZE][2][2] = {
         {{ 0,10},{ 0, 1}}, {{ 0,10},{ 0,20}}, {{ 0,10},{ 0, 3}},
         {{ 0,12},{-1,-1}}, {{ 0,12},{-1,-1}}, {{ 0, 1},{-1,-1}},
-        {{ 0,12},{-1,-1}}, {{ -M_PI,M_PI},{-1,-1}},
+        {{ 0, 2},{-1,-1}}, {{ -M_PI,M_PI},{-1,-1}},
         {{ 0, 1},{-1,-1}}, {{ 0,20},{-1,-1}}, {{ 0,12},{ 0,12}}
 };
 const long STD_BX[STDPLT_LIST_SIZE][2] = {
@@ -137,6 +137,16 @@ const long STD_BX[STDPLT_LIST_SIZE][2] = {
         {400, -1},         {400, -1},         {400, -1},
         {400, -1},         {400, -1},
         {400, -1},         {400, -1},         {200,200}
+};
+
+// Acceptance corrected plots constant arrays.
+const int ACC_PX[ACCPLT_LIST_SIZE] = {
+        0, /* Q^2       */ 0, /* nu        */ 0, /* zh        */
+        0, /* Pt2       */ 0, /* phi_PQ    */
+};
+const int ACC_VX[ACCPLT_LIST_SIZE][2] = {
+        {A_Q2,-1},         {A_NU,-1},         {A_ZH,-1},
+        {A_PT2,-1},        {A_PHIPQ,-1},
 };
 
 // Sampling fraction constant arrays.

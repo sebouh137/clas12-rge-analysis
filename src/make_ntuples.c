@@ -154,8 +154,8 @@ int count_photoelectrons(Cherenkov cherenkov, int pindex, int *htcc_nphe,
 }
 
 /** run() function of the program. Check usage() for details. */
-int run(char *in_file, char *work_dir, char *data_dir, bool debug, int nevn,
-        int run_no, double beam_E)
+int run(char *in_file, char *work_dir, char *data_dir, bool debug, bool use_fmt,
+        int nevn, int run_no, double beam_E)
 {
     // Get sampling fraction.
     char t_file[PATH_MAX];
@@ -196,10 +196,11 @@ int run(char *in_file, char *work_dir, char *data_dir, bool debug, int nevn,
     // Associate banks to TTree.
     Particle     b_particle    (t_in);
     Track        b_track       (t_in);
-    FMT_Tracks   b_fmt_tracks  (t_in);
     Calorimeter  b_calorimeter (t_in);
     Cherenkov    b_cherenkov   (t_in);
     Scintillator b_scintillator(t_in);
+    FMT_Tracks   b_fmt_tracks;
+    if (use_fmt) b_fmt_tracks.link_tree(t_in);
 
     // Iterate through input file. Each TTree entry is one event.
     printf("Reading %d events from %s.\n", nevn, in_file);
@@ -215,10 +216,10 @@ int run(char *in_file, char *work_dir, char *data_dir, bool debug, int nevn,
         // Get entries from input file.
         b_particle    .get_entries(t_in, evn);
         b_track       .get_entries(t_in, evn);
-        b_fmt_tracks  .get_entries(t_in, evn);
         b_scintillator.get_entries(t_in, evn);
         b_calorimeter .get_entries(t_in, evn);
         b_cherenkov   .get_entries(t_in, evn);
+        if (use_fmt) b_fmt_tracks.get_entries(t_in, evn);
 
         // Filter events without the necessary banks.
         if (b_particle.vz->size() == 0 || b_track.pindex->size() == 0) continue;
@@ -234,7 +235,13 @@ int run(char *in_file, char *work_dir, char *data_dir, bool debug, int nevn,
 
             // Get reconstructed particle from DC and from FMT.
             p_el[0] = particle_init(&b_particle, &b_track, pos);
-            p_el[1] = particle_init(&b_particle, &b_track, &b_fmt_tracks, pos);
+            if (use_fmt) {
+                p_el[1] = particle_init(&b_particle, &b_track, &b_fmt_tracks,
+                        pos);
+            }
+            else {
+                p_el[1] = particle_init();
+            }
 
             // Get deposited energy in PCAL, ECIN, and ECOU.
             float pcal_E, ecin_E, ecou_E;
@@ -302,7 +309,10 @@ int run(char *in_file, char *work_dir, char *data_dir, bool debug, int nevn,
             // Get reconstructed particle from DC and from FMT.
             particle p[2];
             p[0] = particle_init(&b_particle, &b_track, pos);
-            p[1] = particle_init(&b_particle, &b_track, &b_fmt_tracks, pos);
+            if (use_fmt)
+                p[1] = particle_init(&b_particle, &b_track, &b_fmt_tracks, pos);
+            else
+                p[1] = particle_init();
 
             // Get deposited energy in PCAL, ECIN, and ECOU.
             float pcal_E, ecin_E, ecou_E;
@@ -360,9 +370,10 @@ int run(char *in_file, char *work_dir, char *data_dir, bool debug, int nevn,
 /** Print usage and exit. */
 int usage() {
     fprintf(stderr,
-            "\n\nUsage: make_ntuples [-hDn:w:d:] infile\n"
+            "\n\nUsage: make_ntuples [-hDfn:w:d:] infile\n"
             " * -h         : show this message and exit.\n"
             " * -D         : activate debug mode.\n"
+            " * -f         : set this to true to process FMT::Tracks bank.\n"
             " * -n nevents : number of events.\n"
             " * -w workdir : location where output root files are to be "
             "stored. Default\n                is root_io.\n"
@@ -443,16 +454,20 @@ int handle_err(int errcode) {
  *     explained in the handle_err() function.
  */
 int handle_args(int argc, char **argv, char **in_file, char **work_dir,
-        char **data_dir, bool *debug, int *nevn, int *run_no, double *beam_E)
+        char **data_dir, bool *debug, bool *use_fmt, int *nevn, int *run_no,
+        double *beam_E)
 {
     // Handle arguments.
     int opt;
-    while ((opt = getopt(argc, argv, "-hDn:w:d:")) != -1) {
+    while ((opt = getopt(argc, argv, "-hDfn:w:d:")) != -1) {
         switch (opt) {
             case 'h':
                 return 1;
             case 'D':
                 *debug = true;
+                break;
+            case 'f':
+                *use_fmt = true;
                 break;
             case 'n':
                 *nevn = atoi(optarg);
@@ -506,16 +521,18 @@ int main(int argc, char **argv) {
     char *work_dir = NULL;
     char *data_dir = NULL;
     bool debug     = false;
+    bool use_fmt   = false;
     int nevn       = -1;
     int run_no     = -1;
     double beam_E  = -1;
 
     int errcode = handle_args(argc, argv, &in_file, &work_dir, &data_dir,
-            &debug, &nevn, &run_no, &beam_E);
+            &debug, &use_fmt, &nevn, &run_no, &beam_E);
 
     // Run.
     if (errcode == 0)
-        errcode = run(in_file, work_dir, data_dir, debug, nevn, run_no, beam_E);
+        errcode = run(in_file, work_dir, data_dir, debug, use_fmt, nevn, run_no,
+                beam_E);
 
     // Free up memory.
     if (in_file  != NULL) free(in_file);
