@@ -141,27 +141,27 @@ int get_deposited_energy(Calorimeter calorimeter, int pindex,
  *
  * @param cherenkov: Instance of the Cherenkov class.
  * @param pindex:    particle index of the particle we're studying.
- * @param htcc_nphe: pointer to int where we'll write the number of
+ * @param nphe_HTCC: pointer to int where we'll write the number of
  *                   photoelectrons deposited on HTCC.
- * @param ltcc_nphe: pointer to int where we'll write the number of
+ * @param nphe_LTCC: pointer to int where we'll write the number of
  *                   photoelectrons deposited on LTCC.
  * @return           error code. 0 if successful, 1 otherwise. The function only
  *                   returns 1 if there's an invalid detector ID in the
  *                   Cherenkov instance, suggesting data corruption or a change
  *                   in the REC::Cherenkov bank.
  */
-int count_photoelectrons(Cherenkov cherenkov, int pindex, int *htcc_nphe,
-        int *ltcc_nphe)
+int count_photoelectrons(Cherenkov cherenkov, int pindex, int *nphe_HTCC,
+        int *nphe_LTCC)
 {
-    *htcc_nphe = 0;
-    *ltcc_nphe = 0;
+    *nphe_HTCC = 0;
+    *nphe_LTCC = 0;
 
     for (UInt_t i = 0; i < cherenkov.pindex->size(); ++i) {
         if (cherenkov.pindex->at(i) != pindex) continue;
 
         int detector = cherenkov.detector->at(i);
-        if      (detector == HTCC_ID) *htcc_nphe += cherenkov.nphe->at(i);
-        else if (detector == LTCC_ID) *ltcc_nphe += cherenkov.nphe->at(i);
+        if      (detector == HTCC_ID) *nphe_HTCC += cherenkov.nphe->at(i);
+        else if (detector == LTCC_ID) *nphe_LTCC += cherenkov.nphe->at(i);
         else return 1;
     }
 
@@ -265,9 +265,9 @@ int run(char *filename_in, char *work_dir, char *data_dir, bool debug,
             ) return 13;
 
             // Get Cherenkov counters data.
-            int htcc_nphe, ltcc_nphe;
-            if (count_photoelectrons(b_cherenkov, pindex, &htcc_nphe,
-                                     &ltcc_nphe)
+            int nphe_HTCC, nphe_LTCC;
+            if (count_photoelectrons(b_cherenkov, pindex, &nphe_HTCC,
+                                     &nphe_LTCC)
             ) return 14;
 
             // Get time of flight.
@@ -282,7 +282,7 @@ int run(char *filename_in, char *work_dir, char *data_dir, bool debug,
             for (int pi = 0; pi < 2; ++pi) {
                 set_pid(&(p_el[pi]), b_particle.pid->at(pindex), status,
                         energy_PCAL + energy_ECIN + energy_ECOU, energy_PCAL,
-                        htcc_nphe, ltcc_nphe,
+                        nphe_HTCC, nphe_LTCC,
                         sf_params[b_track.sector->at(pos)]);
             }
 
@@ -340,9 +340,9 @@ int run(char *filename_in, char *work_dir, char *data_dir, bool debug,
             ) return 13;
 
             // Get Cherenkov counters data.
-            int htcc_nphe, ltcc_nphe;
-            if (count_photoelectrons(b_cherenkov, pindex, &htcc_nphe,
-                                     &ltcc_nphe)
+            int nphe_HTCC, nphe_LTCC;
+            if (count_photoelectrons(b_cherenkov, pindex, &nphe_HTCC,
+                                     &nphe_LTCC)
             ) return 14;
 
             // Get TOF.
@@ -357,7 +357,7 @@ int run(char *filename_in, char *work_dir, char *data_dir, bool debug,
             for (int pi = 0; pi < 2; ++pi) {
                 set_pid(&(p[pi]), b_particle.pid->at(pindex), status,
                         energy_PCAL + energy_ECIN + energy_ECOU, energy_PCAL,
-                        htcc_nphe, ltcc_nphe,
+                        nphe_HTCC, nphe_LTCC,
                         sf_params[b_track.sector->at(pos)]);
             }
 
