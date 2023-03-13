@@ -42,19 +42,28 @@ double get_tof(Scintillator scintillator, Calorimeter calorimeter, int pindex)
     double tof              = INFINITY;
     for (UInt_t i = 0; i < scintillator.pindex->size(); ++i) {
         // Filter out incorrect pindex and hits not from FTOF.
-        if (scintillator.pindex->at(i) != pindex
-                || scintillator.detector->at(i) != FTOF_ID)
+        if (
+                scintillator.pindex->at(i) != pindex ||
+                scintillator.detector->at(i) != FTOF_ID
+        ) {
             continue;
+        }
+
+        // Check FTOF 1B (most precise FTOF layer).
         if (scintillator.layer->at(i) == FTOF1B_LYR) {
             most_precise_lyr = FTOF1B_LYR;
             tof = scintillator.time->at(i);
             break; // Things won't get better than this.
         }
+
+        // Check FTOF 1A.
         else if (scintillator.layer->at(i) == FTOF1A_LYR) {
             if (most_precise_lyr == FTOF1A_LYR) continue;
             most_precise_lyr = FTOF1A_LYR;
             tof = scintillator.time->at(i);
         }
+
+        // Check FTOF 2.
         else if (scintillator.layer->at(i) == FTOF2_LYR) {
             // We already have a similar or better hit.
             if (most_precise_lyr != 0) continue;
@@ -62,22 +71,28 @@ double get_tof(Scintillator scintillator, Calorimeter calorimeter, int pindex)
             tof = scintillator.time->at(i);
         }
     }
-
     if (most_precise_lyr != 0) return tof;
-    // No hits from FTOF, let's try ECAL.
+
+    // If no hits from FTOF were found, try to find TOF from calorimeters.
     for (UInt_t i = 0; i < calorimeter.pindex->size(); ++i) {
         // Filter out incorrect pindex.
         if (calorimeter.pindex->at(i) != pindex) continue;
+
+        // Check PCAL (Calorimeter with the most precise TOF).
         if (calorimeter.layer->at(i) == PCAL_LYR) {
             most_precise_lyr = 10 + PCAL_LYR;
             tof = calorimeter.time->at(i);
             break; // Things won't get better than this.
         }
+
+        // Check ECIN.
         else if (calorimeter.layer->at(i) == ECIN_LYR) {
             if (most_precise_lyr == 10 + ECIN_LYR) continue;
             most_precise_lyr = 10 + ECIN_LYR;
             tof = calorimeter.time->at(i);
         }
+
+        // Check ECOU.
         else if (calorimeter.layer->at(i) == ECOU_LYR) {
             if (most_precise_lyr != 0) continue;
             most_precise_lyr = 10 + ECOU_LYR;
