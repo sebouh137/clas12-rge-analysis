@@ -154,8 +154,8 @@ int count_photoelectrons(Cherenkov cherenkov, int pindex, int *htcc_nphe,
 }
 
 /** run() function of the program. Check usage() for details. */
-int run(char *in_file, char *work_dir, char *data_dir, bool debug, bool use_fmt,
-        int nevn, int run_no, double beam_E)
+int run(char *filename_in, char *work_dir, char *data_dir, bool debug,
+        bool use_fmt, int n_events, int run_no, double energy_beam)
 {
     // Get sampling fraction.
     char t_file[PATH_MAX];
@@ -170,7 +170,7 @@ int run(char *in_file, char *work_dir, char *data_dir, bool debug, bool use_fmt,
     TFile *f_out = TFile::Open(out_file, "RECREATE");
 
     // Access input file.
-    TFile *f_in  = TFile::Open(in_file, "READ");
+    TFile *f_in  = TFile::Open(filename_in, "READ");
     if (!f_in || f_in->IsZombie()) return 11;
 
     // Return to top directory (weird root stuff).
@@ -190,8 +190,8 @@ int run(char *in_file, char *work_dir, char *data_dir, bool debug, bool use_fmt,
     t_out[0] = new TNtuple(S_DC,  S_DC,  vars);
     t_out[1] = new TNtuple(S_FMT, S_FMT, vars);
 
-    // Change nevn to number of entries if it is equal to -1.
-    if (nevn == -1) nevn = t_in->GetEntries();
+    // Change n_events to number of entries if it is equal to -1.
+    if (n_events == -1) n_events = t_in->GetEntries();
 
     // Associate banks to TTree.
     Particle     b_particle    (t_in);
@@ -203,15 +203,15 @@ int run(char *in_file, char *work_dir, char *data_dir, bool debug, bool use_fmt,
     if (use_fmt) b_fmt_tracks.link_tree(t_in);
 
     // Iterate through input file. Each TTree entry is one event.
-    printf("Reading %d events from %s.\n", nevn, in_file);
+    printf("Reading %d events from %s.\n", n_events, filename_in);
 
     // Counters for fancy progress bar.
     int divcntr     = 0;
     int evnsplitter = 0;
 
-    for (int evn = 0; evn < nevn; ++evn) {
+    for (int evn = 0; evn < n_events; ++evn) {
         // Print fancy progress bar.
-        if (!debug) update_progress_bar(nevn, evn, &evnsplitter, &divcntr);
+        if (!debug) update_progress_bar(n_events, evn, &evnsplitter, &divcntr);
 
         // Get entries from input file.
         b_particle    .get_entries(t_in, evn);
@@ -277,8 +277,10 @@ int run(char *in_file, char *work_dir, char *data_dir, bool debug, bool use_fmt,
                 trigger_exist = true;
 
                 Float_t arr[VAR_LIST_SIZE];
-                fill_ntuples_arr(arr, p_el[pi], p_el[pi], run_no, evn, status,
-                        beam_E, chi2, ndf, pcal_E, ecin_E, ecou_E, tof, tof);
+                fill_ntuples_arr(
+                        arr, p_el[pi], p_el[pi], run_no, evn, status,
+                        energy_beam, chi2, ndf, pcal_E, ecin_E, ecou_E, tof, tof
+                );
 
                 t_out[pi]->Fill(arr);
             }
@@ -347,7 +349,7 @@ int run(char *in_file, char *work_dir, char *data_dir, bool debug, bool use_fmt,
                 if (!p[pi].is_valid) continue;
                 Float_t arr[VAR_LIST_SIZE];
                 fill_ntuples_arr(arr, p[pi], p_el[pi], run_no, evn, status,
-                        beam_E, chi2, ndf, pcal_E, ecin_E, ecou_E, tof,
+                        energy_beam, chi2, ndf, pcal_E, ecin_E, ecou_E, tof,
                         trigger_tof);
 
                 t_out[pi]->Fill(arr);
@@ -457,9 +459,9 @@ int handle_err(int errcode) {
  * Handle arguments for make_ntuples using optarg. Error codes used are
  *     explained in the handle_err() function.
  */
-int handle_args(int argc, char **argv, char **in_file, char **work_dir,
-        char **data_dir, bool *debug, bool *use_fmt, int *nevn, int *run_no,
-        double *beam_E)
+int handle_args(int argc, char **argv, char **filename_in, char **work_dir,
+        char **data_dir, bool *debug, bool *use_fmt, int *n_events, int *run_no,
+        double *energy_beam)
 {
     // Handle arguments.
     int opt;
@@ -474,8 +476,8 @@ int handle_args(int argc, char **argv, char **in_file, char **work_dir,
                 *use_fmt = true;
                 break;
             case 'n':
-                *nevn = atoi(optarg);
-                if (*nevn <= 0) return 2; // Check if nevn is valid.
+                *n_events = atoi(optarg);
+                if (*n_events <= 0) return 2; // Check if n_events is valid.
                 break;
             case 'w':
                 *work_dir = (char *) malloc(strlen(optarg) + 1);
@@ -486,8 +488,8 @@ int handle_args(int argc, char **argv, char **in_file, char **work_dir,
                 strcpy(*data_dir, optarg);
                 break;
             case 1:
-                *in_file = (char *) malloc(strlen(optarg) + 1);
-                strcpy(*in_file, optarg);
+                *filename_in = (char *) malloc(strlen(optarg) + 1);
+                strcpy(*filename_in, optarg);
                 break;
             default:
                 return 3; // Bad usage of optional arguments.
@@ -510,9 +512,9 @@ int handle_args(int argc, char **argv, char **in_file, char **work_dir,
     }
 
     // Check positional argument.
-    if (*in_file == NULL) return 4;
+    if (*filename_in == NULL) return 4;
 
-    int check = handle_root_filename(*in_file, run_no, beam_E);
+    int check = handle_root_filename(*filename_in, run_no, energy_beam);
     if (check) return check + 4; // Shift errcode.
 
     return 0;
@@ -521,27 +523,32 @@ int handle_args(int argc, char **argv, char **in_file, char **work_dir,
 /** Entry point of the program. */
 int main(int argc, char **argv) {
     // Handle arguments.
-    char *in_file  = NULL;
-    char *work_dir = NULL;
-    char *data_dir = NULL;
-    bool debug     = false;
-    bool use_fmt   = false;
-    int nevn       = -1;
-    int run_no     = -1;
-    double beam_E  = -1;
+    char *filename_in  = NULL;
+    char *work_dir     = NULL;
+    char *data_dir     = NULL;
+    bool debug         = false;
+    bool use_fmt       = false;
+    int n_events       = -1;
+    int run_no         = -1;
+    double energy_beam = -1;
 
-    int errcode = handle_args(argc, argv, &in_file, &work_dir, &data_dir,
-            &debug, &use_fmt, &nevn, &run_no, &beam_E);
+    int errcode = handle_args(
+            argc, argv, &filename_in, &work_dir, &data_dir, &debug, &use_fmt,
+            &n_events, &run_no, &energy_beam
+    );
 
     // Run.
-    if (errcode == 0)
-        errcode = run(in_file, work_dir, data_dir, debug, use_fmt, nevn, run_no,
-                beam_E);
+    if (errcode == 0) {
+        errcode = run(
+                filename_in, work_dir, data_dir, debug, use_fmt, n_events,
+                run_no, energy_beam
+        );
+    }
 
     // Free up memory.
-    if (in_file  != NULL) free(in_file);
-    if (work_dir != NULL) free(work_dir);
-    if (data_dir != NULL) free(data_dir);
+    if (filename_in != NULL) free(filename_in);
+    if (work_dir    != NULL) free(work_dir);
+    if (data_dir    != NULL) free(data_dir);
 
     // Return errcode.
     return handle_err(errcode);
