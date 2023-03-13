@@ -93,16 +93,16 @@ double get_tof(Scintillator scintillator, Calorimeter calorimeter, int pindex)
  *
  * @param calorimeter: instance of the Calorimeter class.
  * @param pindex:      particle index of the particle we're studying
- * @param pcal_E:      pointer to float to which we'll write the PCAL energy.
- * @param ecin_E:      pointer to float to which we'll write the ECIN energy.
- * @param ecou_E:      pointer to float to which we'll write the ECOU energy.
+ * @param pcal_E:      pointer to double to which we'll write the PCAL energy.
+ * @param ecin_E:      pointer to double to which we'll write the ECIN energy.
+ * @param ecou_E:      pointer to double to which we'll write the ECOU energy.
  * @return             error code. 0 if successful, 1 otherwise. The function
  *                     only returns 1 if there's an invalid layer in the
  *                     Calorimeter instance, suggesting corruption or a change
  *                     in the REC::Calorimeter bank.
  */
-int get_deposited_energy(Calorimeter calorimeter, int pindex, float *pcal_E,
-        float *ecin_E, float *ecou_E)
+int get_deposited_energy(Calorimeter calorimeter, int pindex, double *pcal_E,
+        double *ecin_E, double *ecou_E)
 {
     *pcal_E = 0;
     *ecin_E = 0;
@@ -229,7 +229,7 @@ int run(char *in_file, char *work_dir, char *data_dir, bool debug, bool use_fmt,
         bool    trigger_exist  = false;
         UInt_t  trigger_pos    = -1;
         int     trigger_pindex = -1;
-        float   trigger_tof    = -1.;
+        double   trigger_tof    = -1.;
         for (UInt_t pos = 0; pos < b_track.index->size(); ++pos) {
             int pindex = b_track.pindex->at(pos);
 
@@ -244,7 +244,7 @@ int run(char *in_file, char *work_dir, char *data_dir, bool debug, bool use_fmt,
             }
 
             // Get deposited energy in PCAL, ECIN, and ECOU.
-            float pcal_E, ecin_E, ecou_E;
+            double pcal_E, ecin_E, ecou_E;
             if (get_deposited_energy(b_calorimeter, pindex, &pcal_E, &ecin_E,
                                      &ecou_E)
             ) return 13;
@@ -256,12 +256,12 @@ int run(char *in_file, char *work_dir, char *data_dir, bool debug, bool use_fmt,
             ) return 14;
 
             // Get time of flight.
-            float tof = get_tof(b_scintillator, b_calorimeter, pindex);
+            double tof = get_tof(b_scintillator, b_calorimeter, pindex);
 
             // Get miscellaneous data.
             int status = b_particle.status->at(pindex);
-            float chi2 = b_track.chi2     ->at(pos);
-            float ndf  = b_track.ndf      ->at(pos);
+            double chi2 = b_track.chi2     ->at(pos);
+            double ndf  = b_track.ndf      ->at(pos);
 
             // Assign PID.
             for (int pi = 0; pi < 2; ++pi) {
@@ -315,7 +315,7 @@ int run(char *in_file, char *work_dir, char *data_dir, bool debug, bool use_fmt,
                 p[1] = particle_init();
 
             // Get deposited energy in PCAL, ECIN, and ECOU.
-            float pcal_E, ecin_E, ecou_E;
+            double pcal_E, ecin_E, ecou_E;
             if (get_deposited_energy(b_calorimeter, pindex, &pcal_E, &ecin_E,
                                      &ecou_E)
             ) return 13;
@@ -327,12 +327,12 @@ int run(char *in_file, char *work_dir, char *data_dir, bool debug, bool use_fmt,
             ) return 14;
 
             // Get TOF.
-            float tof = get_tof(b_scintillator, b_calorimeter, pindex);
+            double tof = get_tof(b_scintillator, b_calorimeter, pindex);
 
             // Get miscellaneous data.
             int status = b_particle.status->at(pindex);
-            float chi2 = b_track.chi2     ->at(pos);
-            float ndf  = b_track.ndf      ->at(pos);
+            double chi2 = b_track.chi2     ->at(pos);
+            double ndf  = b_track.ndf      ->at(pos);
 
             // Assign PID.
             for (int pi = 0; pi < 2; ++pi) {
