@@ -223,17 +223,20 @@ int run(char *filename_in, char *work_dir, char *data_dir, bool debug,
     int divcntr     = 0;
     int evnsplitter = 0;
 
-    for (int evn = 0; evn < n_events; ++evn) {
+    // --+ TODO. CONTINUE FROM HERE! +------------------------------------------
+    for (int event = 0; event < n_events; ++event) {
         // Print fancy progress bar.
-        if (!debug) update_progress_bar(n_events, evn, &evnsplitter, &divcntr);
+        if (!debug) {
+            update_progress_bar(n_events, event, &evnsplitter, &divcntr);
+        }
 
         // Get entries from input file.
-        bank_part  .get_entries(tree_in, evn);
-        bank_trk_dc.get_entries(tree_in, evn);
-        bank_sci   .get_entries(tree_in, evn);
-        bank_cal   .get_entries(tree_in, evn);
-        bank_chkv  .get_entries(tree_in, evn);
-        if (use_fmt) bank_trk_fmt.get_entries(tree_in, evn);
+        bank_part  .get_entries(tree_in, event);
+        bank_trk_dc.get_entries(tree_in, event);
+        bank_sci   .get_entries(tree_in, event);
+        bank_cal   .get_entries(tree_in, event);
+        bank_chkv  .get_entries(tree_in, event);
+        if (use_fmt) bank_trk_fmt.get_entries(tree_in, event);
 
         // Filter events without the necessary banks.
         if (bank_part.vz->size() == 0 || bank_trk_dc.pindex->size() == 0) {
@@ -241,37 +244,40 @@ int run(char *filename_in, char *work_dir, char *data_dir, bool debug,
         }
 
         // Check existence of trigger electron
-        particle p_el[2];
+        particle part_trigger[2];
         bool    trigger_exist  = false;
         UInt_t  trigger_pos    = -1;
         int     trigger_pindex = -1;
-        double   trigger_tof    = -1.;
+        double   trigger_tof   = -1.;
         for (UInt_t pos = 0; pos < bank_trk_dc.index->size(); ++pos) {
             int pindex = bank_trk_dc.pindex->at(pos);
 
             // Get reconstructed particle from DC and from FMT.
-            p_el[0] = particle_init(&bank_part, &bank_trk_dc, pos);
+            part_trigger[0] = particle_init(&bank_part, &bank_trk_dc, pos);
             if (use_fmt) {
-                p_el[1] = particle_init(&bank_part, &bank_trk_dc, &bank_trk_fmt,
-                        pos);
+                part_trigger[1] = particle_init(
+                        &bank_part, &bank_trk_dc, &bank_trk_fmt, pos
+                );
             }
             else {
-                p_el[1] = particle_init();
+                part_trigger[1] = particle_init();
             }
 
-            // Get deposited energy in PCAL, ECIN, and ECOU.
+            // Get energy deposited in calorimeters.
             double energy_PCAL, energy_ECIN, energy_ECOU;
-            if (get_deposited_energy(bank_cal, pindex, &energy_PCAL,
-                                     &energy_ECIN, &energy_ECOU)
-            ) return 13;
+            errcode = get_deposited_energy(
+                    bank_cal, pindex, &energy_PCAL, &energy_ECIN, &energy_ECOU
+            );
+            if (errcode) return 13;
 
-            // Get Cherenkov counters data.
+            // Get number of photoelectrons from Cherenkov counters.
             int nphe_HTCC, nphe_LTCC;
-            if (count_photoelectrons(bank_chkv, pindex, &nphe_HTCC,
-                                     &nphe_LTCC)
-            ) return 14;
+            errcode = count_photoelectrons(
+                    bank_chkv, pindex, &nphe_HTCC, &nphe_LTCC
+            );
+            if (errcode) return 14;
 
-            // Get time of flight.
+            // Get time of flight from scintillators or calorimeters.
             double tof = get_tof(bank_sci, bank_cal, pindex);
 
             // Get miscellaneous data.
@@ -280,27 +286,34 @@ int run(char *filename_in, char *work_dir, char *data_dir, bool debug,
             double ndf  = bank_trk_dc.ndf ->at(pos);
 
             // Assign PID.
-            for (int pi = 0; pi < 2; ++pi) {
-                set_pid(&(p_el[pi]), bank_part.pid->at(pindex), status,
-                        energy_PCAL + energy_ECIN + energy_ECOU, energy_PCAL,
-                        nphe_HTCC, nphe_LTCC,
-                        smplng_frctn_prmtrs[bank_trk_dc.sector->at(pos)]);
+            for (int particle_i = 0; particle_i < 2; ++particle_i) {
+                set_pid(
+                        &(part_trigger[particle_i]), bank_part.pid->at(pindex),
+                        status, energy_PCAL + energy_ECIN + energy_ECOU,
+                        energy_PCAL, nphe_HTCC, nphe_LTCC,
+                        smplng_frctn_prmtrs[bank_trk_dc.sector->at(pos)]
+                );
             }
 
             // Fill TNtuples with trigger electron information.
-            for (int pi = 0; pi < 2; ++pi) {
-                if (!(p_el[pi].is_valid && p_el[pi].is_trigger_electron))
+            for (int particle_i = 0; particle_i < 2; ++particle_i) {
+                // TODO. There's something fishy about this condition...
+                if (
+                        !(part_trigger[particle_i].is_valid &&
+                        part_trigger[particle_i].is_trigger_electron)
+                ) {
                     continue;
+                }
                 trigger_exist = true;
 
                 Float_t arr[VAR_LIST_SIZE];
                 fill_ntuples_arr(
-                        arr, p_el[pi], p_el[pi], run_no, evn, status,
-                        energy_beam, chi2, ndf, energy_PCAL, energy_ECIN,
-                        energy_ECOU, tof, tof
+                        arr, part_trigger[particle_i], part_trigger[particle_i],
+                        run_no, event, status, energy_beam, chi2, ndf,
+                        energy_PCAL, energy_ECIN, energy_ECOU, tof, tof
                 );
 
-                tree_out[pi]->Fill(arr);
+                tree_out[particle_i]->Fill(arr);
             }
             if (trigger_exist) {
                 trigger_pindex = pindex;
@@ -310,10 +323,11 @@ int run(char *filename_in, char *work_dir, char *data_dir, bool debug,
             }
         }
 
-        // In case no trigger e was found, initiate p_el as dummy particles.
+        // In case no trigger e was found, initiate part_trigger as dummy
+        //     particles.
         if (!trigger_exist) {
-            p_el[0] = particle_init();
-            p_el[1] = particle_init();
+            part_trigger[0] = particle_init();
+            part_trigger[1] = particle_init();
         }
 
         // Processing particles.
@@ -367,7 +381,8 @@ int run(char *filename_in, char *work_dir, char *data_dir, bool debug,
             for (int pi = 0; pi < 2; ++pi) {
                 if (!p[pi].is_valid) continue;
                 Float_t arr[VAR_LIST_SIZE];
-                fill_ntuples_arr(arr, p[pi], p_el[pi], run_no, evn, status,
+                fill_ntuples_arr(arr, p[pi], part_trigger[pi], run_no, event,
+                        status,
                         energy_beam, chi2, ndf, energy_PCAL, energy_ECIN,
                         energy_ECOU, tof, trigger_tof);
 
