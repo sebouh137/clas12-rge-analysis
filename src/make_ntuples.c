@@ -315,10 +315,8 @@ int run(char *filename_in, char *work_dir, char *data_dir, bool debug,
             break;
         }
 
-        // In case no trigger e was found, initiate part_trigger as dummy
-        //     particle.
-        // TODO. Update. We don't care about events without a trigger electron.
-        if (!trigger_exist) part_trigger = particle_init();
+        // Skip events without a trigger electron.
+        if (!trigger_exist) continue;
 
         // Processing particles.
         for (UInt_t pos = 0; pos < bank_trk_dc.index->size(); ++pos) {
