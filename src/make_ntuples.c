@@ -325,6 +325,7 @@ int run(char *filename_in, char *work_dir, char *data_dir, bool debug,
 
         // In case no trigger e was found, initiate part_trigger as dummy
         //     particles.
+        // TODO. Update. We don't care about events without a trigger electron.
         if (!trigger_exist) {
             part_trigger[0] = particle_init();
             part_trigger[1] = particle_init();
@@ -340,27 +341,32 @@ int run(char *filename_in, char *work_dir, char *data_dir, bool debug,
             if (trigger_pindex == pindex && trigger_pos == pos) continue;
 
             // Get reconstructed particle from DC and from FMT.
-            particle p[2];
-            p[0] = particle_init(&bank_part, &bank_trk_dc, pos);
-            if (use_fmt)
-                p[1] = particle_init(&bank_part, &bank_trk_dc, &bank_trk_fmt,
-                                     pos);
-            else
-                p[1] = particle_init();
+            particle part[2];
+            part[0] = particle_init(&bank_part, &bank_trk_dc, pos);
+            if (use_fmt) {
+                part[1] = particle_init(
+                        &bank_part, &bank_trk_dc, &bank_trk_fmt, pos
+                );
+            }
+            else {
+                part[1] = particle_init();
+            }
 
-            // Get deposited energy in PCAL, ECIN, and ECOU.
+            // Get energy deposited in calorimeters.
             double energy_PCAL, energy_ECIN, energy_ECOU;
-            if (get_deposited_energy(bank_cal, pindex, &energy_PCAL,
-                                     &energy_ECIN, &energy_ECOU)
-            ) return 13;
+            errcode = get_deposited_energy(
+                    bank_cal, pindex, &energy_PCAL, &energy_ECIN, &energy_ECOU
+            );
+            if (errcode) return 13;
 
             // Get Cherenkov counters data.
             int nphe_HTCC, nphe_LTCC;
-            if (count_photoelectrons(bank_chkv, pindex, &nphe_HTCC,
-                                     &nphe_LTCC)
-            ) return 14;
+            errcode = count_photoelectrons(
+                    bank_chkv, pindex, &nphe_HTCC, &nphe_LTCC
+            );
+            if (errcode) return 14;
 
-            // Get TOF.
+            // Get time-of-flight (tof).
             double tof = get_tof(bank_sci, bank_cal, pindex);
 
             // Get miscellaneous data.
@@ -369,24 +375,27 @@ int run(char *filename_in, char *work_dir, char *data_dir, bool debug,
             double ndf  = bank_trk_dc.ndf ->at(pos);
 
             // Assign PID.
-            for (int pi = 0; pi < 2; ++pi) {
-                set_pid(&(p[pi]), bank_part.pid->at(pindex), status,
+            for (int particle_i = 0; particle_i < 2; ++particle_i) {
+                set_pid(
+                        &(part[particle_i]), bank_part.pid->at(pindex), status,
                         energy_PCAL + energy_ECIN + energy_ECOU, energy_PCAL,
                         nphe_HTCC, nphe_LTCC,
-                        smplng_frctn_prmtrs[bank_trk_dc.sector->at(pos)]);
+                        smplng_frctn_prmtrs[bank_trk_dc.sector->at(pos)]
+                );
             }
 
             // Fill TNtuples.
             // NOTE. If adding new variables, check their order in S_VAR_LIST.
-            for (int pi = 0; pi < 2; ++pi) {
-                if (!p[pi].is_valid) continue;
+            for (int particle_i = 0; particle_i < 2; ++particle_i) {
+                if (!part[particle_i].is_valid) continue;
                 Float_t arr[VAR_LIST_SIZE];
-                fill_ntuples_arr(arr, p[pi], part_trigger[pi], run_no, event,
-                        status,
-                        energy_beam, chi2, ndf, energy_PCAL, energy_ECIN,
-                        energy_ECOU, tof, trigger_tof);
+                fill_ntuples_arr(
+                        arr, part[particle_i], part_trigger[particle_i], run_no,
+                        event, status, energy_beam, chi2, ndf, energy_PCAL,
+                        energy_ECIN, energy_ECOU, tof, trigger_tof
+                );
 
-                tree_out[pi]->Fill(arr);
+                tree_out[particle_i]->Fill(arr);
             }
         }
     }
