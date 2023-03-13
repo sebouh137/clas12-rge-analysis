@@ -173,20 +173,17 @@ int run(char *filename_in, char *work_dir, char *data_dir, bool debug,
         bool use_fmt, int n_events, int run_no, double energy_beam)
 {
     // Get sampling fraction.
-    char t_file[PATH_MAX];
-    sprintf(t_file, "%s/sf_params_%06d.txt", data_dir, run_no);
-    double sf_params[NSECTORS][SF_NPARAMS][2];
-    int errcode = get_sf_params(t_file, sf_params);
+    char sampling_fraction_file[PATH_MAX];
+    sprintf(sampling_fraction_file, "%s/sf_params_%06d.txt", data_dir, run_no);
+    double smplng_frctn_prmtrs[NSECTORS][SF_NPARAMS][2];
+    int errcode = get_sf_params(sampling_fraction_file, smplng_frctn_prmtrs);
+
+    // Throw an error if sampling fraction parameters are not found.
     if (errcode) return 10;
 
-    // Create output file.
-    char out_file[PATH_MAX];
-    sprintf(out_file, "%s/ntuples_%06d.root", work_dir, run_no);
-    TFile *f_out = TFile::Open(out_file, "RECREATE");
-
     // Access input file.
-    TFile *f_in  = TFile::Open(filename_in, "READ");
-    if (!f_in || f_in->IsZombie()) return 11;
+    TFile *file_in  = TFile::Open(filename_in, "READ");
+    if (!file_in || file_in->IsZombie()) return 11;
 
     // Return to top directory (weird root stuff).
     gROOT->cd();
@@ -199,23 +196,23 @@ int run(char *filename_in, char *work_dir, char *data_dir, bool debug,
     }
 
     // Create TTree and TNTuples.
-    TTree *t_in = f_in->Get<TTree>("Tree");
-    if (t_in == NULL) return 12;
-    TNtuple *t_out[2];
-    t_out[0] = new TNtuple(S_DC,  S_DC,  vars);
-    t_out[1] = new TNtuple(S_FMT, S_FMT, vars);
+    TTree *tree_in = file_in->Get<TTree>("Tree");
+    if (tree_in == NULL) return 12;
+    TNtuple *tree_out[2];
+    tree_out[0] = new TNtuple(S_DC,  S_DC,  vars);
+    tree_out[1] = new TNtuple(S_FMT, S_FMT, vars);
 
     // Change n_events to number of entries if it is equal to -1.
-    if (n_events == -1) n_events = t_in->GetEntries();
+    if (n_events == -1) n_events = tree_in->GetEntries();
 
     // Associate banks to TTree.
-    Particle     b_particle    (t_in);
-    Track        b_track       (t_in);
-    Calorimeter  b_calorimeter (t_in);
-    Cherenkov    b_cherenkov   (t_in);
-    Scintillator b_scintillator(t_in);
+    Particle     b_particle    (tree_in);
+    Track        b_track       (tree_in);
+    Calorimeter  b_calorimeter (tree_in);
+    Cherenkov    b_cherenkov   (tree_in);
+    Scintillator b_scintillator(tree_in);
     FMT_Tracks   b_fmt_tracks;
-    if (use_fmt) b_fmt_tracks.link_tree(t_in);
+    if (use_fmt) b_fmt_tracks.link_tree(tree_in);
 
     // Iterate through input file. Each TTree entry is one event.
     printf("Reading %d events from %s.\n", n_events, filename_in);
@@ -229,12 +226,12 @@ int run(char *filename_in, char *work_dir, char *data_dir, bool debug,
         if (!debug) update_progress_bar(n_events, evn, &evnsplitter, &divcntr);
 
         // Get entries from input file.
-        b_particle    .get_entries(t_in, evn);
-        b_track       .get_entries(t_in, evn);
-        b_scintillator.get_entries(t_in, evn);
-        b_calorimeter .get_entries(t_in, evn);
-        b_cherenkov   .get_entries(t_in, evn);
-        if (use_fmt) b_fmt_tracks.get_entries(t_in, evn);
+        b_particle    .get_entries(tree_in, evn);
+        b_track       .get_entries(tree_in, evn);
+        b_scintillator.get_entries(tree_in, evn);
+        b_calorimeter .get_entries(tree_in, evn);
+        b_cherenkov   .get_entries(tree_in, evn);
+        if (use_fmt) b_fmt_tracks.get_entries(tree_in, evn);
 
         // Filter events without the necessary banks.
         if (b_particle.vz->size() == 0 || b_track.pindex->size() == 0) continue;
@@ -283,7 +280,7 @@ int run(char *filename_in, char *work_dir, char *data_dir, bool debug,
                 set_pid(&(p_el[pi]), b_particle.pid->at(pindex), status,
                         energy_PCAL + energy_ECIN + energy_ECOU, energy_PCAL,
                         nphe_HTCC, nphe_LTCC,
-                        sf_params[b_track.sector->at(pos)]);
+                        smplng_frctn_prmtrs[b_track.sector->at(pos)]);
             }
 
             // Fill TNtuples with trigger electron information.
@@ -299,7 +296,7 @@ int run(char *filename_in, char *work_dir, char *data_dir, bool debug,
                         energy_ECOU, tof, tof
                 );
 
-                t_out[pi]->Fill(arr);
+                tree_out[pi]->Fill(arr);
             }
             if (trigger_exist) {
                 trigger_pindex = pindex;
@@ -358,7 +355,7 @@ int run(char *filename_in, char *work_dir, char *data_dir, bool debug,
                 set_pid(&(p[pi]), b_particle.pid->at(pindex), status,
                         energy_PCAL + energy_ECIN + energy_ECOU, energy_PCAL,
                         nphe_HTCC, nphe_LTCC,
-                        sf_params[b_track.sector->at(pos)]);
+                        smplng_frctn_prmtrs[b_track.sector->at(pos)]);
             }
 
             // Fill TNtuples.
@@ -370,19 +367,24 @@ int run(char *filename_in, char *work_dir, char *data_dir, bool debug,
                         energy_beam, chi2, ndf, energy_PCAL, energy_ECIN,
                         energy_ECOU, tof, trigger_tof);
 
-                t_out[pi]->Fill(arr);
+                tree_out[pi]->Fill(arr);
             }
         }
     }
 
+    // Create output file.
+    char filename_out[PATH_MAX];
+    sprintf(filename_out, "%s/ntuples_%06d.root", work_dir, run_no);
+    TFile *file_out = TFile::Open(filename_out, "RECREATE");
+
     // Write to output file.
-    f_out->cd();
-    t_out[0]->Write();
-    t_out[1]->Write();
+    file_out->cd();
+    tree_out[0]->Write();
+    tree_out[1]->Write();
 
     // Clean up after ourselves.
-    f_in ->Close();
-    f_out->Close();
+    file_in ->Close();
+    file_out->Close();
 
     return 0;
 }
