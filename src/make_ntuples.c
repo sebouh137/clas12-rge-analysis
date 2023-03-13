@@ -198,9 +198,9 @@ int run(char *filename_in, char *work_dir, char *data_dir, bool debug,
     // Create TTree and TNTuples.
     TTree *tree_in = file_in->Get<TTree>("Tree");
     if (tree_in == NULL) return 12;
-    TNtuple *tree_out[2];
-    tree_out[0] = new TNtuple(S_DC,  S_DC,  vars_string);
-    tree_out[1] = new TNtuple(S_FMT, S_FMT, vars_string);
+    TNtuple *tree_out;
+    if (!use_fmt) tree_out = new TNtuple(S_DC,  S_DC,  vars_string);
+    else          tree_out = new TNtuple(S_FMT, S_FMT, vars_string);
 
     // Change n_events to number of entries if it is equal to -1 or invalid.
     if (n_events == -1 || n_events > tree_in->GetEntries()) {
@@ -223,7 +223,7 @@ int run(char *filename_in, char *work_dir, char *data_dir, bool debug,
     int divcntr     = 0;
     int evnsplitter = 0;
 
-    // --+ TODO. CONTINUE FROM HERE! +------------------------------------------
+    // Loop through events in input file.
     for (int event = 0; event < n_events; ++event) {
         // Print fancy progress bar.
         if (!debug) {
@@ -244,7 +244,7 @@ int run(char *filename_in, char *work_dir, char *data_dir, bool debug,
         }
 
         // Check existence of trigger electron
-        particle part_trigger[2];
+        particle part_trigger;
         bool    trigger_exist  = false;
         UInt_t  trigger_pos    = -1;
         int     trigger_pindex = -1;
@@ -253,14 +253,13 @@ int run(char *filename_in, char *work_dir, char *data_dir, bool debug,
             int pindex = bank_trk_dc.pindex->at(pos);
 
             // Get reconstructed particle from DC and from FMT.
-            part_trigger[0] = particle_init(&bank_part, &bank_trk_dc, pos);
-            if (use_fmt) {
-                part_trigger[1] = particle_init(
-                        &bank_part, &bank_trk_dc, &bank_trk_fmt, pos
-                );
+            if (!use_fmt) {
+                part_trigger = particle_init(&bank_part, &bank_trk_dc, pos);
             }
             else {
-                part_trigger[1] = particle_init();
+                part_trigger = particle_init(
+                        &bank_part, &bank_trk_dc, &bank_trk_fmt, pos
+                );
             }
 
             // Get energy deposited in calorimeters.
@@ -286,50 +285,40 @@ int run(char *filename_in, char *work_dir, char *data_dir, bool debug,
             double ndf  = bank_trk_dc.ndf ->at(pos);
 
             // Assign PID.
-            for (int particle_i = 0; particle_i < 2; ++particle_i) {
-                set_pid(
-                        &(part_trigger[particle_i]), bank_part.pid->at(pindex),
-                        status, energy_PCAL + energy_ECIN + energy_ECOU,
-                        energy_PCAL, nphe_HTCC, nphe_LTCC,
-                        smplng_frctn_prmtrs[bank_trk_dc.sector->at(pos)]
-                );
+            set_pid(
+                    &part_trigger, bank_part.pid->at(pindex), status,
+                    energy_PCAL + energy_ECIN + energy_ECOU, energy_PCAL,
+                    nphe_HTCC, nphe_LTCC,
+                    smplng_frctn_prmtrs[bank_trk_dc.sector->at(pos)]
+            );
+
+            // Skip particle if its not the trigger electron.
+            if (!part_trigger.is_valid || !part_trigger.is_trigger_electron) {
+                continue;
             }
 
-            // Fill TNtuples with trigger electron information.
-            for (int particle_i = 0; particle_i < 2; ++particle_i) {
-                // TODO. There's something fishy about this condition...
-                if (
-                        !(part_trigger[particle_i].is_valid &&
-                        part_trigger[particle_i].is_trigger_electron)
-                ) {
-                    continue;
-                }
-                trigger_exist = true;
+            // Fill TNtuple with trigger electron information.
+            Float_t arr[VAR_LIST_SIZE];
+            fill_ntuples_arr(
+                    arr, part_trigger, part_trigger, run_no, event, status,
+                    energy_beam, chi2, ndf, energy_PCAL, energy_ECIN,
+                    energy_ECOU, tof, tof
+            );
 
-                Float_t arr[VAR_LIST_SIZE];
-                fill_ntuples_arr(
-                        arr, part_trigger[particle_i], part_trigger[particle_i],
-                        run_no, event, status, energy_beam, chi2, ndf,
-                        energy_PCAL, energy_ECIN, energy_ECOU, tof, tof
-                );
+            tree_out->Fill(arr);
 
-                tree_out[particle_i]->Fill(arr);
-            }
-            if (trigger_exist) {
-                trigger_pindex = pindex;
-                trigger_pos    = pos;
-                trigger_tof    = tof;
-                break;
-            }
+            // Fill out trigger electron data and end loop.
+            trigger_exist  = true;
+            trigger_pindex = pindex;
+            trigger_pos    = pos;
+            trigger_tof    = tof;
+            break;
         }
 
         // In case no trigger e was found, initiate part_trigger as dummy
-        //     particles.
+        //     particle.
         // TODO. Update. We don't care about events without a trigger electron.
-        if (!trigger_exist) {
-            part_trigger[0] = particle_init();
-            part_trigger[1] = particle_init();
-        }
+        if (!trigger_exist) part_trigger = particle_init();
 
         // Processing particles.
         for (UInt_t pos = 0; pos < bank_trk_dc.index->size(); ++pos) {
@@ -341,15 +330,12 @@ int run(char *filename_in, char *work_dir, char *data_dir, bool debug,
             if (trigger_pindex == pindex && trigger_pos == pos) continue;
 
             // Get reconstructed particle from DC and from FMT.
-            particle part[2];
-            part[0] = particle_init(&bank_part, &bank_trk_dc, pos);
-            if (use_fmt) {
-                part[1] = particle_init(
+            particle part;
+            if (!use_fmt) part = particle_init(&bank_part, &bank_trk_dc, pos);
+            else {
+                part = particle_init(
                         &bank_part, &bank_trk_dc, &bank_trk_fmt, pos
                 );
-            }
-            else {
-                part[1] = particle_init();
             }
 
             // Get energy deposited in calorimeters.
@@ -375,40 +361,42 @@ int run(char *filename_in, char *work_dir, char *data_dir, bool debug,
             double ndf  = bank_trk_dc.ndf ->at(pos);
 
             // Assign PID.
-            for (int particle_i = 0; particle_i < 2; ++particle_i) {
-                set_pid(
-                        &(part[particle_i]), bank_part.pid->at(pindex), status,
-                        energy_PCAL + energy_ECIN + energy_ECOU, energy_PCAL,
-                        nphe_HTCC, nphe_LTCC,
-                        smplng_frctn_prmtrs[bank_trk_dc.sector->at(pos)]
-                );
-            }
+            set_pid(
+                    &part, bank_part.pid->at(pindex), status,
+                    energy_PCAL + energy_ECIN + energy_ECOU, energy_PCAL,
+                    nphe_HTCC, nphe_LTCC,
+                    smplng_frctn_prmtrs[bank_trk_dc.sector->at(pos)]
+            );
+
+            // Skip particle if its not valid.
+            if (!part.is_valid) continue;
 
             // Fill TNtuples.
             // NOTE. If adding new variables, check their order in S_VAR_LIST.
-            for (int particle_i = 0; particle_i < 2; ++particle_i) {
-                if (!part[particle_i].is_valid) continue;
-                Float_t arr[VAR_LIST_SIZE];
-                fill_ntuples_arr(
-                        arr, part[particle_i], part_trigger[particle_i], run_no,
-                        event, status, energy_beam, chi2, ndf, energy_PCAL,
-                        energy_ECIN, energy_ECOU, tof, trigger_tof
-                );
+            Float_t arr[VAR_LIST_SIZE];
+            fill_ntuples_arr(
+                    arr, part, part_trigger, run_no, event, status, energy_beam,
+                    chi2, ndf, energy_PCAL, energy_ECIN, energy_ECOU, tof,
+                    trigger_tof
+            );
 
-                tree_out[particle_i]->Fill(arr);
-            }
+            tree_out->Fill(arr);
         }
     }
 
     // Create output file.
     char filename_out[PATH_MAX];
-    sprintf(filename_out, "%s/ntuples_%06d.root", work_dir, run_no);
+    if (!use_fmt) {
+        sprintf(filename_out, "%s/ntuples_dc_%06d.root", work_dir, run_no);
+    }
+    else {
+        sprintf(filename_out, "%s/ntuples_fmt_%06d.root", work_dir, run_no);
+    }
     TFile *file_out = TFile::Open(filename_out, "RECREATE");
 
     // Write to output file.
     file_out->cd();
-    tree_out[0]->Write();
-    tree_out[1]->Write();
+    tree_out->Write();
 
     // Clean up after ourselves.
     file_in ->Close();
