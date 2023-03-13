@@ -189,21 +189,23 @@ int run(char *filename_in, char *work_dir, char *data_dir, bool debug,
     gROOT->cd();
 
     // Generate lists of variables.
-    TString vars("");
-    for (int vi = 0; vi < VAR_LIST_SIZE; ++vi) {
-        vars.Append(Form("%s", S_VAR_LIST[vi]));
-        if (vi != VAR_LIST_SIZE-1) vars.Append(":");
+    TString vars_string("");
+    for (int var_i = 0; var_i < VAR_LIST_SIZE; ++var_i) {
+        vars_string.Append(Form("%s", S_VAR_LIST[var_i]));
+        if (var_i != VAR_LIST_SIZE-1) vars_string.Append(":");
     }
 
     // Create TTree and TNTuples.
     TTree *tree_in = file_in->Get<TTree>("Tree");
     if (tree_in == NULL) return 12;
     TNtuple *tree_out[2];
-    tree_out[0] = new TNtuple(S_DC,  S_DC,  vars);
-    tree_out[1] = new TNtuple(S_FMT, S_FMT, vars);
+    tree_out[0] = new TNtuple(S_DC,  S_DC,  vars_string);
+    tree_out[1] = new TNtuple(S_FMT, S_FMT, vars_string);
 
-    // Change n_events to number of entries if it is equal to -1.
-    if (n_events == -1) n_events = tree_in->GetEntries();
+    // Change n_events to number of entries if it is equal to -1 or invalid.
+    if (n_events == -1 || n_events > tree_in->GetEntries()) {
+        n_events = tree_in->GetEntries();
+    }
 
     // Associate banks to TTree.
     Particle     b_particle    (tree_in);
