@@ -120,7 +120,9 @@ int usage() {
     fprintf(stderr,
             "\n\nUsage: hipo2root [-hfn:w:] infile\n"
             " * -h         : show this message and exit.\n"
-            " * -f         : set this to true to process FMT::Tracks bank.\n"
+            " * -f         : set this to true to process FMT::Tracks bank. If "
+            "this is set\n                and FMT::Tracks bank is not present "
+            "in the HIPO file, the\n                program will crash.\n"
             " * -n nevents : number of events.\n"
             " * -w workdir : location where output root files are to be "
             "stored. Default\n                is root_io.\n"
