@@ -246,9 +246,9 @@ int run(char *filename_in, char *work_dir, char *data_dir, bool debug,
         // Check existence of trigger electron
         particle part_trigger;
         bool    trigger_exist  = false;
-        UInt_t  trigger_pos    = -1;
+        int     trigger_pos    = -1;
         int     trigger_pindex = -1;
-        double   trigger_tof   = -1.;
+        double  trigger_tof    = -1.;
         for (UInt_t pos = 0; pos < bank_trk_dc.index->size(); ++pos) {
             int pindex = bank_trk_dc.pindex->at(pos);
 
@@ -261,6 +261,9 @@ int run(char *filename_in, char *work_dir, char *data_dir, bool debug,
                         &bank_part, &bank_trk_dc, &bank_trk_fmt, pos
                 );
             }
+
+            // Skip particle if it doesn't fit requirements.
+            if (!part_trigger.is_valid) continue;
 
             // Get energy deposited in calorimeters.
             double energy_PCAL, energy_ECIN, energy_ECOU;
@@ -293,9 +296,7 @@ int run(char *filename_in, char *work_dir, char *data_dir, bool debug,
             );
 
             // Skip particle if its not the trigger electron.
-            if (!part_trigger.is_valid || !part_trigger.is_trigger_electron) {
-                continue;
-            }
+            if (!part_trigger.is_trigger_electron) continue;
 
             // Fill TNtuple with trigger electron information.
             Float_t arr[VAR_LIST_SIZE];
@@ -325,7 +326,9 @@ int run(char *filename_in, char *work_dir, char *data_dir, bool debug,
             int pindex = bank_trk_dc.pindex->at(pos);
 
             // Avoid double-counting the trigger electron.
-            if (trigger_pindex == pindex && trigger_pos == pos) continue;
+            if (trigger_pindex == pindex && (UInt_t) trigger_pos == pos) {
+                continue;
+            }
 
             // Get reconstructed particle from DC and from FMT.
             particle part;
@@ -335,6 +338,9 @@ int run(char *filename_in, char *work_dir, char *data_dir, bool debug,
                         &bank_part, &bank_trk_dc, &bank_trk_fmt, pos
                 );
             }
+
+            // Skip particle if it doesn't fit requirements.
+            if (!part.is_valid) continue;
 
             // Get energy deposited in calorimeters.
             double energy_PCAL, energy_ECIN, energy_ECOU;
@@ -365,9 +371,6 @@ int run(char *filename_in, char *work_dir, char *data_dir, bool debug,
                     nphe_HTCC, nphe_LTCC,
                     smplng_frctn_prmtrs[bank_trk_dc.sector->at(pos)]
             );
-
-            // Skip particle if its not valid.
-            if (!part.is_valid) continue;
 
             // Fill TNtuples.
             // NOTE. If adding new variables, check their order in S_VAR_LIST.

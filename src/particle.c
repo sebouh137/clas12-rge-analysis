@@ -60,7 +60,7 @@ particle particle_init(Particle *particle, Track *track, FMT_Tracks *fmt_tracks,
         int pos)
 {
     int index  = track->index->at(pos);
-    int pindex = track->pindex->at(pos); // pindex is always equal to pos!
+    int pindex = track->pindex->at(pos);
 
     // Apply FMT cuts.
     // Track reconstructed by FMT.
