@@ -208,16 +208,16 @@ int run(char *filename_in, char *work_dir, char *data_dir, bool debug,
     }
 
     // Associate banks to TTree.
-    Particle     b_particle    (tree_in);
-    Track        b_track       (tree_in);
-    Calorimeter  b_calorimeter (tree_in);
-    Cherenkov    b_cherenkov   (tree_in);
-    Scintillator b_scintillator(tree_in);
-    FMT_Tracks   b_fmt_tracks;
-    if (use_fmt) b_fmt_tracks.link_tree(tree_in);
+    Particle     bank_part  (tree_in);
+    Track        bank_trk_dc(tree_in);
+    Calorimeter  bank_cal   (tree_in);
+    Cherenkov    bank_chkv  (tree_in);
+    Scintillator bank_sci   (tree_in);
+    FMT_Tracks   bank_trk_fmt;
+    if (use_fmt) bank_trk_fmt.link_tree(tree_in);
 
     // Iterate through input file. Each TTree entry is one event.
-    printf("Reading %d events from %s.\n", n_events, filename_in);
+    printf("Processing %d events from %s.\n", n_events, filename_in);
 
     // Counters for fancy progress bar.
     int divcntr     = 0;
@@ -228,15 +228,17 @@ int run(char *filename_in, char *work_dir, char *data_dir, bool debug,
         if (!debug) update_progress_bar(n_events, evn, &evnsplitter, &divcntr);
 
         // Get entries from input file.
-        b_particle    .get_entries(tree_in, evn);
-        b_track       .get_entries(tree_in, evn);
-        b_scintillator.get_entries(tree_in, evn);
-        b_calorimeter .get_entries(tree_in, evn);
-        b_cherenkov   .get_entries(tree_in, evn);
-        if (use_fmt) b_fmt_tracks.get_entries(tree_in, evn);
+        bank_part  .get_entries(tree_in, evn);
+        bank_trk_dc.get_entries(tree_in, evn);
+        bank_sci   .get_entries(tree_in, evn);
+        bank_cal   .get_entries(tree_in, evn);
+        bank_chkv  .get_entries(tree_in, evn);
+        if (use_fmt) bank_trk_fmt.get_entries(tree_in, evn);
 
         // Filter events without the necessary banks.
-        if (b_particle.vz->size() == 0 || b_track.pindex->size() == 0) continue;
+        if (bank_part.vz->size() == 0 || bank_trk_dc.pindex->size() == 0) {
+            continue;
+        }
 
         // Check existence of trigger electron
         particle p_el[2];
@@ -244,13 +246,13 @@ int run(char *filename_in, char *work_dir, char *data_dir, bool debug,
         UInt_t  trigger_pos    = -1;
         int     trigger_pindex = -1;
         double   trigger_tof    = -1.;
-        for (UInt_t pos = 0; pos < b_track.index->size(); ++pos) {
-            int pindex = b_track.pindex->at(pos);
+        for (UInt_t pos = 0; pos < bank_trk_dc.index->size(); ++pos) {
+            int pindex = bank_trk_dc.pindex->at(pos);
 
             // Get reconstructed particle from DC and from FMT.
-            p_el[0] = particle_init(&b_particle, &b_track, pos);
+            p_el[0] = particle_init(&bank_part, &bank_trk_dc, pos);
             if (use_fmt) {
-                p_el[1] = particle_init(&b_particle, &b_track, &b_fmt_tracks,
+                p_el[1] = particle_init(&bank_part, &bank_trk_dc, &bank_trk_fmt,
                         pos);
             }
             else {
@@ -259,30 +261,30 @@ int run(char *filename_in, char *work_dir, char *data_dir, bool debug,
 
             // Get deposited energy in PCAL, ECIN, and ECOU.
             double energy_PCAL, energy_ECIN, energy_ECOU;
-            if (get_deposited_energy(b_calorimeter, pindex, &energy_PCAL,
+            if (get_deposited_energy(bank_cal, pindex, &energy_PCAL,
                                      &energy_ECIN, &energy_ECOU)
             ) return 13;
 
             // Get Cherenkov counters data.
             int nphe_HTCC, nphe_LTCC;
-            if (count_photoelectrons(b_cherenkov, pindex, &nphe_HTCC,
+            if (count_photoelectrons(bank_chkv, pindex, &nphe_HTCC,
                                      &nphe_LTCC)
             ) return 14;
 
             // Get time of flight.
-            double tof = get_tof(b_scintillator, b_calorimeter, pindex);
+            double tof = get_tof(bank_sci, bank_cal, pindex);
 
             // Get miscellaneous data.
-            int status = b_particle.status->at(pindex);
-            double chi2 = b_track.chi2     ->at(pos);
-            double ndf  = b_track.ndf      ->at(pos);
+            int status  = bank_part.status->at(pindex);
+            double chi2 = bank_trk_dc.chi2->at(pos);
+            double ndf  = bank_trk_dc.ndf ->at(pos);
 
             // Assign PID.
             for (int pi = 0; pi < 2; ++pi) {
-                set_pid(&(p_el[pi]), b_particle.pid->at(pindex), status,
+                set_pid(&(p_el[pi]), bank_part.pid->at(pindex), status,
                         energy_PCAL + energy_ECIN + energy_ECOU, energy_PCAL,
                         nphe_HTCC, nphe_LTCC,
-                        smplng_frctn_prmtrs[b_track.sector->at(pos)]);
+                        smplng_frctn_prmtrs[bank_trk_dc.sector->at(pos)]);
             }
 
             // Fill TNtuples with trigger electron information.
@@ -315,49 +317,49 @@ int run(char *filename_in, char *work_dir, char *data_dir, bool debug,
         }
 
         // Processing particles.
-        for (UInt_t pos = 0; pos < b_track.index->size(); ++pos) {
+        for (UInt_t pos = 0; pos < bank_trk_dc.index->size(); ++pos) {
             // Currently pindex is always equal to pos, but this is not a given
-            //     in the future of reconstruction development. Better safe than
-            //     sorry!
-            int pindex = b_track.pindex->at(pos);
+            //     in the future of the reconstruction software development.
+            int pindex = bank_trk_dc.pindex->at(pos);
 
             // Avoid double-counting the trigger electron.
             if (trigger_pindex == pindex && trigger_pos == pos) continue;
 
             // Get reconstructed particle from DC and from FMT.
             particle p[2];
-            p[0] = particle_init(&b_particle, &b_track, pos);
+            p[0] = particle_init(&bank_part, &bank_trk_dc, pos);
             if (use_fmt)
-                p[1] = particle_init(&b_particle, &b_track, &b_fmt_tracks, pos);
+                p[1] = particle_init(&bank_part, &bank_trk_dc, &bank_trk_fmt,
+                                     pos);
             else
                 p[1] = particle_init();
 
             // Get deposited energy in PCAL, ECIN, and ECOU.
             double energy_PCAL, energy_ECIN, energy_ECOU;
-            if (get_deposited_energy(b_calorimeter, pindex, &energy_PCAL,
+            if (get_deposited_energy(bank_cal, pindex, &energy_PCAL,
                                      &energy_ECIN, &energy_ECOU)
             ) return 13;
 
             // Get Cherenkov counters data.
             int nphe_HTCC, nphe_LTCC;
-            if (count_photoelectrons(b_cherenkov, pindex, &nphe_HTCC,
+            if (count_photoelectrons(bank_chkv, pindex, &nphe_HTCC,
                                      &nphe_LTCC)
             ) return 14;
 
             // Get TOF.
-            double tof = get_tof(b_scintillator, b_calorimeter, pindex);
+            double tof = get_tof(bank_sci, bank_cal, pindex);
 
             // Get miscellaneous data.
-            int status = b_particle.status->at(pindex);
-            double chi2 = b_track.chi2     ->at(pos);
-            double ndf  = b_track.ndf      ->at(pos);
+            int status  = bank_part.status->at(pindex);
+            double chi2 = bank_trk_dc.chi2->at(pos);
+            double ndf  = bank_trk_dc.ndf ->at(pos);
 
             // Assign PID.
             for (int pi = 0; pi < 2; ++pi) {
-                set_pid(&(p[pi]), b_particle.pid->at(pindex), status,
+                set_pid(&(p[pi]), bank_part.pid->at(pindex), status,
                         energy_PCAL + energy_ECIN + energy_ECOU, energy_PCAL,
                         nphe_HTCC, nphe_LTCC,
-                        smplng_frctn_prmtrs[b_track.sector->at(pos)]);
+                        smplng_frctn_prmtrs[bank_trk_dc.sector->at(pos)]);
             }
 
             // Fill TNtuples.
