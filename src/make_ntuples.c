@@ -108,28 +108,28 @@ double get_tof(Scintillator scintillator, Calorimeter calorimeter, int pindex)
  *
  * @param calorimeter: instance of the Calorimeter class.
  * @param pindex:      particle index of the particle we're studying
- * @param pcal_E:      pointer to double to which we'll write the PCAL energy.
- * @param ecin_E:      pointer to double to which we'll write the ECIN energy.
- * @param ecou_E:      pointer to double to which we'll write the ECOU energy.
+ * @param energy_PCAL: pointer to double to which we'll write the PCAL energy.
+ * @param energy_ECIN: pointer to double to which we'll write the ECIN energy.
+ * @param energy_ECOU: pointer to double to which we'll write the ECOU energy.
  * @return             error code. 0 if successful, 1 otherwise. The function
  *                     only returns 1 if there's an invalid layer in the
  *                     Calorimeter instance, suggesting corruption or a change
  *                     in the REC::Calorimeter bank.
  */
-int get_deposited_energy(Calorimeter calorimeter, int pindex, double *pcal_E,
-        double *ecin_E, double *ecou_E)
+int get_deposited_energy(Calorimeter calorimeter, int pindex,
+        double *energy_PCAL, double *energy_ECIN, double *energy_ECOU)
 {
-    *pcal_E = 0;
-    *ecin_E = 0;
-    *ecou_E = 0;
+    *energy_PCAL = 0;
+    *energy_ECIN = 0;
+    *energy_ECOU = 0;
 
     for (UInt_t i = 0; i < calorimeter.pindex->size(); ++i) {
         if (calorimeter.pindex->at(i) != pindex) continue;
         int lyr = (int) calorimeter.layer->at(i);
 
-        if      (lyr == PCAL_LYR) *pcal_E += calorimeter.energy->at(i);
-        else if (lyr == ECIN_LYR) *ecin_E += calorimeter.energy->at(i);
-        else if (lyr == ECOU_LYR) *ecou_E += calorimeter.energy->at(i);
+        if      (lyr == PCAL_LYR) *energy_PCAL += calorimeter.energy->at(i);
+        else if (lyr == ECIN_LYR) *energy_ECIN += calorimeter.energy->at(i);
+        else if (lyr == ECOU_LYR) *energy_ECOU += calorimeter.energy->at(i);
         else return 1;
     }
 
@@ -259,9 +259,9 @@ int run(char *filename_in, char *work_dir, char *data_dir, bool debug,
             }
 
             // Get deposited energy in PCAL, ECIN, and ECOU.
-            double pcal_E, ecin_E, ecou_E;
-            if (get_deposited_energy(b_calorimeter, pindex, &pcal_E, &ecin_E,
-                                     &ecou_E)
+            double energy_PCAL, energy_ECIN, energy_ECOU;
+            if (get_deposited_energy(b_calorimeter, pindex, &energy_PCAL,
+                                     &energy_ECIN, &energy_ECOU)
             ) return 13;
 
             // Get Cherenkov counters data.
@@ -281,7 +281,8 @@ int run(char *filename_in, char *work_dir, char *data_dir, bool debug,
             // Assign PID.
             for (int pi = 0; pi < 2; ++pi) {
                 set_pid(&(p_el[pi]), b_particle.pid->at(pindex), status,
-                        pcal_E + ecin_E + ecou_E, pcal_E, htcc_nphe, ltcc_nphe,
+                        energy_PCAL + energy_ECIN + energy_ECOU, energy_PCAL,
+                        htcc_nphe, ltcc_nphe,
                         sf_params[b_track.sector->at(pos)]);
             }
 
@@ -294,7 +295,8 @@ int run(char *filename_in, char *work_dir, char *data_dir, bool debug,
                 Float_t arr[VAR_LIST_SIZE];
                 fill_ntuples_arr(
                         arr, p_el[pi], p_el[pi], run_no, evn, status,
-                        energy_beam, chi2, ndf, pcal_E, ecin_E, ecou_E, tof, tof
+                        energy_beam, chi2, ndf, energy_PCAL, energy_ECIN,
+                        energy_ECOU, tof, tof
                 );
 
                 t_out[pi]->Fill(arr);
@@ -332,9 +334,9 @@ int run(char *filename_in, char *work_dir, char *data_dir, bool debug,
                 p[1] = particle_init();
 
             // Get deposited energy in PCAL, ECIN, and ECOU.
-            double pcal_E, ecin_E, ecou_E;
-            if (get_deposited_energy(b_calorimeter, pindex, &pcal_E, &ecin_E,
-                                     &ecou_E)
+            double energy_PCAL, energy_ECIN, energy_ECOU;
+            if (get_deposited_energy(b_calorimeter, pindex, &energy_PCAL,
+                                     &energy_ECIN, &energy_ECOU)
             ) return 13;
 
             // Get Cherenkov counters data.
@@ -354,7 +356,8 @@ int run(char *filename_in, char *work_dir, char *data_dir, bool debug,
             // Assign PID.
             for (int pi = 0; pi < 2; ++pi) {
                 set_pid(&(p[pi]), b_particle.pid->at(pindex), status,
-                        pcal_E + ecin_E + ecou_E, pcal_E, htcc_nphe, ltcc_nphe,
+                        energy_PCAL + energy_ECIN + energy_ECOU, energy_PCAL,
+                        htcc_nphe, ltcc_nphe,
                         sf_params[b_track.sector->at(pos)]);
             }
 
@@ -364,8 +367,8 @@ int run(char *filename_in, char *work_dir, char *data_dir, bool debug,
                 if (!p[pi].is_valid) continue;
                 Float_t arr[VAR_LIST_SIZE];
                 fill_ntuples_arr(arr, p[pi], p_el[pi], run_no, evn, status,
-                        energy_beam, chi2, ndf, pcal_E, ecin_E, ecou_E, tof,
-                        trigger_tof);
+                        energy_beam, chi2, ndf, energy_PCAL, energy_ECIN,
+                        energy_ECOU, tof, trigger_tof);
 
                 t_out[pi]->Fill(arr);
             }
