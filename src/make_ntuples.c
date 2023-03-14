@@ -199,8 +199,7 @@ int run(char *filename_in, char *work_dir, char *data_dir, bool debug,
     TTree *tree_in = file_in->Get<TTree>("Tree");
     if (tree_in == NULL) return 12;
     TNtuple *tree_out;
-    if (!use_fmt) tree_out = new TNtuple(S_DC,  S_DC,  vars_string);
-    else          tree_out = new TNtuple(S_FMT, S_FMT, vars_string);
+    tree_out = new TNtuple("data", "data", vars_string);
 
     // Change n_events to number of entries if it is equal to -1 or invalid.
     if (n_events == -1 || n_events > tree_in->GetEntries()) {
@@ -222,6 +221,10 @@ int run(char *filename_in, char *work_dir, char *data_dir, bool debug,
     // Counters for fancy progress bar.
     int divcntr     = 0;
     int evnsplitter = 0;
+
+    // Particle counters.
+    int cnt_trigger = 0;
+    int cnt_part    = 0;
 
     // Loop through events in input file.
     for (int event = 0; event < n_events; ++event) {
@@ -318,6 +321,7 @@ int run(char *filename_in, char *work_dir, char *data_dir, bool debug,
 
         // Skip events without a trigger electron.
         if (!trigger_exist) continue;
+        ++cnt_trigger;
 
         // Processing particles.
         for (UInt_t pos = 0; pos < bank_trk_dc.index->size(); ++pos) {
@@ -382,8 +386,14 @@ int run(char *filename_in, char *work_dir, char *data_dir, bool debug,
             );
 
             tree_out->Fill(arr);
+
+            ++cnt_part;
         }
     }
+
+    // Print number of particles found to detect errors early.
+    printf("Triggers found:  %d\n", cnt_trigger);
+    printf("Particles found: %d\n", cnt_trigger + cnt_part);
 
     // Create output file.
     char filename_out[PATH_MAX];
