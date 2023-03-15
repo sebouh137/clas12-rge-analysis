@@ -23,12 +23,12 @@
 // Set this to 1 to get some debug information.
 const int DEBUG = 0;
 // Set to the PID to plot acceptance correction from.
-const int PID = -211;
+const int PID = 211;
 // acc_corr.txt files produced by acc_corr.
-const char *DC_FILENAME  = "../data/acc_corr_dc.txt";
+const char *DC_FILENAME  =  "../data/acc_corr_dc.txt";
 const char *FMT_FILENAME = "../data/acc_corr_fmt.txt";
 // Root file where we'll write the plots.
-const char *OUTPUT_FILENAME = "../root_io/acc_corr.root";
+const char *OUTPUT_FILENAME = "../root_io/acc_corr_pid211.root";
 // Map containing the variables we're working with.
 const int NPLOTS = 5;
 const std::map<int, const char *> PLOT_NAMES {
@@ -299,7 +299,9 @@ int draw_acc_corr() {
         TGraphErrors *graph_simul_dc = new TGraphErrors(
                 bs[var_idx]-1, x_pos, y_simul_dc_dbl, x_length, y_err
         );
-        graph_simul_dc->SetTitle(Form("%s (DC)", PLOT_NAMES.at(var_idx)));
+        graph_simul_dc->SetTitle(
+                Form("%s (simul - DC)", PLOT_NAMES.at(var_idx))
+        );
         graph_simul_dc->SetMarkerColor(kBlue);
         graph_simul_dc->SetMarkerStyle(21);
         graph_simul_dc->Draw("sameP");
@@ -308,7 +310,9 @@ int draw_acc_corr() {
         TGraphErrors *graph_simul_fmt = new TGraphErrors(
                 bs[var_idx]-1, x_pos, y_simul_fmt_dbl, x_length, y_err
         );
-        graph_simul_fmt->SetTitle(Form("%s (FMT)", PLOT_NAMES.at(var_idx)));
+        graph_simul_fmt->SetTitle(
+                Form("%s (simul - FMT)", PLOT_NAMES.at(var_idx))
+        );
         graph_simul_fmt->SetMarkerColor(kGreen);
         graph_simul_fmt->SetMarkerStyle(21);
         graph_simul_fmt->Draw("sameP");
