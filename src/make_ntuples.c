@@ -306,7 +306,7 @@ int run(char *filename_in, char *work_dir, char *data_dir, bool debug,
             fill_ntuples_arr(
                     arr, part_trigger, part_trigger, run_no, event, status,
                     energy_beam, chi2, ndf, energy_PCAL, energy_ECIN,
-                    energy_ECOU, tof, tof
+                    energy_ECOU, tof, tof, nphe_LTCC, nphe_HTCC
             );
 
             tree_out->Fill(arr);
@@ -382,7 +382,7 @@ int run(char *filename_in, char *work_dir, char *data_dir, bool debug,
             fill_ntuples_arr(
                     arr, part, part_trigger, run_no, event, status, energy_beam,
                     chi2, ndf, energy_PCAL, energy_ECIN, energy_ECOU, tof,
-                    trigger_tof
+                    trigger_tof, nphe_LTCC, nphe_HTCC
             );
 
             tree_out->Fill(arr);

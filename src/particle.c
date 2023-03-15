@@ -65,7 +65,7 @@ particle particle_init(Particle *particle, Track *track, FMT_Tracks *fmt_tracks,
     // Apply FMT cuts.
     // Track reconstructed by FMT.
     if (fmt_tracks->vz->size() < 1)               return particle_init();
-    // Track crossed 3 FMT layers.
+    // Track crossed enough FMT layers.
     if (fmt_tracks->ndf->at(index) < FMTNLYRSCUT) return particle_init();
 
     return particle_init(particle->charge->at(pindex),
@@ -236,7 +236,8 @@ int match_pid(int hyp, bool r_match, int q, bool e, bool htcc_s, bool htcc_p) {
  */
 int fill_ntuples_arr(Float_t *arr, particle p, particle e, int run_no, int evn,
         int status, double beam_E, float chi2, float ndf, double pcal_E,
-        double ecin_E, double ecou_E, double tof, double tre_tof)
+        double ecin_E, double ecou_E, double tof, double tre_tof,
+        int nphe_ltcc, int nphe_htcc)
 {
     // Metadata.
     arr[A_RUNNO]   = (Float_t) run_no;
@@ -271,6 +272,10 @@ int fill_ntuples_arr(Float_t *arr, particle p, particle e, int run_no, int evn,
 
     // Scintillator.
     arr[A_DTOF] = tof - tre_tof;
+
+    // Cherenkov.
+    arr[A_NPHELTCC] = nphe_ltcc;
+    arr[A_NPHEHTCC] = nphe_htcc;
 
     // DIS -- For hadrons, just use e- data.
     arr[A_Q2] = Q2(e, beam_E);

@@ -92,6 +92,7 @@ float t_mandelstam(particle p, particle e, double bE);
 // Fill array for ntuples file.
 int fill_ntuples_arr(Float_t *vec, particle p, particle e, int run_no, int evn,
         int status, double beam_E, float chi2, float ndf, double pcal_E,
-        double ecin_E, double ecou_E, double tof, double tre_tof);
+        double ecin_E, double ecou_E, double tof, double tre_tof,
+        int nphe_ltcc, int nphe_htcc);
 
 #endif

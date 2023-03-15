@@ -82,7 +82,7 @@ extern const long   ACC_BX[ACCPLT_LIST_SIZE][2];
 
 // All variables.
 #define S_PARTICLE "particle"
-#define VAR_LIST_SIZE 33
+#define VAR_LIST_SIZE 35
 extern const char *R_VAR_LIST[VAR_LIST_SIZE];
 extern const char *S_VAR_LIST[VAR_LIST_SIZE];
 
@@ -168,23 +168,32 @@ extern const char *S_VAR_LIST[VAR_LIST_SIZE];
 #define R_DTOF "dtof"
 #define A_DTOF 23
 
+// Cherenkov.
+#define S_NPHELTCC "N_{pheLTCC}"
+#define R_NPHELTCC "nphe_ltcc"
+#define A_NPHELTCC 24
+
+#define S_NPHEHTCC "N_{pheHTCC}"
+#define R_NPHEHTCC "nphe_htcc"
+#define A_NPHEHTCC 25
+
 // DIS.
 #define DIS_LIST_SIZE 4
 extern const char *DIS_LIST[DIS_LIST_SIZE];
 
 #define S_Q2 "Q2"          // GeV^2.
 #define R_Q2 "q2"
-#define A_Q2 24
+#define A_Q2 26
 #define S_NU "#nu"         // GeV.
 // #define S_NU "nu"
 #define R_NU "nu"
-#define A_NU 25
+#define A_NU 27
 #define S_XB "x_{bjorken}" // adimensional.
 #define R_XB "x_bjorken"
-#define A_XB 26
+#define A_XB 28
 #define S_W2 "W2"          // GeV^2.
 #define R_W2 "w2"
-#define A_W2 27
+#define A_W2 29
 
 // SIDIS.
 // using usual name convention...
@@ -194,20 +203,20 @@ extern const char *SIDIS_LIST[SIDIS_LIST_SIZE];
 #define S_ZH      "z_{h}"       // adimensional.
 // #define S_ZH      "zh"
 #define R_ZH      "zh"
-#define A_ZH       28
+#define A_ZH       30
 #define S_PT2     "Pt2"         // GeV^2.
 #define R_PT2     "pt2"
-#define A_PT2      29
+#define A_PT2      31
 #define S_PL2     "Pl2"         // GeV^2.
 #define R_PL2     "pl2"
-#define A_PL2      30
+#define A_PL2      32
 #define S_PHIPQ   "#phi_{PQ}"   // Rad.
 // #define S_PHIPQ   "phiPQ"
 #define R_PHIPQ   "phipq"
-#define A_PHIPQ    31
+#define A_PHIPQ    33
 #define S_THETAPQ "#theta_{PQ}" // Rad.
 #define R_THETAPQ "thetapq"
-#define A_THETAPQ  32
+#define A_THETAPQ  34
 
 // #define PHOTONTHETA "virtual photon #theta (lab frame #degree)"
 // #define PHOTONPHI   "virtual photon #phi (lab frame #degree)"
