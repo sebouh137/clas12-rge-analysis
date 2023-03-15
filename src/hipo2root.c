@@ -63,7 +63,9 @@ int run(char *in_filename, char *work_dir, bool use_fmt, int run_no,
     if (use_fmt) fmt_tracks_bank = factory.getSchema("FMT::Tracks");
 
     // Get stuff from hipo file and write to root file.
-    if (event_max == -1) event_max = reader.getEntries();
+    if (event_max == -1 || event_max > reader.getEntries()) {
+        event_max = reader.getEntries();
+    }
     printf("Reading %d events from %s.\n", event_max, in_filename);
 
     int event_no = 0;
