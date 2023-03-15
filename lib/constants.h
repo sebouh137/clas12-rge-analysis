@@ -27,6 +27,9 @@ extern const std::map<int, const char*> PID_NAME;
 extern const std::map<int, double> PID_MASS;
 extern const std::map<int, int> PID_QA;
 
+// Tree name.
+#define TREENAME "data"
+
 // Particle cut array.
 #define PART_LIST_SIZE 5
 extern const char *PART_LIST[PART_LIST_SIZE];

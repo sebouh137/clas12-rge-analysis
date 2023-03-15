@@ -199,7 +199,7 @@ int run(char *filename_in, char *work_dir, char *data_dir, bool debug,
     TTree *tree_in = file_in->Get<TTree>("Tree");
     if (tree_in == NULL) return 12;
     TNtuple *tree_out;
-    tree_out = new TNtuple("data", "data", vars_string);
+    tree_out = new TNtuple(TREENAME, TREENAME, vars_string);
 
     // Change n_events to number of entries if it is equal to -1 or invalid.
     if (n_events == -1 || n_events > tree_in->GetEntries()) {

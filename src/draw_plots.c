@@ -20,7 +20,6 @@
 #include "../lib/io_handler.h"
 #include "../lib/utilities.h"
 
-// TODO. Do acceptance correction.
 // TODO. See what happens to low-momentum particles inside CLAS12 through
 //       simulation and see if they are reconstructed.
 // TODO. Evaluate **acceptance** in diferent regions.
@@ -281,12 +280,6 @@ int run(char *in_filename, char *out_filename, char *acc_filename,
     //       Pre-configured cuts, binnings, and corrections would be nice.
     // TODO. Prepare corrections (acceptance, radiative, Feynman, etc...).
 
-    // === TRACKER SELECTION ===================================================
-    printf("\nUse DC or FMT data? [");
-    for (int ti = 0; ti < TRK_LIST_SIZE; ++ti) printf("%s, ", TRK_LIST[ti]);
-    printf("\b\b]\n");
-    int plot_tracker = catch_string(TRK_LIST, TRK_LIST_SIZE);
-
     // === PARTICLE SELECTION ==================================================
     printf("\nWhat particle should be plotted? Available cuts:\n[");
     for (int part_i = 0; part_i < PART_LIST_SIZE; ++part_i)
@@ -454,7 +447,7 @@ int run(char *in_filename, char *out_filename, char *acc_filename,
     }
 
     // === SETUP NTUPLES =======================================================
-    TNtuple *ntuple = (TNtuple *) f_in->Get(plot_tracker == 0 ? S_DC : S_FMT);
+    TNtuple *ntuple = (TNtuple *) f_in->Get(TREENAME);
     Float_t vars[VAR_LIST_SIZE];
     for (int var_i = 0; var_i < VAR_LIST_SIZE; ++var_i)
         ntuple->SetBranchAddress(S_VAR_LIST[var_i], &vars[var_i]);
@@ -610,7 +603,7 @@ int run(char *in_filename, char *out_filename, char *acc_filename,
             bin_vars_idx[bin_dim_i] = vars[bin_vars[bin_dim_i]];
         }
 
-        // Fills plots.
+        // Fill plots.
         for (int plot_i = 0; plot_i < plot_arr_size; ++plot_i) {
             // SIDIS variables only make sense for some particles.
             bool sidis_pass = true;
@@ -915,12 +908,12 @@ int handle_args(int argc, char **argv, char **in_filename, char **out_filename,
 /** Entry point of the program. */
 int main(int argc, char **argv) {
     // Handle arguments.
-    char *in_filename  = NULL;
-    char *out_filename = NULL;
-    char *acc_filename = NULL;
-    char *work_dir = NULL;
-    int run_no     = -1;
-    int nentries  = -1;
+    char *in_filename   = NULL;
+    char *out_filename  = NULL;
+    char *acc_filename  = NULL;
+    char *work_dir      = NULL;
+    int run_no          = -1;
+    int nentries        = -1;
     bool apply_acc_corr = true;
 
     int errcode = handle_args(argc, argv, &in_filename, &out_filename,
