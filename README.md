@@ -2,10 +2,11 @@
 The purpose of this repository is to contain various tools used in the analysis of RG-E data from the CLAS12 experiment. We use [root](https://root.cern.ch/) for analysis, and [hipo](https://github.com/gavalian/hipo) for the handling of hipo files. If you run into any problems compiling or using the tools, please raise an [issue](https://github.com/bleaktwig/clas12-rge-analysis/issues/new) and we'll take a look into it.
 
 ## Compilation
-First, set the environment variable `HIPO` to the location where hipo is installed. Then, compile everything my running `make` in the root directory (where `Makefile` is). The repository has been tested with the following root versions:
+First, set the environment variable `HIPO` to the location where hipo is installed. Then, compile everything by running `make` in the root directory (where `Makefile` is). The repository has been tested and works fine with the following root versions:
 * 6.20/04.
 * 6.24/02.
 * 6.26/08.
+* 6.28/00.
 
 ## Usage
 ### hipo2root
