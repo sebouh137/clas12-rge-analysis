@@ -1,5 +1,5 @@
 // CLAS12 RG-E Analyser.
-// Copyright (C) 2022 Bruno Benkel
+// Copyright (C) 2022-2023 Bruno Benkel
 //
 // This program is free software: you can redistribute it and/or modify it under
 // the terms of the GNU Lesser General Public License as published by the Free
@@ -33,7 +33,8 @@ int is_number(char c);
 
 int update_progress_bar(int nevn, int evn, int *evnsplitter, int *divcntr);
 
-int grab_multiarg(int argc, char **argv, int *optind, int *size, double **b);
+int grab_multiarg(int argc, char **argv, int *opt_idx, long unsigned int *size,
+        double **b);
 int grab_str(char *optarg, char **str);
 
 bool catch_yn();

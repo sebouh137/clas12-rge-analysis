@@ -1,5 +1,5 @@
 // CLAS12 RG-E Analyser.
-// Copyright (C) 2022 Bruno Benkel
+// Copyright (C) 2022-2023 Bruno Benkel
 //
 // This program is free software: you can redistribute it and/or modify it under
 // the terms of the GNU Lesser General Public License as published by the Free
@@ -14,6 +14,8 @@
 // You can see a copy of the GNU Lesser Public License under the LICENSE file.
 
 #include "../lib/io_handler.h"
+
+// TODO. Change run_no to unsigned int and all instances of atoi to strto* funs.
 
 /**
  * Get run number from a filename, assuming the filename is in format
@@ -215,15 +217,16 @@ int update_progress_bar(int nevn, int evn, int *evnsplitter, int *divcntr) {
 /**
  * Grab multiple arguments and fill an array with their values.
  *
- * @param argc:   size of list of arguments given to program.
- * @param argv:   list of arguments given to program.
- * @param optind: optind variable from getopt.
- * @param size:   pointer to the size of the array that we'll fill.
- * @param arr:    array that we'll fill.
- * @return:       error code, which is always 0 (no error).
+ * @param argc:    size of list of arguments given to program.
+ * @param argv:    list of arguments given to program.
+ * @param opt_idx: optind variable from getopt.
+ * @param size:    pointer to the size of the array that we'll fill.
+ * @param arr:     array that we'll fill.
+ * @return:        error code, which is always 0 (no error).
  */
-int grab_multiarg(int argc, char **argv, int *optind, int *size, double **arr) {
-    int idx   = *optind - 1;
+int grab_multiarg(int argc, char **argv, int *opt_idx, long unsigned int *size,
+        double **arr) {
+    int idx   = *opt_idx - 1;
     int start = idx;
     *size     = 0;
     char *next;
@@ -237,7 +240,7 @@ int grab_multiarg(int argc, char **argv, int *optind, int *size, double **arr) {
 
     // Restart counter and initialize binning.
     idx = start;
-    (*arr) = (double *) malloc((*size) * sizeof(**arr));
+    (*arr) = static_cast<double *>(malloc((*size) * sizeof(**arr)));
 
     // Fill binning.
     int i = 0;
@@ -248,20 +251,20 @@ int grab_multiarg(int argc, char **argv, int *optind, int *size, double **arr) {
     }
 
     // Continue with getopts.
-    *optind = idx - 1;
+    *opt_idx = idx - 1;
     return 0;
 }
 
 /**
  * Grab a string from an optarg.
  *
- * @param optarg: optarg variable from getopt.
- * @param str:    string to which optarg will be copied.
- * @return:       error code, which is always 0 (no error).
+ * @param getopt_arg: optarg variable from getopt.
+ * @param str:        string to which optarg will be copied.
+ * @return:           error code, which is always 0 (no error).
  */
-int grab_str(char *optarg, char **str) {
-    *str = (char *) malloc(strlen(optarg) + 1);
-    strcpy(*str, optarg);
+int grab_str(char *getopt_arg, char **str) {
+    *str = static_cast<char *>(malloc(strlen(getopt_arg) + 1));
+    strcpy(*str, getopt_arg);
     return 0;
 }
 
