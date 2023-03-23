@@ -1,5 +1,5 @@
 // CLAS12 RG-E Analyser.
-// Copyright (C) 2022 Bruno Benkel
+// Copyright (C) 2022-2023 Bruno Benkel
 //
 // This program is free software: you can redistribute it and/or modify it under
 // the terms of the GNU Lesser General Public License as published by the Free
@@ -19,7 +19,7 @@
 #include "../lib/bank_containers.h"
 
 /** run() function of the program. Check usage() for details. */
-int run(char *in_filename, char *work_dir, bool use_fmt, int run_no,
+static int run(char *in_filename, char *work_dir, bool use_fmt, int run_no,
         int event_max)
 {
     // Create output file.
@@ -99,11 +99,11 @@ int run(char *in_filename, char *work_dir, bool use_fmt, int run_no,
         if (use_fmt) fmt_tracks.fill(fmt_tracks_bank);
 
         // Write to tree *if* event is not empty.
-        int total_nrows = particle.get_nrows() +
-                          track.get_nrows() +
-                          calorimeter.get_nrows() +
-                          cherenkov.get_nrows() +
-                          scintillator.get_nrows();
+        long unsigned int total_nrows = particle.get_nrows() +
+                                        track.get_nrows() +
+                                        calorimeter.get_nrows() +
+                                        cherenkov.get_nrows() +
+                                        scintillator.get_nrows();
         if (use_fmt) total_nrows += fmt_tracks.get_nrows();
 
         if (total_nrows > 0) tree->Fill();
@@ -118,7 +118,7 @@ int run(char *in_filename, char *work_dir, bool use_fmt, int run_no,
 }
 
 /** Print usage and exit. */
-int usage() {
+static int usage() {
     fprintf(stderr,
             "\n\nUsage: hipo2root [-hfn:w:] infile\n"
             " * -h         : show this message and exit.\n"
@@ -139,7 +139,7 @@ int usage() {
 }
 
 /** Print error number and provide a short description of the error. */
-int handle_err(int errcode) {
+static int handle_err(int errcode) {
     if (errcode > 1) fprintf(stderr, "Error %02d. ", errcode);
     switch (errcode) {
         case 0:
@@ -180,8 +180,8 @@ int handle_err(int errcode) {
  * Handle arguments for hipo2root using optarg. Error codes used are explained
  *     in the handle_err() function.
  */
-int handle_args(int argc, char **argv, char **in_filename, char **work_dir,
-        bool *use_fmt, int *run_no, int *event_max)
+static int handle_args(int argc, char **argv, char **in_filename,
+        char **work_dir, bool *use_fmt, int *run_no, int *event_max)
 {
     // Handle arguments.
     int opt;
@@ -197,11 +197,11 @@ int handle_args(int argc, char **argv, char **in_filename, char **work_dir,
                 if (*event_max <= 0) return 2; // Check if event_max is valid.
                 break;
             case 'w':
-                *work_dir = (char *) malloc(strlen(optarg) + 1);
+                *work_dir = static_cast<char *>(malloc(strlen(optarg) + 1));
                 strcpy(*work_dir, optarg);
                 break;
             case 1:
-                *in_filename = (char *) malloc(strlen(optarg) + 1);
+                *in_filename = static_cast<char *>(malloc(strlen(optarg) + 1));
                 strcpy(*in_filename, optarg);
                 break;
             default:
@@ -211,7 +211,7 @@ int handle_args(int argc, char **argv, char **in_filename, char **work_dir,
 
     // Define workdir if undefined.
     if (*work_dir == NULL) {
-        *work_dir = (char *) malloc(PATH_MAX);
+        *work_dir = static_cast<char *>(malloc(PATH_MAX));
         sprintf(*work_dir, "%s/../root_io", dirname(argv[0]));
     }
 
