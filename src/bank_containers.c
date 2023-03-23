@@ -1,5 +1,5 @@
 // CLAS12 RG-E Analyser.
-// Copyright (C) 2022 Bruno Benkel
+// Copyright (C) 2022-2023 Bruno Benkel
 //
 // This program is free software: you can redistribute it and/or modify it under
 // the terms of the GNU Lesser General Public License as published by the Free
@@ -74,7 +74,7 @@ int Particle::link_branches(TTree *t) {
     t->Branch("REC::Particle::status",  &status);
     return 0;
 }
-int Particle::set_nrows(int in_nrows) {
+int Particle::set_nrows(long unsigned int in_nrows) {
     nrows = in_nrows;
     pid    ->resize(nrows);
     px     ->resize(nrows);
@@ -90,10 +90,10 @@ int Particle::set_nrows(int in_nrows) {
     status ->resize(nrows);
     return 0;
 }
-int Particle::get_nrows() {return nrows;}
+long unsigned int Particle::get_nrows() {return nrows;}
 int Particle::fill(hipo::bank b) {
-    set_nrows(b.getRows());
-    for (int row = 0; row < nrows; ++row) {
+    set_nrows(static_cast<long unsigned int>(b.getRows()));
+    for (long unsigned int row = 0; row < nrows; ++row) {
         pid    ->at(row) = b.getInt  ("pid",     row);
         px     ->at(row) = b.getFloat("px",      row);
         py     ->at(row) = b.getFloat("py",      row);
@@ -104,8 +104,8 @@ int Particle::fill(hipo::bank b) {
         vt     ->at(row) = b.getFloat("vt",      row);
         beta   ->at(row) = b.getFloat("beta",    row);
         chi2pid->at(row) = b.getFloat("chi2pid", row);
-        charge ->at(row) = (int8_t)  b.getByte ("charge", row);
-        status ->at(row) = (int16_t) b.getShort("status", row);
+        charge ->at(row) = static_cast<int8_t> (b.getByte ("charge", row));
+        status ->at(row) = static_cast<int16_t>(b.getShort("status", row));
     }
     return 0;
 }
@@ -153,7 +153,7 @@ int Track::link_branches(TTree *t) {
     t->Branch("REC::Track::chi2",   &chi2);
     return 0;
 }
-int Track::set_nrows(int in_nrows) {
+int Track::set_nrows(long unsigned int in_nrows) {
     nrows = in_nrows;
     index ->resize(nrows);
     pindex->resize(nrows);
@@ -162,14 +162,14 @@ int Track::set_nrows(int in_nrows) {
     chi2  ->resize(nrows);
     return 0;
 }
-int Track::get_nrows() {return nrows;}
+long unsigned int Track::get_nrows() {return nrows;}
 int Track::fill(hipo::bank b) {
-    set_nrows(b.getRows());
-    for (int row = 0; row < nrows; ++row) {
-        index ->at(row) = (int16_t) b.getShort("index",  row);
-        pindex->at(row) = (int16_t) b.getShort("pindex", row);
-        sector->at(row) = (int8_t)  b.getByte ("sector", row);
-        ndf   ->at(row) = (int16_t) b.getShort("NDF",    row);
+    set_nrows(static_cast<long unsigned int>(b.getRows()));
+    for (long unsigned int row = 0; row < nrows; ++row) {
+        index ->at(row) = static_cast<int16_t>(b.getShort("index",  row));
+        pindex->at(row) = static_cast<int16_t>(b.getShort("pindex", row));
+        sector->at(row) = static_cast<int8_t> (b.getByte ("sector", row));
+        ndf   ->at(row) = static_cast<int16_t>(b.getShort("NDF",    row));
         chi2  ->at(row) = b.getFloat("chi2", row);
     }
     return 0;
@@ -211,7 +211,7 @@ int Calorimeter::link_branches(TTree *t) {
     t->Branch("REC::Calorimeter::time",   &time);
     return 0;
 }
-int Calorimeter::set_nrows(int in_nrows) {
+int Calorimeter::set_nrows(long unsigned int in_nrows) {
     nrows = in_nrows;
     pindex->resize(nrows);
     layer ->resize(nrows);
@@ -220,13 +220,13 @@ int Calorimeter::set_nrows(int in_nrows) {
     time  ->resize(nrows);
     return 0;
 }
-int Calorimeter::get_nrows() {return nrows;}
+long unsigned int Calorimeter::get_nrows() {return nrows;}
 int Calorimeter::fill(hipo::bank b) {
-    set_nrows(b.getRows());
-    for (int row = 0; row < nrows; ++row) {
-        pindex->at(row) = (int16_t) b.getShort("pindex", row);
-        layer ->at(row) = (int8_t)  b.getByte ("layer",  row);
-        sector->at(row) = (int8_t)  b.getByte ("sector", row);
+    set_nrows(static_cast<long unsigned int>(b.getRows()));
+    for (long unsigned int row = 0; row < nrows; ++row) {
+        pindex->at(row) = static_cast<int16_t>(b.getShort("pindex", row));
+        layer ->at(row) = static_cast<int8_t> (b.getByte ("layer",  row));
+        sector->at(row) = static_cast<int8_t> (b.getByte ("sector", row));
         energy->at(row) = b.getFloat("energy", row);
         time  ->at(row) = b.getFloat("time", row);
     }
@@ -265,7 +265,7 @@ int Scintillator::link_branches(TTree *t) {
     t->Branch("REC::Scintillator::layer",    &layer);
     return 0;
 }
-int Scintillator::set_nrows(int in_nrows) {
+int Scintillator::set_nrows(long unsigned int in_nrows) {
     nrows = in_nrows;
     pindex  ->resize(nrows);
     time    ->resize(nrows);
@@ -273,14 +273,14 @@ int Scintillator::set_nrows(int in_nrows) {
     layer   ->resize(nrows);
     return 0;
 }
-int Scintillator::get_nrows() {return nrows;}
+long unsigned int Scintillator::get_nrows() {return nrows;}
 int Scintillator::fill(hipo::bank b) {
-    set_nrows(b.getRows());
-    for (int row = 0; row < nrows; ++row) {
-        pindex  ->at(row) = (int16_t) b.getShort("pindex", row);
+    set_nrows(static_cast<long unsigned int>(b.getRows()));
+    for (long unsigned int row = 0; row < nrows; ++row) {
+        pindex  ->at(row) = static_cast<int16_t>(b.getShort("pindex", row));
         time    ->at(row) = b.getFloat("time", row);
-        detector->at(row) = (int8_t) b.getByte("detector", row);
-        layer   ->at(row) = (int8_t) b.getByte("layer", row);
+        detector->at(row) = static_cast<uint8_t>(b.getByte("detector", row));
+        layer   ->at(row) = static_cast<uint8_t>(b.getByte("layer",    row));
     }
     return 0;
 }
@@ -312,19 +312,19 @@ int Cherenkov::link_branches(TTree *t) {
     t->Branch("REC::Cherenkov::nphe",     &nphe);
     return 0;
 }
-int Cherenkov::set_nrows(int in_nrows) {
+int Cherenkov::set_nrows(long unsigned int in_nrows) {
     nrows = in_nrows;
     pindex  ->resize(nrows);
     detector->resize(nrows);
     nphe    ->resize(nrows);
     return 0;
 }
-int Cherenkov::get_nrows() {return nrows;}
+long unsigned int Cherenkov::get_nrows() {return nrows;}
 int Cherenkov::fill(hipo::bank b) {
-    set_nrows(b.getRows());
-    for (int row = 0; row < nrows; ++row) {
-        pindex  ->at(row) = (int16_t) b.getShort("pindex", row);
-        detector->at(row) = (int8_t)  b.getByte("detector", row);
+    set_nrows(static_cast<long unsigned int>(b.getRows()));
+    for (long unsigned int row = 0; row < nrows; ++row) {
+        pindex  ->at(row) = static_cast<int16_t>(b.getShort("pindex",   row));
+        detector->at(row) = static_cast<uint8_t>(b.getByte ("detector", row));
         nphe    ->at(row) = b.getFloat("nphe", row);
     }
     return 0;
@@ -394,7 +394,7 @@ int FMT_Tracks::link_branches(TTree *t) {
     t->Branch("FMT::Tracks::pz",    &pz);
     return 0;
 }
-int FMT_Tracks::set_nrows(int in_nrows) {
+int FMT_Tracks::set_nrows(long unsigned int in_nrows) {
     nrows = in_nrows;
     index->resize(nrows);
     ndf  ->resize(nrows);
@@ -406,11 +406,11 @@ int FMT_Tracks::set_nrows(int in_nrows) {
     pz   ->resize(nrows);
     return 0;
 }
-int FMT_Tracks::get_nrows() {return nrows;}
+long unsigned int FMT_Tracks::get_nrows() {return nrows;}
 int FMT_Tracks::fill(hipo::bank b) {
-    set_nrows(b.getRows());
-    for (int row = 0; row < nrows; ++row) {
-        index->at(row) = (int16_t) b.getShort("index", row);
+    set_nrows(static_cast<long unsigned int>(b.getRows()));
+    for (long unsigned int row = 0; row < nrows; ++row) {
+        index->at(row) = static_cast<int16_t>(b.getShort("index", row));
         ndf  ->at(row) = b.getInt("NDF", row);
         vx   ->at(row) = b.getFloat("Vtx0_x", row);
         vy   ->at(row) = b.getFloat("Vtx0_y", row);

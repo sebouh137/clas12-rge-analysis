@@ -1,5 +1,5 @@
 // CLAS12 RG-E Analyser.
-// Copyright (C) 2022 Bruno Benkel
+// Copyright (C) 2022-2023 Bruno Benkel
 //
 // This program is free software: you can redistribute it and/or modify it under
 // the terms of the GNU Lesser General Public License as published by the Free
@@ -22,8 +22,8 @@
 /** Reconstructed particle "final" information. */
 class Particle {
 private:
-    int nrows;
-    int set_nrows(int in_nrows);
+    long unsigned int nrows;
+    int set_nrows(long unsigned int in_nrows);
 public:
     // particle id in LUND conventions.
     std::vector<Int_t>    *pid;     TBranch *b_pid;
@@ -51,7 +51,7 @@ public:
     std::vector<Short_t>  *status;  TBranch *b_status;
     Particle();
     Particle(TTree *t);
-    int get_nrows();
+    long unsigned int get_nrows();
     int link_branches(TTree *t);
     int fill(hipo::bank b);
     int get_entries(TTree *t, int idx);
@@ -59,8 +59,8 @@ public:
 
 class Track {
 private:
-    int nrows;
-    int set_nrows(int in_nrows);
+    long unsigned int nrows;
+    int set_nrows(long unsigned int in_nrows);
 public:
     // Index of the track in the specific detector bank.
     std::vector<Short_t>  *index;   TBranch *b_index;
@@ -74,7 +74,7 @@ public:
     std::vector<Float_t>  *chi2;    TBranch *b_chi2;
     Track();
     Track(TTree *t);
-    int get_nrows();
+    long unsigned int get_nrows();
     int link_branches(TTree *t);
     int fill(hipo::bank b);
     int get_entries(TTree *t, int idx);
@@ -82,8 +82,8 @@ public:
 
 class Calorimeter {
 private:
-    int nrows;
-    int set_nrows(int in_nrows);
+    long unsigned int nrows;
+    int set_nrows(long unsigned int in_nrows);
 public:
     // Row number in the particle bank.
     std::vector<Short_t> *pindex; TBranch *b_pindex;
@@ -97,7 +97,7 @@ public:
     std::vector<Float_t> *time;   TBranch *b_time;
     Calorimeter();
     Calorimeter(TTree *t);
-    int get_nrows();
+    long unsigned int get_nrows();
     int link_branches(TTree *t);
     int fill(hipo::bank b);
     int get_entries(TTree *t, int idx);
@@ -105,8 +105,8 @@ public:
 
 class Scintillator {
 private:
-    int nrows;
-    int set_nrows(int in_nrows);
+    long unsigned int nrows;
+    int set_nrows(long unsigned int in_nrows);
 public:
     // Row number in the particle bank.
     std::vector<Short_t> *pindex;   TBranch *b_pindex;
@@ -118,7 +118,7 @@ public:
     std::vector<Byte_t>  *layer;    TBranch *b_layer;
     Scintillator();
     Scintillator(TTree *t);
-    int get_nrows();
+    long unsigned int get_nrows();
     int link_branches(TTree *t);
     int fill(hipo::bank b);
     int get_entries(TTree *t, int idx);
@@ -126,8 +126,8 @@ public:
 
 class Cherenkov {
 private:
-    int nrows;
-    int set_nrows(int in_nrows);
+    long unsigned int nrows;
+    int set_nrows(long unsigned int in_nrows);
 public:
     // Row number in the particle bank associated with the hit.
     std::vector<Short_t> *pindex;   TBranch *b_pindex;
@@ -137,7 +137,7 @@ public:
     std::vector<Float_t> *nphe;     TBranch *b_nphe;
     Cherenkov();
     Cherenkov(TTree *t);
-    int get_nrows();
+    long unsigned int get_nrows();
     int link_branches(TTree *t);
     int fill(hipo::bank b);
     int get_entries(TTree *t, int idx);
@@ -145,8 +145,8 @@ public:
 
 class FMT_Tracks {
 private:
-    int nrows;
-    int set_nrows(int in_nrows);
+    long unsigned int nrows;
+    int set_nrows(long unsigned int in_nrows);
 public:
     // index of the track in the DC bank.
     std::vector<Short_t> *index; TBranch *b_index;
@@ -167,7 +167,7 @@ public:
     FMT_Tracks();
     FMT_Tracks(TTree *t);
     int link_tree(TTree *t);
-    int get_nrows();
+    long unsigned int get_nrows();
     int link_branches(TTree *t);
     int fill(hipo::bank b);
     int get_entries(TTree *t, int idx);
