@@ -1,5 +1,5 @@
 // CLAS12 RG-E Analyser.
-// Copyright (C) 2022 Bruno Benkel
+// Copyright (C) 2022-2023 Bruno Benkel
 //
 // This program is free software: you can redistribute it and/or modify it under
 // the terms of the GNU Lesser General Public License as published by the Free
@@ -44,9 +44,10 @@ typedef struct {
 
 // particle functions.
 particle particle_init();
-particle particle_init(Particle *particle, Track *track, int pos);
-particle particle_init(Particle *particle, Track *track, FMT_Tracks *fmt_tracks,
-        int pos);
+particle particle_init(Particle *bank_particle, Track *bank_track,
+        unsigned int pos);
+particle particle_init(Particle *bank_particle, Track *bank_track,
+        FMT_Tracks *bank_fmt_tracks, unsigned int pos);
 particle particle_init(int charge, double beta, int sector, double vx,
         double vy, double vz, double px, double py, double pz);
 int set_pid(particle *p, int recon_pid, int status, double tot_E,

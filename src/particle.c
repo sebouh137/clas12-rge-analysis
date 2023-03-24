@@ -1,5 +1,5 @@
 // CLAS12 RG-E Analyser.
-// Copyright (C) 2022 Bruno Benkel
+// Copyright (C) 2022-2023 Bruno Benkel
 //
 // This program is free software: you can redistribute it and/or modify it under
 // the terms of the GNU Lesser General Public License as published by the Free
@@ -34,45 +34,54 @@ particle particle_init() {
   * Initialize a new DC-tracked particle from the REC::Particle and REC::TRACK
   *     banks.
   *
-  * @param particle   : pointer to the Particle class.
-  * @param track      : pointer to the Track class to get DC tracking data.
-  * @param pos        : position of the particle at the track class.
+  * @param bank_particle : pointer to the Particle class.
+  * @param bank_track    : pointer to the Track class to get DC tracking data.
+  * @param pos           : position of the particle at the track class.
   */
-particle particle_init(Particle *particle, Track *track, int pos) {
-    int pindex = track->pindex->at(pos);
-    return particle_init(particle->charge->at(pindex),
-            particle->beta->at(pindex), track->sector->at(pos),
-            particle->vx->at(pindex), particle->vy->at(pindex),
-            particle->vz->at(pindex), particle->px->at(pindex),
-            particle->py->at(pindex), particle->pz->at(pindex));
+particle particle_init(Particle *bank_particle, Track *bank_track,
+        unsigned int pos)
+{
+    unsigned int pindex =
+            static_cast<unsigned int>(bank_track->pindex->at(pos));
+    return particle_init(
+            bank_particle->charge->at(pindex),
+            bank_particle->beta->at(pindex), bank_track->sector->at(pos),
+            bank_particle->vx->at(pindex), bank_particle->vy->at(pindex),
+            bank_particle->vz->at(pindex), bank_particle->px->at(pindex),
+            bank_particle->py->at(pindex), bank_particle->pz->at(pindex)
+    );
 }
 
 /**
   * Initialize a new DC+FMT-tracked particle from the REC::Particle, REC::TRACK,
   *     and FMT::Tracks banks.
   *
-  * @param particle   : pointer to the Particle class.
-  * @param track      : pointer to the Track class to get DC tracking data.
-  * @param fmt_tracks : pointer to the FMT_Tracks class to get FMT tracks.
-  * @param pos        : position of the particle at the track class.
+  * @param bank_particle   : pointer to the Particle class.
+  * @param bank_track      : pointer to the Track class to get DC tracking data.
+  * @param bank_fmt_tracks : pointer to the FMT_Tracks class to get FMT tracks.
+  * @param pos             : position of the particle at the track class.
   */
-particle particle_init(Particle *particle, Track *track, FMT_Tracks *fmt_tracks,
-        int pos)
+particle particle_init(Particle *bank_particle, Track *bank_track,
+        FMT_Tracks *bank_fmt_tracks, unsigned int pos)
 {
-    int index  = track->index->at(pos);
-    int pindex = track->pindex->at(pos);
+    unsigned int index  =
+            static_cast<unsigned int>(bank_track->index->at(pos));
+    unsigned int pindex =
+            static_cast<unsigned int>(bank_track->pindex->at(pos));
 
     // Apply FMT cuts.
     // Track reconstructed by FMT.
-    if (fmt_tracks->vz->size() < 1)               return particle_init();
+    if (bank_fmt_tracks->vz->size() < 1)               return particle_init();
     // Track crossed enough FMT layers.
-    if (fmt_tracks->ndf->at(index) < FMTNLYRSCUT) return particle_init();
+    if (bank_fmt_tracks->ndf->at(index) < FMTNLYRSCUT) return particle_init();
 
-    return particle_init(particle->charge->at(pindex),
-            particle->beta->at(pindex), track->sector->at(pos),
-            fmt_tracks->vx->at(index), fmt_tracks->vy->at(index),
-            fmt_tracks->vz->at(index), fmt_tracks->px->at(index),
-            fmt_tracks->py->at(index), fmt_tracks->pz->at(index));
+    return particle_init(
+            bank_particle->charge->at(pindex),
+            bank_particle->beta->at(pindex), bank_track->sector->at(pos),
+            bank_fmt_tracks->vx->at(index), bank_fmt_tracks->vy->at(index),
+            bank_fmt_tracks->vz->at(index), bank_fmt_tracks->px->at(index),
+            bank_fmt_tracks->py->at(index), bank_fmt_tracks->pz->at(index)
+    );
 }
 
 /**
@@ -117,17 +126,18 @@ int set_pid(particle *p, int recon_pid, int status, double tot_E,
     int rpid = p->q == 0 ? assign_neutral_pid(tot_E, p->beta) : recon_pid;
 
     // Create PID list.
-    int hypotheses_size;
+    unsigned int hypotheses_size;
     if      (p->q >  0) hypotheses_size = PID_POSITIVE_SIZE;
     else if (p->q == 0) hypotheses_size = PID_NEUTRAL_SIZE;
     else                hypotheses_size = PID_NEGATIVE_SIZE;
 
-    int hypotheses[hypotheses_size];
-    for (int pi = 0; p->q >  0 && pi < hypotheses_size; ++pi)
+    // Forbidding vlas in this context is a somewhat dumb g++ requirement.
+    __extension__ int hypotheses[hypotheses_size];
+    for (unsigned int pi = 0; p->q >  0 && pi < hypotheses_size; ++pi)
         hypotheses[pi] = PID_POSITIVE[pi];
-    for (int pi = 0; p->q == 0 && pi < hypotheses_size; ++pi)
+    for (unsigned int pi = 0; p->q == 0 && pi < hypotheses_size; ++pi)
         hypotheses[pi] = PID_NEUTRAL [pi];
-    for (int pi = 0; p->q <  0 && pi < hypotheses_size; ++pi)
+    for (unsigned int pi = 0; p->q <  0 && pi < hypotheses_size; ++pi)
         hypotheses[pi] = PID_NEGATIVE[pi];
 
     // Perform checks.
@@ -147,7 +157,7 @@ int set_pid(particle *p, int recon_pid, int status, double tot_E,
     // bool ltcc_kaon_threshold = P(*p) > LTCC_KAON_THRESHOLD;
 
     // Match PID.
-    for (int pi = 0; p->pid == 0 && pi < hypotheses_size; ++pi) {
+    for (unsigned int pi = 0; p->pid == 0 && pi < hypotheses_size; ++pi) {
         p->pid = match_pid(hypotheses[pi], hypotheses[pi] == rpid, p->q,
                 e_check, htcc_signal_check, htcc_pion_threshold);
     }
@@ -226,6 +236,10 @@ int match_pid(int hyp, bool r_match, int q, bool e, bool htcc_s, bool htcc_p) {
         case 321: case 2212: case 45: case 2112: case 22:
             if (r_match) return hyp;
             break;
+        default:
+            // NOTE. Maybe raise an error or assign pid = 0 in this case.
+            if (r_match) return hyp;
+            break;
     }
     return 0;
 }
@@ -240,14 +254,14 @@ int fill_ntuples_arr(Float_t *arr, particle p, particle e, int run_no, int evn,
         int nphe_ltcc, int nphe_htcc)
 {
     // Metadata.
-    arr[A_RUNNO]   = (Float_t) run_no;
-    arr[A_EVENTNO] = (Float_t) evn;
+    arr[A_RUNNO]   = static_cast<Float_t>(run_no);
+    arr[A_EVENTNO] = static_cast<Float_t>(evn);
     arr[A_BEAME]   = beam_E;
 
     // Particle.
-    arr[A_PID]    = (Float_t) p.pid;
+    arr[A_PID]    = static_cast<Float_t>(p.pid);
     arr[A_CHARGE] = p.q;
-    arr[A_STATUS] = (Float_t) status;
+    arr[A_STATUS] = static_cast<Float_t>(status);
     arr[A_MASS]   = p.mass;
     arr[A_VX]     = p.vx;
     arr[A_VY]     = p.vy;
