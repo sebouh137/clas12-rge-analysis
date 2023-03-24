@@ -53,15 +53,18 @@ int get_run_no(char *filename, int *run_no) {
  *                       * 1: beam energy for run number is unavailable.
  */
 int get_beam_energy(int run_no, double *beam_energy) {
-    // NOTE. This should be taken directly from RCDB.
+    // Input file is from gemc.
+    if (run_no / 1000 == 999) {
+        *beam_energy = static_cast<double>(run_no % 1000)/10;
+        return 0;
+    }
+
+    // TODO. This should be taken directly from RCDB.
     switch (run_no) {
         case  11983: *beam_energy = BE11983;  break;
         case  12016: *beam_energy = BE12016;  break;
         case  12439: *beam_energy = BE12439;  break;
         case  12933: *beam_energy = BE12933;  break;
-        case 999106: *beam_energy = BE999106; break;
-        case 999110: *beam_energy = BE999110; break;
-        case 999120: *beam_energy = BE999120; break;
         default:     return 1;
     }
 

@@ -132,8 +132,8 @@ Pull requests are welcome. For major changes, open an issue first to discuss the
 - [ ] Apply Feynman cuts.
 - [ ] Improve error code handling.
 - [ ] Improve sampling fraction handling.
-- [ ] Improve simulation filename handling so that it can work with any beam energy -- at least up to [0.1*GeV].
-- [ ] Get beam energy from `clas12mon` instead of hardcoding it -- check `get_beam_energy()` function from `file_handler.c`.
+- [x] Improve simulation filename handling so that it can work with any beam energy -- at least up to [0.1*GeV].
+- [ ] Get beam energy from `RCDB` instead of hardcoding it -- check `get_beam_energy()` function from `file_handler.c`.
 
 ## License
 [GNU LGPLv3](https://www.gnu.org/licenses/lgpl-3.0.en.html). Details in [LICENSE](/LICENSE) file.
