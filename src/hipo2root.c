@@ -233,12 +233,14 @@ int main(int argc, char **argv) {
     int  run_no       = -1;
     int  event_max    = -1;
 
-    int errcode = handle_args(argc, argv, &in_filename, &work_dir, &use_fmt,
-            &run_no, &event_max);
+    int errcode = handle_args(
+            argc, argv, &in_filename, &work_dir, &use_fmt, &run_no, &event_max
+    );
 
     // Run.
-    if (errcode == 0)
+    if (errcode == 0) {
         errcode = run(in_filename, work_dir, use_fmt, run_no, event_max);
+    }
 
     // Free up memory.
     if (in_filename != NULL) free(in_filename);
