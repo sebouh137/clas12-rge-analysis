@@ -122,6 +122,7 @@ Pull requests are welcome. For major changes, open an issue first to discuss the
 
 **Pending tasks are**:
 - [x] Apply acceptance correction.
+- [ ] Switch from atoi() to strto*() functions.
 - [ ] Implement variable bin sizes for every variable and binning.
 - [ ] Include GitHub tests -- I've no clue on how to do this with ROOT + HIPO.
 - [ ] Add a main program (probably in bash) to call all other programs for working simplicity.

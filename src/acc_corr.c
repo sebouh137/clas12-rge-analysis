@@ -1,5 +1,5 @@
 // CLAS12 RG-E Analyser.
-// Copyright (C) 2022 Bruno Benkel
+// Copyright (C) 2022-2023 Bruno Benkel
 //
 // This program is free software: you can redistribute it and/or modify it under
 // the terms of the GNU Lesser General Public License as published by the Free
@@ -24,7 +24,7 @@
  * Return position of value v inside a binning array b of size s. If v is not
  *     inside b, return -1.
  */
-int find_pos(double v, double *b, int size) {
+static int find_pos(double v, double *b, int size) {
     for (int i = 0; i < size; ++i) if (b[i] < v && v < b[i+1]) return i;
     return -1;
 }
@@ -44,17 +44,22 @@ int find_pos(double v, double *b, int size) {
  *                simulated data.
  * @return:       success code (0).
  */
-int count_entries(FILE *file, TTree *tree, int pid, int *nbins, double **edges,
-        bool in_deg, bool simul)
+static int count_entries(FILE *file, TTree *tree, int pid,
+        long unsigned int *nbins, double **edges, bool in_deg, bool simul)
 {
     // Store total number of bins for simplicity.
-    int tnbins = 1;
+    long unsigned int tnbins = 1;
     for (int i = 0; i < 5; ++i) tnbins *= nbins[i];
 
     // Create and initialize evn_cnt.
-    int evn_cnt[nbins[0]][nbins[1]][nbins[2]][nbins[3]][nbins[4]];
+    // NOTE. Variable-length arrays (vla) are technically not permitted in C++
+    //       (-Werror=vla from -pedantic), but *we know* that the array won't be
+    //       ridiculously large, and I'd rather have my memory contiguous than
+    //       keeping a 5D array of non-contiguous pointers or -- even worse --
+    //       C++ vectors.
+    __extension__ int evn_cnt[nbins[0]][nbins[1]][nbins[2]][nbins[3]][nbins[4]];
     int *iterator = &evn_cnt[0][0][0][0][0];
-    for (int i = 0; i < tnbins; ++i) {
+    for (long unsigned int bin_i = 0; bin_i < tnbins; ++bin_i) {
         *iterator = 0;
         ++iterator;
     }
@@ -101,7 +106,7 @@ int count_entries(FILE *file, TTree *tree, int pid, int *nbins, double **edges,
 
     // Write evn_cnt to file.
     iterator = &evn_cnt[0][0][0][0][0];
-    for (int i = 0; i < tnbins; ++i) {
+    for (long unsigned int bin_i = 0; bin_i < tnbins; ++bin_i) {
         fprintf(file, "%d ", *iterator);
         ++iterator;
     }
@@ -111,8 +116,8 @@ int count_entries(FILE *file, TTree *tree, int pid, int *nbins, double **edges,
 }
 
 /** run() function of the program. Check usage() for details. */
-int run(char *gen_file, char *sim_file, char *data_dir, int *nedges,
-        double **edges, bool use_fmt, bool in_deg)
+static int run(char *gen_file, char *sim_file, char *data_dir,
+        long unsigned int *nedges, double **edges, bool use_fmt, bool in_deg)
 {
     // Open input files and load TTrees.
     printf("\nOpening generated events file...\n");
@@ -134,12 +139,12 @@ int run(char *gen_file, char *sim_file, char *data_dir, int *nedges,
     FILE *t_out = fopen(out_file, "w");
 
     // Write binning nedges to output file.
-    for (int bi = 0; bi < 5; ++bi) fprintf(t_out, "%d ", nedges[bi]);
+    for (int bi = 0; bi < 5; ++bi) fprintf(t_out, "%lu ", nedges[bi]);
     fprintf(t_out, "\n");
 
     // Write edges to output file.
     for (int bi = 0; bi < 5; ++bi) {
-        for (int bii = 0; bii < nedges[bi]; ++bii) {
+        for (long unsigned int bii = 0; bii < nedges[bi]; ++bii) {
             fprintf(t_out, "%12.9f ", edges[bi][bii]);
         }
         fprintf(t_out, "\n");
@@ -156,8 +161,8 @@ int run(char *gen_file, char *sim_file, char *data_dir, int *nedges,
     for (int evn = 0; evn < thrown->GetEntries(); ++evn) {
         thrown->GetEntry(evn);
         bool found = false;
-        for (int pi = 0; pi < pidlist_size; ++pi) {
-            if (pidlist[pi] - 0.5 <= s_pid && s_pid <= pidlist[pi] + 0.5) {
+        for (int pid_i = 0; pid_i < pidlist_size; ++pid_i) {
+            if (pidlist[pid_i] - .5 <= s_pid && s_pid <= pidlist[pid_i] + .5) {
                 found = true;
             }
         }
@@ -168,19 +173,21 @@ int run(char *gen_file, char *sim_file, char *data_dir, int *nedges,
 
     // Write list of PIDs to output file.
     fprintf(t_out, "%d\n", pidlist_size);
-    for (int pi = 0; pi < pidlist_size; ++pi)
-        fprintf(t_out, "%d ", (int) pidlist[pi]);
+    for (int pid_i = 0; pid_i < pidlist_size; ++pid_i) {
+        fprintf(t_out, "%d ", static_cast<int>(pidlist[pid_i]));
+    }
     fprintf(t_out, "\n");
 
     // Get number of bins.
-    int nbins[5];
-    for (int bin_dim_i = 0; bin_dim_i < 5; ++bin_dim_i)
-        nbins[bin_dim_i] = nedges[bin_dim_i] - 1;
+    long unsigned int nbins[5];
+    for (int bin_dim_i = 0; bin_dim_i < 5; ++bin_dim_i) {
+        nbins[bin_dim_i] = static_cast<long unsigned int>(nedges[bin_dim_i]-1);
+    }
 
     // Count and write number of thrown and simulated events in each bin.
-    for (int pi = 0; pi < pidlist_size; ++pi) {
-        int pid = (int) pidlist[pi];
-        printf("Working on PID %5d (%2d/%2d)...\n", pid, pi+1, pidlist_size);
+    for (int pid_i = 0; pid_i < pidlist_size; ++pid_i) {
+        int pid = static_cast<int>(pidlist[pid_i]);
+        printf("Working on PID %5d (%2d/%2d)...\n", pid, pid_i+1, pidlist_size);
 
         printf("  Counting thrown events...\n");
         count_entries(t_out, thrown, pid, nbins, edges, in_deg, false);
@@ -202,7 +209,7 @@ int run(char *gen_file, char *sim_file, char *data_dir, int *nedges,
 }
 
 /** Print usage and exit. */
-int usage() {
+static int usage() {
     fprintf(stderr,
             "\n\nUsage: acc_corr [-hq:n:z:p:f:g:s:d:FD]\n"
             " * -h         : show this message and exit.\n"
@@ -230,7 +237,7 @@ int usage() {
 }
 
 /** Print error number and provide a short description of the error. */
-int handle_err(int errcode) {
+static int handle_err(int errcode) {
     if (errcode > 1) fprintf(stderr, "Error %02d. ", errcode);
     switch (errcode) {
         case 0:
@@ -288,9 +295,9 @@ int handle_err(int errcode) {
  * Handle arguments for make_ntuples using optarg. Error codes used are
  *     explained in the handle_err() function.
  */
-int handle_args(int argc, char **argv, char **gen_file, char **sim_file,
-        char **data_dir, int *nedges, double **edges, bool *use_fmt,
-        bool *in_deg)
+static int handle_args(int argc, char **argv, char **gen_file, char **sim_file,
+        char **data_dir, long unsigned int *nedges, double **edges,
+        bool *use_fmt, bool *in_deg)
 {
     // Handle arguments.
     int opt;
@@ -320,7 +327,7 @@ int handle_args(int argc, char **argv, char **gen_file, char **sim_file,
             grab_str(optarg, sim_file);
             break;
         case 'd':
-            *data_dir = (char *) malloc(strlen(optarg) + 1);
+            *data_dir = static_cast<char *>(malloc(strlen(optarg) + 1));
             strcpy(*data_dir, optarg);
             break;
         case 'F':
@@ -335,16 +342,17 @@ int handle_args(int argc, char **argv, char **gen_file, char **sim_file,
     }
 
     // Check that all arrays have *at least* two values.
-    for (int bi = 0; bi < 5; ++bi) if (nedges[bi] == -1) return 2;
-    for (int bi = 0; bi < 5; ++bi) if (nedges[bi] < 2)   return 3;
+    for (int bi = 0; bi < 5; ++bi) if (nedges[bi] == 0) return 2;
+    for (int bi = 0; bi < 5; ++bi) if (nedges[bi]  < 2) return 3;
 
     // Convert phi_PQ binning to radians.
-    for (int bbi = 0; bbi < nedges[4]; ++bbi)
+    for (long unsigned int bbi = 0; bbi < nedges[4]; ++bbi) {
         edges[4][bbi] = to_rad(edges[4][bbi]);
+    }
 
     // Define datadir if undefined.
     if (*data_dir == NULL) {
-        *data_dir = (char *) malloc(PATH_MAX);
+        *data_dir = static_cast<char *>(malloc(PATH_MAX));
         sprintf(*data_dir, "%s/../data", dirname(argv[0]));
     }
 
@@ -369,17 +377,21 @@ int main(int argc, char **argv) {
     char *data_dir = NULL;
     bool use_fmt   = false;
     bool in_deg    = false;
-    int nedges[5]  = {-1, -1, -1, -1, -1};
+    long unsigned int nedges[5]  = {0, 0, 0, 0, 0};
     double **edges;
 
-    edges = (double **) malloc(5 * sizeof(*edges));
-    int errcode = handle_args(argc, argv, &gen_file, &sim_file, &data_dir,
-            nedges, edges, &use_fmt, &in_deg);
+    edges = static_cast<double **>(malloc(5 * sizeof(*edges)));
+    int errcode = handle_args(
+            argc, argv, &gen_file, &sim_file, &data_dir, nedges, edges,
+            &use_fmt, &in_deg
+    );
 
     // Run.
-    if (errcode == 0)
-        errcode = run(gen_file, sim_file, data_dir, nedges, edges, use_fmt,
-                in_deg);
+    if (errcode == 0) {
+        errcode = run(
+                gen_file, sim_file, data_dir, nedges, edges, use_fmt, in_deg
+        );
+    }
 
     // Free up memory.
     if (gen_file != NULL) free(gen_file);
