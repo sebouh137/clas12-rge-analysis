@@ -130,7 +130,7 @@ static int run(char *in_file, char *work_dir, char *data_dir, int nevn,
     int evnsplitter = 0;
     if (nevn == -1 || t->GetEntries() < nevn) nevn = t->GetEntries();
 
-    printf("Reading %lld events from %s.\n", nevn, in_file);
+    printf("Reading %d events from %s.\n", nevn, in_file);
     for (int evn = 0; evn < nevn; ++evn) {
         update_progress_bar(nevn, evn, &evnsplitter, &divcntr);
 
