@@ -157,7 +157,7 @@ int set_pid(particle *p, int recon_pid, int status, double tot_E,
     p->mass = PID_MASS.at(abs(p->pid));
 
     // If particle is not a lepton, check if it is a valid hadron.
-    if (p->pid >= 100 || p->pid <= 100) p->is_hadron = true;
+    if (p->pid >= 100 || p->pid <= -100) p->is_hadron = true;
 
     return 0;
 }
