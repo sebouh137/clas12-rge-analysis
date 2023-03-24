@@ -1,5 +1,5 @@
 // CLAS12 RG-E Analyser.
-// Copyright (C) 2022 Bruno Benkel
+// Copyright (C) 2022-2023 Bruno Benkel
 //
 // This program is free software: you can redistribute it and/or modify it under
 // the terms of the GNU Lesser General Public License as published by the Free
@@ -24,7 +24,8 @@
 #include "../lib/utilities.h"
 
 /** run() function of the program. Check usage() for details. */
-int run(char *in_file, char *work_dir, char *data_dir, int nevn, int run_no) {
+static int run(char *in_file, char *work_dir, char *data_dir, int nevn,
+        int run_no) {
     gStyle->SetOptFit();
 
     // Create output root file.
@@ -47,184 +48,234 @@ int run(char *in_file, char *work_dir, char *data_dir, int nevn, int run_no) {
     std::map<const char *, TH1 *> histos;
 
     const int ncals = sizeof(CALNAME)/sizeof(CALNAME[0]);
-    char *sf1D_name_arr[ncals][NSECTORS][(int) ((SF_PMAX - SF_PMIN)/SF_PSTEP)];
+    char *sf1D_name_arr[ncals][NSECTORS][
+            static_cast<long unsigned int>(((SF_PMAX - SF_PMIN)/SF_PSTEP))
+    ];
     char *sf2D_name_arr[ncals][NSECTORS];
     TGraphErrors *sf_dotgraph[ncals][NSECTORS];
     char *sf2Dfit_name_arr[ncals][NSECTORS];
     TF1 *sf_polyfit[ncals][NSECTORS];
     double sf_fitresults[ncals][NSECTORS][SF_NPARAMS][2];
 
-    int ci = -1;
+    int cal_idx = -1;
     for (const char *cal : SFARR2D) {
-        ci++;
-        for (int si = 0; si < NSECTORS; ++si) {
+        cal_idx++;
+        for (int sector_i = 0; sector_i < NSECTORS; ++sector_i) {
             // Initialize dotgraphs.
-            char *tmp_str = Form("%s%d)", cal, si+1);
-            sf2D_name_arr[ci][si] = (char *) malloc(strlen(tmp_str)+1);
-            strncpy(sf2D_name_arr[ci][si], tmp_str, strlen(tmp_str));
-            insert_TH2F(&histos, R_PALL, sf2D_name_arr[ci][si], S_P, S_EDIVP,
-                        200, 0, 10, 200, 0, 0.4);
-            sf_dotgraph[ci][si] = new TGraphErrors();
-            sf_dotgraph[ci][si]->SetMarkerStyle(kFullCircle);
-            sf_dotgraph[ci][si]->SetMarkerColor(kRed);
+            char *tmp_str = Form("%s%d)", cal, sector_i+1);
+            sf2D_name_arr[cal_idx][sector_i] =
+                    static_cast<char *>(malloc(strlen(tmp_str)+1));
+            strncpy(sf2D_name_arr[cal_idx][sector_i], tmp_str, strlen(tmp_str));
+            insert_TH2F(
+                    &histos, R_PALL, sf2D_name_arr[cal_idx][sector_i], S_P,
+                    S_EDIVP, 200, 0, 10, 200, 0, 0.4
+            );
+            sf_dotgraph[cal_idx][sector_i] = new TGraphErrors();
+            sf_dotgraph[cal_idx][sector_i]->SetMarkerStyle(kFullCircle);
+            sf_dotgraph[cal_idx][sector_i]->SetMarkerColor(kRed);
 
             // Initialize fits.
-            sf2Dfit_name_arr[ci][si] = (char *) malloc(strlen(tmp_str)+1);
-            strncpy(sf2Dfit_name_arr[ci][si], tmp_str, strlen(tmp_str));
-            sf_polyfit[ci][si] = new TF1(sf2Dfit_name_arr[ci][si],
+            sf2Dfit_name_arr[cal_idx][sector_i] =
+                    static_cast<char *>(malloc(strlen(tmp_str)+1));
+            strncpy(
+                    sf2Dfit_name_arr[cal_idx][sector_i], tmp_str,
+                    strlen(tmp_str)
+            );
+            sf_polyfit[cal_idx][sector_i] = new TF1(
+                    sf2Dfit_name_arr[cal_idx][sector_i],
                     "[0]*([1]+[2]/x + [3]/(x*x))", SF_PMIN+SF_PSTEP,
-                    SF_PMAX-SF_PSTEP);
-            sf_polyfit[ci][si]->SetParameter(0 /* p0 */, 0.25);
-            sf_polyfit[ci][si]->SetParameter(1 /* p1 */, 1);
-            sf_polyfit[ci][si]->SetParameter(2 /* p2 */, 0);
-            sf_polyfit[ci][si]->SetParameter(3 /* p3 */, 0);
+                    SF_PMAX-SF_PSTEP
+            );
+            sf_polyfit[cal_idx][sector_i]->SetParameter(0 /* p0 */, 0.25);
+            sf_polyfit[cal_idx][sector_i]->SetParameter(1 /* p1 */, 1);
+            sf_polyfit[cal_idx][sector_i]->SetParameter(2 /* p2 */, 0);
+            sf_polyfit[cal_idx][sector_i]->SetParameter(3 /* p3 */, 0);
         }
     }
 
-    ci = -1;
+    cal_idx = -1;
     for (const char *cal : SFARR1D) {
-        ci++;
-        for (int si = 0; si < NSECTORS; ++si) {
-            int pi = -1;
+        cal_idx++;
+        for (int sector_i = 0; sector_i < NSECTORS; ++sector_i) {
+            int param_i = -1;
             for (double p = SF_PMIN; p < SF_PMAX; p += SF_PSTEP) {
-                pi++;
-                char *tmp_str = Form("%s%d (%5.2f < p < %5.2f)", cal, si+1, p,
-                        p+SF_PSTEP);
-                sf1D_name_arr[ci][si][pi] = (char *) malloc(strlen(tmp_str)+1);
-                strncpy(sf1D_name_arr[ci][si][pi], tmp_str, strlen(tmp_str));
-                insert_TH1F(&histos, R_PALL, sf1D_name_arr[ci][si][pi], S_EDIVP,
-                        200, 0, 0.4);
+                param_i++;
+                char *tmp_str = Form(
+                        "%s%d (%5.2f < p < %5.2f)", cal, sector_i + 1, p,
+                        p + SF_PSTEP
+                );
+                sf1D_name_arr[cal_idx][sector_i][param_i] =
+                        static_cast<char *>(malloc(strlen(tmp_str)+1));
+                strncpy(
+                        sf1D_name_arr[cal_idx][sector_i][param_i], tmp_str,
+                        strlen(tmp_str)
+                );
+                insert_TH1F(
+                        &histos, R_PALL,
+                        sf1D_name_arr[cal_idx][sector_i][param_i], S_EDIVP,
+                        200, 0, 0.4
+                );
             }
         }
     }
 
     // Create TTree and link bank_containers.
     TTree *t = f_in->Get<TTree>("Tree");
-    Particle     rp(t);
-    Track        rt(t);
-    Calorimeter  rc(t);
+    Particle particle(t);
+    Track track(t);
+    Calorimeter calorimeter(t);
 
     // Iterate through input file. Each TTree entry is one event.
-    int evn;
     int divcntr = 0;
     int evnsplitter = 0;
-    printf("Reading %lld events from %s.\n", nevn == -1 ? t->GetEntries() :
-            nevn, in_file);
-    for (evn = 0; (evn < t->GetEntries()) && (nevn == -1 || evn < nevn); ++evn)
-    {
-        update_progress_bar(nevn == -1 ? t->GetEntries() : nevn, evn,
-                &evnsplitter, &divcntr);
+    if (nevn == -1 || t->GetEntries() < nevn) nevn = t->GetEntries();
 
-        rp.get_entries(t, evn);
-        rt.get_entries(t, evn);
-        rc.get_entries(t, evn);
+    printf("Reading %lld events from %s.\n", nevn, in_file);
+    for (int evn = 0; evn < nevn; ++evn) {
+        update_progress_bar(nevn, evn, &evnsplitter, &divcntr);
 
-        // Filter events without the necessary banks.
-        if (rp.vz->size() == 0 || rt.pindex->size() == 0 ||
-                rc.pindex->size() == 0) continue;
+        // Get entries from bank containers.
+        particle.get_entries(t, evn);
+        track.get_entries(t, evn);
+        calorimeter.get_entries(t, evn);
 
-        for (UInt_t pos = 0; pos < rt.index->size(); ++pos) {
+        // Skip events without the necessary banks.
+        if (
+                particle.vz->size() == 0 ||
+                track.pindex->size() == 0 ||
+                calorimeter.pindex->size() == 0
+        ) {
+            continue;
+        }
+
+        for (long unsigned int pos = 0; pos < track.index->size(); ++pos) {
             // Get basic data from track and particle banks.
-            int pindex = rt.pindex->at(pos);
+            long unsigned int pindex =
+                    static_cast<long unsigned int>(track.pindex->at(pos));
 
             // Get particle momentum.
-            double px = rp.px->at(pindex);
-            double py = rp.py->at(pindex);
-            double pz = rp.pz->at(pindex);
-            double tot_P = calc_magnitude(px, py, pz);
+            double px = particle.px->at(pindex);
+            double py = particle.py->at(pindex);
+            double pz = particle.pz->at(pindex);
+            double total_p = calc_magnitude(px, py, pz);
 
             // Compute energy deposited in each calorimeter per sector.
             double sf_E[ncals][NSECTORS];
-            for (int ci = 0; ci < ncals; ++ci) {
-                for (int si = 0; si < NSECTORS; ++si) {
-                    sf_E[ci][si] = 0;
+            for (int cal_i = 0; cal_i < ncals; ++cal_i) {
+                for (int sector_i = 0; sector_i < NSECTORS; ++sector_i) {
+                    sf_E[cal_i][sector_i] = 0;
                 }
             }
 
-            for (UInt_t i = 0; i < rc.pindex->size(); ++i) {
-                if (rc.pindex->at(i) != pindex) continue;
+            for (
+                    unsigned long int entry_i = 0;
+                    entry_i < calorimeter.pindex->size();
+                    ++entry_i
+            ) {
+                if (
+                        static_cast<long unsigned int>(
+                                calorimeter.pindex->at(entry_i)
+                        ) != pindex
+                ) {
+                    continue;
+                }
 
                 // Get sector.
-                int si = rc.sector->at(i) - 1;
-                if      (si == -1)                   continue;
-                else if (si < -1 || si > NSECTORS-1) return 11;
+                int sector_i = calorimeter.sector->at(entry_i) - 1;
+                if (sector_i == -1) continue;
+                if (sector_i < -1 || sector_i > NSECTORS-1) return 11;
 
                 // Get detector.
-                switch(rc.layer->at(i)) {
+                switch(calorimeter.layer->at(entry_i)) {
                     case PCAL_LYR:
-                        sf_E[PCAL_IDX][si] += rc.energy->at(i);
+                        sf_E[PCAL_IDX][sector_i] +=
+                                calorimeter.energy->at(entry_i);
                         break;
                     case ECIN_LYR:
-                        sf_E[ECIN_IDX][si] += rc.energy->at(i);
+                        sf_E[ECIN_IDX][sector_i] +=
+                                calorimeter.energy->at(entry_i);
                         break;
                     case ECOU_LYR:
-                        sf_E[ECOU_IDX][si] += rc.energy->at(i);
+                        sf_E[ECOU_IDX][sector_i] +=
+                                calorimeter.energy->at(entry_i);
                         break;
                     default:
                         return 12;
                 }
             }
 
-            for (int ci = 0; ci < ncals-1; ++ci) {
-                for (int si = 0; si < NSECTORS; ++si) {
-                    sf_E[CALS_IDX][si] += sf_E[ci][si];
+            for (int cal_i = 0; cal_i < ncals-1; ++cal_i) {
+                for (int sector_i = 0; sector_i < NSECTORS; ++sector_i) {
+                    sf_E[CALS_IDX][sector_i] += sf_E[cal_i][sector_i];
                 }
             }
 
             // Get momentum bin.
-            if (tot_P < SF_PMIN || tot_P > SF_PMAX) continue;
-            int pi = -1;
+            if (total_p < SF_PMIN || total_p > SF_PMAX) continue;
+            int param_i = -1;
             for (double p_cnt = SF_PMIN; p_cnt <= SF_PMAX; p_cnt += SF_PSTEP) {
-                if (tot_P < p_cnt) break;
-                ++pi;
+                if (total_p < p_cnt) break;
+                ++param_i;
             }
 
             // Write to histograms.
-            for (int ci = 0; ci < ncals; ++ci) {
-                for (int si = 0; si < NSECTORS; ++si) {
-                    if (sf_E[ci][si] <= 0) continue;
-                    histos[sf2D_name_arr[ci][si]]->Fill(
-                            tot_P, sf_E[ci][si]/tot_P);
-                    histos[sf1D_name_arr[ci][si][pi]]->Fill(sf_E[ci][si]/tot_P);
+            for (int cal_i = 0; cal_i < ncals; ++cal_i) {
+                for (int sector_i = 0; sector_i < NSECTORS; ++sector_i) {
+                    if (sf_E[cal_i][sector_i] <= 0) continue;
+                    histos[sf2D_name_arr[cal_i][sector_i]]->Fill(
+                            total_p, sf_E[cal_i][sector_i]/total_p
+                    );
+                    histos[sf1D_name_arr[cal_i][sector_i][param_i]]->Fill(
+                            sf_E[cal_i][sector_i]/total_p
+                    );
                 }
             }
         }
     }
 
     // Fit histograms.
-    ci = -1;
+    cal_idx = -1;
     for (const char *cal : SFARR1D) {
-        ci++;
-        for (int si = 0; si < NSECTORS; ++si) {
-            int pi = -1;
-            int point_index = 0;
+        ++cal_idx;
+        for (int sector_i = 0; sector_i < NSECTORS; ++sector_i) {
+            int param_idx = -1;
+            int point_idx = 0;
             // Fit 1D plots for each momentum bin to fill dotgraphs.
             for (double p = SF_PMIN; p < SF_PMAX; p += SF_PSTEP) {
-                pi++;
+                ++param_idx;
 
                 // Get ref to histogram.
-                TH1 *EdivP = histos[sf1D_name_arr[ci][si][pi]];
+                TH1 *EdivP = histos[
+                        sf1D_name_arr[cal_idx][sector_i][param_idx]
+                ];
 
                 // Form fit string name.
-                char *tmp_str = Form("%s%d (%5.2f < p < %5.2f) fit", cal, si+1,
-                        p, p+SF_PSTEP);
+                char *tmp_str = Form(
+                        "%s%d (%5.2f < p < %5.2f) fit", cal, sector_i+1,
+                        p, p+SF_PSTEP
+                );
 
                 // Fit.
                 TF1 *sf_gaus = new TF1(tmp_str,
                         "[0]*TMath::Gaus(x,[1],[2]) + [3]*x*x + [4]*x + [5]",
-                        PLIMITSARR[ci][0], PLIMITSARR[ci][1]);
+                        PLIMITSARR[cal_idx][0], PLIMITSARR[cal_idx][1]);
                 sf_gaus->SetParameter(0 /* amp   */,
                         EdivP->GetBinContent(EdivP->GetMaximumBin()));
-                sf_gaus->SetParLimits(1, PLIMITSARR[ci][0], PLIMITSARR[ci][1]);
+                sf_gaus->SetParLimits(1,
+                        PLIMITSARR[cal_idx][0], PLIMITSARR[cal_idx][1]
+                );
                 sf_gaus->SetParameter(1 /* mean  */,
-                        (PLIMITSARR[ci][1] + PLIMITSARR[ci][0])/2);
+                        (PLIMITSARR[cal_idx][1] + PLIMITSARR[cal_idx][0])/2
+                );
                 sf_gaus->SetParLimits(2, 0., 0.1);
                 sf_gaus->SetParameter(2 /* sigma */, 0.05);
                 sf_gaus->SetParameter(3 /* p0 */,    0);
                 sf_gaus->SetParameter(4 /* p1 */,    0);
                 sf_gaus->SetParameter(5 /* p2 */,    0);
-                EdivP->Fit(sf_gaus, "QR", "",
-                        PLIMITSARR[ci][0], PLIMITSARR[ci][1]);
+                EdivP->Fit(
+                        sf_gaus, "QR", "",
+                        PLIMITSARR[cal_idx][0], PLIMITSARR[cal_idx][1]
+                );
 
                 // Extract mean and sigma from fit and add it to 2D plots.
                 double mean  = sf_gaus->GetParameter(1);
@@ -232,30 +283,43 @@ int run(char *in_file, char *work_dir, char *data_dir, int nevn, int run_no) {
 
                 // Only add points within PLIMITSARR borders and with an
                 // acceptable chi2.
-                if ((mean - 2*sigma > PLIMITSARR[ci][0] &&
-                        mean + 2*sigma < PLIMITSARR[ci][1]) &&
-                        (sf_gaus->GetChisquare() / sf_gaus->GetNDF() <
-                        SF_CHI2CONFORMITY)) {
-                        // Older root compatibility fix
-                        sf_dotgraph[ci][si]->SetPoint(point_index,
-                                p + SF_PSTEP/2, mean);
-                        point_index++;
+                if (
+                        (
+                                mean - 2*sigma > PLIMITSARR[cal_idx][0] &&
+                                mean + 2*sigma < PLIMITSARR[cal_idx][1]
+                        ) &&
+                        (
+                                sf_gaus->GetChisquare() / sf_gaus->GetNDF() <
+                                SF_CHI2CONFORMITY
+                        )
+                ) {
+                    sf_dotgraph[cal_idx][sector_i]->SetPoint(
+                            point_idx, p + SF_PSTEP/2, mean
+                    );
+                    point_idx++;
                 }
             }
 
             // Fit dotgraphs.
-            if (sf_dotgraph[ci][si]->GetN() > 0)
-                sf_dotgraph[ci][si]->Fit(sf_polyfit[ci][si], "QR", "",
-                                         SF_PMIN+SF_PSTEP, SF_PMAX-SF_PSTEP);
+            if (sf_dotgraph[cal_idx][sector_i]->GetN() > 0) {
+                sf_dotgraph[cal_idx][sector_i]->Fit(
+                        sf_polyfit[cal_idx][sector_i], "QR", "",
+                        SF_PMIN+SF_PSTEP, SF_PMAX-SF_PSTEP
+                );
+            }
 
             // Extract and save dotgraph fits parameters to make cuts from them.
-            for (int pi = 0; pi < sf_polyfit[ci][si]->GetNpar(); ++pi) {
-                // sf.
-                sf_fitresults[ci][si][pi][0] =
-                        sf_polyfit[ci][si]->GetParameter(pi);
-                // sfs.
-                sf_fitresults[ci][si][pi][1] =
-                        sf_polyfit[ci][si]->GetParError(pi);
+            for (
+                    int param_i = 0;
+                    param_i < sf_polyfit[cal_idx][sector_i]->GetNpar();
+                    ++param_i
+            ) {
+                // Sampling fraction (sf in CCDB).
+                sf_fitresults[cal_idx][sector_i][param_i][0] =
+                        sf_polyfit[cal_idx][sector_i]->GetParameter(param_i);
+                // Sampling fraction sigma (sfs in CCDB).
+                sf_fitresults[cal_idx][sector_i][param_i][1] =
+                        sf_polyfit[cal_idx][sector_i]->GetParError(param_i);
             }
         }
     }
@@ -263,35 +327,44 @@ int run(char *in_file, char *work_dir, char *data_dir, int nevn, int run_no) {
     // Write to output file.
     TString dir;
     TCanvas *gcvs = new TCanvas();
-    for (ci = 0; ci < ncals; ++ci) {
-        dir = Form("%s", CALNAME[ci]);
+    for (int cal_i = 0; cal_i < ncals; ++cal_i) {
+        dir = Form("%s", CALNAME[cal_i]);
         f_out->mkdir(dir);
         f_out->cd(dir);
-        for (int si = 0; si < NSECTORS; ++si) {
-            dir = Form("%s/sector %d", CALNAME[ci], si+1);
+        for (int sector_i = 0; sector_i < NSECTORS; ++sector_i) {
+            dir = Form("%s/sector %d", CALNAME[cal_i], sector_i+1);
             f_out->mkdir(dir);
             f_out->cd(dir);
 
-            histos[sf2D_name_arr[ci][si]]->Draw("colz");
-            sf_dotgraph[ci][si]->Draw("Psame");
-            sf_polyfit[ci][si]->Draw("same");
-            gcvs->Write(sf2D_name_arr[ci][si]);
-            free(sf2D_name_arr[ci][si]);
-            for (int pi = 0; pi < ((int) ((SF_PMAX - SF_PMIN)/SF_PSTEP)); ++pi)
-            {
-                histos[sf1D_name_arr[ci][si][pi]]->Write();
-                free(sf1D_name_arr[ci][si][pi]);
+            histos[sf2D_name_arr[cal_i][sector_i]]->Draw("colz");
+            sf_dotgraph[cal_i][sector_i]->Draw("Psame");
+            sf_polyfit[cal_i][sector_i]->Draw("same");
+            gcvs->Write(sf2D_name_arr[cal_i][sector_i]);
+
+            // Free arrays after writing.
+            free(sf2D_name_arr[cal_i][sector_i]);
+            for (
+                    int param_i = 0;
+                    param_i < static_cast<int>(((SF_PMAX-SF_PMIN) / SF_PSTEP));
+                    ++param_i
+            ) {
+                histos[sf1D_name_arr[cal_i][sector_i][param_i]]->Write();
+                free(sf1D_name_arr[cal_i][sector_i][param_i]);
             }
-            free(sf2Dfit_name_arr[ci][si]);
+            free(sf2Dfit_name_arr[cal_i][sector_i]);
         }
     }
 
     // Write results to data file.
-    for (int ci = 3; ci < 4; ++ci) { // NOTE. Only writing ECAL sf results.
-        for (int si = 0; si < NSECTORS; ++si) {
-            for (int ppi = 0; ppi < 2; ++ppi) { // sf and sfs.
-                for (int pi = 0; pi < SF_NPARAMS; ++pi) {
-                    fprintf(t_out, "%011.8f ", sf_fitresults[ci][si][pi][0]);
+    // NOTE. Only writing ECAL sf results.
+    for (int cal_i = 3; cal_i < 4; ++cal_i) {
+        for (int sector_i = 0; sector_i < NSECTORS; ++sector_i) {
+            for (int sf_i = 0; sf_i < 2; ++sf_i) { // sf and sfs.
+                for (int param_i = 0; param_i < SF_NPARAMS; ++param_i) {
+                    fprintf(
+                            t_out, "%011.8f ",
+                            sf_fitresults[cal_i][sector_i][param_i][0]
+                    );
                 }
             }
             fprintf(t_out, "\n");
@@ -306,7 +379,7 @@ int run(char *in_file, char *work_dir, char *data_dir, int nevn, int run_no) {
 }
 
 /** Print usage and exit. */
-int usage() {
+static int usage() {
     fprintf(stderr,
             "\n\nUsage: extract_sf [-hn:w:d:] infile\n"
             " * -h         : show this message and exit.\n"
@@ -323,7 +396,7 @@ int usage() {
 }
 
 /** Print error number and provide a short description of the error. */
-int handle_err(int errcode) {
+static int handle_err(int errcode) {
     if (errcode > 1) fprintf(stderr, "Error %02d. ", errcode);
     switch (errcode) {
         case 0:
@@ -375,7 +448,7 @@ int handle_err(int errcode) {
  * Handle arguments for make_ntuples using optarg. Error codes used are
  *     explained in the handle_err() function.
  */
-int handle_args(int argc, char **argv, char **in_file, char **work_dir,
+static int handle_args(int argc, char **argv, char **in_file, char **work_dir,
         char **data_dir, int *run_no, int *nevn)
 {
     // Handle optional arguments.
@@ -389,14 +462,15 @@ int handle_args(int argc, char **argv, char **in_file, char **work_dir,
                 if (*nevn <= 0) return 2;
                 break;
             case 'w':
-                *work_dir = (char *) malloc(strlen(optarg) + 1);
+                *work_dir = static_cast<char *>(malloc(strlen(optarg) + 1));
                 strcpy(*work_dir, optarg);
+                break;
             case 'd':
-                *data_dir = (char *) malloc(strlen(optarg) + 1);
+                *data_dir = static_cast<char *>(malloc(strlen(optarg) + 1));
                 strcpy(*data_dir, optarg);
                 break;
             case 1:
-                *in_file = (char *) malloc(strlen(optarg) + 1);
+                *in_file = static_cast<char *>(malloc(strlen(optarg) + 1));
                 strcpy(*in_file, optarg);
                 break;
             default:
@@ -408,13 +482,13 @@ int handle_args(int argc, char **argv, char **in_file, char **work_dir,
     char tmpfile[PATH_MAX];
     sprintf(tmpfile, "%s", argv[0]);
     if (*work_dir == NULL) {
-        *work_dir = (char *) malloc(PATH_MAX);
+        *work_dir = static_cast<char *>(malloc(PATH_MAX));
         sprintf(*work_dir, "%s/../root_io", dirname(argv[0]));
     }
 
     // Define datadir if undefined.
     if (*data_dir == NULL) {
-        *data_dir = (char *) malloc(PATH_MAX);
+        *data_dir = static_cast<char *>(malloc(PATH_MAX));
         sprintf(*data_dir, "%s/../data", dirname(tmpfile));
     }
 
@@ -436,12 +510,14 @@ int main(int argc, char **argv) {
     int nevn       = -1;
     int run_no     = -1;
 
-    int errcode = handle_args(argc, argv, &in_file, &work_dir, &data_dir,
-            &run_no, &nevn);
+    int errcode = handle_args(
+            argc, argv, &in_file, &work_dir, &data_dir, &run_no, &nevn
+    );
 
     // Run.
-    if (errcode == 0)
+    if (errcode == 0) {
         errcode = run(in_file, work_dir, data_dir, nevn, run_no);
+    }
 
     // Free up memory.
     if (in_file  != NULL) free(in_file);
