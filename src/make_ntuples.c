@@ -1,5 +1,5 @@
 // CLAS12 RG-E Analyser.
-// Copyright (C) 2022 Bruno Benkel
+// Copyright (C) 2022-2023 Bruno Benkel
 //
 // This program is free software: you can redistribute it and/or modify it under
 // the terms of the GNU Lesser General Public License as published by the Free
@@ -36,14 +36,17 @@
  * @return:             the most accurate TOF available in the scintillator and
  *                      calorimeter banks.
  */
-double get_tof(Scintillator scintillator, Calorimeter calorimeter, int pindex)
+static double get_tof(Scintillator scintillator, Calorimeter calorimeter,
+        unsigned int pindex)
 {
     int    most_precise_lyr = 0;
     double tof              = INFINITY;
-    for (UInt_t i = 0; i < scintillator.pindex->size(); ++i) {
+    for (unsigned int i = 0; i < scintillator.pindex->size(); ++i) {
         // Filter out incorrect pindex and hits not from FTOF.
         if (
-                scintillator.pindex->at(i) != pindex ||
+                static_cast<unsigned int>(
+                        scintillator.pindex->at(i)
+                ) != pindex ||
                 scintillator.detector->at(i) != FTOF_ID
         ) {
             continue;
@@ -74,9 +77,11 @@ double get_tof(Scintillator scintillator, Calorimeter calorimeter, int pindex)
     if (most_precise_lyr != 0) return tof;
 
     // If no hits from FTOF were found, try to find TOF from calorimeters.
-    for (UInt_t i = 0; i < calorimeter.pindex->size(); ++i) {
+    for (unsigned int i = 0; i < calorimeter.pindex->size(); ++i) {
         // Filter out incorrect pindex.
-        if (calorimeter.pindex->at(i) != pindex) continue;
+        if (static_cast<unsigned int>(calorimeter.pindex->at(i)) != pindex) {
+            continue;
+        }
 
         // Check PCAL (Calorimeter with the most precise TOF).
         if (calorimeter.layer->at(i) == PCAL_LYR) {
@@ -116,16 +121,18 @@ double get_tof(Scintillator scintillator, Calorimeter calorimeter, int pindex)
  *                     Calorimeter instance, suggesting corruption or a change
  *                     in the REC::Calorimeter bank.
  */
-int get_deposited_energy(Calorimeter calorimeter, int pindex,
+static int get_deposited_energy(Calorimeter calorimeter, unsigned int pindex,
         double *energy_PCAL, double *energy_ECIN, double *energy_ECOU)
 {
     *energy_PCAL = 0;
     *energy_ECIN = 0;
     *energy_ECOU = 0;
 
-    for (UInt_t i = 0; i < calorimeter.pindex->size(); ++i) {
-        if (calorimeter.pindex->at(i) != pindex) continue;
-        int lyr = (int) calorimeter.layer->at(i);
+    for (unsigned int i = 0; i < calorimeter.pindex->size(); ++i) {
+        if (static_cast<unsigned int>(calorimeter.pindex->at(i)) != pindex) {
+            continue;
+        }
+        int lyr = static_cast<int>(calorimeter.layer->at(i));
 
         if      (lyr == PCAL_LYR) *energy_PCAL += calorimeter.energy->at(i);
         else if (lyr == ECIN_LYR) *energy_ECIN += calorimeter.energy->at(i);
@@ -150,14 +157,16 @@ int get_deposited_energy(Calorimeter calorimeter, int pindex,
  *                   Cherenkov instance, suggesting data corruption or a change
  *                   in the REC::Cherenkov bank.
  */
-int count_photoelectrons(Cherenkov cherenkov, int pindex, int *nphe_HTCC,
-        int *nphe_LTCC)
+static int count_photoelectrons(Cherenkov cherenkov, unsigned int pindex,
+        int *nphe_HTCC, int *nphe_LTCC)
 {
     *nphe_HTCC = 0;
     *nphe_LTCC = 0;
 
-    for (UInt_t i = 0; i < cherenkov.pindex->size(); ++i) {
-        if (cherenkov.pindex->at(i) != pindex) continue;
+    for (unsigned int i = 0; i < cherenkov.pindex->size(); ++i) {
+        if (static_cast<unsigned int>(cherenkov.pindex->at(i)) != pindex) {
+            continue;
+        }
 
         int detector = cherenkov.detector->at(i);
         if      (detector == HTCC_ID) *nphe_HTCC += cherenkov.nphe->at(i);
@@ -169,7 +178,7 @@ int count_photoelectrons(Cherenkov cherenkov, int pindex, int *nphe_HTCC,
 }
 
 /** run() function of the program. Check usage() for details. */
-int run(char *filename_in, char *work_dir, char *data_dir, bool debug,
+static int run(char *filename_in, char *work_dir, char *data_dir, bool debug,
         bool use_fmt, int n_events, int run_no, double energy_beam)
 {
     // Get sampling fraction.
@@ -248,12 +257,14 @@ int run(char *filename_in, char *work_dir, char *data_dir, bool debug,
 
         // Check existence of trigger electron
         particle part_trigger;
-        bool    trigger_exist  = false;
-        int     trigger_pos    = -1;
-        int     trigger_pindex = -1;
-        double  trigger_tof    = -1.;
-        for (UInt_t pos = 0; pos < bank_trk_dc.index->size(); ++pos) {
-            int pindex = bank_trk_dc.pindex->at(pos);
+        bool trigger_exist = false;
+        unsigned int trigger_pos    = INT_MAX;
+        unsigned int trigger_pindex = INT_MAX;
+        double trigger_tof = -1.;
+        for (unsigned int pos = 0; pos < bank_trk_dc.index->size(); ++pos) {
+            unsigned int pindex = static_cast<unsigned int>(
+                    bank_trk_dc.pindex->at(pos)
+            );
 
             // Get reconstructed particle from DC and from FMT.
             if (!use_fmt) {
@@ -324,13 +335,14 @@ int run(char *filename_in, char *work_dir, char *data_dir, bool debug,
         ++cnt_trigger;
 
         // Processing particles.
-        for (UInt_t pos = 0; pos < bank_trk_dc.index->size(); ++pos) {
+        for (unsigned int pos = 0; pos < bank_trk_dc.index->size(); ++pos) {
             // Currently pindex is always equal to pos, but this is not a given
             //     in the future of the reconstruction software development.
-            int pindex = bank_trk_dc.pindex->at(pos);
+            unsigned int pindex =
+                    static_cast<unsigned int>(bank_trk_dc.pindex->at(pos));
 
             // Avoid double-counting the trigger electron.
-            if (trigger_pindex == pindex && (UInt_t) trigger_pos == pos) {
+            if (trigger_pindex == pindex && trigger_pos == pos) {
                 continue;
             }
 
@@ -417,7 +429,7 @@ int run(char *filename_in, char *work_dir, char *data_dir, bool debug,
 }
 
 /** Print usage and exit. */
-int usage() {
+static int usage() {
     fprintf(stderr,
             "\n\nUsage: make_ntuples [-hDfn:w:d:] infile\n"
             " * -h         : show this message and exit.\n"
@@ -442,7 +454,7 @@ int usage() {
 }
 
 /** Print error number and provide a short description of the error. */
-int handle_err(int errcode) {
+static int handle_err(int errcode) {
     if (errcode > 1) fprintf(stderr, "Error %02d. ", errcode);
     switch (errcode) {
         case 0:
@@ -506,9 +518,9 @@ int handle_err(int errcode) {
  * Handle arguments for make_ntuples using optarg. Error codes used are
  *     explained in the handle_err() function.
  */
-int handle_args(int argc, char **argv, char **filename_in, char **work_dir,
-        char **data_dir, bool *debug, bool *use_fmt, int *n_events, int *run_no,
-        double *energy_beam)
+static int handle_args(int argc, char **argv, char **filename_in,
+        char **work_dir, char **data_dir, bool *debug, bool *use_fmt,
+        int *n_events, int *run_no, double *energy_beam)
 {
     // Handle arguments.
     int opt;
@@ -527,15 +539,15 @@ int handle_args(int argc, char **argv, char **filename_in, char **work_dir,
                 if (*n_events <= 0) return 2; // Check if n_events is valid.
                 break;
             case 'w':
-                *work_dir = (char *) malloc(strlen(optarg) + 1);
+                *work_dir = static_cast<char *>(malloc(strlen(optarg) + 1));
                 strcpy(*work_dir, optarg);
                 break;
             case 'd':
-                *data_dir = (char *) malloc(strlen(optarg) + 1);
+                *data_dir = static_cast<char *>(malloc(strlen(optarg) + 1));
                 strcpy(*data_dir, optarg);
                 break;
             case 1:
-                *filename_in = (char *) malloc(strlen(optarg) + 1);
+                *filename_in = static_cast<char *>(malloc(strlen(optarg) + 1));
                 strcpy(*filename_in, optarg);
                 break;
             default:
@@ -548,13 +560,13 @@ int handle_args(int argc, char **argv, char **filename_in, char **work_dir,
     char tmpfile[PATH_MAX];
     sprintf(tmpfile, "%s", argv[0]);
     if (*work_dir == NULL) {
-        *work_dir = (char *) malloc(PATH_MAX);
+        *work_dir = static_cast<char *>(malloc(PATH_MAX));
         sprintf(*work_dir, "%s/../root_io", dirname(argv[0]));
     }
 
     // Define datadir if undefined.
     if (*data_dir == NULL) {
-        *data_dir = (char *) malloc(PATH_MAX);
+        *data_dir = static_cast<char *>(malloc(PATH_MAX));
         sprintf(*data_dir, "%s/../data", dirname(tmpfile));
     }
 
