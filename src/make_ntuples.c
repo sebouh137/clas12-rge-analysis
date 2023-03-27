@@ -179,7 +179,7 @@ static int count_photoelectrons(Cherenkov cherenkov, unsigned int pindex,
 
 /** run() function of the program. Check usage() for details. */
 static int run(char *filename_in, char *work_dir, char *data_dir, bool debug,
-        bool use_fmt, int n_events, int run_no, double energy_beam)
+        bool use_fmt, long int n_events, int run_no, double energy_beam)
 {
     // Get sampling fraction.
     char sampling_fraction_file[PATH_MAX];
@@ -225,7 +225,7 @@ static int run(char *filename_in, char *work_dir, char *data_dir, bool debug,
     if (use_fmt) bank_trk_fmt.link_tree(tree_in);
 
     // Iterate through input file. Each TTree entry is one event.
-    printf("Processing %d events from %s.\n", n_events, filename_in);
+    printf("Processing %ld events from %s.\n", n_events, filename_in);
 
     // Counters for fancy progress bar.
     int divcntr     = 0;
@@ -236,7 +236,7 @@ static int run(char *filename_in, char *work_dir, char *data_dir, bool debug,
     int cnt_part    = 0;
 
     // Loop through events in input file.
-    for (int event = 0; event < n_events; ++event) {
+    for (long int event = 0; event < n_events; ++event) {
         // Print fancy progress bar.
         if (!debug) {
             update_progress_bar(n_events, event, &evnsplitter, &divcntr);
@@ -506,6 +506,14 @@ static int handle_err(int errcode) {
             fprintf(stderr, "Invalid Cherenkov Counter ID. Check bank "
                             "integrity.");
             break;
+        case 15:
+            fprintf(stderr, "Number of entries is invalid. Please input a valid"
+                            " number after -n.");
+            break;
+        case 16:
+            fprintf(stderr, "Number of entries is too large. Please input a "
+                            "number smaller than %ld.", LONG_MAX);
+            break;
         default:
             fprintf(stderr, "Error code not implemented!\n");
             return 1;
@@ -520,7 +528,7 @@ static int handle_err(int errcode) {
  */
 static int handle_args(int argc, char **argv, char **filename_in,
         char **work_dir, char **data_dir, bool *debug, bool *use_fmt,
-        int *n_events, int *run_no, double *energy_beam)
+        long int *n_events, int *run_no, double *energy_beam)
 {
     // Handle arguments.
     int opt;
@@ -535,8 +543,12 @@ static int handle_args(int argc, char **argv, char **filename_in,
                 *use_fmt = true;
                 break;
             case 'n':
-                *n_events = atoi(optarg);
-                if (*n_events <= 0) return 2; // Check if n_events is valid.
+                char *eptr;
+                errno = 0;
+                *n_events = strtol(optarg, &eptr, 10);
+                if (errno == EINVAL) return 15; // Value not supported.
+                if (errno == ERANGE) return 16; // Value outside of range.
+                if (*n_events <= 0)  return  2; // Value is negative or zero.
                 break;
             case 'w':
                 *work_dir = static_cast<char *>(malloc(strlen(optarg) + 1));
@@ -587,7 +599,7 @@ int main(int argc, char **argv) {
     char *data_dir     = NULL;
     bool debug         = false;
     bool use_fmt       = false;
-    int n_events       = -1;
+    long int n_events  = -1;
     int run_no         = -1;
     double energy_beam = -1;
 

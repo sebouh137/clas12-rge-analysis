@@ -24,7 +24,7 @@
 #include "../lib/utilities.h"
 
 /** run() function of the program. Check usage() for details. */
-static int run(char *in_file, char *work_dir, char *data_dir, int nevn,
+static int run(char *in_file, char *work_dir, char *data_dir, long int nevn,
         int run_no) {
     gStyle->SetOptFit();
 
@@ -130,8 +130,8 @@ static int run(char *in_file, char *work_dir, char *data_dir, int nevn,
     int evnsplitter = 0;
     if (nevn == -1 || t->GetEntries() < nevn) nevn = t->GetEntries();
 
-    printf("Reading %d events from %s.\n", nevn, in_file);
-    for (int evn = 0; evn < nevn; ++evn) {
+    printf("Reading %ld events from %s.\n", nevn, in_file);
+    for (long int evn = 0; evn < nevn; ++evn) {
         update_progress_bar(nevn, evn, &evnsplitter, &divcntr);
 
         // Get entries from bank containers.
@@ -436,6 +436,15 @@ static int handle_err(int errcode) {
         case 12:
             fprintf(stderr, "Invalid EC layer. Check bank integrity.");
             break;
+        case 13:
+            fprintf(stderr, "Number of events is invalid. Please input a valid"
+                            " number after -n.");
+            break;
+        case 14:
+            fprintf(stderr, "Number of events is too large. Please input a "
+                            "number smaller than %ld.", LONG_MAX);
+            break;
+
         default:
             fprintf(stderr, "Error code not implemented!\n");
             return 1;
@@ -449,7 +458,7 @@ static int handle_err(int errcode) {
  *     explained in the handle_err() function.
  */
 static int handle_args(int argc, char **argv, char **in_file, char **work_dir,
-        char **data_dir, int *run_no, int *nevn)
+        char **data_dir, int *run_no, long int *nevn)
 {
     // Handle optional arguments.
     int opt;
@@ -458,8 +467,12 @@ static int handle_args(int argc, char **argv, char **in_file, char **work_dir,
             case 'h':
                 return 1;
             case 'n':
-                *nevn = atoi(optarg);
-                if (*nevn <= 0) return 2;
+                char *eptr;
+                errno = 0;
+                *nevn = strtol(optarg, &eptr, 10);
+                if (errno == EINVAL) return 13; // Value not supported.
+                if (errno == ERANGE) return 14; // Value outside of range.
+                if (*nevn <= 0)      return  2; // Value is negative or zero.
                 break;
             case 'w':
                 *work_dir = static_cast<char *>(malloc(strlen(optarg) + 1));
@@ -507,7 +520,7 @@ int main(int argc, char **argv) {
     char *in_file  = NULL;
     char *work_dir = NULL;
     char *data_dir = NULL;
-    int nevn       = -1;
+    long int nevn  = -1;
     int run_no     = -1;
 
     int errcode = handle_args(

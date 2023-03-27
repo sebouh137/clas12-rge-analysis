@@ -266,7 +266,7 @@ static long int find_idx(long unsigned int dim_bins,
 
 /** run() function of the program. Check usage() for details. */
 static int run(char *in_filename, char *out_filename, char *acc_filename,
-        char *work_dir, int run_no, int nentries, bool apply_acc_corr)
+        char *work_dir, int run_no, long int nentries, bool apply_acc_corr)
 {
     // Open input file.
     TFile *f_in  = TFile::Open(in_filename, "READ");
@@ -480,7 +480,7 @@ static int run(char *in_filename, char *out_filename, char *acc_filename,
     // Apply SIDIS cuts, checking which event numbers should be skipped.
     long unsigned int nevents = 0;
     // Count number of events.
-    for (int entry = 0; entry < nentries; ++entry) {
+    for (long int entry = 0; entry < nentries; ++entry) {
         update_progress_bar(nentries, entry, &evnsplitter, &divcntr);
         ntuple->GetEntry(entry);
         if (vars[A_EVENTNO] > nevents) {
@@ -507,7 +507,7 @@ static int run(char *in_filename, char *out_filename, char *acc_filename,
     //     one event. Then, we need to check beforehand which events are valid
     //     so that we can skip those when plotting. It is only necessary to do
     //     this if we're applying DIS cuts.
-    for (int entry = 0; entry < nentries && dis_cuts; ++entry) {
+    for (long int entry = 0; entry < nentries && dis_cuts; ++entry) {
         update_progress_bar(nentries, entry, &evnsplitter, &divcntr);
 
         ntuple->GetEntry(entry);
@@ -579,7 +579,7 @@ static int run(char *in_filename, char *out_filename, char *acc_filename,
 
     // Run through events.
     printf("Processing plots...\n");
-    for (int entry = 0; entry < nentries; ++entry) {
+    for (long int entry = 0; entry < nentries; ++entry) {
         update_progress_bar(nentries, entry, &evnsplitter, &divcntr);
         ntuple->GetEntry(entry);
 
@@ -881,6 +881,14 @@ static int handle_err(int errcode) {
             fprintf(stderr, "Erroneous variables in ACC_VX. Check constants "
                             "integrity.");
             break;
+        case 15:
+            fprintf(stderr, "Number of entries is invalid. Please input a valid"
+                            " number after -n.");
+            break;
+        case 16:
+            fprintf(stderr, "Number of entries is too large. Please input a "
+                            "number smaller than %ld.", LONG_MAX);
+            break;
         default:
             fprintf(stderr, "Error code not implemented!\n");
             return 1;
@@ -895,7 +903,7 @@ static int handle_err(int errcode) {
  */
 static int handle_args(int argc, char **argv, char **in_filename,
         char **out_filename, char **acc_filename, char **work_dir, int *run_no,
-        int *nentries, bool *apply_acc_corr)
+        long int *nentries, bool *apply_acc_corr)
 {
     // Handle arguments.
     int opt;
@@ -905,8 +913,12 @@ static int handle_args(int argc, char **argv, char **in_filename,
             case 'h':
                 return 1;
             case 'n':
-                *nentries = atoi(optarg);
-                if (*nentries <= 0) return 10; // Check if nentries is valid.
+                char *eptr;
+                errno = 0;
+                *nentries = strtol(optarg, &eptr, 10);
+                if (errno == EINVAL) return 15; // Value not supported.
+                if (errno == ERANGE) return 16; // Value outside of range.
+                if (*nentries <= 0)  return 10; // Value is negative or zero.
                 break;
             case 'o':
                 tmp_out_filename =
@@ -971,7 +983,7 @@ int main(int argc, char **argv) {
     char *acc_filename  = NULL;
     char *work_dir      = NULL;
     int run_no          = -1;
-    int nentries        = -1;
+    long int nentries   = -1;
     bool apply_acc_corr = true;
 
     int errcode = handle_args(

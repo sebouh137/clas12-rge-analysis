@@ -16,6 +16,8 @@
 #ifndef IO_HANDLER
 #define IO_HANDLER
 
+#include <cerrno>
+#include <stdlib.h>
 #include "file_handler.h"
 
 int get_run_no(char *filename, int *run_no);

@@ -169,6 +169,14 @@ static int handle_err(int errcode) {
         case 8:
             fprintf(stderr, "Couldn't find run number in input filename.");
             break;
+        case 9:
+            fprintf(stderr, "Number of entries is invalid. Please input a valid"
+                            " number after -n.");
+            break;
+        case 10:
+            fprintf(stderr, "Number of entries is too large. Please input a "
+                            "number smaller than %ld.", LONG_MAX);
+            break;
         default:
             fprintf(stderr, "Error code not implemented!\n");
             return 1;
@@ -193,8 +201,12 @@ static int handle_args(int argc, char **argv, char **in_filename,
                 *use_fmt = true;
                 break;
             case 'n':
-                *event_max = atoi(optarg);
-                if (*event_max <= 0) return 2; // Check if event_max is valid.
+                char *eptr;
+                errno = 0;
+                *event_max = strtol(optarg, &eptr, 10);
+                if (errno == EINVAL) return  9; // Value not supported.
+                if (errno == ERANGE) return 10; // Value outside of range.
+                if (*event_max <= 0) return  2; // Value is negative or zero.
                 break;
             case 'w':
                 *work_dir = static_cast<char *>(malloc(strlen(optarg) + 1));

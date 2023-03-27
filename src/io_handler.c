@@ -15,28 +15,34 @@
 
 #include "../lib/io_handler.h"
 
-// TODO. Change run_no to unsigned int and all instances of atoi to strto* funs.
-
 /**
  * Get run number from a filename, assuming the filename is in format
- *     <text><run_no>.<extension>. If the filename is badly formatted or if atoi
- *     fails, the function returns 0.
+ *     <text><run_no>.<extension>. Write run number to *run_no, and return an
+ *     error code.
  *
  * @param filename: filename to be processed.
  * @param run_no:   pointer to the int where the run number is written.
- * @return          an error code:
+ * @return          error code:
  *                    * 0: everything went fine.
  *                    * 1: couldn't find dot position in filename.
- *                    * 2: atoi failed -- couldn't find run number.
+ *                    * 2: strtoul failed -- couldn't find run number.
  */
 int get_run_no(char *filename, int *run_no) {
     char run_no_str[7];
+
+    // Find position of dot in string.
     char *dot_pos = strrchr(filename, '.');
     if (!dot_pos) return 1; // Couldn't find dot.
+
+    // Copy final 6 chars from string -- should be the run number!
     strncpy(run_no_str, dot_pos - 6, 6);
     run_no_str[6] = '\0';
-    *run_no = atoi(run_no_str); // If atoi fails, it returns 0.
-    if (*run_no == 0) return 2;
+
+    // Run strtoul, giving an error upon failure.
+    char *eptr;
+    errno = 0;
+    *run_no = strtoul(optarg, &eptr, 10);
+    if (errno == EINVAL || errno == ERANGE) return 2; // Value not supported.
 
     return 0;
 }
@@ -98,7 +104,7 @@ int check_root_filename(char *filename) {
  *                       * 1: filename extension isn't root.
  *                       * 2: no file with filename was found.
  *                       * 3: couldn't find dot position in filename.
- *                       * 4: atoi failed -- couldn't find run number.
+ *                       * 4: strtoul failed -- couldn't find run number.
  *                       * 5: beam energy for run number is unavailable.
  */
 int handle_root_filename(char *filename, int *run_no, double *beam_energy) {
@@ -145,7 +151,7 @@ int check_hipo_filename(char *filename) {
  *                    * 1: filename extension isn't hipo.
  *                    * 2: no file with filename was found.
  *                    * 3: couldn't find dot position in filename.
- *                    * 4: atoi failed -- couldn't find run number.
+ *                    * 4: strtoul failed -- couldn't find run number.
  */
 int handle_hipo_filename(char *filename, int *run_no) {
     int check = check_hipo_filename(filename);
