@@ -15,6 +15,8 @@
 
 #include "../lib/io_handler.h"
 
+// TODO. Separate this file into io_handler, file_handler, and progress_bar.
+
 /**
  * Get run number from a filename, assuming the filename is in format
  *     <text><run_no>.<extension>. Write run number to *run_no, and return an
@@ -81,13 +83,22 @@ int get_beam_energy(int run_no, double *beam_energy) {
  * Check if a root filename is valid.
  *
  * @param filename: filename to be processed.
- * @return          an error code:
- *                    * 1: filename extension isn't root.
- *                    * 2: no file with filename was found.
+ * @return          0 if successful, 1 otherwise.
  */
 int check_root_filename(char *filename) {
-    if (!strstr(filename, ".root")) return 1;
-    if (access(filename, F_OK))     return 2;
+    // Check that filename extension is correct.
+    if (!strstr(filename, ".root")) {
+        rge_errno = ERR_IOHANDLER_INVALIDROOTFILE;
+        return 1;
+    }
+
+    // Check if file exists.
+    if (access(filename, F_OK)) {
+        rge_errno = ERR_IOHANDLER_NOINPUTFILE;
+        return 1;
+    }
+
+    // All good.
     return 0;
 }
 

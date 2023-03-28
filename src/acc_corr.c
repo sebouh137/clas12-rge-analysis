@@ -17,17 +17,9 @@
 #include <limits.h>
 #include <TFile.h>
 #include <TNtuple.h>
+#include "../lib/err_handler.h"
 #include "../lib/io_handler.h"
 #include "../lib/utilities.h"
-
-/**
- * Return position of value v inside a binning array b of size s. If v is not
- *     inside b, return -1.
- */
-static int find_pos(double v, double *b, int size) {
-    for (int i = 0; i < size; ++i) if (b[i] < v && v < b[i+1]) return i;
-    return -1;
-}
 
 /**
  * Count number of events in a tree for each bin, for a given pid. The number of
@@ -44,9 +36,10 @@ static int find_pos(double v, double *b, int size) {
  *                simulated data.
  * @return:       success code (0).
  */
-static int count_entries(FILE *file, TTree *tree, int pid,
-        long unsigned int *nbins, double **edges, bool in_deg, bool simul)
-{
+static int count_entries(
+        FILE *file, TTree *tree, int pid, long unsigned int *nbins,
+        double **edges, bool in_deg, bool simul
+) {
     // Store total number of bins for simplicity.
     long unsigned int tnbins = 1;
     for (int i = 0; i < 5; ++i) tnbins *= nbins[i];
@@ -91,7 +84,12 @@ static int count_entries(FILE *file, TTree *tree, int pid,
         // if (s_y      > YBCUT) continue; // TODO. Yb < 0.85.
 
         // Find position of event.
-        if (in_deg) s_bin[4] = to_rad(s_bin[4]);
+        if (in_deg) {
+            double tmp; // s_bin is Float_t, so we need a conversion step.
+            to_rad(s_bin[4], &tmp);
+            s_bin[4] = tmp;
+            if (rge_errno) return 1;
+        }
         int idx[5];
         bool kill = false; // If kill is true, var falls outside of bin range.
         for (int bi = 0; bi < 5 && !kill; ++bi) {
@@ -116,38 +114,54 @@ static int count_entries(FILE *file, TTree *tree, int pid,
 }
 
 /** run() function of the program. Check usage() for details. */
-static int run(char *gen_file, char *sim_file, char *data_dir,
-        long unsigned int *nedges, double **edges, bool use_fmt, bool in_deg)
-{
+static int run(
+        char *thrown_filename, char *simul_filename, char *data_dir,
+        long unsigned int *nedges, double **edges, bool in_deg
+) {
     // Open input files and load TTrees.
     printf("\nOpening generated events file...\n");
-    TFile *t_in = TFile::Open(gen_file, "READ");
-    if (!t_in || t_in->IsZombie()) return 10;
-    TNtuple *thrown = t_in->Get<TNtuple>("ntuple_thrown");
-    if (thrown == NULL) return 11;
+    TFile *thrown_file = TFile::Open(thrown_filename, "READ");
+    if (!thrown_file || thrown_file->IsZombie()) {
+        rge_errno = ERR_ACCCORR_WRONGGENFILE;
+        return 1;
+    }
+    TNtuple *thrown = thrown_file->Get<TNtuple>("ntuple_thrown");
+    if (thrown == NULL) {
+        rge_errno = ERR_ACCCORR_BADGENFILE;
+        return 1;
+    }
 
     printf("Opening simulated events file...\n");
-    TFile *s_in = TFile::Open(sim_file, "READ");
-    if (!s_in || s_in->IsZombie()) return 12;
-    TTree *simul = use_fmt ? s_in->Get<TTree>("fmt") : s_in->Get<TTree>("dc");
-    if (simul == NULL) return 13;
+    TFile *simul_file = TFile::Open(simul_filename, "READ");
+    if (!simul_file || simul_file->IsZombie()) {
+        rge_errno = ERR_ACCCORR_WRONGSIMFILE;
+        return 1;
+    }
+    TTree *simul = simul_file->Get<TTree>(TREENAME);
+    if (simul == NULL) {
+        rge_errno = ERR_ACCCORR_BADSIMFILE;
+        return 1;
+    }
 
     // Create output file.
-    char out_file[PATH_MAX];
-    sprintf(out_file, "%s/acc_corr.txt", data_dir);
-    if (!access(out_file, F_OK)) return 14;
-    FILE *t_out = fopen(out_file, "w");
+    char out_filename[PATH_MAX];
+    sprintf(out_filename, "%s/acc_corr.txt", data_dir);
+    if (!access(out_filename, F_OK)) {
+        rge_errno = ERR_ACCCORR_OUTFILEEXISTS;
+        return 1;
+    }
+    FILE *out_file = fopen(out_filename, "w");
 
     // Write binning nedges to output file.
-    for (int bi = 0; bi < 5; ++bi) fprintf(t_out, "%lu ", nedges[bi]);
-    fprintf(t_out, "\n");
+    for (int bi = 0; bi < 5; ++bi) fprintf(out_file, "%lu ", nedges[bi]);
+    fprintf(out_file, "\n");
 
     // Write edges to output file.
     for (int bi = 0; bi < 5; ++bi) {
         for (long unsigned int bii = 0; bii < nedges[bi]; ++bii) {
-            fprintf(t_out, "%12.9f ", edges[bi][bii]);
+            fprintf(out_file, "%12.9f ", edges[bi][bii]);
         }
-        fprintf(t_out, "\n");
+        fprintf(out_file, "\n");
     }
 
     // Get list of PIDs.
@@ -172,11 +186,11 @@ static int run(char *gen_file, char *sim_file, char *data_dir,
     }
 
     // Write list of PIDs to output file.
-    fprintf(t_out, "%d\n", pidlist_size);
+    fprintf(out_file, "%d\n", pidlist_size);
     for (int pid_i = 0; pid_i < pidlist_size; ++pid_i) {
-        fprintf(t_out, "%d ", static_cast<int>(pidlist[pid_i]));
+        fprintf(out_file, "%d ", static_cast<int>(pidlist[pid_i]));
     }
-    fprintf(t_out, "\n");
+    fprintf(out_file, "\n");
 
     // Get number of bins.
     long unsigned int nbins[5];
@@ -190,18 +204,18 @@ static int run(char *gen_file, char *sim_file, char *data_dir,
         printf("Working on PID %5d (%2d/%2d)...\n", pid, pid_i+1, pidlist_size);
 
         printf("  Counting thrown events...\n");
-        count_entries(t_out, thrown, pid, nbins, edges, in_deg, false);
+        count_entries(out_file, thrown, pid, nbins, edges, in_deg, false);
 
         printf("  Counting simulated events...\n");
-        count_entries(t_out, simul,  pid, nbins, edges, false, true);
+        count_entries(out_file, simul,  pid, nbins, edges, false, true);
 
         printf("  Done!\n");
     }
 
     // Clean up after ourselves.
-    t_in->Close();
-    s_in->Close();
-    fclose(t_out);
+    thrown_file->Close();
+    simul_file->Close();
+    fclose(out_file);
     for (int bi = 0; bi < 5; ++bi) free(edges[bi]);
     free(edges);
 
@@ -209,7 +223,10 @@ static int run(char *gen_file, char *sim_file, char *data_dir,
 }
 
 /** Print usage and exit. */
-static int usage() {
+static int usage(int err) {
+    if (err == 0) return 0;
+    if (err == 2) return 2;
+
     fprintf(stderr,
             "\n\nUsage: acc_corr [-hq:n:z:p:f:g:s:d:FD]\n"
             " * -h         : show this message and exit.\n"
@@ -236,74 +253,17 @@ static int usage() {
     return 1;
 }
 
-/** Print error number and provide a short description of the error. */
-static int handle_err(int errcode) {
-    if (errcode > 1) fprintf(stderr, "Error %02d. ", errcode);
-    switch (errcode) {
-        case 0:
-            return 0;
-        case 1:
-            break;
-        case 2:
-            fprintf(stderr, "All edges should be specified.");
-            break;
-        case 3:
-            fprintf(stderr, "All edges should have *at least* two values -- a "
-                            "minimum and a maximum.");
-            break;
-        case 4:
-            fprintf(stderr, "Generated file must be specified.");
-            break;
-        case 5:
-            fprintf(stderr, "Generated file should be in root format.");
-            break;
-        case 6:
-            fprintf(stderr, "Generated file does not exist.");
-            break;
-        case 7:
-            fprintf(stderr, "Simulated file must be specified.");
-            break;
-        case 8:
-            fprintf(stderr, "Simulated file should be in root format.");
-            break;
-        case 9:
-            fprintf(stderr, "Simulated file does not exist.");
-            break;
-        case 10:
-            fprintf(stderr, "Generated file is not a valid root file.");
-            break;
-        case 11:
-            fprintf(stderr, "Generated file is badly formatted.");
-            break;
-        case 12:
-            fprintf(stderr, "Simulated file is not a valid root file.");
-            break;
-        case 13:
-            fprintf(stderr, "Simualted file is badly formatted.");
-            break;
-        case 14:
-            fprintf(stderr, "Output file already exists.");
-            break;
-        default:
-            fprintf(stderr, "Error code not implemented!\n");
-            return 1;
-    }
-    return usage();
-}
-
-/**
- * Handle arguments for make_ntuples using optarg. Error codes used are
- *     explained in the handle_err() function.
- */
-static int handle_args(int argc, char **argv, char **gen_file, char **sim_file,
-        char **data_dir, long unsigned int *nedges, double **edges,
-        bool *use_fmt, bool *in_deg)
-{
+/** Handle arguments for make_ntuples using optarg. */
+static int handle_args(
+        int argc, char **argv, char **thrown_filename, char **simul_filename,
+        char **data_dir, long unsigned int *nedges, double **edges, bool *in_deg
+) {
     // Handle arguments.
     int opt;
-    while ((opt = getopt(argc, argv, "hq:n:z:p:f:g:s:d:FD")) != -1) {
+    while ((opt = getopt(argc, argv, "hq:n:z:p:f:g:s:d:D")) != -1) {
         switch (opt) {
         case 'h':
+            rge_errno = ERR_USAGE;
             return 1;
         case 'q':
             grab_multiarg(argc, argv, &optind, &(nedges[0]), &(edges[0]));
@@ -321,17 +281,14 @@ static int handle_args(int argc, char **argv, char **gen_file, char **sim_file,
             grab_multiarg(argc, argv, &optind, &(nedges[4]), &(edges[4]));
             break;
         case 'g':
-            grab_str(optarg, gen_file);
+            grab_str(optarg, thrown_filename);
             break;
         case 's':
-            grab_str(optarg, sim_file);
+            grab_str(optarg, simul_filename);
             break;
         case 'd':
             *data_dir = static_cast<char *>(malloc(strlen(optarg) + 1));
             strcpy(*data_dir, optarg);
-            break;
-        case 'F':
-            *use_fmt = true;
             break;
         case 'D':
             *in_deg = true;
@@ -341,13 +298,28 @@ static int handle_args(int argc, char **argv, char **gen_file, char **sim_file,
         }
     }
 
+    // Check that all arrays were defined.
+    for (int bi = 0; bi < 5; ++bi) {
+        if (nedges[bi] == 0) {
+            rge_errno = ERR_ACCCORR_NOEDGE;
+            return 1;
+        }
+    }
+
     // Check that all arrays have *at least* two values.
-    for (int bi = 0; bi < 5; ++bi) if (nedges[bi] == 0) return 2;
-    for (int bi = 0; bi < 5; ++bi) if (nedges[bi]  < 2) return 3;
+    for (int bi = 0; bi < 5; ++bi) {
+        if (nedges[bi]  < 2) {
+            rge_errno = ERR_ACCCORR_BADEDGES;
+            return 1;
+        }
+    }
 
     // Convert phi_PQ binning to radians.
     for (long unsigned int bbi = 0; bbi < nedges[4]; ++bbi) {
-        edges[4][bbi] = to_rad(edges[4][bbi]);
+        double tmp;
+        to_rad(edges[4][bbi], &tmp);
+        if (rge_errno) return 1;
+        edges[4][bbi] = tmp;
     }
 
     // Define datadir if undefined.
@@ -357,14 +329,18 @@ static int handle_args(int argc, char **argv, char **gen_file, char **sim_file,
     }
 
     // Check genfile.
-    if (*gen_file == NULL) return 4;
-    int errcode = check_root_filename(*gen_file);
-    if (errcode) return errcode + 4; // Shift errcode.
+    if (*thrown_filename == NULL) {
+        rge_errno = ERR_ACCCORR_NOGENFILE;
+        return 1;
+    }
+    if (check_root_filename(*thrown_filename)) return 1;
 
     // Check simfile.
-    if (*sim_file == NULL) return 7;
-    errcode = check_root_filename(*sim_file);
-    if (errcode) return errcode + 7; // Shift errcode.
+    if (*simul_filename == NULL) {
+        rge_errno = ERR_ACCCORR_NOSIMFILE;
+        return 1;
+    }
+    if (check_root_filename(*simul_filename)) return 1;
 
     return 0;
 }
@@ -372,32 +348,29 @@ static int handle_args(int argc, char **argv, char **gen_file, char **sim_file,
 /** Entry point of the program. */
 int main(int argc, char **argv) {
     // Handle arguments.
-    char *gen_file = NULL;
-    char *sim_file = NULL;
-    char *data_dir = NULL;
-    bool use_fmt   = false;
-    bool in_deg    = false;
-    long unsigned int nedges[5]  = {0, 0, 0, 0, 0};
+    char *thrown_filename = NULL;
+    char *simul_filename  = NULL;
+    char *data_dir        = NULL;
+    bool in_deg           = false;
+    long unsigned int nedges[5] = {0, 0, 0, 0, 0};
     double **edges;
 
     edges = static_cast<double **>(malloc(5 * sizeof(*edges)));
-    int errcode = handle_args(
-            argc, argv, &gen_file, &sim_file, &data_dir, nedges, edges,
-            &use_fmt, &in_deg
+    handle_args(
+            argc, argv, &thrown_filename, &simul_filename, &data_dir, nedges,
+            edges, &in_deg
     );
 
     // Run.
-    if (errcode == 0) {
-        errcode = run(
-                gen_file, sim_file, data_dir, nedges, edges, use_fmt, in_deg
-        );
+    if (rge_errno == 0) {
+        run(thrown_filename, simul_filename, data_dir, nedges, edges, in_deg);
     }
 
     // Free up memory.
-    if (gen_file != NULL) free(gen_file);
-    if (sim_file != NULL) free(sim_file);
-    if (data_dir != NULL) free(data_dir);
+    if (thrown_filename != NULL) free(thrown_filename);
+    if (simul_filename  != NULL) free(simul_filename);
+    if (data_dir        != NULL) free(data_dir);
 
     // Return errcode.
-    return handle_err(errcode);
+    return usage(handle_err());
 }

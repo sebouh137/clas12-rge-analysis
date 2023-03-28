@@ -18,9 +18,11 @@
 
 #include <TH2F.h>
 #include "constants.h"
+#include "err_handler.h"
 
-double to_deg(double a);
-double to_rad(double a);
+int find_pos(double v, double *b, int size);
+int to_deg(double src, double *dest);
+int to_rad(double src, double *dest);
 double calc_magnitude(double x, double y);
 double calc_magnitude(double x, double y, double z);
 double calc_angle(double x1, double y1, double z1, double x2, double y2,

@@ -15,14 +15,39 @@
 
 #include "../lib/utilities.h"
 
+/**
+ * Return position of value v inside a doubles array b of size s. If v is not
+ *     inside b, return -1.
+ */
+int find_pos(double v, double *b, int size) {
+    for (int i = 0; i < size; ++i) if (b[i] < v && v < b[i+1]) return i;
+    return -1;
+}
+
 /** Transform an angle a from radians to degrees. */
-double to_deg(double a) {
-    return a * (180.0 / M_PI);
+int to_deg(double src, double *dest) {
+    // Check angle validity.
+    if (-M_PI > src || src > M_PI) {
+        rge_errno = ERR_UTILITIES_ANGLEOUTOFRANGE;
+        return 1;
+    }
+
+    // Transform.
+    *dest = src * (180.0 / M_PI);
+    return 0;
 }
 
 /** Transform an angle a from degrees to radians. */
-double to_rad(double a) {
-    return a * (M_PI / 180.0);
+int to_rad(double src, double *dest) {
+    // Check angle validity.
+    if (-180 > src || src > 180) {
+        rge_errno = ERR_UTILITIES_ANGLEOUTOFRANGE;
+        return 1;
+    }
+
+    // Transform.
+    *dest = src * (M_PI / 180.0);
+    return 0;
 }
 
 /** Compute a 2D vector's magntitude from its x and y components. */
