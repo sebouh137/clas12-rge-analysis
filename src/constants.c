@@ -16,7 +16,7 @@
 #include "../lib/constants.h"
 
 // Particle name map.
-const std::map<int, const char*> PID_NAME = {
+const std::map<int, const char *> PID_NAME = {
         {        11,  "electron"},
         {       -11,  "positron"},
         {      2212,  "proton"},
