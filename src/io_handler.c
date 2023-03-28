@@ -41,7 +41,7 @@ int get_run_no(char *filename, int *run_no) {
     // Run strtoul, giving an error upon failure.
     char *eptr;
     errno = 0;
-    *run_no = strtoul(optarg, &eptr, 10);
+    *run_no = strtoul(run_no_str, &eptr, 10);
     if (errno == EINVAL || errno == ERANGE) return 2; // Value not supported.
 
     return 0;
