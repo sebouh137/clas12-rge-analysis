@@ -17,19 +17,20 @@
 #define RGE_ANALYSIS_ERRHANDLER
 
 #include <stdio.h>
+#include <map>
 
-extern int rge_errno;
+extern const std::map<unsigned int, const char *> ERRMAP;
+extern unsigned int rge_errno;
+
 int handle_err();
 
 // --+ ERROR CODES LIST +-------------------------------------------------------
 //    0 -  199 general
-int general_err();
-#define ERR_NOERR 0
-#define ERR_USAGE 1
+#define ERR_NOERR           0
+#define ERR_USAGE           1
 #define ERR_INVALIDROOTFILE 2
 
 //  200 -  299 acc_corr
-int acc_corr_err();
 #define ERR_ACCCORR_USAGE         200
 #define ERR_ACCCORR_NOEDGE        201
 #define ERR_ACCCORR_BADEDGES      202
@@ -49,14 +50,12 @@ int acc_corr_err();
 //  800 -  899 file_handler
 //  900 -  999 hipo2root
 // 1000 - 1099 io_handler
-int io_handler_err();
 #define ERR_IOHANDLER_INVALIDROOTFILE 1001
 #define ERR_IOHANDLER_NOINPUTFILE     1002
 
 // 1100 - 1199 make_ntuples
 // 1200 - 1299 particle
 // 1300 - 1399 utilities
-int utilities_err();
 #define ERR_UTILITIES_ANGLEOUTOFRANGE 1301
 
 #endif

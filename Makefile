@@ -27,7 +27,7 @@ CFLAGS_DBG  := -g -pedantic -Wall -Wextra -Wcast-align -Wcast-qual \
 			   -Wmissing-include-dirs -Wnoexcept -Wold-style-cast \
 			   -Woverloaded-virtual -Wredundant-decls -Wshadow \
 			   -Wsign-conversion -Wsign-promo -Wstrict-null-sentinel \
-			   -Wstrict-overflow=5 -Wswitch-default -Wundef -Werror -Wno-unused
+			   -Wstrict-overflow=4 -Wswitch-default -Wundef -Werror -Wno-unused
 CFLAGS_PROD := -O3
 CXX         := $(CXX) $(CFLAGS_DBG)
 
@@ -82,7 +82,7 @@ $(BLD)/constants.o: $(SRC)/constants.c $(LIB)/constants.h
 	$(CXX) -c $(SRC)/constants.c -o $(BLD)/constants.o
 
 $(BLD)/err_handler.o: $(SRC)/err_handler.c $(LIB)/err_handler.h
-	$(CXX) -c $(SRC)/err_handler.c -o $(BLD)/err_handler.o
+	$(CXX) -std=c++20 -c $(SRC)/err_handler.c -o $(BLD)/err_handler.o
 
 $(BLD)/io_handler.o: $(SRC)/io_handler.c $(LIB)/io_handler.h
 	$(CXX) -c $(SRC)/io_handler.c -o $(BLD)/io_handler.o
