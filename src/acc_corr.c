@@ -228,7 +228,7 @@ static int usage(int err) {
     if (err == 2) return 2;
 
     fprintf(stderr,
-            "\n\nUsage: acc_corr [-hq:n:z:p:f:g:s:d:FD]\n"
+            "Usage: acc_corr [-hq:n:z:p:f:g:s:d:FD]\n"
             " * -h         : show this message and exit.\n"
             " * -q ...     : Q2 bins.\n"
             " * -n ...     : nu bins.\n"

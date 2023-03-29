@@ -812,7 +812,7 @@ static int run(char *in_filename, char *out_filename, char *acc_filename,
 /** Print usage and exit. */
 static int usage() {
     fprintf(stderr,
-            "\n\nUsage: draw_plots [-hn:o:a:w:] infile\n"
+            "Usage: draw_plots [-hn:o:a:w:] infile\n"
             " * -h          : show this message and exit.\n"
             " * -n nentries : number of entries to process.\n"
             " * -o outfile  : output file name. Default is plots_<run_no>.root."
