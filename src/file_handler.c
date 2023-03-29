@@ -26,7 +26,10 @@
  *                    * 1: no file with filename was found.
  */
 int get_sf_params(char *filename, double sf[NSECTORS][SF_NPARAMS][2]) {
-    if (access(filename, F_OK) != 0) return 1;
+    if (access(filename, F_OK) != 0) {
+        rge_errno = ERR_NOSAMPFRACFILE;
+        return 1;
+    }
     FILE *file_in = fopen(filename, "r");
 
     for (int sector_i = 0; sector_i < NSECTORS; ++sector_i) {
@@ -51,9 +54,10 @@ int get_sf_params(char *filename, double sf[NSECTORS][SF_NPARAMS][2]) {
  * @param pids_size:  number of PIDs in list of PIDs.
  * @return:           success code (0).
  */
-int get_bin_edges(FILE *file_in, long unsigned int *bin_nedges,
-        double **bin_edges, long unsigned int *pids_size)
-{
+int get_bin_edges(
+        FILE *file_in, long unsigned int *bin_nedges, double **bin_edges,
+        long unsigned int *pids_size
+) {
     // Get binning sizes.
     for (int bin_i = 0; bin_i < 5; ++bin_i) {
         fscanf(file_in, "%lu ", &(bin_nedges[bin_i]));
@@ -88,9 +92,10 @@ int get_bin_edges(FILE *file_in, long unsigned int *bin_nedges,
  *                   for each bin, for each PID.
  * @return:          success code (0).
  */
-int get_acc_corr(FILE *file_in, long unsigned int pids_size,
-        long unsigned int nbins, long int *pids, int **n_thrown, int **n_simul)
-{
+int get_acc_corr(
+        FILE *file_in, long unsigned int pids_size, long unsigned int nbins,
+        long int *pids, int **n_thrown, int **n_simul
+) {
     // Get PIDs.
     for (long unsigned int pid_i = 0; pid_i < pids_size; ++pid_i) {
         fscanf(file_in, "%ld ", &(pids[pid_i]));
@@ -144,13 +149,17 @@ int get_acc_corr(FILE *file_in, long unsigned int pids_size,
  *            * 0: Function performed correctly.
  *            * 1: Failed to access acceptance correction file.
  */
-int read_acc_corr_file(char *acc_filename, long unsigned int bin_nedges[5],
+int read_acc_corr_file(
+        char *acc_filename, long unsigned int bin_nedges[5],
         double ***bin_edges, long unsigned int *pids_size,
         long unsigned int *nbins, long int **pids, int ***n_thrown,
         int ***n_simul)
 {
     // Access file.
-    if (access(acc_filename, F_OK) != 0) return 1;
+    if (access(acc_filename, F_OK) != 0) {
+        rge_errno = ERR_NOACCCORRFILE;
+        return 1;
+    }
     FILE *acc_file = fopen(acc_filename, "r");
 
     // Get bin_nedges, bin_edges, and pids_size.

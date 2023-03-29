@@ -21,6 +21,7 @@
 #include <string.h>
 #include <unistd.h>
 #include "constants.h"
+#include "err_handler.h"
 
 int get_sf_params(char *filename, double sf[NSECTORS][SF_NPARAMS][2]);
 int get_bin_edges(FILE *file_in, long unsigned int *bin_nedges,

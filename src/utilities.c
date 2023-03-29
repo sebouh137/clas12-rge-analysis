@@ -28,7 +28,7 @@ int find_pos(double v, double *b, int size) {
 int to_deg(double src, double *dest) {
     // Check angle validity.
     if (-M_PI > src || src > M_PI) {
-        rge_errno = ERR_UTILITIES_ANGLEOUTOFRANGE;
+        rge_errno = ERR_ANGLEOUTOFRANGE;
         return 1;
     }
 
@@ -41,7 +41,7 @@ int to_deg(double src, double *dest) {
 int to_rad(double src, double *dest) {
     // Check angle validity.
     if (-180 > src || src > 180) {
-        rge_errno = ERR_UTILITIES_ANGLEOUTOFRANGE;
+        rge_errno = ERR_ANGLEOUTOFRANGE;
         return 1;
     }
 

@@ -19,8 +19,33 @@ const std::map<unsigned int, const char *> ERRMAP = {
     //    0 -  199 general
     {ERR_NOERR, ""}, // Handled before accessing this map.
     {ERR_USAGE, ""}, // Handled before accessing this map.
+    {ERR_BADINPUTFILE,
+            "Failed to open input file."},
+    {ERR_OUTFILEEXISTS,
+            "Output file already exists."},
+    {ERR_OUTPUTFAILED,
+            "Failed to create output file."},
+    {ERR_NOINPUTFILE,
+            "Input root file doesn't exist."},
     {ERR_INVALIDROOTFILE,
-            "Input file is missing `.root` extension."},
+            "Root filename should finish with the `.root` extension."},
+    {ERR_NOSAMPFRACFILE,
+            // NOTE. A smoother behaviour here would be that the program calls
+            //       extract_sf itself.
+            "No sampling fraction file is available for this run number."},
+    {ERR_NOACCCORRFILE,
+            "Failed to access acceptance correction file."},
+    {ERR_ANGLEOUTOFRANGE,
+            "Invalid angle value. By convention, all angles should be between "
+            "-180 (-pi) and 180 (pi)."},
+    {ERR_NODOTFILENAME,
+            "Couldn't find a `.` in filename. Provide a valid file."},
+    {ERR_BADFILENAMEFORMAT,
+            "Couldn't extract run number from filename. Follow file name "
+            "conventions specified in usage()."},
+    {ERR_UNIMPLEMENTEDBEAMENERGY,
+            "No beam energy available in constants for run number. Add it from "
+            "RCDB."},
 
     //  200 -  299 acc_corr
     {ERR_ACCCORR_NOEDGE,
@@ -37,33 +62,45 @@ const std::map<unsigned int, const char *> ERRMAP = {
     {ERR_ACCCORR_WRONGGENFILE,
             "Generated ntuples file is not a valid root file."},
     {ERR_ACCCORR_BADGENFILE,
-            "Generated ntuples file is badly formatted."},
+            "Failed to open generated ntuples file."},
     {ERR_ACCCORR_WRONGSIMFILE,
             "Simulation ntuples file is not a valid root file."},
     {ERR_ACCCORR_BADSIMFILE,
-            "Simulated ntuples file is badly formatted."},
-    {ERR_ACCCORR_OUTFILEEXISTS,
-            "Output file already exists."},
+            "Failed to open simulated ntuples file."},
 
     //  300 -  399 bank_containers
     //  400 -  499 constants
     //  500 -  599 draw_plots
+    {ERR_DRAWPLOTS_BADOPTARGS,
+            "Bad usage of optional arguments."},
+    {ERR_DRAWPLOTS_NOINPUTFILE,
+            "No input file provided."},
+    {ERR_DRAWPLOTS_2DACCEPTANCEPLOT,
+            "2D acceptance correction plots haven't been implemented yet."},
+    {ERR_DRAWPLOTS_INVALIDNENTRIES,
+            "Number of entries is invalid. Input a valid number after -n"},
+    {ERR_DRAWPLOTS_NENTRIESLARGE,
+            "Number of entries is too large. Input a number smaller than "
+            "LONG_MAX"},
+    {ERR_DRAWPLOTS_NENTRIESNEGATIVE,
+            "Number of entries should be greater than 0."},
+    {ERR_DRAWPLOTS_INVALIDACCEPTANCEOPT,
+            "Option -A is only valid if an acceptance correction file is "
+            "specified using -a."},
+    {ERR_DRAWPLOTS_WRONGACCVARS,
+            "Erroneous variables in the ACC_VX arr. Check constants."},
+    {ERR_DRAWPLOTS_NOACCDATA,
+            "There's no acceptance correction data for the selected PID. Run "
+            "acc_corr and define a binning scheme to use this feature."}
+
     //  600 -  699 err_handler
     //  700 -  799 extract_sf
     //  800 -  899 file_handler
     //  900 -  999 hipo2root
     // 1000 - 1099 io_handler
-    {ERR_IOHANDLER_INVALIDROOTFILE,
-            "Root filename should finish with the `.root` extension."},
-    {ERR_IOHANDLER_NOINPUTFILE,
-            "Input root file doesn't exist."},
-
     // 1100 - 1199 make_ntuples
     // 1200 - 1299 particle
     // 1300 - 1399 utilities
-    {ERR_UTILITIES_ANGLEOUTOFRANGE,
-            "Invalid angle value. By convention, all angles should be between "
-            "-180 (-pi) and 180 (pi)."}
 };
 
 unsigned int rge_errno = 0;

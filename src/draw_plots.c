@@ -13,17 +13,13 @@
 //
 // You can see a copy of the GNU Lesser Public License under the LICENSE file.
 
-#include <climits>
+#include <limits.h>
 #include <libgen.h>
 #include <TFile.h>
 #include <TNtuple.h>
+#include "../lib/err_handler.h"
 #include "../lib/io_handler.h"
 #include "../lib/utilities.h"
-
-// TODO. See what happens to low-momentum particles inside CLAS12 through
-//       simulation and see if they are reconstructed.
-// TODO. Evaluate **acceptance** in diferent regions.
-// TODO. Separate in vz bins. Start from -40 to 40 cm, 4-cm bins.
 
 /**
  * Assign title to plots, recursively going through binnings. The title that
@@ -63,12 +59,13 @@
  *
  * @return:            Error code. Currently, can only return 0 (success).
  */
-static int create_plots(TH1 *plot_arr[], long unsigned int dim_bins, int *idx,
+static int create_plots(
+        TH1 *plot_arr[], long unsigned int dim_bins, int *idx,
         long unsigned int depth, TString *plot_title, const char *x_var,
         const char *y_var, int plot_type, long unsigned int plot_nbins[],
         double plot_range[][2], int bin_vars[], long unsigned int bin_nbins[],
-        double bin_range[][2], double bin_binsize[])
-{
+        double bin_range[][2], double bin_binsize[]
+) {
     if (depth == dim_bins) {
         // Create plot and increase index.
         if (plot_type == 0) {
@@ -110,14 +107,15 @@ static int create_plots(TH1 *plot_arr[], long unsigned int dim_bins, int *idx,
     return 0;
 }
 
-/** Copy of above function for acceptance corrected plots. */
-static int create_acc_corr_plots(TH1 *plot_arr[], long unsigned int dim_bins,
-        int *idx, long unsigned int depth, TString *plot_title,
+/** Copy of function above for acceptance corrected plots. */
+static int create_acc_corr_plots(
+        TH1 *plot_arr[], long unsigned int dim_bins, int *idx,
+        long unsigned int depth, TString *plot_title,
         const char *x_var, const char *y_var, int plot_type,
         long unsigned int plot_nbins, double plot_edges[], int bin_vars[],
         long unsigned int bin_nbins[], double bin_range[][2],
-        double bin_binsize[])
-{
+        double bin_binsize[]
+) {
     if (depth == dim_bins) {
         // Create plot and increase index.
         if (plot_type == 0) {
@@ -127,7 +125,8 @@ static int create_acc_corr_plots(TH1 *plot_arr[], long unsigned int dim_bins,
             );
         }
         if (plot_type == 1) {
-            return 1; // NOTE. Not available yet.
+            rge_errno = ERR_DRAWPLOTS_2DACCEPTANCEPLOT;
+            return 1; // NOTE. Feature not available yet.
         }
         ++(*idx);
         return 0;
@@ -144,11 +143,11 @@ static int create_acc_corr_plots(TH1 *plot_arr[], long unsigned int dim_bins,
                              b_low, b_high));
 
         // Continue down the recursive line...
-        create_acc_corr_plots(
+        if (create_acc_corr_plots(
                 plot_arr, dim_bins, idx, depth+1, &name_cpy, x_var, y_var,
                 plot_type, plot_nbins, plot_edges, bin_vars, bin_nbins,
                 bin_range, bin_binsize
-        );
+        )) return 1;
     }
 
     return 0;
@@ -174,21 +173,21 @@ static int create_acc_corr_plots(TH1 *plot_arr[], long unsigned int dim_bins,
  *     BINNING PARAMETERS.
  * @param nplots:          Number of TH1F and TH2F plots, depends on number of
  *                         bins.
- * @param vars:        Array of variables for binning for each plot.
- * @param nbins:       Array with number of dimensions for binning for each
+ * @param vars:            Array of variables for binning for each plot.
+ * @param nbins:           Array with number of dimensions for binning for each
  *                         binning.
- * @param range:       2-dimensional array with lower and upper limits for
+ * @param range:           2-dimensional array with lower and upper limits for
  *                         each binning variable.
- * @param binsize:     Array with size of each bin for each binning.
+ * @param binsize:         Array with size of each bin for each binning.
  *
  * @return:                Error code. Currently, can only return 0 (success).
  */
-static int find_bin(TString *plot_title,
-        long unsigned int dim_bins, long unsigned int idx,
+static int find_bin(
+        TString *plot_title, long unsigned int dim_bins, long unsigned int idx,
         long unsigned int depth, long unsigned int prev_dim_factor, int nplots,
         int vars[], long unsigned int nbins[], double range[][2],
-        double binsize[])
-{
+        double binsize[]
+) {
     if (depth == dim_bins) return 0;
 
     // Find index in array (for this dimension).
@@ -203,8 +202,9 @@ static int find_bin(TString *plot_title,
     double high = range[depth][0] + binsize[depth]*(bi+1);
 
     // Append dir to title.
-    plot_title->Append(Form("%s (%6.2f, %6.2f)/", S_VAR_LIST[vars[depth]],
-            low, high));
+    plot_title->Append(Form(
+            "%s (%6.2f, %6.2f)/", S_VAR_LIST[vars[depth]], low, high
+    ));
 
     return find_bin(
             plot_title, dim_bins, idx, depth+1, dim_factor,
@@ -232,10 +232,10 @@ static int find_bin(TString *plot_title,
  * @return:         Index of the bin we're looking for. Returns -1 if variable
  *                  is not within binning range.
  */
-static long int find_idx(long unsigned int dim_bins,
-        long unsigned int depth, Float_t var[], long unsigned int nbins[],
-        double range[][2], double binsize[])
-{
+static long int find_idx(
+        long unsigned int dim_bins, long unsigned int depth, Float_t var[],
+        long unsigned int nbins[], double range[][2], double binsize[]
+) {
     if (depth == dim_bins) return 0;
     for (long unsigned int bi = 0; bi < nbins[depth]; ++bi) {
         // Define bin limits.
@@ -265,12 +265,16 @@ static long int find_idx(long unsigned int dim_bins,
 }
 
 /** run() function of the program. Check usage() for details. */
-static int run(char *in_filename, char *out_filename, char *acc_filename,
-        char *work_dir, int run_no, long int nentries, bool apply_acc_corr)
-{
+static int run(
+        char *in_filename, char *out_filename, char *acc_filename,
+        char *work_dir, int run_no, long int nentries, bool apply_acc_corr
+) {
     // Open input file.
     TFile *f_in  = TFile::Open(in_filename, "READ");
-    if (!f_in || f_in->IsZombie()) return 8;
+    if (!f_in || f_in->IsZombie()) {
+        rge_errno = ERR_BADINPUTFILE;
+        return 1;
+    }
 
     // Get acceptance correction
     bool acc_plot = false;
@@ -283,10 +287,11 @@ static int run(char *in_filename, char *out_filename, char *acc_filename,
     int **acc_n_simul;
     if (acc_filename != NULL) {
         acc_plot = true;
-        int errcode = read_acc_corr_file(acc_filename, acc_nedges,
-                &acc_edges, &acc_npids, &acc_nbins, &acc_pids,
-                &acc_n_thrown, &acc_n_simul);
-        if (errcode != 0) return 9;
+        read_acc_corr_file(
+                acc_filename, acc_nedges, &acc_edges, &acc_npids, &acc_nbins,
+                &acc_pids, &acc_n_thrown, &acc_n_simul
+        );
+        if (rge_errno != 0) return 1;
     }
 
     // NOTE. This function could receive a few arguments to speed IO up.
@@ -316,13 +321,16 @@ static int run(char *in_filename, char *out_filename, char *acc_filename,
 
     // Find selected particle PID in acceptance correction data. If not found,
     //     return an error.
-    unsigned int acc_pid_idx = INT_MAX;
+    unsigned int acc_pid_idx = UINT_MAX;
     if (acc_plot) {
         // Find index of plot_pid in acc_pids.
         for (unsigned int pid_i = 0; pid_i < acc_npids; ++pid_i) {
             if (acc_pids[pid_i] == plot_pid) acc_pid_idx = pid_i;
         }
-        if (acc_pid_idx == INT_MAX) return 11;
+        if (acc_pid_idx == UINT_MAX) {
+            rge_errno = ERR_DRAWPLOTS_NOACCDATA;
+            return 1;
+        }
     }
 
     // === SELECT CUTS =========================================================
@@ -479,6 +487,7 @@ static int run(char *in_filename, char *out_filename, char *acc_filename,
 
     // Apply SIDIS cuts, checking which event numbers should be skipped.
     long unsigned int nevents = 0;
+
     // Count number of events.
     for (long int entry = 0; entry < nentries; ++entry) {
         update_progress_bar(nentries, entry, &evnsplitter, &divcntr);
@@ -616,9 +625,12 @@ static int run(char *in_filename, char *out_filename, char *acc_filename,
         }
 
         // Remove DIS vars = 0.
-        if (vars[A_Q2] == 0 || vars[A_NU] == 0 || vars[A_ZH] == 0 ||
-                vars[A_PT2] == 0 || vars[A_PHIPQ] == 0)
+        if (
+                vars[A_Q2] == 0 || vars[A_NU] == 0 || vars[A_ZH] == 0 ||
+                vars[A_PT2] == 0 || vars[A_PHIPQ] == 0
+        ) {
             continue;
+        }
 
         // Prepare binning vars.
         __extension__ Float_t bin_vars_idx[dim_bins];
@@ -723,7 +735,10 @@ static int run(char *in_filename, char *out_filename, char *acc_filename,
                                     case 2: sel_idx = i2; break;
                                     case 3: sel_idx = i3; break;
                                     case 4: sel_idx = i4; break;
-                                    default: return 14;
+                                    default: {
+                                        rge_errno = ERR_DRAWPLOTS_WRONGACCVARS;
+                                        return 1;
+                                    }
                                 }
 
                                 // Increment appropriate counters.
@@ -766,7 +781,10 @@ static int run(char *in_filename, char *out_filename, char *acc_filename,
     // === WRITE TO OUTPUT FILE ================================================
     // Create output file.
     TFile *f_out = TFile::Open(out_filename, "RECREATE");
-    if (!f_out || f_out->IsZombie()) return 13;
+    if (!f_out || f_out->IsZombie()) {
+        rge_errno = ERR_OUTPUTFAILED;
+        return 1;
+    }
 
     // Write plots to output file.
     for (long unsigned int bin_i = 0; bin_i < bin_arr_size; ++bin_i) {
@@ -810,7 +828,10 @@ static int run(char *in_filename, char *out_filename, char *acc_filename,
 }
 
 /** Print usage and exit. */
-static int usage() {
+static int usage(int err) {
+    if (err == 0) return 0;
+    if (err == 2) return 2;
+
     fprintf(stderr,
             "Usage: draw_plots [-hn:o:a:w:] infile\n"
             " * -h          : show this message and exit.\n"
@@ -826,75 +847,7 @@ static int usage() {
             "    Draw plots from a ROOT file built from make_ntuples. File "
             "should be named\n     <text>run_no.root.\n\n"
     );
-
     return 1;
-}
-
-/** Print error number and provide a short description of the error. */
-static int handle_err(int errcode) {
-    if (errcode > 1) fprintf(stderr, "Error %02d. ", errcode);
-    switch (errcode) {
-        case 0:
-            return 0;
-        case 1:
-            break;
-        case 2:
-            fprintf(stderr, "Bad usage of optional arguments.");
-            break;
-        case 3:
-            fprintf(stderr, "No input file provided.");
-            break;
-        case 4:
-            fprintf(stderr, "Input file should be a root file.");
-            break;
-        case 5:
-            fprintf(stderr, "Input file wasn't found.");
-            break;
-        case 6:
-            fprintf(stderr, "Couldn't find extension in input filename.");
-            break;
-        case 7:
-            fprintf(stderr, "Couldn't find run number from input filename.");
-            break;
-        case 8:
-            fprintf(stderr, "Input file is not a valid root file.");
-            break;
-        case 9:
-            fprintf(stderr, "Acceptance correction text file couldn't be "
-                            "opened.");
-            break;
-        case 10:
-            fprintf(stderr, "Number of entries should be greater than 0.");
-            break;
-        case 11:
-            fprintf(stderr, "There's no acceptance correction data for the "
-                            "selected PID.");
-            break;
-        case 12:
-            fprintf(stderr, "Option -A is only valid if an acceptance "
-                            "correction file is specified using -a.");
-            break;
-        case 13:
-            fprintf(stderr, "Failed to create output file.");
-            break;
-        case 14:
-            fprintf(stderr, "Erroneous variables in ACC_VX. Check constants "
-                            "integrity.");
-            break;
-        case 15:
-            fprintf(stderr, "Number of entries is invalid. Please input a valid"
-                            " number after -n.");
-            break;
-        case 16:
-            fprintf(stderr, "Number of entries is too large. Please input a "
-                            "number smaller than %ld.", LONG_MAX);
-            break;
-        default:
-            fprintf(stderr, "Error code not implemented!\n");
-            return 1;
-    }
-
-    return usage();
 }
 
 /**
@@ -911,14 +864,24 @@ static int handle_args(int argc, char **argv, char **in_filename,
     while ((opt = getopt(argc, argv, "-hn:o:a:Aw:")) != -1) {
         switch (opt) {
             case 'h':
+                rge_errno = ERR_USAGE;
                 return 1;
             case 'n':
                 char *eptr;
                 errno = 0;
                 *nentries = strtol(optarg, &eptr, 10);
-                if (errno == EINVAL) return 15; // Value not supported.
-                if (errno == ERANGE) return 16; // Value outside of range.
-                if (*nentries <= 0)  return 10; // Value is negative or zero.
+                if (errno == EINVAL) {
+                    rge_errno = ERR_DRAWPLOTS_INVALIDNENTRIES;
+                    return 1;
+                }
+                if (errno == ERANGE) {
+                    rge_errno = ERR_DRAWPLOTS_NENTRIESLARGE;
+                    return 1;
+                }
+                if (*nentries <= 0) {
+                    rge_errno = ERR_DRAWPLOTS_NENTRIESNEGATIVE;
+                    return 1;
+                }
                 break;
             case 'o':
                 tmp_out_filename =
@@ -941,7 +904,8 @@ static int handle_args(int argc, char **argv, char **in_filename,
                 strcpy(*in_filename, optarg);
                 break;
             default:
-                return 2;
+                rge_errno = ERR_DRAWPLOTS_BADOPTARGS;
+                return 1;
         }
     }
 
@@ -952,14 +916,19 @@ static int handle_args(int argc, char **argv, char **in_filename,
     }
 
     // -A is only valid if -a is also specified.
-    if (*apply_acc_corr == false && *acc_filename == NULL) return 12;
+    if (*apply_acc_corr == false && *acc_filename == NULL) {
+        rge_errno = ERR_DRAWPLOTS_INVALIDACCEPTANCEOPT;
+        return 1;
+    }
 
     // Check positional argument.
-    if (*in_filename == NULL) return 3;
+    if (*in_filename == NULL) {
+        rge_errno = ERR_DRAWPLOTS_NOINPUTFILE;
+        return 1;
+    }
 
     // Check input filename validity and write run number to run_no.
-    int check = handle_root_filename(*in_filename, run_no);
-    if (check && check != 5) return check + 3; // Shift errcode.
+    if (handle_root_filename(*in_filename, run_no)) return 1;
 
     // Define tmp output filename if undefined.
     if (tmp_out_filename == NULL) {
@@ -986,25 +955,24 @@ int main(int argc, char **argv) {
     long int nentries   = -1;
     bool apply_acc_corr = true;
 
-    int errcode = handle_args(
+    handle_args(
             argc, argv, &in_filename, &out_filename, &acc_filename, &work_dir,
             &run_no, &nentries, &apply_acc_corr
     );
 
     // Run.
-    if (errcode == 0) {
-        errcode = run(
-                in_filename, out_filename, acc_filename, work_dir, run_no,
-                nentries, apply_acc_corr
-        );
-    }
+    if (rge_errno != 0) return usage(handle_err());
+    run(
+            in_filename, out_filename, acc_filename, work_dir, run_no,
+            nentries, apply_acc_corr
+    );
 
     // Free up memory.
     if (in_filename  != NULL) free(in_filename);
     if (out_filename != NULL) free(out_filename);
     if (acc_filename != NULL) free(acc_filename);
-    if (work_dir != NULL) free(work_dir);
+    if (work_dir     != NULL) free(work_dir);
 
     // Return errcode.
-    return handle_err(errcode);
+    return usage(handle_err());
 }

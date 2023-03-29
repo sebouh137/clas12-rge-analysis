@@ -184,11 +184,9 @@ static int run(char *filename_in, char *work_dir, char *data_dir, bool debug,
     // Get sampling fraction.
     char sampling_fraction_file[PATH_MAX];
     sprintf(sampling_fraction_file, "%s/sf_params_%06d.txt", data_dir, run_no);
-    double smplng_frctn_prmtrs[NSECTORS][SF_NPARAMS][2];
-    int errcode = get_sf_params(sampling_fraction_file, smplng_frctn_prmtrs);
-
-    // Throw an error if sampling fraction parameters are not found.
-    if (errcode) return 10;
+    double sampling_fraction_params[NSECTORS][SF_NPARAMS][2];
+    if (get_sf_params(sampling_fraction_file, sampling_fraction_params))
+        return 1;
 
     // Access input file.
     TFile *file_in  = TFile::Open(filename_in, "READ");
@@ -281,7 +279,7 @@ static int run(char *filename_in, char *work_dir, char *data_dir, bool debug,
 
             // Get energy deposited in calorimeters.
             double energy_PCAL, energy_ECIN, energy_ECOU;
-            errcode = get_deposited_energy(
+            int errcode = get_deposited_energy(
                     bank_cal, pindex, &energy_PCAL, &energy_ECIN, &energy_ECOU
             );
             if (errcode) return 13;
@@ -306,7 +304,7 @@ static int run(char *filename_in, char *work_dir, char *data_dir, bool debug,
                     &part_trigger, bank_part.pid->at(pindex), status,
                     energy_PCAL + energy_ECIN + energy_ECOU, energy_PCAL,
                     nphe_HTCC, nphe_LTCC,
-                    smplng_frctn_prmtrs[bank_trk_dc.sector->at(pos)]
+                    sampling_fraction_params[bank_trk_dc.sector->at(pos)]
             );
 
             // Skip particle if its not the trigger electron.
@@ -360,7 +358,7 @@ static int run(char *filename_in, char *work_dir, char *data_dir, bool debug,
 
             // Get energy deposited in calorimeters.
             double energy_PCAL, energy_ECIN, energy_ECOU;
-            errcode = get_deposited_energy(
+            int errcode = get_deposited_energy(
                     bank_cal, pindex, &energy_PCAL, &energy_ECIN, &energy_ECOU
             );
             if (errcode) return 13;
@@ -385,7 +383,7 @@ static int run(char *filename_in, char *work_dir, char *data_dir, bool debug,
                     &part, bank_part.pid->at(pindex), status,
                     energy_PCAL + energy_ECIN + energy_ECOU, energy_PCAL,
                     nphe_HTCC, nphe_LTCC,
-                    smplng_frctn_prmtrs[bank_trk_dc.sector->at(pos)]
+                    sampling_fraction_params[bank_trk_dc.sector->at(pos)]
             );
 
             // Fill TNtuples.
@@ -484,13 +482,6 @@ static int handle_err(int errcode) {
             break;
         case 9:
             fprintf(stderr, "Run number not in constants. Add from RCDB.");
-            break;
-        case 10:
-            // NOTE. In this scenario, a smoother behavior would be that the
-            //       program calls extract_sf itself.
-            fprintf(stderr, "No sampling fraction file is available for run "
-            "number! Run extract_sf on this\nroot file before running "
-            "make_ntuples.");
             break;
         case 11:
             fprintf(stderr, "Input file is not a valid root file.");

@@ -147,7 +147,7 @@ static int run(
     char out_filename[PATH_MAX];
     sprintf(out_filename, "%s/acc_corr.txt", data_dir);
     if (!access(out_filename, F_OK)) {
-        rge_errno = ERR_ACCCORR_OUTFILEEXISTS;
+        rge_errno = ERR_OUTFILEEXISTS;
         return 1;
     }
     FILE *out_file = fopen(out_filename, "w");
