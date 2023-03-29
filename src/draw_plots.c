@@ -854,9 +854,10 @@ static int usage(int err) {
  * Handle arguments for make_ntuples using optarg. Error codes used are
  *     explained in the handle_err() function.
  */
-static int handle_args(int argc, char **argv, char **in_filename,
-        char **out_filename, char **acc_filename, char **work_dir, int *run_no,
-        long int *nentries, bool *apply_acc_corr)
+static int handle_args(
+        int argc, char **argv, char **in_filename, char **out_filename,
+        char **acc_filename, char **work_dir, int *run_no, long int *nentries,
+        bool *apply_acc_corr)
 {
     // Handle arguments.
     int opt;
@@ -867,21 +868,7 @@ static int handle_args(int argc, char **argv, char **in_filename,
                 rge_errno = ERR_USAGE;
                 return 1;
             case 'n':
-                char *eptr;
-                errno = 0;
-                *nentries = strtol(optarg, &eptr, 10);
-                if (errno == EINVAL) {
-                    rge_errno = ERR_INVALIDENTRIES;
-                    return 1;
-                }
-                if (errno == ERANGE) {
-                    rge_errno = ERR_NENTRIESLARGE;
-                    return 1;
-                }
-                if (*nentries <= 0) {
-                    rge_errno = ERR_NENTRIESNEGATIVE;
-                    return 1;
-                }
+                if (process_nentries(nentries, optarg)) return 1;
                 break;
             case 'o':
                 tmp_out_filename =

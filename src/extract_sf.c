@@ -20,6 +20,7 @@
 #include <TGraphErrors.h>
 #include <TStyle.h>
 #include "../lib/bank_containers.h"
+#include "../lib/err_handler.h"
 #include "../lib/io_handler.h"
 #include "../lib/utilities.h"
 
@@ -467,12 +468,6 @@ static int handle_args(int argc, char **argv, char **in_file, char **work_dir,
             case 'h':
                 return 1;
             case 'n':
-                char *eptr;
-                errno = 0;
-                *nevn = strtol(optarg, &eptr, 10);
-                if (errno == EINVAL) return 13; // Value not supported.
-                if (errno == ERANGE) return 14; // Value outside of range.
-                if (*nevn <= 0)      return  2; // Value is negative or zero.
                 break;
             case 'w':
                 *work_dir = static_cast<char *>(malloc(strlen(optarg) + 1));

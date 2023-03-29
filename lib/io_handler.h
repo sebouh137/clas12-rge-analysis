@@ -28,6 +28,8 @@ int check_root_filename(char *filename);
 int handle_root_filename(char *filename, int *run_no, double *beam_energy);
 int handle_root_filename(char *filename, int *run_no);
 
+int process_nentries(long int *nentries, char *arg);
+
 int check_hipo_filename(char *filename);
 int handle_hipo_filename(char *filename, int *run_no);
 

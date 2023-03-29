@@ -140,6 +140,27 @@ int handle_root_filename(char *filename, int *run_no) {
     return handle_root_filename(filename, run_no, &dump);
 }
 
+/* Run strtol on art to get number of entries. */
+int process_nentries(long int *nentries, char *arg) {
+    char *eptr;
+    errno = 0;
+    *nentries = strtol(arg, &eptr, 10);
+    if (errno == EINVAL) {
+        rge_errno = ERR_INVALIDENTRIES;
+        return 1;
+    }
+    if (errno == ERANGE) {
+        rge_errno = ERR_NENTRIESLARGE;
+        return 1;
+    }
+    if (*nentries <= 0) {
+        rge_errno = ERR_NENTRIESNEGATIVE;
+        return 1;
+    }
+
+    return 0;
+}
+
 /**
  * Check if a hipo filename is valid.
  *
