@@ -781,7 +781,7 @@ static int run(
     // Create output file.
     TFile *f_out = TFile::Open(out_filename, "RECREATE");
     if (!f_out || f_out->IsZombie()) {
-        rge_errno = ERR_OUTPUTFAILED;
+        rge_errno = ERR_OUTPUTROOTFAILED;
         return 1;
     }
 
@@ -829,8 +829,7 @@ static int run(
 
 /** Print usage and exit. */
 static int usage(int err) {
-    if (err == 0) return 0;
-    if (err == 2) return 2;
+    if (err == 0 || err == 2) return err;
 
     fprintf(stderr,
             "Usage: draw_plots [-hn:o:a:w:] infile\n"
@@ -948,11 +947,12 @@ int main(int argc, char **argv) {
     );
 
     // Run.
-    if (rge_errno != 0) return usage(handle_err());
-    run(
-            in_filename, out_filename, acc_filename, work_dir, run_no,
-            nentries, apply_acc_corr
-    );
+    if (rge_errno == ERR_UNDEFINED) {
+        run(
+                in_filename, out_filename, acc_filename, work_dir, run_no,
+                nentries, apply_acc_corr
+        );
+    }
 
     // Free up memory.
     if (in_filename  != NULL) free(in_filename);

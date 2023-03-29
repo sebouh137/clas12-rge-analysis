@@ -30,7 +30,7 @@ int handle_err();
 #define ERR_USAGE                     1
 #define ERR_BADINPUTFILE              2
 #define ERR_OUTFILEEXISTS             3
-#define ERR_OUTPUTFAILED              4
+#define ERR_OUTPUTROOTFAILED          4
 #define ERR_INVALIDROOTFILE           5
 #define ERR_NOINPUTFILE               6
 #define ERR_NOSAMPFRACFILE            7
@@ -40,7 +40,11 @@ int handle_err();
 #define ERR_BADFILENAMEFORMAT        11
 #define ERR_UNIMPLEMENTEDBEAMENERGY  12
 #define ERR_BADOPTARGS               13
+#define ERR_INVALIDENTRIES           14
+#define ERR_NENTRIESLARGE            15
+#define ERR_NENTRIESNEGATIVE         16
 #define ERR_UNDEFINED                17
+#define ERR_OUTPUTTEXTFAILED         18
 // --+ 200 - 299 acc_corr +-----------------------------------------------------
 #define ERR_NOEDGE                  201
 #define ERR_BADEDGES                202
@@ -52,13 +56,12 @@ int handle_err();
 #define ERR_BADSIMFILE              208
 // --+ 300 - 399 draw_plots +---------------------------------------------------
 #define ERR_2DACCEPTANCEPLOT        301
-#define ERR_INVALIDENTRIES          302
-#define ERR_NENTRIESLARGE           303
-#define ERR_NENTRIESNEGATIVE        304
-#define ERR_INVALIDACCEPTANCEOPT    305
-#define ERR_WRONGACCVARS            306
-#define ERR_NOACCDATA               307
+#define ERR_INVALIDACCEPTANCEOPT    302
+#define ERR_WRONGACCVARS            303
+#define ERR_NOACCDATA               304
 // --+ 400 - 499 extract_sf +---------------------------------------------------
+#define ERR_INVALIDCALSECTOR        401
+#define ERR_INVALIDCALLAYER         402
 // --+ 500 - 599 hipo2root +----------------------------------------------------
 // --+ 600 - 699 make_ntuples +-------------------------------------------------
 

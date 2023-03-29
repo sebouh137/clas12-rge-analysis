@@ -23,8 +23,8 @@ const std::map<unsigned int, const char *> ERRMAP = {
             "Failed to open input file."},
     {ERR_OUTFILEEXISTS,
             "Output file already exists."},
-    {ERR_OUTPUTFAILED,
-            "Failed to create output file."},
+    {ERR_OUTPUTROOTFAILED,
+            "Failed to create output root file."},
     {ERR_NOINPUTFILE,
             "Input root file doesn't exist."},
     {ERR_INVALIDROOTFILE,
@@ -48,8 +48,17 @@ const std::map<unsigned int, const char *> ERRMAP = {
             "RCDB."},
     {ERR_BADOPTARGS,
             "Bad usage of optional arguments."},
+    {ERR_INVALIDENTRIES,
+            "Number of entries is invalid. Input a valid number after -n"},
+    {ERR_NENTRIESLARGE,
+            "Number of entries is too large. Input a number smaller than "
+            "LONG_MAX."},
+    {ERR_NENTRIESNEGATIVE,
+            "Number of entries should be greater than 0."},
     {ERR_UNDEFINED,
             "rge_errno = ERR_UNDEFINED. Something is wrong."},
+    {ERR_OUTPUTTEXTFAILED,
+            "Failed to create output text file."},
 
     // acc_corr.
     {ERR_NOEDGE,
@@ -75,13 +84,6 @@ const std::map<unsigned int, const char *> ERRMAP = {
     // draw_plots.
     {ERR_2DACCEPTANCEPLOT,
             "2D acceptance correction plots haven't been implemented yet."},
-    {ERR_INVALIDENTRIES,
-            "Number of entries is invalid. Input a valid number after -n"},
-    {ERR_NENTRIESLARGE,
-            "Number of entries is too large. Input a number smaller than "
-            "LONG_MAX"},
-    {ERR_NENTRIESNEGATIVE,
-            "Number of entries should be greater than 0."},
     {ERR_INVALIDACCEPTANCEOPT,
             "Option -A is only valid if an acceptance correction file is "
             "specified using -a."},
@@ -89,14 +91,19 @@ const std::map<unsigned int, const char *> ERRMAP = {
             "Erroneous variables in the ACC_VX arr. Check constants."},
     {ERR_NOACCDATA,
             "There's no acceptance correction data for the selected PID. Run "
-            "acc_corr and define a binning scheme to use this feature."}
+            "acc_corr and define a binning scheme to use this feature."},
 
     // extract_sf.
+    {ERR_INVALIDCALSECTOR,
+            "Invalid sector in the calorimeter bank. Check bank integrity."},
+    {ERR_INVALIDCALLAYER,
+            "Invalid layer in the calorimeter bank. Check bank integrity."}
+
     // hipo2root.
     // make_ntuples.
 };
 
-unsigned int rge_errno = 0;
+unsigned int rge_errno = ERR_UNDEFINED;
 
 /**
  * Entry point to all error handling. Decides which handler should react.

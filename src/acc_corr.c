@@ -224,8 +224,7 @@ static int run(
 
 /** Print usage and exit. */
 static int usage(int err) {
-    if (err == 0) return 0;
-    if (err == 2) return 2;
+    if (err == 0 || err == 2) return err;
 
     fprintf(stderr,
             "Usage: acc_corr [-hq:n:z:p:f:g:s:d:FD]\n"
@@ -361,7 +360,7 @@ int main(int argc, char **argv) {
     );
 
     // Run.
-    if (rge_errno == 0) {
+    if (rge_errno == ERR_UNDEFINED) {
         run(thrown_filename, simul_filename, data_dir, nedges, edges, in_deg);
     }
 

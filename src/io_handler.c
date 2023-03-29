@@ -137,7 +137,15 @@ int handle_root_filename(char *filename, int *run_no, double *beam_energy) {
 /** Run handle_root_filename() without writing beam_energy. */
 int handle_root_filename(char *filename, int *run_no) {
     double dump = 0.;
-    return handle_root_filename(filename, run_no, &dump);
+    int err = handle_root_filename(filename, run_no, &dump);
+
+    // We don't care about missing beam energy here.
+    if (rge_errno == ERR_UNIMPLEMENTEDBEAMENERGY) {
+        rge_errno = ERR_NOERR;
+        err = 0;
+    }
+
+    return err;
 }
 
 /* Run strtol on art to get number of entries. */

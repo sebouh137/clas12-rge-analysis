@@ -25,25 +25,35 @@
 #include "../lib/utilities.h"
 
 /** run() function of the program. Check usage() for details. */
-static int run(char *in_file, char *work_dir, char *data_dir, long int nevn,
-        int run_no) {
+static int run(
+        char *in_filename, char *work_dir, char *data_dir, long int nevn, int run_no
+) {
     gStyle->SetOptFit();
 
     // Create output root file.
     char out_file[PATH_MAX];
     sprintf(out_file, "%s/sf_study_%06d.root", work_dir, run_no);
     TFile *f_out = TFile::Open(out_file, "RECREATE");
-    if (!f_out || f_out->IsZombie()) return 8;
+    if (!f_out || f_out->IsZombie()) {
+        rge_errno = ERR_OUTPUTROOTFAILED;
+        return 1;
+    }
 
     // Create output data file.
     char t_file[PATH_MAX];
     sprintf(t_file, "%s/sf_params_%06d.txt", data_dir, run_no);
     FILE *t_out = fopen(t_file, "w");
-    if (t_out == NULL) return 9;
+    if (t_out == NULL) {
+        rge_errno = ERR_OUTPUTTEXTFAILED;
+        return 1;
+    }
 
     // Access input file.
-    TFile *f_in = TFile::Open(in_file, "READ");
-    if (!f_in || f_in->IsZombie()) return 10;
+    TFile *f_in = TFile::Open(in_filename, "READ");
+    if (!f_in || f_in->IsZombie()) {
+        rge_errno = ERR_BADINPUTFILE;
+        return 1;
+    }
 
     // Create and organize histos and name arrays.
     std::map<const char *, TH1 *> histos;
@@ -131,7 +141,7 @@ static int run(char *in_file, char *work_dir, char *data_dir, long int nevn,
     int evnsplitter = 0;
     if (nevn == -1 || t->GetEntries() < nevn) nevn = t->GetEntries();
 
-    printf("Reading %ld events from %s.\n", nevn, in_file);
+    printf("Reading %ld events from %s.\n", nevn, in_filename);
     for (long int evn = 0; evn < nevn; ++evn) {
         update_progress_bar(nevn, evn, &evnsplitter, &divcntr);
 
@@ -142,8 +152,8 @@ static int run(char *in_file, char *work_dir, char *data_dir, long int nevn,
 
         // Skip events without the necessary banks.
         if (
-                particle.vz->size() == 0 ||
-                track.pindex->size() == 0 ||
+                particle.vz->size()        == 0 ||
+                track.pindex->size()       == 0 ||
                 calorimeter.pindex->size() == 0
         ) {
             continue;
@@ -184,7 +194,10 @@ static int run(char *in_file, char *work_dir, char *data_dir, long int nevn,
                 // Get sector.
                 int sector_i = calorimeter.sector->at(entry_i) - 1;
                 if (sector_i == -1) continue;
-                if (sector_i < -1 || sector_i > NSECTORS-1) return 11;
+                if (sector_i < -1 || sector_i > NSECTORS-1) {
+                    rge_errno = ERR_INVALIDCALSECTOR;
+                    return 1;
+                }
 
                 // Get detector.
                 switch(calorimeter.layer->at(entry_i)) {
@@ -201,7 +214,8 @@ static int run(char *in_file, char *work_dir, char *data_dir, long int nevn,
                                 calorimeter.energy->at(entry_i);
                         break;
                     default:
-                        return 12;
+                        rge_errno = ERR_INVALIDCALLAYER;
+                        return 1;
                 }
             }
 
@@ -376,13 +390,16 @@ static int run(char *in_file, char *work_dir, char *data_dir, long int nevn,
     f_in ->Close();
     f_out->Close();
 
+    rge_errno = ERR_NOERR;
     return 0;
 }
 
 /** Print usage and exit. */
-static int usage() {
+static int usage(int err) {
+    if (err == 0 || err == 2) return err;
+
     fprintf(stderr,
-            "\n\nUsage: extract_sf [-hn:w:d:] infile\n"
+            "Usage: extract_sf [-hn:w:d:] infile\n"
             " * -h         : show this message and exit.\n"
             " * -n nevents : number of events\n"
             " * -w workdir : location where output root files are to be "
@@ -396,78 +413,23 @@ static int usage() {
     return 1;
 }
 
-/** Print error number and provide a short description of the error. */
-static int handle_err(int errcode) {
-    if (errcode > 1) fprintf(stderr, "Error %02d. ", errcode);
-    switch (errcode) {
-        case 0:
-            return 0;
-        case 1:
-            break;
-        case 2:
-            fprintf(stderr, "nevents should greater than 0.");
-            break;
-        case 3:
-            fprintf(stderr, "No file name provided.");
-            break;
-        case 4:
-            fprintf(stderr, "Input file should be in root format.");
-            break;
-        case 5:
-            fprintf(stderr, "Input file does not exist.");
-            break;
-        case 6:
-            fprintf(stderr, "Couldn't find dot position in filename.");
-            break;
-        case 7:
-            fprintf(stderr, "Couldn't get run number from input file.");
-            break;
-        case 8:
-            fprintf(stderr, "Couldn't create output root file.");
-            break;
-        case 9:
-            fprintf(stderr, "Couldn't create output text file.");
-            break;
-        case 10:
-            fprintf(stderr, "Couldn't open input root file.");
-            break;
-        case 11:
-            fprintf(stderr, "Invalid particle sector. Check bank integrity.");
-            break;
-        case 12:
-            fprintf(stderr, "Invalid EC layer. Check bank integrity.");
-            break;
-        case 13:
-            fprintf(stderr, "Number of events is invalid. Please input a valid"
-                            " number after -n.");
-            break;
-        case 14:
-            fprintf(stderr, "Number of events is too large. Please input a "
-                            "number smaller than %ld.", LONG_MAX);
-            break;
-
-        default:
-            fprintf(stderr, "Error code not implemented!\n");
-            return 1;
-    }
-
-    return usage();
-}
-
 /**
  * Handle arguments for make_ntuples using optarg. Error codes used are
  *     explained in the handle_err() function.
  */
-static int handle_args(int argc, char **argv, char **in_file, char **work_dir,
-        char **data_dir, int *run_no, long int *nevn)
-{
+static int handle_args(
+        int argc, char **argv, char **in_filename, char **work_dir,
+        char **data_dir, int *run_no, long int *nevn
+) {
     // Handle optional arguments.
     int opt;
     while ((opt = getopt(argc, argv, "-hn:w:d:")) != -1) {
         switch (opt) {
             case 'h':
+                rge_errno = ERR_USAGE;
                 return 1;
             case 'n':
+                if (process_nentries(nevn, optarg)) return 1;
                 break;
             case 'w':
                 *work_dir = static_cast<char *>(malloc(strlen(optarg) + 1));
@@ -478,10 +440,11 @@ static int handle_args(int argc, char **argv, char **in_file, char **work_dir,
                 strcpy(*data_dir, optarg);
                 break;
             case 1:
-                *in_file = static_cast<char *>(malloc(strlen(optarg) + 1));
-                strcpy(*in_file, optarg);
+                *in_filename = static_cast<char *>(malloc(strlen(optarg) + 1));
+                strcpy(*in_filename, optarg);
                 break;
             default:
+                rge_errno = ERR_BADOPTARGS;
                 return 1;
         }
     }
@@ -501,37 +464,38 @@ static int handle_args(int argc, char **argv, char **in_file, char **work_dir,
     }
 
     // Check positional argument.
-    if (*in_file == NULL) return 3;
+    if (*in_filename == NULL) {
+        rge_errno = ERR_NOINPUTFILE;
+        return 1;
+    }
 
     // Handle input filename.
-    int check = handle_root_filename(*in_file, run_no);
-    if (!check || check == 5) return 0;
-    else                      return check + 3; // Shift errcode.
+    if (handle_root_filename(*in_filename, run_no)) return 1;
+
+    return 0;
 }
 
 /** Entry point of the program. */
 int main(int argc, char **argv) {
     // Handle arguments.
-    char *in_file  = NULL;
-    char *work_dir = NULL;
-    char *data_dir = NULL;
-    long int nevn  = -1;
-    int run_no     = -1;
+    char *in_filename = NULL;
+    char *work_dir    = NULL;
+    char *data_dir    = NULL;
+    long int nevn     = -1;
+    int run_no        = -1;
 
-    int errcode = handle_args(
-            argc, argv, &in_file, &work_dir, &data_dir, &run_no, &nevn
-    );
+    handle_args(argc, argv, &in_filename, &work_dir, &data_dir, &run_no, &nevn);
 
     // Run.
-    if (errcode == 0) {
-        errcode = run(in_file, work_dir, data_dir, nevn, run_no);
+    if (rge_errno == ERR_UNDEFINED) {
+        run(in_filename, work_dir, data_dir, nevn, run_no);
     }
 
     // Free up memory.
-    if (in_file  != NULL) free(in_file);
-    if (work_dir != NULL) free(work_dir);
-    if (data_dir != NULL) free(data_dir);
+    if (in_filename != NULL) free(in_filename);
+    if (work_dir    != NULL) free(work_dir);
+    if (data_dir    != NULL) free(data_dir);
 
     // Return errcode.
-    return handle_err(errcode);
+    return usage(handle_err());
 }
