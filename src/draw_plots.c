@@ -125,7 +125,7 @@ static int create_acc_corr_plots(
             );
         }
         if (plot_type == 1) {
-            rge_errno = ERR_DRAWPLOTS_2DACCEPTANCEPLOT;
+            rge_errno = ERR_2DACCEPTANCEPLOT;
             return 1; // NOTE. Feature not available yet.
         }
         ++(*idx);
@@ -328,7 +328,7 @@ static int run(
             if (acc_pids[pid_i] == plot_pid) acc_pid_idx = pid_i;
         }
         if (acc_pid_idx == UINT_MAX) {
-            rge_errno = ERR_DRAWPLOTS_NOACCDATA;
+            rge_errno = ERR_NOACCDATA;
             return 1;
         }
     }
@@ -736,7 +736,7 @@ static int run(
                                     case 3: sel_idx = i3; break;
                                     case 4: sel_idx = i4; break;
                                     default: {
-                                        rge_errno = ERR_DRAWPLOTS_WRONGACCVARS;
+                                        rge_errno = ERR_WRONGACCVARS;
                                         return 1;
                                     }
                                 }
@@ -871,15 +871,15 @@ static int handle_args(int argc, char **argv, char **in_filename,
                 errno = 0;
                 *nentries = strtol(optarg, &eptr, 10);
                 if (errno == EINVAL) {
-                    rge_errno = ERR_DRAWPLOTS_INVALIDNENTRIES;
+                    rge_errno = ERR_INVALIDENTRIES;
                     return 1;
                 }
                 if (errno == ERANGE) {
-                    rge_errno = ERR_DRAWPLOTS_NENTRIESLARGE;
+                    rge_errno = ERR_NENTRIESLARGE;
                     return 1;
                 }
                 if (*nentries <= 0) {
-                    rge_errno = ERR_DRAWPLOTS_NENTRIESNEGATIVE;
+                    rge_errno = ERR_NENTRIESNEGATIVE;
                     return 1;
                 }
                 break;
@@ -904,7 +904,7 @@ static int handle_args(int argc, char **argv, char **in_filename,
                 strcpy(*in_filename, optarg);
                 break;
             default:
-                rge_errno = ERR_DRAWPLOTS_BADOPTARGS;
+                rge_errno = ERR_BADOPTARGS;
                 return 1;
         }
     }
@@ -917,13 +917,13 @@ static int handle_args(int argc, char **argv, char **in_filename,
 
     // -A is only valid if -a is also specified.
     if (*apply_acc_corr == false && *acc_filename == NULL) {
-        rge_errno = ERR_DRAWPLOTS_INVALIDACCEPTANCEOPT;
+        rge_errno = ERR_INVALIDACCEPTANCEOPT;
         return 1;
     }
 
     // Check positional argument.
     if (*in_filename == NULL) {
-        rge_errno = ERR_DRAWPLOTS_NOINPUTFILE;
+        rge_errno = ERR_NOINPUTFILE;
         return 1;
     }
 

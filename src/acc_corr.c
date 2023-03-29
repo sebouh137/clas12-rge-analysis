@@ -122,24 +122,24 @@ static int run(
     printf("\nOpening generated events file...\n");
     TFile *thrown_file = TFile::Open(thrown_filename, "READ");
     if (!thrown_file || thrown_file->IsZombie()) {
-        rge_errno = ERR_ACCCORR_WRONGGENFILE;
+        rge_errno = ERR_WRONGGENFILE;
         return 1;
     }
     TNtuple *thrown = thrown_file->Get<TNtuple>("ntuple_thrown");
     if (thrown == NULL) {
-        rge_errno = ERR_ACCCORR_BADGENFILE;
+        rge_errno = ERR_BADGENFILE;
         return 1;
     }
 
     printf("Opening simulated events file...\n");
     TFile *simul_file = TFile::Open(simul_filename, "READ");
     if (!simul_file || simul_file->IsZombie()) {
-        rge_errno = ERR_ACCCORR_WRONGSIMFILE;
+        rge_errno = ERR_WRONGSIMFILE;
         return 1;
     }
     TTree *simul = simul_file->Get<TTree>(TREENAME);
     if (simul == NULL) {
-        rge_errno = ERR_ACCCORR_BADSIMFILE;
+        rge_errno = ERR_BADSIMFILE;
         return 1;
     }
 
@@ -301,7 +301,7 @@ static int handle_args(
     // Check that all arrays were defined.
     for (int bi = 0; bi < 5; ++bi) {
         if (nedges[bi] == 0) {
-            rge_errno = ERR_ACCCORR_NOEDGE;
+            rge_errno = ERR_NOEDGE;
             return 1;
         }
     }
@@ -309,7 +309,7 @@ static int handle_args(
     // Check that all arrays have *at least* two values.
     for (int bi = 0; bi < 5; ++bi) {
         if (nedges[bi]  < 2) {
-            rge_errno = ERR_ACCCORR_BADEDGES;
+            rge_errno = ERR_BADEDGES;
             return 1;
         }
     }
@@ -330,14 +330,14 @@ static int handle_args(
 
     // Check genfile.
     if (*thrown_filename == NULL) {
-        rge_errno = ERR_ACCCORR_NOGENFILE;
+        rge_errno = ERR_NOGENFILE;
         return 1;
     }
     if (check_root_filename(*thrown_filename)) return 1;
 
     // Check simfile.
     if (*simul_filename == NULL) {
-        rge_errno = ERR_ACCCORR_NOSIMFILE;
+        rge_errno = ERR_NOSIMFILE;
         return 1;
     }
     if (check_root_filename(*simul_filename)) return 1;

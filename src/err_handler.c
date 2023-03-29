@@ -16,7 +16,7 @@
 #include "../lib/err_handler.h"
 
 const std::map<unsigned int, const char *> ERRMAP = {
-    //    0 -  199 general
+    // general.
     {ERR_NOERR, ""}, // Handled before accessing this map.
     {ERR_USAGE, ""}, // Handled before accessing this map.
     {ERR_BADINPUTFILE,
@@ -46,61 +46,52 @@ const std::map<unsigned int, const char *> ERRMAP = {
     {ERR_UNIMPLEMENTEDBEAMENERGY,
             "No beam energy available in constants for run number. Add it from "
             "RCDB."},
+    {ERR_BADOPTARGS,
+            "Bad usage of optional arguments."},
 
-    //  200 -  299 acc_corr
-    {ERR_ACCCORR_NOEDGE,
+    // acc_corr.
+    {ERR_NOEDGE,
             "Edges for the five binning variables should be specified."},
-    {ERR_ACCCORR_BADEDGES,
+    {ERR_BADEDGES,
             "All edges should have *at least* two values -- a minimum and a "
             "maximum."},
-    {ERR_ACCCORR_NOGENFILE,
+    {ERR_NOGENFILE,
             "A generated ntuples file is required to obtain acceptance "
             "correction."},
-    {ERR_ACCCORR_NOSIMFILE,
+    {ERR_NOSIMFILE,
             "A simulation ntuples file is required to obtain acceptance "
             "correction."},
-    {ERR_ACCCORR_WRONGGENFILE,
+    {ERR_WRONGGENFILE,
             "Generated ntuples file is not a valid root file."},
-    {ERR_ACCCORR_BADGENFILE,
+    {ERR_BADGENFILE,
             "Failed to open generated ntuples file."},
-    {ERR_ACCCORR_WRONGSIMFILE,
+    {ERR_WRONGSIMFILE,
             "Simulation ntuples file is not a valid root file."},
-    {ERR_ACCCORR_BADSIMFILE,
+    {ERR_BADSIMFILE,
             "Failed to open simulated ntuples file."},
 
-    //  300 -  399 bank_containers
-    //  400 -  499 constants
-    //  500 -  599 draw_plots
-    {ERR_DRAWPLOTS_BADOPTARGS,
-            "Bad usage of optional arguments."},
-    {ERR_DRAWPLOTS_NOINPUTFILE,
-            "No input file provided."},
-    {ERR_DRAWPLOTS_2DACCEPTANCEPLOT,
+    // draw_plots.
+    {ERR_2DACCEPTANCEPLOT,
             "2D acceptance correction plots haven't been implemented yet."},
-    {ERR_DRAWPLOTS_INVALIDNENTRIES,
+    {ERR_INVALIDENTRIES,
             "Number of entries is invalid. Input a valid number after -n"},
-    {ERR_DRAWPLOTS_NENTRIESLARGE,
+    {ERR_NENTRIESLARGE,
             "Number of entries is too large. Input a number smaller than "
             "LONG_MAX"},
-    {ERR_DRAWPLOTS_NENTRIESNEGATIVE,
+    {ERR_NENTRIESNEGATIVE,
             "Number of entries should be greater than 0."},
-    {ERR_DRAWPLOTS_INVALIDACCEPTANCEOPT,
+    {ERR_INVALIDACCEPTANCEOPT,
             "Option -A is only valid if an acceptance correction file is "
             "specified using -a."},
-    {ERR_DRAWPLOTS_WRONGACCVARS,
+    {ERR_WRONGACCVARS,
             "Erroneous variables in the ACC_VX arr. Check constants."},
-    {ERR_DRAWPLOTS_NOACCDATA,
+    {ERR_NOACCDATA,
             "There's no acceptance correction data for the selected PID. Run "
             "acc_corr and define a binning scheme to use this feature."}
 
-    //  600 -  699 err_handler
-    //  700 -  799 extract_sf
-    //  800 -  899 file_handler
-    //  900 -  999 hipo2root
-    // 1000 - 1099 io_handler
-    // 1100 - 1199 make_ntuples
-    // 1200 - 1299 particle
-    // 1300 - 1399 utilities
+    // extract_sf.
+    // hipo2root.
+    // make_ntuples.
 };
 
 unsigned int rge_errno = 0;
