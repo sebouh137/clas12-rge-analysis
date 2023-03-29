@@ -40,6 +40,7 @@ int handle_err();
 #define ERR_BADFILENAMEFORMAT        11
 #define ERR_UNIMPLEMENTEDBEAMENERGY  12
 #define ERR_BADOPTARGS               13
+#define ERR_UNDEFINED                17
 // --+ 200 - 299 acc_corr +-----------------------------------------------------
 #define ERR_NOEDGE                  201
 #define ERR_BADEDGES                202

@@ -48,6 +48,8 @@ const std::map<unsigned int, const char *> ERRMAP = {
             "RCDB."},
     {ERR_BADOPTARGS,
             "Bad usage of optional arguments."},
+    {ERR_UNDEFINED,
+            "rge_errno = ERR_UNDEFINED. Something is wrong."},
 
     // acc_corr.
     {ERR_NOEDGE,

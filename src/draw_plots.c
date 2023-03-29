@@ -287,11 +287,10 @@ static int run(
     int **acc_n_simul;
     if (acc_filename != NULL) {
         acc_plot = true;
-        read_acc_corr_file(
+        if (read_acc_corr_file(
                 acc_filename, acc_nedges, &acc_edges, &acc_npids, &acc_nbins,
                 &acc_pids, &acc_n_thrown, &acc_n_simul
-        );
-        if (rge_errno != 0) return 1;
+        )) return 1;
     }
 
     // NOTE. This function could receive a few arguments to speed IO up.
@@ -824,6 +823,7 @@ static int run(
         free(acc_n_simul);
     }
 
+    rge_errno = ERR_NOERR;
     return 0;
 }
 
