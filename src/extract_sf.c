@@ -26,24 +26,25 @@
 
 /** run() function of the program. Check usage() for details. */
 static int run(
-        char *in_filename, char *work_dir, char *data_dir, long int nevn, int run_no
+        char *in_filename, char *work_dir, char *data_dir, long int nevn,
+        int run_no
 ) {
     gStyle->SetOptFit();
 
     // Create output root file.
-    char out_file[PATH_MAX];
-    sprintf(out_file, "%s/sf_study_%06d.root", work_dir, run_no);
-    TFile *f_out = TFile::Open(out_file, "RECREATE");
-    if (!f_out || f_out->IsZombie()) {
+    char out_rootfilename[PATH_MAX];
+    sprintf(out_rootfilename, "%s/sf_study_%06d.root", work_dir, run_no);
+    TFile *out_rootfile = TFile::Open(out_rootfilename, "RECREATE");
+    if (!out_rootfile || out_rootfile->IsZombie()) {
         rge_errno = ERR_OUTPUTROOTFAILED;
         return 1;
     }
 
     // Create output data file.
-    char t_file[PATH_MAX];
-    sprintf(t_file, "%s/sf_params_%06d.txt", data_dir, run_no);
-    FILE *t_out = fopen(t_file, "w");
-    if (t_out == NULL) {
+    char out_textfilename[PATH_MAX];
+    sprintf(out_textfilename, "%s/sf_params_%06d.txt", data_dir, run_no);
+    FILE *out_textfile = fopen(out_textfilename, "w");
+    if (out_textfile == NULL) {
         rge_errno = ERR_OUTPUTTEXTFAILED;
         return 1;
     }
@@ -344,12 +345,12 @@ static int run(
     TCanvas *gcvs = new TCanvas();
     for (int cal_i = 0; cal_i < ncals; ++cal_i) {
         dir = Form("%s", CALNAME[cal_i]);
-        f_out->mkdir(dir);
-        f_out->cd(dir);
+        out_rootfile->mkdir(dir);
+        out_rootfile->cd(dir);
         for (int sector_i = 0; sector_i < NSECTORS; ++sector_i) {
             dir = Form("%s/sector %d", CALNAME[cal_i], sector_i+1);
-            f_out->mkdir(dir);
-            f_out->cd(dir);
+            out_rootfile->mkdir(dir);
+            out_rootfile->cd(dir);
 
             histos[sf2D_name_arr[cal_i][sector_i]]->Draw("colz");
             sf_dotgraph[cal_i][sector_i]->Draw("Psame");
@@ -377,18 +378,18 @@ static int run(
             for (int sf_i = 0; sf_i < 2; ++sf_i) { // sf and sfs.
                 for (int param_i = 0; param_i < SF_NPARAMS; ++param_i) {
                     fprintf(
-                            t_out, "%011.8f ",
+                            out_textfile, "%011.8f ",
                             sf_fitresults[cal_i][sector_i][param_i][0]
                     );
                 }
             }
-            fprintf(t_out, "\n");
+            fprintf(out_textfile, "\n");
         }
     }
 
-    fclose(t_out);
+    fclose(out_textfile);
     f_in ->Close();
-    f_out->Close();
+    out_rootfile->Close();
 
     rge_errno = ERR_NOERR;
     return 0;
