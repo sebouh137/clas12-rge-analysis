@@ -17,6 +17,7 @@
 #include <TFile.h>
 #include <TNtuple.h>
 #include <TROOT.h>
+#include "../lib/err_handler.h"
 #include "../lib/io_handler.h"
 #include "../lib/particle.h"
 
@@ -36,9 +37,9 @@
  * @return:             the most accurate TOF available in the scintillator and
  *                      calorimeter banks.
  */
-static double get_tof(Scintillator scintillator, Calorimeter calorimeter,
-        unsigned int pindex)
-{
+static double get_tof(
+        Scintillator scintillator, Calorimeter calorimeter, unsigned int pindex
+) {
     int    most_precise_lyr = 0;
     double tof              = INFINITY;
     for (unsigned int i = 0; i < scintillator.pindex->size(); ++i) {
@@ -121,9 +122,10 @@ static double get_tof(Scintillator scintillator, Calorimeter calorimeter,
  *                     Calorimeter instance, suggesting corruption or a change
  *                     in the REC::Calorimeter bank.
  */
-static int get_deposited_energy(Calorimeter calorimeter, unsigned int pindex,
-        double *energy_PCAL, double *energy_ECIN, double *energy_ECOU)
-{
+static int get_deposited_energy(
+        Calorimeter calorimeter, unsigned int pindex, double *energy_PCAL,
+        double *energy_ECIN, double *energy_ECOU
+) {
     *energy_PCAL = 0;
     *energy_ECIN = 0;
     *energy_ECOU = 0;
@@ -137,7 +139,10 @@ static int get_deposited_energy(Calorimeter calorimeter, unsigned int pindex,
         if      (lyr == PCAL_LYR) *energy_PCAL += calorimeter.energy->at(i);
         else if (lyr == ECIN_LYR) *energy_ECIN += calorimeter.energy->at(i);
         else if (lyr == ECOU_LYR) *energy_ECOU += calorimeter.energy->at(i);
-        else return 1;
+        else {
+            rge_errno = ERR_INVALIDCALLAYER;
+            return 1;
+        }
     }
 
     return 0;
@@ -157,9 +162,9 @@ static int get_deposited_energy(Calorimeter calorimeter, unsigned int pindex,
  *                   Cherenkov instance, suggesting data corruption or a change
  *                   in the REC::Cherenkov bank.
  */
-static int count_photoelectrons(Cherenkov cherenkov, unsigned int pindex,
-        int *nphe_HTCC, int *nphe_LTCC)
-{
+static int count_photoelectrons(
+        Cherenkov cherenkov, unsigned int pindex, int *nphe_HTCC, int *nphe_LTCC
+) {
     *nphe_HTCC = 0;
     *nphe_LTCC = 0;
 
@@ -171,26 +176,34 @@ static int count_photoelectrons(Cherenkov cherenkov, unsigned int pindex,
         int detector = cherenkov.detector->at(i);
         if      (detector == HTCC_ID) *nphe_HTCC += cherenkov.nphe->at(i);
         else if (detector == LTCC_ID) *nphe_LTCC += cherenkov.nphe->at(i);
-        else return 1;
+        else {
+            rge_errno = ERR_INVALIDCHERENKOVID;
+            return 1;
+        }
     }
 
     return 0;
 }
 
 /** run() function of the program. Check usage() for details. */
-static int run(char *filename_in, char *work_dir, char *data_dir, bool debug,
-        bool use_fmt, long int n_events, int run_no, double energy_beam)
-{
+static int run(
+        char *filename_in, char *work_dir, char *data_dir, bool debug,
+        bool use_fmt, long int n_events, int run_no, double energy_beam
+) {
     // Get sampling fraction.
     char sampling_fraction_file[PATH_MAX];
     sprintf(sampling_fraction_file, "%s/sf_params_%06d.txt", data_dir, run_no);
     double sampling_fraction_params[NSECTORS][SF_NPARAMS][2];
-    if (get_sf_params(sampling_fraction_file, sampling_fraction_params))
+    if (get_sf_params(sampling_fraction_file, sampling_fraction_params)) {
         return 1;
+    }
 
     // Access input file.
     TFile *file_in  = TFile::Open(filename_in, "READ");
-    if (!file_in || file_in->IsZombie()) return 11;
+    if (!file_in || file_in->IsZombie()) {
+        rge_errno = ERR_BADINPUTFILE;
+        return 1;
+    }
 
     // Return to top directory (weird root stuff).
     gROOT->cd();
@@ -204,7 +217,10 @@ static int run(char *filename_in, char *work_dir, char *data_dir, bool debug,
 
     // Create TTree and TNTuples.
     TTree *tree_in = file_in->Get<TTree>(TREENAME);
-    if (tree_in == NULL) return 12;
+    if (tree_in == NULL) {
+        rge_errno = ERR_BADROOTFILE;
+        return 1;
+    }
     TNtuple *tree_out;
     tree_out = new TNtuple(TREENAME, TREENAME, vars_string);
 
@@ -279,17 +295,14 @@ static int run(char *filename_in, char *work_dir, char *data_dir, bool debug,
 
             // Get energy deposited in calorimeters.
             double energy_PCAL, energy_ECIN, energy_ECOU;
-            int errcode = get_deposited_energy(
+            if (get_deposited_energy(
                     bank_cal, pindex, &energy_PCAL, &energy_ECIN, &energy_ECOU
-            );
-            if (errcode) return 13;
+            )) return 1;
 
             // Get number of photoelectrons from Cherenkov counters.
             int nphe_HTCC, nphe_LTCC;
-            errcode = count_photoelectrons(
-                    bank_chkv, pindex, &nphe_HTCC, &nphe_LTCC
-            );
-            if (errcode) return 14;
+            if (count_photoelectrons(bank_chkv, pindex, &nphe_HTCC, &nphe_LTCC))
+                return 1;
 
             // Get time of flight from scintillators or calorimeters.
             double tof = get_tof(bank_sci, bank_cal, pindex);
@@ -358,17 +371,14 @@ static int run(char *filename_in, char *work_dir, char *data_dir, bool debug,
 
             // Get energy deposited in calorimeters.
             double energy_PCAL, energy_ECIN, energy_ECOU;
-            int errcode = get_deposited_energy(
+            if (get_deposited_energy(
                     bank_cal, pindex, &energy_PCAL, &energy_ECIN, &energy_ECOU
-            );
-            if (errcode) return 13;
+            )) return 1;
 
             // Get Cherenkov counters data.
             int nphe_HTCC, nphe_LTCC;
-            errcode = count_photoelectrons(
-                    bank_chkv, pindex, &nphe_HTCC, &nphe_LTCC
-            );
-            if (errcode) return 14;
+            if (count_photoelectrons(bank_chkv, pindex, &nphe_HTCC, &nphe_LTCC))
+                return 1;
 
             // Get time-of-flight (tof).
             double tof = get_tof(bank_sci, bank_cal, pindex);
@@ -423,11 +433,14 @@ static int run(char *filename_in, char *work_dir, char *data_dir, bool debug,
     file_in ->Close();
     file_out->Close();
 
+    rge_errno = ERR_NOERR;
     return 0;
 }
 
 /** Print usage and exit. */
-static int usage() {
+static int usage(int err) {
+    if (err == 0 || err == 2) return err;
+
     fprintf(stderr,
             "\n\nUsage: make_ntuples [-hDfn:w:d:] infile\n"
             " * -h         : show this message and exit.\n"
@@ -447,85 +460,21 @@ static int usage() {
             "    Generate ntuples relevant to SIDIS analysis based on the "
             "reconstructed\n    variables from CLAS12 data.\n\n"
     );
-
     return 1;
 }
 
-/** Print error number and provide a short description of the error. */
-static int handle_err(int errcode) {
-    if (errcode > 1) fprintf(stderr, "Error %02d. ", errcode);
-    switch (errcode) {
-        case 0:
-            return 0;
-        case 1:
-            break;
-        case 2:
-            fprintf(stderr, "nevents should be a number greater than 0.");
-            break;
-        case 3:
-            fprintf(stderr, "Bad usage of optional arguments.");
-            break;
-        case 4:
-            fprintf(stderr, "No file name provided.");
-            break;
-        case 5:
-            fprintf(stderr, "Input file should be in root format.");
-            break;
-        case 6:
-            fprintf(stderr, "Input file does not exist.");
-            break;
-        case 7:
-            fprintf(stderr, "Couldn't find dot position in input filename.");
-            break;
-        case 8:
-            fprintf(stderr, "Couldn't find run number in input filename.");
-            break;
-        case 9:
-            fprintf(stderr, "Run number not in constants. Add from RCDB.");
-            break;
-        case 11:
-            fprintf(stderr, "Input file is not a valid root file.");
-            break;
-        case 12:
-            fprintf(stderr, "Couldn't get relevant trees from input file.");
-            break;
-        case 13:
-            fprintf(stderr, "Invalid Electronic Calorimeter layer. Check bank "
-                            "integrity.\n");
-            break;
-        case 14:
-            fprintf(stderr, "Invalid Cherenkov Counter ID. Check bank "
-                            "integrity.");
-            break;
-        case 15:
-            fprintf(stderr, "Number of entries is invalid. Please input a valid"
-                            " number after -n.");
-            break;
-        case 16:
-            fprintf(stderr, "Number of entries is too large. Please input a "
-                            "number smaller than %ld.", LONG_MAX);
-            break;
-        default:
-            fprintf(stderr, "Error code not implemented!\n");
-            return 1;
-    }
-
-    return usage();
-}
-
-/**
- * Handle arguments for make_ntuples using optarg. Error codes used are
- *     explained in the handle_err() function.
- */
-static int handle_args(int argc, char **argv, char **filename_in,
-        char **work_dir, char **data_dir, bool *debug, bool *use_fmt,
-        long int *n_events, int *run_no, double *energy_beam)
-{
+/** Handle arguments for make_ntuples using optarg. */
+static int handle_args(
+        int argc, char **argv, char **filename_in, char **work_dir,
+        char **data_dir, bool *debug, bool *use_fmt,
+        long int *n_events, int *run_no, double *energy_beam
+) {
     // Handle arguments.
     int opt;
     while ((opt = getopt(argc, argv, "-hDfn:w:d:")) != -1) {
         switch (opt) {
             case 'h':
+                rge_errno = ERR_USAGE;
                 return 1;
             case 'D':
                 *debug = true;
@@ -534,12 +483,7 @@ static int handle_args(int argc, char **argv, char **filename_in,
                 *use_fmt = true;
                 break;
             case 'n':
-                char *eptr;
-                errno = 0;
-                *n_events = strtol(optarg, &eptr, 10);
-                if (errno == EINVAL) return 15; // Value not supported.
-                if (errno == ERANGE) return 16; // Value outside of range.
-                if (*n_events <= 0)  return  2; // Value is negative or zero.
+                if (process_nentries(n_events, optarg)) return 1;
                 break;
             case 'w':
                 *work_dir = static_cast<char *>(malloc(strlen(optarg) + 1));
@@ -554,14 +498,15 @@ static int handle_args(int argc, char **argv, char **filename_in,
                 strcpy(*filename_in, optarg);
                 break;
             default:
-                return 3; // Bad usage of optional arguments.
+                rge_errno = ERR_BADOPTARGS;
+                return 1;
         }
     }
 
     // Define workdir if undefined.
     // NOTE. We copy argv[0] because sprintf() writes over it.
-    char tmpfile[PATH_MAX];
-    sprintf(tmpfile, "%s", argv[0]);
+    char tmpfilename[PATH_MAX];
+    sprintf(tmpfilename, "%s", argv[0]);
     if (*work_dir == NULL) {
         *work_dir = static_cast<char *>(malloc(PATH_MAX));
         sprintf(*work_dir, "%s/../root_io", dirname(argv[0]));
@@ -570,14 +515,15 @@ static int handle_args(int argc, char **argv, char **filename_in,
     // Define datadir if undefined.
     if (*data_dir == NULL) {
         *data_dir = static_cast<char *>(malloc(PATH_MAX));
-        sprintf(*data_dir, "%s/../data", dirname(tmpfile));
+        sprintf(*data_dir, "%s/../data", dirname(tmpfilename));
     }
 
     // Check positional argument.
-    if (*filename_in == NULL) return 4;
-
-    int check = handle_root_filename(*filename_in, run_no, energy_beam);
-    if (check) return check + 4; // Shift errcode.
+    if (*filename_in == NULL) {
+        rge_errno = ERR_NOINPUTFILE;
+        return 1;
+    }
+    if (handle_root_filename(*filename_in, run_no, energy_beam)) return 1;
 
     return 0;
 }
@@ -594,14 +540,14 @@ int main(int argc, char **argv) {
     int run_no         = -1;
     double energy_beam = -1;
 
-    int errcode = handle_args(
+    int err = handle_args(
             argc, argv, &filename_in, &work_dir, &data_dir, &debug, &use_fmt,
             &n_events, &run_no, &energy_beam
     );
 
     // Run.
-    if (errcode == 0) {
-        errcode = run(
+    if (rge_errno == ERR_UNDEFINED && err == 0) {
+        run(
                 filename_in, work_dir, data_dir, debug, use_fmt, n_events,
                 run_no, energy_beam
         );
@@ -613,5 +559,5 @@ int main(int argc, char **argv) {
     if (data_dir    != NULL) free(data_dir);
 
     // Return errcode.
-    return handle_err(errcode);
+    return usage(handle_err());
 }
