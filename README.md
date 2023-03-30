@@ -131,7 +131,7 @@ Pull requests are welcome. For major changes, open an issue first to discuss the
 - [ ] Improve the use of constants thorough the code by using a dictionary or a similar structure.
 - [ ] Apply radiative correction.
 - [ ] Apply Feynman cuts.
-- [ ] Improve error code handling.
+- [x] Improve error code handling.
 - [ ] Improve sampling fraction handling.
 - [x] Improve simulation filename handling so that it can work with any beam energy -- at least up to [0.1*GeV].
 - [ ] Get beam energy from `RCDB` instead of hardcoding it -- check `get_beam_energy()` function from `file_handler.c`.

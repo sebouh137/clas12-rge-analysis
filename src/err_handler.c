@@ -15,37 +15,18 @@
 
 #include "../lib/err_handler.h"
 
+// Map linking every error number with an explanation script for the user.
+// NOTE. std::map isn't smart enough to detect if two keys have the same
+//       value, so be *very careful* when adding rge_errnos. An invisibile error
+//       arises if two keys have the same value!
 const std::map<unsigned int, const char *> ERRMAP = {
-    // general.
+    // Basic functionalities.
     {ERR_NOERR, ""}, // Handled before accessing this map.
     {ERR_USAGE, ""}, // Handled before accessing this map.
-    {ERR_BADINPUTFILE,
-            "Failed to open input file."},
-    {ERR_OUTFILEEXISTS,
-            "Output file already exists."},
-    {ERR_OUTPUTROOTFAILED,
-            "Failed to create output root file."},
-    {ERR_NOINPUTFILE,
-            "Input file doesn't exist."},
-    {ERR_INVALIDROOTFILE,
-            "Root filename should finish with the `.root` extension."},
-    {ERR_NOSAMPFRACFILE,
-            // NOTE. A smoother behaviour here would be that the program calls
-            //       extract_sf itself.
-            "No sampling fraction file is available for this run number."},
-    {ERR_NOACCCORRFILE,
-            "Failed to access acceptance correction file."},
-    {ERR_ANGLEOUTOFRANGE,
-            "Invalid angle value. By convention, all angles should be between "
-            "-180 (-pi) and 180 (pi)."},
-    {ERR_NODOTFILENAME,
-            "Couldn't find a `.` in filename. Provide a valid file."},
-    {ERR_BADFILENAMEFORMAT,
-            "Couldn't extract run number from filename. Follow file name "
-            "conventions specified in usage()."},
-    {ERR_UNIMPLEMENTEDBEAMENERGY,
-            "No beam energy available in constants for run number. Add it from "
-            "RCDB."},
+    {ERR_UNDEFINED,
+            "rge_errno = ERR_UNDEFINED. Something is wrong."},
+
+    // Argument errors.
     {ERR_BADOPTARGS,
             "Bad usage of optional arguments."},
     {ERR_INVALIDENTRIES,
@@ -55,67 +36,95 @@ const std::map<unsigned int, const char *> ERRMAP = {
             "LONG_MAX."},
     {ERR_NENTRIESNEGATIVE,
             "Number of entries should be greater than 0."},
-    {ERR_UNDEFINED,
-            "rge_errno = ERR_UNDEFINED. Something is wrong."},
-    {ERR_OUTPUTTEXTFAILED,
-            "Failed to create output text file."},
-    {ERR_INVALIDHIPOFILE,
-            "Hipo filename should finish with the `.hipo` extension."},
-    {ERR_INVALIDCALLAYER,
-            "Invalid layer in the calorimeter bank. Check bank integrity."},
-    {ERR_INVALIDCHERENKOVID,
-            "Invalid detector ID in the cherenkov bank. Check bank integrity."},
-    {ERR_BADROOTFILE,
-            "Couldn't extract tree/ntuple with TREENAME from root file."},
-
-    // acc_corr.
     {ERR_NOEDGE,
             "Edges for the five binning variables should be specified."},
     {ERR_BADEDGES,
             "All edges should have *at least* two values -- a minimum and a "
             "maximum."},
+    {ERR_INVALIDFMTNLAYERS,
+            "Number of FMT layers is invalid. Input either 0, 2, or 3 after "
+            "-f."},
+    {ERR_INVALIDACCEPTANCEOPT,
+            "Option -A is only valid if an acceptance correction file is "
+            "specified using -a."},
+
+    // File errors.
+    {ERR_NOINPUTFILE,
+            "Input file doesn't exist."},
+    {ERR_NOSAMPFRACFILE,
+            // NOTE. A smoother behaviour here would be that the program calls
+            //       extract_sf itself.
+            "No sampling fraction file is available for this run number."},
+    {ERR_NOACCCORRFILE,
+            "Failed to access acceptance correction file."},
     {ERR_NOGENFILE,
             "A generated ntuples file is required to obtain acceptance "
             "correction."},
     {ERR_NOSIMFILE,
             "A simulation ntuples file is required to obtain acceptance "
             "correction."},
-    {ERR_WRONGGENFILE,
-            "Generated ntuples file is not a valid root file."},
+    {ERR_NODOTFILENAME,
+            "Couldn't find a `.` in filename. Provide a valid file."},
+    {ERR_BADFILENAMEFORMAT,
+            "Couldn't extract run number from filename. Follow filename "
+            "conventions specified in usage()."},
+    {ERR_INVALIDROOTFILE,
+            "Root filename should finish with the `.root` extension."},
+    {ERR_INVALIDHIPOFILE,
+            "Hipo filename should finish with the `.hipo` extension."},
+    {ERR_BADINPUTFILE,
+            "Failed to open input file."},
     {ERR_BADGENFILE,
             "Failed to open generated ntuples file."},
-    {ERR_WRONGSIMFILE,
-            "Simulation ntuples file is not a valid root file."},
     {ERR_BADSIMFILE,
             "Failed to open simulated ntuples file."},
+    {ERR_BADROOTFILE,
+            "Couldn't extract tree/ntuple with TREENAME from root file."},
+    {ERR_WRONGGENFILE,
+            "Generated ntuples file is not a valid root file."},
+    {ERR_WRONGSIMFILE,
+            "Simulation ntuples file is not a valid root file."},
+    {ERR_OUTFILEEXISTS,
+            "Output file already exists."},
+    {ERR_OUTPUTROOTFAILED,
+            "Failed to create output root file."},
+    {ERR_OUTPUTTEXTFAILED,
+            "Failed to create output text file."},
 
-    // draw_plots.
-    {ERR_2DACCEPTANCEPLOT,
-            "2D acceptance correction plots haven't been implemented yet."},
-    {ERR_INVALIDACCEPTANCEOPT,
-            "Option -A is only valid if an acceptance correction file is "
-            "specified using -a."},
-    {ERR_WRONGACCVARS,
-            "Erroneous variables in the ACC_VX arr. Check constants."},
-    {ERR_NOACCDATA,
-            "There's no acceptance correction data for the selected PID. Run "
-            "acc_corr and define a binning scheme to use this feature."},
-
-    // extract_sf.
+    // Detector errors.
+    {ERR_INVALIDCALLAYER,
+            "Invalid layer in the calorimeter bank. Check bank integrity."},
     {ERR_INVALIDCALSECTOR,
             "Invalid sector in the calorimeter bank. Check bank integrity."},
+    {ERR_INVALIDCHERENKOVID,
+            "Invalid detector ID in the cherenkov bank. Check bank integrity."},
 
-    // hipo2root.
-    // make_ntuples.
-    {ERR_INVALIDFMTNLAYERS,
-            "Number of FMT layers is invalid. Input either 0, 2, or 3 after "
-            "-f."},
+    // Program errors.
+    {ERR_UNIMPLEMENTEDBEAMENERGY,
+            "No beam energy available in constants for run number. Add it from "
+            "RCDB."},
+    {ERR_2DACCEPTANCEPLOT,
+            "2D acceptance correction plots haven't been implemented yet."},
+    {ERR_WRONGACCVARS,
+            "Erroneous variables in the ACC_VX arr. Check constants."},
+
+    // Miscellaneous.
+    {ERR_ANGLEOUTOFRANGE,
+            "Invalid angle value. By convention, all angles should be between "
+            "-180 (-pi) and 180 (pi)."},
+    {ERR_NOACCDATA,
+            "There's no acceptance correction data for the selected PID. Run "
+            "acc_corr and define a binning scheme to use this feature."}
 };
 
+// Error number. Initially defined to ERR_UNDEFINED to check if the program
+//     ends abruptly without setting an error number.
+// NOTE. To check for undefined errors, all run() functions in the code should
+//       have a line with `rge_errno = ERR_NOERR;` before returning 0.
 unsigned int rge_errno = ERR_UNDEFINED;
 
 /**
- * Entry point to all error handling. Decides which handler should react.
+ * Entry point to all error handling. Decides how to react to errno.
  *
  * @return:
  *    * 0 : no error was found.
