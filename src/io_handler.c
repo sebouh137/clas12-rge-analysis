@@ -148,16 +148,34 @@ int handle_root_filename(char *filename, int *run_no) {
     return err;
 }
 
-/* Run strtol on art to get number of entries. */
-int process_nentries(long int *nentries, char *arg) {
+/* Run strtol, returning appropriate error codes. */
+int run_strtol(long int *n, char *t) {
     char *eptr;
     errno = 0;
-    *nentries = strtol(arg, &eptr, 10);
-    if (errno == EINVAL) {
+    *n = strtol(t, &eptr, 10);
+    if (errno == EINVAL) return 1;
+    if (errno == ERANGE) return 2;
+    return 0;
+}
+
+/* Run strtol on arg to get number of FMT layers required. */
+int process_fmtnlayers(long int *nlayers, char *arg) {
+    int err = run_strtol(nlayers, arg);
+    if (err == 1 || (*nlayers != 0 && *nlayers != 2 && *nlayers != 3)) {
+        rge_errno = ERR_INVALIDFMTNLAYERS;
+        return 1;
+    }
+    return 0;
+}
+
+/* Run strtol on arg to get number of entries. */
+int process_nentries(long int *nentries, char *arg) {
+    int err = run_strtol(nentries, arg);
+    if (err == 1) {
         rge_errno = ERR_INVALIDENTRIES;
         return 1;
     }
-    if (errno == ERANGE) {
+    if (err == 2) {
         rge_errno = ERR_NENTRIESLARGE;
         return 1;
     }

@@ -67,5 +67,6 @@ int handle_err();
 #define ERR_INVALIDCALSECTOR        401
 // --+ 500 - 599 hipo2root +----------------------------------------------------
 // --+ 600 - 699 make_ntuples +-------------------------------------------------
+#define ERR_INVALIDFMTNLAYERS       601
 
 #endif

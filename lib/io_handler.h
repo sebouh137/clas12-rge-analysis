@@ -28,6 +28,8 @@ int check_root_filename(char *filename);
 int handle_root_filename(char *filename, int *run_no, double *beam_energy);
 int handle_root_filename(char *filename, int *run_no);
 
+int run_strtol(long int *n, char *t);
+int process_fmtnlayers(long int *nlayers, char *arg);
 int process_nentries(long int *nentries, char *arg);
 
 int check_hipo_filename(char *filename);

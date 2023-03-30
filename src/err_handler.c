@@ -107,6 +107,9 @@ const std::map<unsigned int, const char *> ERRMAP = {
 
     // hipo2root.
     // make_ntuples.
+    {ERR_INVALIDFMTNLAYERS,
+            "Number of FMT layers is invalid. Input either 0, 2, or 3 after "
+            "-f."},
 };
 
 unsigned int rge_errno = ERR_UNDEFINED;

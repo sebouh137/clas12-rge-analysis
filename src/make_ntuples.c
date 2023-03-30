@@ -188,7 +188,7 @@ static int count_photoelectrons(
 /** run() function of the program. Check usage() for details. */
 static int run(
         char *filename_in, char *work_dir, char *data_dir, bool debug,
-        bool use_fmt, long int n_events, int run_no, double energy_beam
+        long int fmt_nlayers, long int n_events, int run_no, double energy_beam
 ) {
     // Get sampling fraction.
     char sampling_fraction_file[PATH_MAX];
@@ -236,7 +236,7 @@ static int run(
     Cherenkov    bank_chkv  (tree_in);
     Scintillator bank_sci   (tree_in);
     FMT_Tracks   bank_trk_fmt;
-    if (use_fmt) bank_trk_fmt.link_tree(tree_in);
+    if (fmt_nlayers != 0) bank_trk_fmt.link_tree(tree_in);
 
     // Iterate through input file. Each TTree entry is one event.
     printf("Processing %ld events from %s.\n", n_events, filename_in);
@@ -262,7 +262,7 @@ static int run(
         bank_sci   .get_entries(tree_in, event);
         bank_cal   .get_entries(tree_in, event);
         bank_chkv  .get_entries(tree_in, event);
-        if (use_fmt) bank_trk_fmt.get_entries(tree_in, event);
+        if (fmt_nlayers != 0) bank_trk_fmt.get_entries(tree_in, event);
 
         // Filter events without the necessary banks.
         if (bank_part.vz->size() == 0 || bank_trk_dc.pindex->size() == 0) {
@@ -281,12 +281,13 @@ static int run(
             );
 
             // Get reconstructed particle from DC and from FMT.
-            if (!use_fmt) {
+            if (fmt_nlayers != 0) {
                 part_trigger = particle_init(&bank_part, &bank_trk_dc, pos);
             }
             else {
                 part_trigger = particle_init(
-                        &bank_part, &bank_trk_dc, &bank_trk_fmt, pos
+                        &bank_part, &bank_trk_dc, &bank_trk_fmt, pos,
+                        fmt_nlayers
                 );
             }
 
@@ -359,10 +360,13 @@ static int run(
 
             // Get reconstructed particle from DC and from FMT.
             particle part;
-            if (!use_fmt) part = particle_init(&bank_part, &bank_trk_dc, pos);
+            if (fmt_nlayers == 0) {
+                part = particle_init(&bank_part, &bank_trk_dc, pos);
+            }
             else {
                 part = particle_init(
-                        &bank_part, &bank_trk_dc, &bank_trk_fmt, pos
+                        &bank_part, &bank_trk_dc, &bank_trk_fmt, pos,
+                        fmt_nlayers
                 );
             }
 
@@ -417,11 +421,14 @@ static int run(
 
     // Create output file.
     char filename_out[PATH_MAX];
-    if (!use_fmt) {
+    if (fmt_nlayers == 0) {
         sprintf(filename_out, "%s/ntuples_dc_%06d.root", work_dir, run_no);
     }
     else {
-        sprintf(filename_out, "%s/ntuples_fmt_%06d.root", work_dir, run_no);
+        sprintf(
+                filename_out, "%s/ntuples_fmt%1ld_%06d.root", work_dir,
+                fmt_nlayers, run_no
+        );
     }
     TFile *file_out = TFile::Open(filename_out, "RECREATE");
 
@@ -442,14 +449,14 @@ static int usage(int err) {
     if (err == 0 || err == 2) return err;
 
     fprintf(stderr,
-            "\n\nUsage: make_ntuples [-hDfn:w:d:] infile\n"
+            "\n\nUsage: make_ntuples [-hDf:n:w:d:] infile\n"
             " * -h         : show this message and exit.\n"
             " * -D         : activate debug mode.\n"
-            " * -f         : define from which bank the tracking data is to be "
-            "obtained. Set\n                to false to use DC data, set to "
-            "true to use FMT data \n                If set to true and "
-            "FMT::Tracks bank is not in the input file,\n                the "
-            "program will crash.\n"
+            " * -f fmtlyrs : define how many FMT layers should the track have "
+            "hit. Available\n                numbers are 0 (tracked only by DC)"
+            ", 2, and 3. If set to\n                something other than 0 and "
+            "there is no FMT::Tracks bank in the\n                input file, "
+            "the program will crash. Default is 0.\n"
             " * -n nevents : number of events.\n"
             " * -w workdir : location where output root files are to be "
             "stored. Default\n                is root_io.\n"
@@ -466,12 +473,12 @@ static int usage(int err) {
 /** Handle arguments for make_ntuples using optarg. */
 static int handle_args(
         int argc, char **argv, char **filename_in, char **work_dir,
-        char **data_dir, bool *debug, bool *use_fmt,
+        char **data_dir, bool *debug, long int *fmt_nlayers,
         long int *n_events, int *run_no, double *energy_beam
 ) {
     // Handle arguments.
     int opt;
-    while ((opt = getopt(argc, argv, "-hDfn:w:d:")) != -1) {
+    while ((opt = getopt(argc, argv, "-hDf:n:w:d:")) != -1) {
         switch (opt) {
             case 'h':
                 rge_errno = ERR_USAGE;
@@ -480,7 +487,7 @@ static int handle_args(
                 *debug = true;
                 break;
             case 'f':
-                *use_fmt = true;
+                if (process_fmtnlayers(fmt_nlayers, optarg)) return 1;
                 break;
             case 'n':
                 if (process_nentries(n_events, optarg)) return 1;
@@ -531,24 +538,24 @@ static int handle_args(
 /** Entry point of the program. */
 int main(int argc, char **argv) {
     // Handle arguments.
-    char *filename_in  = NULL;
-    char *work_dir     = NULL;
-    char *data_dir     = NULL;
-    bool debug         = false;
-    bool use_fmt       = false;
-    long int n_events  = -1;
-    int run_no         = -1;
-    double energy_beam = -1;
+    char *filename_in    = NULL;
+    char *work_dir       = NULL;
+    char *data_dir       = NULL;
+    bool debug           = false;
+    long int fmt_nlayers = 0;
+    long int n_events    = -1;
+    int run_no           = -1;
+    double energy_beam   = -1;
 
     int err = handle_args(
-            argc, argv, &filename_in, &work_dir, &data_dir, &debug, &use_fmt,
-            &n_events, &run_no, &energy_beam
+            argc, argv, &filename_in, &work_dir, &data_dir, &debug,
+            &fmt_nlayers, &n_events, &run_no, &energy_beam
     );
 
     // Run.
     if (rge_errno == ERR_UNDEFINED && err == 0) {
         run(
-                filename_in, work_dir, data_dir, debug, use_fmt, n_events,
+                filename_in, work_dir, data_dir, debug, fmt_nlayers, n_events,
                 run_no, energy_beam
         );
     }

@@ -267,7 +267,6 @@ extern const double PLIMITSARR[SF_NPARAMS][2]; // Momentum limits for 1D SF fit.
 #define ECOU_LYR    7 // EC outer layer id.
 
 // General Cuts.
-#define FMTNLYRSCUT   3    // # of FMT layers required to accept track.
 #define Q2CUT         1.   // Q2 of particle must be over this value.
 #define WCUT          2.   // W of particle must be over this value.
 #define W2CUT         4.   // W2 of particle must be over this value.

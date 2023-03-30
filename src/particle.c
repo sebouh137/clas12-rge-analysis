@@ -60,10 +60,12 @@ particle particle_init(Particle *bank_particle, Track *bank_track,
   * @param bank_track      : pointer to the Track class to get DC tracking data.
   * @param bank_fmt_tracks : pointer to the FMT_Tracks class to get FMT tracks.
   * @param pos             : position of the particle at the track class.
+  * @param fmt_nlayers     : number of FMT layers required to make a particle.
   */
-particle particle_init(Particle *bank_particle, Track *bank_track,
-        FMT_Tracks *bank_fmt_tracks, unsigned int pos)
-{
+particle particle_init(
+        Particle *bank_particle, Track *bank_track,
+        FMT_Tracks *bank_fmt_tracks, unsigned int pos, long int fmt_nlayers
+) {
     unsigned int index  =
             static_cast<unsigned int>(bank_track->index->at(pos));
     unsigned int pindex =
@@ -73,7 +75,7 @@ particle particle_init(Particle *bank_particle, Track *bank_track,
     // Track reconstructed by FMT.
     if (bank_fmt_tracks->vz->size() < 1)               return particle_init();
     // Track crossed enough FMT layers.
-    if (bank_fmt_tracks->ndf->at(index) < FMTNLYRSCUT) return particle_init();
+    if (bank_fmt_tracks->ndf->at(index) < fmt_nlayers) return particle_init();
 
     return particle_init(
             bank_particle->charge->at(pindex),
