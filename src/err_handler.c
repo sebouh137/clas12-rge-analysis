@@ -61,6 +61,12 @@ const std::map<unsigned int, const char *> ERRMAP = {
             "Failed to create output text file."},
     {ERR_INVALIDHIPOFILE,
             "Hipo filename should finish with the `.hipo` extension."},
+    {ERR_INVALIDCALLAYER,
+            "Invalid layer in the calorimeter bank. Check bank integrity."},
+    {ERR_INVALIDCHERENKOVID,
+            "Invalid detector ID in the cherenkov bank. Check bank integrity."},
+    {ERR_BADROOTFILE,
+            "Couldn't extract tree/ntuple with TREENAME from root file."},
 
     // acc_corr.
     {ERR_NOEDGE,
@@ -98,8 +104,6 @@ const std::map<unsigned int, const char *> ERRMAP = {
     // extract_sf.
     {ERR_INVALIDCALSECTOR,
             "Invalid sector in the calorimeter bank. Check bank integrity."},
-    {ERR_INVALIDCALLAYER,
-            "Invalid layer in the calorimeter bank. Check bank integrity."}
 
     // hipo2root.
     // make_ntuples.

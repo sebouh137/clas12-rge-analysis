@@ -485,10 +485,12 @@ int main(int argc, char **argv) {
     long int nevn     = -1;
     int run_no        = -1;
 
-    handle_args(argc, argv, &in_filename, &work_dir, &data_dir, &run_no, &nevn);
+    int err = handle_args(
+            argc, argv, &in_filename, &work_dir, &data_dir, &run_no, &nevn
+    );
 
     // Run.
-    if (rge_errno == ERR_UNDEFINED) {
+    if (rge_errno == ERR_UNDEFINED && err == 0) {
         run(in_filename, work_dir, data_dir, nevn, run_no);
     }
 

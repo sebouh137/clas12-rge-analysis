@@ -469,6 +469,11 @@ static int run(
 
     // === SETUP NTUPLES =======================================================
     TNtuple *ntuple = static_cast<TNtuple *>(f_in->Get(TREENAME));
+    if (ntuple == NULL) {
+        rge_errno = ERR_BADROOTFILE;
+        return 1;
+    }
+
     Float_t vars[VAR_LIST_SIZE];
     for (int var_i = 0; var_i < VAR_LIST_SIZE; ++var_i) {
         ntuple->SetBranchAddress(S_VAR_LIST[var_i], &vars[var_i]);
@@ -941,13 +946,13 @@ int main(int argc, char **argv) {
     long int nentries   = -1;
     bool apply_acc_corr = true;
 
-    handle_args(
+    int err = handle_args(
             argc, argv, &in_filename, &out_filename, &acc_filename, &work_dir,
             &run_no, &nentries, &apply_acc_corr
     );
 
     // Run.
-    if (rge_errno == ERR_UNDEFINED) {
+    if (rge_errno == ERR_UNDEFINED && err == 0) {
         run(
                 in_filename, out_filename, acc_filename, work_dir, run_no,
                 nentries, apply_acc_corr

@@ -46,6 +46,9 @@ int handle_err();
 #define ERR_UNDEFINED                17
 #define ERR_OUTPUTTEXTFAILED         18
 #define ERR_INVALIDHIPOFILE          19
+#define ERR_INVALIDCALLAYER          20
+#define ERR_INVALIDCHERENKOVID       21
+#define ERR_BADROOTFILE              22
 // --+ 200 - 299 acc_corr +-----------------------------------------------------
 #define ERR_NOEDGE                  201
 #define ERR_BADEDGES                202
@@ -62,7 +65,6 @@ int handle_err();
 #define ERR_NOACCDATA               304
 // --+ 400 - 499 extract_sf +---------------------------------------------------
 #define ERR_INVALIDCALSECTOR        401
-#define ERR_INVALIDCALLAYER         402
 // --+ 500 - 599 hipo2root +----------------------------------------------------
 // --+ 600 - 699 make_ntuples +-------------------------------------------------
 

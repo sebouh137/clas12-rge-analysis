@@ -354,13 +354,13 @@ int main(int argc, char **argv) {
     double **edges;
 
     edges = static_cast<double **>(malloc(5 * sizeof(*edges)));
-    handle_args(
+    int err = handle_args(
             argc, argv, &thrown_filename, &simul_filename, &data_dir, nedges,
             edges, &in_deg
     );
 
     // Run.
-    if (rge_errno == ERR_UNDEFINED) {
+    if (rge_errno == ERR_UNDEFINED && err == 0) {
         run(thrown_filename, simul_filename, data_dir, nedges, edges, in_deg);
     }
 
