@@ -26,7 +26,7 @@ const std::map<unsigned int, const char *> ERRMAP = {
     {ERR_OUTPUTROOTFAILED,
             "Failed to create output root file."},
     {ERR_NOINPUTFILE,
-            "Input root file doesn't exist."},
+            "Input file doesn't exist."},
     {ERR_INVALIDROOTFILE,
             "Root filename should finish with the `.root` extension."},
     {ERR_NOSAMPFRACFILE,
@@ -59,6 +59,8 @@ const std::map<unsigned int, const char *> ERRMAP = {
             "rge_errno = ERR_UNDEFINED. Something is wrong."},
     {ERR_OUTPUTTEXTFAILED,
             "Failed to create output text file."},
+    {ERR_INVALIDHIPOFILE,
+            "Hipo filename should finish with the `.hipo` extension."},
 
     // acc_corr.
     {ERR_NOEDGE,

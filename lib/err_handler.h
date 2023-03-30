@@ -45,6 +45,7 @@ int handle_err();
 #define ERR_NENTRIESNEGATIVE         16
 #define ERR_UNDEFINED                17
 #define ERR_OUTPUTTEXTFAILED         18
+#define ERR_INVALIDHIPOFILE          19
 // --+ 200 - 299 acc_corr +-----------------------------------------------------
 #define ERR_NOEDGE                  201
 #define ERR_BADEDGES                202

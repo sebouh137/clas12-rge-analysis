@@ -15,19 +15,21 @@
 
 #include <libgen.h>
 #include "TFile.h"
+#include "../lib/err_handler.h"
 #include "../lib/io_handler.h"
 #include "../lib/bank_containers.h"
 
 /** run() function of the program. Check usage() for details. */
-static int run(char *in_filename, char *work_dir, bool use_fmt, int run_no,
-        int event_max)
-{
+static int run(
+        char *in_filename, char *work_dir, bool use_fmt, int run_no,
+        long int event_max
+) {
     // Create output file.
-    char out_file[PATH_MAX];
-    sprintf(out_file, "%s/banks_%06d.root", work_dir, run_no);
+    char out_filename[PATH_MAX];
+    sprintf(out_filename, "%s/banks_%06d.root", work_dir, run_no);
 
-    TFile *f = TFile::Open(out_file, "RECREATE");
-    f->SetCompressionAlgorithm(ROOT::kLZ4);
+    TFile *out_file = TFile::Open(out_filename, "RECREATE");
+    out_file->SetCompressionAlgorithm(ROOT::kLZ4);
 
     // Create tree for output file and bank containers to read hipo file.
     TTree *tree = new TTree(TREENAME, TREENAME);
@@ -54,19 +56,19 @@ static int run(char *in_filename, char *work_dir, bool use_fmt, int run_no,
     reader.readDictionary(factory);
 
     hipo::event event;
-    hipo::bank particle_bank    (factory.getSchema("REC::Particle"));
-    hipo::bank track_bank       (factory.getSchema("REC::Track"));
-    hipo::bank calorimeter_bank (factory.getSchema("REC::Calorimeter"));
-    hipo::bank cherenkov_bank   (factory.getSchema("REC::Cherenkov"));
-    hipo::bank scintillator_bank(factory.getSchema("REC::Scintillator"));
+    hipo::bank particle_bank    (factory.getSchema(BANKRECPARTICLE));
+    hipo::bank track_bank       (factory.getSchema(BANKRECTRACK));
+    hipo::bank calorimeter_bank (factory.getSchema(BANKRECCALORIMETER));
+    hipo::bank cherenkov_bank   (factory.getSchema(BANKRECCHERENKOV));
+    hipo::bank scintillator_bank(factory.getSchema(BANKRECSCINTILLATOR));
     hipo::bank fmt_tracks_bank;
-    if (use_fmt) fmt_tracks_bank = factory.getSchema("FMT::Tracks");
+    if (use_fmt) fmt_tracks_bank = factory.getSchema(BANKFMTTRACKS);
 
     // Get stuff from hipo file and write to root file.
     if (event_max == -1 || event_max > reader.getEntries()) {
         event_max = reader.getEntries();
     }
-    printf("Reading %d events from %s.\n", event_max, in_filename);
+    printf("Reading %ld events from %s.\n", event_max, in_filename);
 
     int event_no = 0;
 
@@ -112,13 +114,16 @@ static int run(char *in_filename, char *work_dir, bool use_fmt, int run_no,
 
     // Write to root tree and clean up after ourselves.
     tree->Write();
-    f->Close();
+    out_file->Close();
 
+    rge_errno = ERR_NOERR;
     return 0;
 }
 
 /** Print usage and exit. */
-static int usage() {
+static int usage(int err) {
+    if (err == 0 || err == 2) return err;
+
     fprintf(stderr,
             "\n\nUsage: hipo2root [-hfn:w:] infile\n"
             " * -h         : show this message and exit.\n"
@@ -134,79 +139,29 @@ static int usage() {
             "conserves the\n    banks that are useful for RG-E analysis, as "
             "specified in the\n    lib/bank_containers.h file.\n\n"
     );
-
     return 1;
-}
-
-/** Print error number and provide a short description of the error. */
-static int handle_err(int errcode) {
-    if (errcode > 1) fprintf(stderr, "Error %02d. ", errcode);
-    switch (errcode) {
-        case 0:
-            return 0;
-        case 1:
-            break;
-        case 2:
-            fprintf(stderr, "nevents should be a number greater than 0");
-            break;
-        case 3:
-            fprintf(stderr, "Bad usage of optional arguments.");
-            break;
-        case 4:
-            fprintf(stderr, "No input filename provided.");
-            break;
-        case 5:
-            fprintf(stderr, "Input file should be in hipo format.");
-            break;
-        case 6:
-            fprintf(stderr, "Input file does not exist.");
-            break;
-        case 7:
-            // NOTE. It's technically impossible to get here, this error should
-            //     be fully covered by errcode 5. Better safe than sorry.
-            fprintf(stderr, "Couldn't find extension in input filename.");
-            break;
-        case 8:
-            fprintf(stderr, "Couldn't find run number in input filename.");
-            break;
-        case 9:
-            fprintf(stderr, "Number of entries is invalid. Please input a valid"
-                            " number after -n.");
-            break;
-        case 10:
-            fprintf(stderr, "Number of entries is too large. Please input a "
-                            "number smaller than %ld.", LONG_MAX);
-            break;
-        default:
-            fprintf(stderr, "Error code not implemented!\n");
-            return 1;
-    }
-    return usage();
 }
 
 /**
  * Handle arguments for hipo2root using optarg. Error codes used are explained
  *     in the handle_err() function.
  */
-static int handle_args(int argc, char **argv, char **in_filename,
-        char **work_dir, bool *use_fmt, int *run_no, int *event_max)
-{
+static int handle_args(
+        int argc, char **argv, char **in_filename, char **work_dir,
+        bool *use_fmt, int *run_no, long int *event_max
+) {
     // Handle arguments.
     int opt;
     while ((opt = getopt(argc, argv, "-hfn:w:")) != -1) {
         switch (opt) {
             case 'h':
+                rge_errno = ERR_USAGE;
                 return 1;
             case 'f':
                 *use_fmt = true;
                 break;
             case 'n':
-                char *eptr;
-                errno = 0;
-                *event_max = strtol(optarg, &eptr, 10);
-                if (errno == EINVAL) return  9; // Value not supported.
-                if (errno == ERANGE) return 10; // Value outside of range.
-                if (*event_max <= 0) return  2; // Value is negative or zero.
+                if (process_nentries(event_max, optarg)) return 1;
                 break;
             case 'w':
                 *work_dir = static_cast<char *>(malloc(strlen(optarg) + 1));
@@ -217,7 +172,8 @@ static int handle_args(int argc, char **argv, char **in_filename,
                 strcpy(*in_filename, optarg);
                 break;
             default:
-                return 3;
+                rge_errno = ERR_BADOPTARGS;
+                return 1;
         }
     }
 
@@ -228,10 +184,12 @@ static int handle_args(int argc, char **argv, char **in_filename,
     }
 
     // Check that a positional argument was given.
-    if (*in_filename == NULL) return 4;
+    if (*in_filename == NULL) {
+        rge_errno = ERR_NOINPUTFILE;
+        return 1;
+    }
 
-    int check = handle_hipo_filename(*in_filename, run_no);
-    if (check) return check + 4; // Shift errcode.
+    if (handle_hipo_filename(*in_filename, run_no)) return 1;
 
     return 0;
 }
@@ -239,19 +197,19 @@ static int handle_args(int argc, char **argv, char **in_filename,
 /** Entry point of hipo2root. Check usage() for details. */
 int main(int argc, char **argv) {
     // Handle arguments.
-    char *in_filename = NULL;
-    char *work_dir    = NULL;
-    bool use_fmt      = false;
-    int  run_no       = -1;
-    int  event_max    = -1;
+    char *in_filename  = NULL;
+    char *work_dir     = NULL;
+    bool use_fmt       = false;
+    int  run_no        = -1;
+    long int event_max = -1;
 
-    int errcode = handle_args(
+    handle_args(
             argc, argv, &in_filename, &work_dir, &use_fmt, &run_no, &event_max
     );
 
     // Run.
-    if (errcode == 0) {
-        errcode = run(in_filename, work_dir, use_fmt, run_no, event_max);
+    if (rge_errno == ERR_UNDEFINED) {
+        run(in_filename, work_dir, use_fmt, run_no, event_max);
     }
 
     // Free up memory.
@@ -259,5 +217,5 @@ int main(int argc, char **argv) {
     if (work_dir    != NULL) free(work_dir);
 
     // Return errcode.
-    return handle_err(errcode);
+    return usage(handle_err());
 }

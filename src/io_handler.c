@@ -173,13 +173,17 @@ int process_nentries(long int *nentries, char *arg) {
  * Check if a hipo filename is valid.
  *
  * @param filename: filename to be processed.
- * @return          an error code:
- *                    * 1: filename extension isn't hipo.
- *                    * 2: no file with filename was found.
+ * @return          error code.
  */
 int check_hipo_filename(char *filename) {
-    if (!strstr(filename, ".hipo")) return 1;
-    if (access(filename, F_OK))     return 2;
+    if (!strstr(filename, ".hipo")) {
+        rge_errno = ERR_INVALIDHIPOFILE;
+        return 1;
+    }
+    if (access(filename, F_OK)) {
+        rge_errno = ERR_NOINPUTFILE;
+        return 1;
+    }
     return 0;
 }
 
@@ -189,20 +193,11 @@ int check_hipo_filename(char *filename) {
  *
  * @param filename: filename to be processed.
  * @param run_no:   pointer to the int where the run number will be written.
- * @return          an error code:
- *                    * 0: everything went fine.
- *                    * 1: filename extension isn't hipo.
- *                    * 2: no file with filename was found.
- *                    * 3: couldn't find dot position in filename.
- *                    * 4: strtoul failed -- couldn't find run number.
+ * @return          error code.
  */
 int handle_hipo_filename(char *filename, int *run_no) {
-    int check = check_hipo_filename(filename);
-    if (check) return check;
-
-    check = get_run_no(filename, run_no);
-    if (check) return check + 2;
-
+    if (check_hipo_filename(filename)) return 1;
+    if (get_run_no(filename, run_no))  return 1;
     return 0;
 }
 
