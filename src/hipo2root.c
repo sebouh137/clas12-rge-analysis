@@ -30,7 +30,7 @@ static int run(char *in_filename, char *work_dir, bool use_fmt, int run_no,
     f->SetCompressionAlgorithm(ROOT::kLZ4);
 
     // Create tree for output file and bank containers to read hipo file.
-    TTree *tree = new TTree("Tree", "Tree");
+    TTree *tree = new TTree(TREENAME, TREENAME);
     Particle     particle;
     Track        track;
     Calorimeter  calorimeter;
