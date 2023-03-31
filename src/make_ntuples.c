@@ -252,8 +252,8 @@ static int run(
     int evnsplitter = 0;
 
     // Particle counters.
-    int cnt_trigger = 0;
-    int cnt_part    = 0;
+    int trigger_counter  = 0;
+    int particle_counter = 0;
 
     // Loop through events in input file.
     for (long int event = 0; event < n_events; ++event) {
@@ -350,7 +350,7 @@ static int run(
 
         // Skip events without a trigger electron.
         if (!trigger_exist) continue;
-        ++cnt_trigger;
+        ++trigger_counter;
 
         // Processing particles.
         for (unsigned int pos = 0; pos < bank_trk_dc.index->size(); ++pos) {
@@ -417,13 +417,13 @@ static int run(
 
             tree_out->Fill(arr);
 
-            ++cnt_part;
+            ++particle_counter;
         }
     }
 
     // Print number of particles found to detect errors early.
-    printf("Triggers found:  %d\n", cnt_trigger);
-    printf("Particles found: %d\n", cnt_trigger + cnt_part);
+    printf("Triggers found:  %d\n", trigger_counter);
+    printf("Particles found: %d\n", trigger_counter + particle_counter);
 
     // Create output file.
     char filename_out[PATH_MAX];
@@ -455,7 +455,7 @@ static int usage(int err) {
     if (err == 0 || err == 2) return err;
 
     fprintf(stderr,
-            "\n\nUsage: make_ntuples [-hDf:n:w:d:] infile\n"
+            "Usage: make_ntuples [-hDf:n:w:d:] infile\n"
             " * -h         : show this message and exit.\n"
             " * -D         : activate debug mode.\n"
             " * -f fmtlyrs : define how many FMT layers should the track have "
