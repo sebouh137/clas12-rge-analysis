@@ -287,7 +287,7 @@ static int run(
             );
 
             // Get reconstructed particle from DC and from FMT.
-            if (fmt_nlayers != 0) {
+            if (fmt_nlayers == 0) {
                 part_trigger = particle_init(&bank_part, &bank_trk_dc, pos);
             }
             else {
