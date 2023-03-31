@@ -205,6 +205,12 @@ static int run(
         return 1;
     }
 
+    // If fmt_nlayers != 0, check that FMT::Tracks bank exists.
+    if (fmt_nlayers != 0 && file_in->GetListOfKeys()->Contains(BANKFMTTRACKS)) {
+        rge_errno = ERR_NOFMTBANK;
+        return 1;
+    }
+
     // Return to top directory (weird root stuff).
     gROOT->cd();
 

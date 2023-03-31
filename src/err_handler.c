@@ -98,6 +98,9 @@ const std::map<unsigned int, const char *> ERRMAP = {
             "Invalid sector in the calorimeter bank. Check bank integrity."},
     {ERR_INVALIDCHERENKOVID,
             "Invalid detector ID in the cherenkov bank. Check bank integrity."},
+    {ERR_NOFMTBANK,
+            "FMT::Tracks bank not found in input. No FMT analysis is available "
+            "for this input file."},
 
     // Program errors.
     {ERR_UNIMPLEMENTEDBEAMENERGY,
@@ -137,7 +140,7 @@ int handle_err() {
 
     // Print error.
     if (ERRMAP.contains(rge_errno)) {
-        fprintf(stderr, "%s\n\n", ERRMAP.at(rge_errno));
+        fprintf(stderr, "\n%s\n", ERRMAP.at(rge_errno));
         return 1;
     }
     else {

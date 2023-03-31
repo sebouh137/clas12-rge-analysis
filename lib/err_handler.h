@@ -61,6 +61,7 @@ int handle_err();
 #define ERR_INVALIDCALLAYER         100
 #define ERR_INVALIDCALSECTOR        101
 #define ERR_INVALIDCHERENKOVID      102
+#define ERR_NOFMTBANK               103
 // --+ 150 - 199 program errors +-----------------------------------------------
 #define ERR_UNIMPLEMENTEDBEAMENERGY 150
 #define ERR_2DACCEPTANCEPLOT        151
