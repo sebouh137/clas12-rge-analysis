@@ -47,7 +47,6 @@ extern const char *PART_LIST[PART_LIST_SIZE];
 #define A_PPOS 1
 #define R_PNEG "-"       // Negative.
 #define A_PNEG 2
-
 #define R_PNEU "neutral" // Neutral.
 #define A_PNEU 3
 #define R_PPID "pid"     // Filter by PID.
@@ -255,16 +254,18 @@ extern const double PLIMITSARR[SF_NPARAMS][2]; // Momentum limits for 1D SF fit.
 #define BE12933 10.4057 // 250 nA.
 
 // Detector constants.
-#define NSECTORS    6 // # of CLAS12 sectors.
-#define FTOF_ID    12 // FTOF detector id.
-#define HTCC_ID    15 // HTCC detector id.
-#define LTCC_ID    16 // LTCC detector id.
-#define FTOF1A_LYR  1 // FTOF1A layer id.
-#define FTOF1B_LYR  2 // FTOF1B layer id.
-#define FTOF2_LYR   3 // FTOF2 layer id.
-#define PCAL_LYR    1 // PCAL's layer id.
-#define ECIN_LYR    4 // EC inner layer id.
-#define ECOU_LYR    7 // EC outer layer id.
+#define FMTMINLAYERS 2 // Minimum number of FMT layers to accept a track.
+#define FMTNLAYERS   3 // Total number of FMT layers.
+#define NSECTORS     6 // # of CLAS12 sectors.
+#define FTOF_ID     12 // FTOF detector id.
+#define HTCC_ID     15 // HTCC detector id.
+#define LTCC_ID     16 // LTCC detector id.
+#define FTOF1A_LYR   1 // FTOF1A layer id.
+#define FTOF1B_LYR   2 // FTOF1B layer id.
+#define FTOF2_LYR    3 // FTOF2 layer id.
+#define PCAL_LYR     1 // PCAL's layer id.
+#define ECIN_LYR     4 // EC inner layer id.
+#define ECOU_LYR     7 // EC outer layer id.
 
 // General Cuts.
 #define Q2CUT         1.   // Q2 of particle must be over this value.

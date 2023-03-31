@@ -161,7 +161,11 @@ int run_strtol(long int *n, char *t) {
 /* Run strtol on arg to get number of FMT layers required. */
 int process_fmtnlayers(long int *nlayers, char *arg) {
     int err = run_strtol(nlayers, arg);
-    if (err == 1 || (*nlayers != 0 && *nlayers != 2 && *nlayers != 3)) {
+    if (err == 1 || (
+            *nlayers != 0 &&
+            FMTMINLAYERS <= *nlayers &&
+            *nlayers <= FMTNLAYERS
+    )) {
         rge_errno = ERR_INVALIDFMTNLAYERS;
         return 1;
     }

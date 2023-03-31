@@ -278,8 +278,8 @@ static int run(
         // Check existence of trigger electron
         particle part_trigger;
         bool trigger_exist = false;
-        unsigned int trigger_pos    = INT_MAX;
-        unsigned int trigger_pindex = INT_MAX;
+        unsigned int trigger_pos    = UINT_MAX;
+        unsigned int trigger_pindex = UINT_MAX;
         double trigger_tof = -1.;
         for (unsigned int pos = 0; pos < bank_trk_dc.index->size(); ++pos) {
             unsigned int pindex = static_cast<unsigned int>(

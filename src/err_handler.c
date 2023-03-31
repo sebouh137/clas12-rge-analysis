@@ -42,8 +42,8 @@ const std::map<unsigned int, const char *> ERRMAP = {
             "All edges should have *at least* two values -- a minimum and a "
             "maximum."},
     {ERR_INVALIDFMTNLAYERS,
-            "Number of FMT layers is invalid. Input either 0, 2, or 3 after "
-            "-f."},
+            "Number of FMT layers is invalid. fmt_nlayers should be at least "
+            "FMTMINLAYERS and at most FMTNLAYERS."},
     {ERR_INVALIDACCEPTANCEOPT,
             "Option -A is only valid if an acceptance correction file is "
             "specified using -a."},

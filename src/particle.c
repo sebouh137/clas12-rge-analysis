@@ -38,9 +38,9 @@ particle particle_init() {
   * @param bank_track    : pointer to the Track class to get DC tracking data.
   * @param pos           : position of the particle at the track class.
   */
-particle particle_init(Particle *bank_particle, Track *bank_track,
-        unsigned int pos)
-{
+particle particle_init(
+        Particle *bank_particle, Track *bank_track, unsigned int pos
+) {
     unsigned int pindex =
             static_cast<unsigned int>(bank_track->pindex->at(pos));
     return particle_init(
