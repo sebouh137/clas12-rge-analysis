@@ -79,7 +79,7 @@ const std::map<unsigned int, const char *> ERRMAP = {
     {ERR_BADSIMFILE,
             "Failed to open simulated ntuples file."},
     {ERR_BADROOTFILE,
-            "Couldn't extract tree/ntuple with TREENAME from root file."},
+            "Couldn't extract tree/ntuple with TREENAMEDATA from root file."},
     {ERR_WRONGGENFILE,
             "Generated ntuples file is not a valid root file."},
     {ERR_WRONGSIMFILE,

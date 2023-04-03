@@ -468,7 +468,7 @@ static int run(
     }
 
     // === SETUP NTUPLES =======================================================
-    TNtuple *ntuple = static_cast<TNtuple *>(f_in->Get(TREENAME));
+    TNtuple *ntuple = static_cast<TNtuple *>(f_in->Get(TREENAMEDATA));
     if (ntuple == NULL) {
         rge_errno = ERR_BADROOTFILE;
         return 1;

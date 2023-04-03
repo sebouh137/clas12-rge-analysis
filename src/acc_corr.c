@@ -124,7 +124,7 @@ static int run(
         rge_errno = ERR_WRONGGENFILE;
         return 1;
     }
-    TNtuple *thrown = thrown_file->Get<TNtuple>("ntuple_thrown");
+    TNtuple *thrown   = thrown_file->Get<TNtuple>(TREENAMETHRN);
     if (thrown == NULL) {
         rge_errno = ERR_BADGENFILE;
         return 1;
@@ -136,7 +136,7 @@ static int run(
         rge_errno = ERR_WRONGSIMFILE;
         return 1;
     }
-    TTree *simul = simul_file->Get<TTree>(TREENAME);
+    TTree *simul = simul_file->Get<TTree>(TREENAMEDATA);
     if (simul == NULL) {
         rge_errno = ERR_BADSIMFILE;
         return 1;

@@ -222,13 +222,13 @@ static int run(
     }
 
     // Create TTree and TNTuples.
-    TTree *tree_in = file_in->Get<TTree>(TREENAME);
+    TTree *tree_in = file_in->Get<TTree>(TREENAMEDATA);
     if (tree_in == NULL) {
         rge_errno = ERR_BADROOTFILE;
         return 1;
     }
     TNtuple *tree_out;
-    tree_out = new TNtuple(TREENAME, TREENAME, vars_string);
+    tree_out = new TNtuple(TREENAMEDATA, TREENAMEDATA, vars_string);
 
     // Change n_events to number of entries if it is equal to -1 or invalid.
     if (n_events == -1 || n_events > tree_in->GetEntries()) {
@@ -350,6 +350,9 @@ static int run(
 
         // Skip events without a trigger electron.
         if (!trigger_exist) continue;
+
+        // NOTE. Temporary code. Create a dummy trigger to get more statistics.
+        // if (!trigger_exist) part_trigger = particle_init();
         ++trigger_counter;
 
         // Processing particles.

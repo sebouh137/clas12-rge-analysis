@@ -27,8 +27,10 @@ extern const std::map<int, const char*> PID_NAME;
 extern const std::map<int, double> PID_MASS;
 extern const std::map<int, int> PID_QA;
 
-// Tree name for hipo2root and make_ntuples.
-#define TREENAME "data"
+// Data tree name for programs.
+#define TREENAMEDATA          "data"
+#define TREENAMETHRN          "ntuple_thrown"
+#define TREENAMETHRNELECTRONS "ntuple_thrown_electrons"
 
 // Bank names.
 #define BANKRECPARTICLE     "REC::Particle"
