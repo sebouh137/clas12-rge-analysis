@@ -163,8 +163,7 @@ int process_fmtnlayers(long int *nlayers, char *arg) {
     int err = run_strtol(nlayers, arg);
     if (err == 1 || (
             *nlayers != 0 &&
-            FMTMINLAYERS <= *nlayers &&
-            *nlayers <= FMTNLAYERS
+            (FMTMINLAYERS > *nlayers || *nlayers > FMTNLAYERS)
     )) {
         rge_errno = ERR_INVALIDFMTNLAYERS;
         return 1;
