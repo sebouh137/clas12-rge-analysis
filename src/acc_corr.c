@@ -41,8 +41,8 @@ static int count_entries(
         double **edges, bool in_deg, bool simul
 ) {
     // Store total number of bins for simplicity.
-    long unsigned int tnbins = 1;
-    for (int i = 0; i < 5; ++i) tnbins *= nbins[i];
+    long unsigned int total_nbins = 1;
+    for (int i = 0; i < 5; ++i) total_nbins *= nbins[i];
 
     // Create and initialize evn_cnt.
     // NOTE. Variable-length arrays (vla) are technically not permitted in C++
@@ -52,7 +52,7 @@ static int count_entries(
     //       C++ vectors.
     __extension__ int evn_cnt[nbins[0]][nbins[1]][nbins[2]][nbins[3]][nbins[4]];
     int *iterator = &evn_cnt[0][0][0][0][0];
-    for (long unsigned int bin_i = 0; bin_i < tnbins; ++bin_i) {
+    for (long unsigned int bin_i = 0; bin_i < total_nbins; ++bin_i) {
         *iterator = 0;
         ++iterator;
     }
@@ -103,7 +103,7 @@ static int count_entries(
 
     // Write evn_cnt to file.
     iterator = &evn_cnt[0][0][0][0][0];
-    for (long unsigned int bin_i = 0; bin_i < tnbins; ++bin_i) {
+    for (long unsigned int bin_i = 0; bin_i < total_nbins; ++bin_i) {
         fprintf(file, "%d ", *iterator);
         ++iterator;
     }
