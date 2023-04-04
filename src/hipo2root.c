@@ -19,7 +19,21 @@
 #include "../lib/io_handler.h"
 #include "../lib/bank_containers.h"
 
-/** run() function of the program. Check usage() for details. */
+const char *usage_message =
+"Usage: hipo2root [-hfn:w:] infile\n"
+" * -h         : show this message and exit.\n"
+" * -f         : set this to true to process FMT::Tracks bank. If this is set\n"
+"                and FMT::Tracks bank is not present in the HIPO file, the\n"
+"                program will crash.\n"
+" * -n nevents : number of events.\n"
+" * -w workdir : location where output root files are to be stored. Default\n"
+"                is root_io.\n"
+" * infile     : input HIPO file. Expected format is <text>run_no.hipo.\n\n"
+"    Convert a file from hipo to root format. This program only conserves the\n"
+"    banks that are useful for RG-E analysis, as specified in the\n"
+"    lib/bank_containers.h file.\n";
+
+/** run() function of the program. Check usage_message for details. */
 static int run(
         char *in_filename, char *work_dir, bool use_fmt, int run_no,
         long int event_max
@@ -120,28 +134,6 @@ static int run(
     return 0;
 }
 
-/** Print usage and exit. */
-static int usage(int err) {
-    if (err == 0 || err == 2) return err;
-
-    fprintf(stderr,
-            "\n\nUsage: hipo2root [-hfn:w:] infile\n"
-            " * -h         : show this message and exit.\n"
-            " * -f         : set this to true to process FMT::Tracks bank. If "
-            "this is set\n                and FMT::Tracks bank is not present "
-            "in the HIPO file, the\n                program will crash.\n"
-            " * -n nevents : number of events.\n"
-            " * -w workdir : location where output root files are to be "
-            "stored. Default\n                is root_io.\n"
-            " * infile     : input HIPO file. Expected file format is "
-            "<text>run_no.hipo.\n\n"
-            "    Convert a file from hipo to root format. This program only "
-            "conserves the\n    banks that are useful for RG-E analysis, as "
-            "specified in the\n    lib/bank_containers.h file.\n\n"
-    );
-    return 1;
-}
-
 /**
  * Handle arguments for hipo2root using optarg. Error codes used are explained
  *     in the handle_err() function.
@@ -217,5 +209,5 @@ int main(int argc, char **argv) {
     if (work_dir    != NULL) free(work_dir);
 
     // Return errcode.
-    return usage(handle_err());
+    return print_usage(usage_message, handle_err());
 }

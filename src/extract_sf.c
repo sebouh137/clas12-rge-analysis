@@ -24,7 +24,18 @@
 #include "../lib/io_handler.h"
 #include "../lib/utilities.h"
 
-/** run() function of the program. Check usage() for details. */
+const char *usage_message =
+"Usage: extract_sf [-hn:w:d:] infile\n"
+" * -h         : show this message and exit.\n"
+" * -n nevents : number of events\n"
+" * -w workdir : location where output root files are to be stored. Default\n"
+"                is root_io.\n"
+" * -d datadir : location where sampling fraction files are stored. Default\n"
+"                is data.\n"
+" * infile     : input ROOT file. Expected file format: <text>run_no.root.\n\n"
+"    Obtain the EC sampling fraction from an input file.\n";
+
+/** run() function of the program. Check usage_message for details. */
 static int run(
         char *in_filename, char *work_dir, char *data_dir, long int nevn,
         int run_no
@@ -395,25 +406,6 @@ static int run(
     return 0;
 }
 
-/** Print usage and exit. */
-static int usage(int err) {
-    if (err == 0 || err == 2) return err;
-
-    fprintf(stderr,
-            "Usage: extract_sf [-hn:w:d:] infile\n"
-            " * -h         : show this message and exit.\n"
-            " * -n nevents : number of events\n"
-            " * -w workdir : location where output root files are to be "
-            "stored. Default\n                is root_io.\n"
-            " * -d datadir : location where sampling fraction files are "
-            "located. Default\n                is data.\n"
-            " * infile     : input ROOT file. Expected file format: "
-            "<text>run_no.root.\n\n"
-            "    Obtain the EC sampling fraction from an input file.\n\n"
-    );
-    return 1;
-}
-
 /**
  * Handle arguments for make_ntuples using optarg. Error codes used are
  *     explained in the handle_err() function.
@@ -500,5 +492,5 @@ int main(int argc, char **argv) {
     if (data_dir    != NULL) free(data_dir);
 
     // Return errcode.
-    return usage(handle_err());
+    return print_usage(usage_message, handle_err());
 }

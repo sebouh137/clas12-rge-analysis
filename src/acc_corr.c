@@ -21,6 +21,28 @@
 #include "../lib/io_handler.h"
 #include "../lib/utilities.h"
 
+const char *usage_message =
+"Usage: acc_corr [-hq:n:z:p:f:g:s:d:FD]\n"
+" * -h         : show this message and exit.\n"
+" * -q ...     : Q2 bins.\n"
+" * -n ...     : nu bins.\n"
+" * -z ...     : z_h bins.\n"
+" * -p ...     : Pt2 bins.\n"
+" * -f ...     : phi_PQ bins (in degrees).\n"
+" * -g genfile : generated events ROOT file.\n"
+" * -s simfile : simulated events ROOT file.\n"
+" * -d datadir : location where sampling fraction files are found. Default is\n"
+"                data.\n"
+" * -F         : flag to tell program to use FMT data instead of DC data from\n"
+"                the simulation file.\n"
+" * -D         : flag to tell program that generated events are in degrees\n"
+"                instead of radians.\n\n"
+"    Get the 5-dimensional acceptance correction factors for Q2, nu, z_h, Pt2,\n"
+"    and phi_PQ. For each optional argument, an array of doubles is expected.\n"
+"    The first double will be the lower limit of the leftmost bin, the final\n"
+"    double will be the upper limit of the rightmost bin, and all doubles\n"
+"    inbetween will be the separators between each bin.\n";
+
 /**
  * Count number of events in a tree for each bin, for a given pid. The number of
  *     bins is equal to the multiplication of the size-1 of each binning.
@@ -112,7 +134,7 @@ static int count_entries(
     return 0;
 }
 
-/** run() function of the program. Check usage() for details. */
+/** run() function of the program. Check usage_message for details. */
 static int run(
         char *thrown_filename, char *simul_filename, char *data_dir,
         long unsigned int *nedges, double **edges, bool in_deg
@@ -220,36 +242,6 @@ static int run(
 
     rge_errno = ERR_NOERR;
     return 0;
-}
-
-/** Print usage and exit. */
-static int usage(int err) {
-    if (err == 0 || err == 2) return err;
-
-    fprintf(stderr,
-            "Usage: acc_corr [-hq:n:z:p:f:g:s:d:FD]\n"
-            " * -h         : show this message and exit.\n"
-            " * -q ...     : Q2 bins.\n"
-            " * -n ...     : nu bins.\n"
-            " * -z ...     : z_h bins.\n"
-            " * -p ...     : Pt2 bins.\n"
-            " * -f ...     : phi_PQ bins (in degrees).\n"
-            " * -g genfile : generated events ROOT file.\n"
-            " * -s simfile : simulated events ROOT file.\n"
-            " * -d datadir : location where sampling fraction files are "
-            "located. Default is\n                data.\n"
-            " * -F         : flag to tell program to use FMT data instead of DC"
-            " data from\n                the simulation file.\n"
-            " * -D         : flag to tell program that generated events are in "
-            "degrees\n                instead of radians.\n"
-            "    Get the 5-dimensional acceptance correction factors for Q2, nu"
-            ", z_h, Pt2, and\n    phi_PQ. For each optional argument, an array "
-            "of doubles is expected. The first\n    double will be the lower "
-            "limit of the leftmost bin, the final double will be\n    the upper"
-            " limit of the rightmost bin, and all doubles inbetween will be the"
-            "\n    separators between each bin.\n\n"
-    );
-    return 1;
 }
 
 /** Handle arguments for make_ntuples using optarg. */
@@ -370,5 +362,5 @@ int main(int argc, char **argv) {
     if (data_dir        != NULL) free(data_dir);
 
     // Return errcode.
-    return usage(handle_err());
+    return print_usage(usage_message, handle_err());
 }

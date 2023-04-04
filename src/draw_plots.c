@@ -21,6 +21,20 @@
 #include "../lib/io_handler.h"
 #include "../lib/utilities.h"
 
+const char *usage_message =
+"Usage: draw_plots [-hn:o:a:w:] infile\n"
+" * -h          : show this message and exit.\n"
+" * -n nentries : number of entries to process.\n"
+" * -o outfile  : output file name. Default is plots_<run_no>.root.\n"
+" * -a accfile  : apply acceptance correction using acc_filename.\n"
+" * -A          : get acceptance correction plots without applying acceptance\n"
+"                 correction. Requires -a to be set.\n"
+" * -w workdir  : location where output root files are to be stored. Default\n"
+"                 is root_io.\n"
+" * infile      : input file produced by make_ntuples.\n\n"
+"    Draw plots from a ROOT file built from make_ntuples. File should be\n"
+"    named <text>run_no.root.\n";
+
 /**
  * Assign title to plots, recursively going through binnings. The title that
  *     will be given to the plots is <title> (<bin 1>) (<bin 2>) ... (<bin n>),
@@ -264,7 +278,7 @@ static long int find_idx(
     return -1; // Variable is not within binning range.
 }
 
-/** run() function of the program. Check usage() for details. */
+/** run() function of the program. Check usage_message for details. */
 static int run(
         char *in_filename, char *out_filename, char *acc_filename,
         char *work_dir, int run_no, long int nentries, bool apply_acc_corr
@@ -832,28 +846,6 @@ static int run(
     return 0;
 }
 
-/** Print usage and exit. */
-static int usage(int err) {
-    if (err == 0 || err == 2) return err;
-
-    fprintf(stderr,
-            "Usage: draw_plots [-hn:o:a:w:] infile\n"
-            " * -h          : show this message and exit.\n"
-            " * -n nentries : number of entries to process.\n"
-            " * -o outfile  : output file name. Default is plots_<run_no>.root."
-            "\n"
-            " * -a accfile  : apply acceptance correction using acc_filename.\n"
-            " * -A          : get acceptance correction plots without applying "
-            "acceptance\n                 correction. Requires -a to be set.\n"
-            " * -w workdir  : location where output root files are to be "
-            "stored. Default\n                 is root_io.\n"
-            " * infile      : input file produced by make_ntuples.\n\n"
-            "    Draw plots from a ROOT file built from make_ntuples. File "
-            "should be named\n     <text>run_no.root.\n\n"
-    );
-    return 1;
-}
-
 /**
  * Handle arguments for make_ntuples using optarg. Error codes used are
  *     explained in the handle_err() function.
@@ -966,5 +958,5 @@ int main(int argc, char **argv) {
     if (work_dir     != NULL) free(work_dir);
 
     // Return errcode.
-    return usage(handle_err());
+    return print_usage(usage_message, handle_err());
 }

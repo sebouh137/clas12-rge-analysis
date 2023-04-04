@@ -21,6 +21,22 @@
 #include "../lib/io_handler.h"
 #include "../lib/particle.h"
 
+const char *usage_message =
+"Usage: make_ntuples [-hDf:n:w:d:] infile\n"
+" * -h         : show this message and exit.\n"
+" * -D         : activate debug mode.\n"
+" * -f fmtlyrs : define how many FMT layers should the track have hit.\n"
+"                Options are 0 (tracked only by DC), 2, and 3. If set to\n"
+"                something other than 0 and there is no FMT::Tracks bank in\n"
+"                the input file, the program will crash. Default is 0.\n"
+" * -n nevents : number of events.\n"
+" * -w workdir : location where output root files are to be stored. Default\n"
+"                is root_io.\n"
+" * -d datadir : location where sampling fraction files are. Default is data.\n"
+" * infile     : input ROOT file. Expected file format: <text>run_no.root`.\n\n"
+"    Generate ntuples relevant to SIDIS analysis based on the reconstructed\n"
+"    variables from CLAS12 data.\n";
+
 /**
  * Find and return the most precise time of flight (TOF). Both the Forward Time
  *     Of Flight (FTOF) detectors and the Electronic Calorimeter (EC) can
@@ -185,7 +201,7 @@ static int count_photoelectrons(
     return 0;
 }
 
-/** run() function of the program. Check usage() for details. */
+/** run() function of the program. Check usage_message for details. */
 static int run(
         char *filename_in, char *work_dir, char *data_dir, bool debug,
         long int fmt_nlayers, long int n_events, int run_no, double energy_beam
@@ -453,32 +469,6 @@ static int run(
     return 0;
 }
 
-/** Print usage and exit. */
-static int usage(int err) {
-    if (err == 0 || err == 2) return err;
-
-    fprintf(stderr,
-            "Usage: make_ntuples [-hDf:n:w:d:] infile\n"
-            " * -h         : show this message and exit.\n"
-            " * -D         : activate debug mode.\n"
-            " * -f fmtlyrs : define how many FMT layers should the track have "
-            "hit. Available\n                numbers are 0 (tracked only by DC)"
-            ", 2, and 3. If set to\n                something other than 0 and "
-            "there is no FMT::Tracks bank in the\n                input file, "
-            "the program will crash. Default is 0.\n"
-            " * -n nevents : number of events.\n"
-            " * -w workdir : location where output root files are to be "
-            "stored. Default\n                is root_io.\n"
-            " * -d datadir : location where sampling fraction files are "
-            "located. Default is\n                data.\n"
-            " * infile     : input ROOT file. Expected file format: "
-            "<text>run_no.root`.\n\n"
-            "    Generate ntuples relevant to SIDIS analysis based on the "
-            "reconstructed\n    variables from CLAS12 data.\n\n"
-    );
-    return 1;
-}
-
 /** Handle arguments for make_ntuples using optarg. */
 static int handle_args(
         int argc, char **argv, char **filename_in, char **work_dir,
@@ -575,5 +565,5 @@ int main(int argc, char **argv) {
     if (data_dir    != NULL) free(data_dir);
 
     // Return errcode.
-    return usage(handle_err());
+    return print_usage(usage_message, handle_err());
 }
