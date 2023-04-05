@@ -153,8 +153,8 @@ int read_acc_corr_file(
         char *acc_filename, long unsigned int bin_nedges[5],
         double ***bin_edges, long unsigned int *pids_size,
         long unsigned int *nbins, long int **pids, int ***n_thrown,
-        int ***n_simul)
-{
+        int ***n_simul
+) {
     // Access file.
     if (access(acc_filename, F_OK) != 0) {
         rge_errno = ERR_NOACCCORRFILE;

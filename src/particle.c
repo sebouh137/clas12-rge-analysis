@@ -90,9 +90,10 @@ particle particle_init(
  * Initialize a new particle using data from the Particle and Track banks. This
  *     function should only be called from this same file.
  */
-particle particle_init(int charge, double beta, int sector, double vx,
-        double vy, double vz, double px, double py, double pz)
-{
+particle particle_init(
+        int charge, double beta, int sector, double vx, double vy, double vz,
+        double px, double py, double pz
+) {
     particle p;
 
     // Inherent vars.
@@ -119,10 +120,10 @@ particle particle_init(int charge, double beta, int sector, double vx,
 
 // Set PID from all available information. This function mimics PIDMatch from
 //         the EB engine.
-int set_pid(particle *p, int recon_pid, int status, double tot_E,
-        double pcal_E, int htcc_nphe, int ltcc_nphe,
-        double sf_params[SF_NPARAMS][2])
-{
+int set_pid(
+        particle *p, int recon_pid, int status, double tot_E, double pcal_E,
+        int htcc_nphe, int ltcc_nphe, double sf_params[SF_NPARAMS][2]
+) {
     // Assign PID for neutrals and store PID from reconstruction for charge
     //         particles.
     int rpid = p->q == 0 ? assign_neutral_pid(tot_E, p->beta) : recon_pid;
@@ -178,9 +179,10 @@ int set_pid(particle *p, int recon_pid, int status, double tot_E,
  * Check if a particle satisfies all requirements to be considered an electron
  *     or positron. Specific requirements can be seen on the function itself.
  */
-bool is_electron(double tot_E, double pcal_E, double htcc_nphe, double p,
-        double pars[SF_NPARAMS][2])
-{
+bool is_electron(
+        double tot_E, double pcal_E, double htcc_nphe, double p,
+        double pars[SF_NPARAMS][2]
+) {
     // Require ECAL.
     if (tot_E < 1e-9)              return false;
     // Momentum must be greater than 0.
@@ -206,9 +208,9 @@ int assign_neutral_pid(double tot_E, double beta) {
 }
 
 /** Compare beta computed from momentum with beta computed from TOF. */
-int best_pid_from_momentum(double p, double beta, int hypotheses[],
-        int hypotheses_size)
-{
+int best_pid_from_momentum(
+        double p, double beta, int hypotheses[], int hypotheses_size
+) {
     int min_pid = 0;
     double min_diff = DBL_MAX;
     for (int pi = 0; pi < hypotheses_size; ++pi) {
@@ -250,11 +252,11 @@ int match_pid(int hyp, bool r_match, int q, bool e, bool htcc_s, bool htcc_p) {
  * Fill array to be stored in ntuples_%06d.root file. Array is of constant size
  * VAR_LIST_SIZE, and the order of variables can be seen in constants.h.
  */
-int fill_ntuples_arr(Float_t *arr, particle p, particle e, int run_no, int evn,
-        int status, double beam_E, float chi2, float ndf, double pcal_E,
-        double ecin_E, double ecou_E, double tof, double tre_tof,
-        int nphe_ltcc, int nphe_htcc)
-{
+int fill_ntuples_arr(
+        Float_t *arr, particle p, particle e, int run_no, int evn, int status,
+        double beam_E, float chi2, float ndf, double pcal_E, double ecin_E,
+        double ecou_E, double tof, double tre_tof, int nphe_ltcc, int nphe_htcc
+) {
     // Metadata.
     arr[A_RUNNO]   = static_cast<Float_t>(run_no);
     arr[A_EVENTNO] = static_cast<Float_t>(evn);

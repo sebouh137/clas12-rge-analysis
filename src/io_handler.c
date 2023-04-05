@@ -299,8 +299,10 @@ int update_progress_bar(int nevn, int evn, int *evnsplitter, int *divcntr) {
  * @param arr:     array that we'll fill.
  * @return:        error code, which is always 0 (no error).
  */
-int grab_multiarg(int argc, char **argv, int *opt_idx, long unsigned int *size,
-        double **arr) {
+int grab_multiarg(
+        int argc, char **argv, int *opt_idx, long unsigned int *size,
+        double **arr
+) {
     int idx   = *opt_idx - 1;
     int start = idx;
     *size     = 0;

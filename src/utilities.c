@@ -61,9 +61,9 @@ double calc_magnitude(double x, double y, double z) {
 }
 
 /** Compute the angle between two vectors (x1,y1,z1) and (x2,y2,z2). */
-double calc_angle(double x1, double y1, double z1, double x2, double y2,
-        double z2)
-{
+double calc_angle(
+        double x1, double y1, double z1, double x2, double y2, double z2
+) {
     return acos((x1*x2 + y1*y2 + z1*z2)/(calc_magnitude(x1,y1,z1) *
             calc_magnitude(x2,y2,z2)));
 }
@@ -108,9 +108,10 @@ void rotate_z(double *x, double *y, double th) {
  * @param max:  Maximum value for the x axis of the histogram.
  * @return:      Success code (0).
  */
-int insert_TH1F(std::map<const char *, TH1 *> *map, const char *k,
-        const char *n, const char *xn, int bins, double min, double max)
-{
+int insert_TH1F(
+        std::map<const char *, TH1 *> *map, const char *k, const char *n,
+        const char *xn, int bins, double min, double max
+) {
     map->insert(std::pair<const char *, TH1 *>
             (n, new TH1F(Form("%s: %s", k, n), Form("%s;%s", n, xn), bins, min,
             max)));
@@ -133,10 +134,11 @@ int insert_TH1F(std::map<const char *, TH1 *> *map, const char *k,
  * @param ymax:  Maximum value for the y axis of the histogram.
  * @return:      Success code (0).
  */
-int insert_TH2F(std::map<const char *, TH1 *> *map, const char *k,
-        const char *n, const char *nx, const char *ny, int xbins, double xmin,
-        double xmax, int ybins, double ymin, double ymax)
-{
+int insert_TH2F(
+        std::map<const char *, TH1 *> *map, const char *k, const char *n,
+        const char *nx, const char *ny, int xbins, double xmin, double xmax,
+        int ybins, double ymin, double ymax
+) {
     map->insert(std::pair<const char *, TH1 *>
             (n, new TH2F(Form("%s: %s", k, n), Form("%s;%s;%s", n, nx, ny),
                          xbins, xmin, xmax, ybins, ymin, ymax)));
