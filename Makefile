@@ -93,6 +93,9 @@ $(BLD)/file_handler.o: $(SRC)/file_handler.c $(LIB)/file_handler.h
 $(BLD)/particle.o: $(SRC)/particle.c $(LIB)/particle.h
 	$(HXX) -c $(SRC)/particle.c -o $(BLD)/particle.o
 
+$(BLD)/pid_constants.o: $(SRC)/pid_constants.c $(LIB)/pid_constants.h
+	$(CXX) -c $(SRC)/pid_constants.c -o $(BLD)/pid_constants.o
+
 $(BLD)/utilities.o: $(SRC)/utilities.c $(LIB)/utilities.h
 	$(RXX) -c $(SRC)/utilities.c -o $(BLD)/utilities.o
 
