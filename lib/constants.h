@@ -25,7 +25,6 @@
 // PID arrays.
 extern const std::map<int, const char*> PID_NAME;
 extern const std::map<int, double> PID_MASS;
-extern const std::map<int, int> PID_QA;
 
 // Data tree name for programs.
 #define TREENAMEDATA          "data"
