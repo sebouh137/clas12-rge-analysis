@@ -53,9 +53,9 @@ O_ACCCORR   := $(BLD)/err_handler.o $(BLD)/file_handler.o $(BLD)/io_handler.o \
  			   $(BLD)/utilities.o
 O_MKNTUPLES := $(BLD)/bank_containers.o $(BLD)/constants.o \
 			   $(BLD)/err_handler.o $(BLD)/file_handler.o $(BLD)/io_handler.o \
-			   $(BLD)/particle.o $(BLD)/utilities.o
+			   $(BLD)/particle.o $(BLD)/pid_constants.o $(BLD)/utilities.o
 O_DRAWPLOTS := $(BLD)/constants.o $(BLD)/err_handler.o $(BLD)/file_handler.o \
-			   $(BLD)/io_handler.o $(BLD)/utilities.o
+			   $(BLD)/io_handler.o $(BLD)/pid_constants.o $(BLD)/utilities.o
 
 all: $(BIN)/hipo2root $(BIN)/extract_sf $(BIN)/acc_corr \
 	 $(BIN)/make_ntuples $(BIN)/draw_plots

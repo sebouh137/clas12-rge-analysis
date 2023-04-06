@@ -18,15 +18,15 @@
 /** Initialize one pid_constants struct with the given data. */
 static pid_constants pid_constants_init(int c, double m, const char *n) {
     pid_constants p;
-    p.charge = c;
-    p.mass   = m;
+    p.charge = c; // electron charge.
+    p.mass   = m; // GeV.
     p.name   = n;
 
     return p;
 }
 
-// Map linking PIDs to pid_constants.
-static const std::map<int, pid_constants> PID_MAP = {
+/** Map linking PIDs to pid_constants. */
+const std::map<int, pid_constants> PID_MAP = {
         {     -2212, pid_constants_init( 1, 0.938272, "antiproton"           )},
         {      -321, pid_constants_init(-1, 0.493677, "negative kaon"        )},
         {      -211, pid_constants_init(-1, 0.139570, "negative pion"        )},
@@ -38,19 +38,20 @@ static const std::map<int, pid_constants> PID_MAP = {
         {       211, pid_constants_init( 1, 0.139570, "positive pion"        )},
         {       321, pid_constants_init( 1, 0.493677, "positive kaon"        )},
         {      2112, pid_constants_init( 0, 0.939565, "neutron"              )},
-        {      2212, pid_constants_init( 1, 0.938272, "proton"               )},
+        {      2212, pid_constants_init( 1, 0.938272, "proton"               )}
 
-        // NOTE. not yet implemented PIDs.
-        {        13, pid_constants_init( 1, 0.105658, "positive muon"        )},
-        {       -13, pid_constants_init(-1, 0.105658, "negative muon"        )},
-        {       111, pid_constants_init( 0, 0.134977, "neutral pion"         )},
-        {       311, pid_constants_init( 0, 0.497614, "neutral kaon"         )},
-        {       221, pid_constants_init( 0, 0.548953, "eta"                  )},
-        {       223, pid_constants_init( 0, 0.782650, "omega"                )},
-        {1000010020, pid_constants_init( 0, 1.875,    "deuterium"            )}
+        // NOTE. Not yet implemented.
+        // {        13, pid_constants_init( 1, 0.105658, "positive muon"     )},
+        // {       -13, pid_constants_init(-1, 0.105658, "negative muon"     )},
+        // {       111, pid_constants_init( 0, 0.134977, "neutral pion"      )},
+        // {       311, pid_constants_init( 0, 0.497614, "neutral kaon"      )},
+        // {       221, pid_constants_init( 0, 0.548953, "eta"               )},
+        // {       223, pid_constants_init( 0, 0.782650, "omega"             )},
+        // {1000010020, pid_constants_init( 0, 1.875,    "deuterium"         )}
 };
 
 // Functions for getting stuff from a particular PID.
+// TODO. Add an rge_errno if PID is not found in PID_MAP.
 int get_charge(int pid) {return PID_MAP.at(pid).charge;}
 double get_mass(int pid) {return PID_MAP.at(pid).mass;}
 const char *get_name(int pid) {return PID_MAP.at(pid).name;}

@@ -16,15 +16,10 @@
 #ifndef PARTICLE
 #define PARTICLE
 
+#include <map>
 #include "bank_containers.h"
+#include "pid_constants.h"
 #include "utilities.h"
-
-#define PID_POSITIVE_SIZE 5
-#define PID_NEGATIVE_SIZE 4
-#define PID_NEUTRAL_SIZE  2
-extern const int PID_POSITIVE[PID_POSITIVE_SIZE];
-extern const int PID_NEGATIVE[PID_NEGATIVE_SIZE];
-extern const int PID_NEUTRAL[PID_NEUTRAL_SIZE];
 
 typedef struct {
     bool is_valid;

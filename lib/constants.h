@@ -22,10 +22,6 @@
 // Physics constants.
 #define SPEEDOFLIGHT 29.9792458
 
-// PID arrays.
-extern const std::map<int, const char*> PID_NAME;
-extern const std::map<int, double> PID_MASS;
-
 // Data tree name for programs.
 #define TREENAMEDATA          "data"
 #define TREENAMETHRN          "ntuple_thrown"

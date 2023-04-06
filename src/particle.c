@@ -15,11 +15,6 @@
 
 #include "../lib/particle.h"
 
-// Lists of positive, negative, and neutral particles.
-const int PID_POSITIVE[PID_POSITIVE_SIZE] = {-11,  211,  321,  2212, 45};
-const int PID_NEGATIVE[PID_NEGATIVE_SIZE] = { 11, -211, -321, -2212};
-const int PID_NEUTRAL [PID_NEUTRAL_SIZE]  = { 22, 2112};
-
 /** Initialize an empty particle. */
 particle particle_init() {
     particle p;
@@ -118,8 +113,10 @@ particle particle_init(
     return p;
 }
 
-// Set PID from all available information. This function mimics PIDMatch from
-//         the EB engine.
+/**
+ * Set PID from all available information. This function mimics PIDMatch from
+ *     the EB engine.
+ */
 int set_pid(
         particle *p, int recon_pid, int status, double tot_E, double pcal_E,
         int htcc_nphe, int ltcc_nphe, double sf_params[SF_NPARAMS][2]
@@ -129,19 +126,35 @@ int set_pid(
     int rpid = p->q == 0 ? assign_neutral_pid(tot_E, p->beta) : recon_pid;
 
     // Create PID list.
-    unsigned int hypotheses_size;
-    if      (p->q >  0) hypotheses_size = PID_POSITIVE_SIZE;
-    else if (p->q == 0) hypotheses_size = PID_NEUTRAL_SIZE;
-    else                hypotheses_size = PID_NEGATIVE_SIZE;
+    unsigned int hypotheses_size = 0;
+    for (
+            std::map<int, pid_constants>::const_iterator it = PID_MAP.begin();
+            it != PID_MAP.end();
+            ++it
+    ) {
+        if (
+                (p->q == 0 && it->second.charge == 0) || // both are neutral.
+                (p->q * it->second.charge > 0)           // both are same sign.
+        ) {
+            ++hypotheses_size;
+        }
+    }
 
-    // Forbidding vlas in this context is a somewhat dumb g++ requirement.
     __extension__ int hypotheses[hypotheses_size];
-    for (unsigned int pi = 0; p->q >  0 && pi < hypotheses_size; ++pi)
-        hypotheses[pi] = PID_POSITIVE[pi];
-    for (unsigned int pi = 0; p->q == 0 && pi < hypotheses_size; ++pi)
-        hypotheses[pi] = PID_NEUTRAL [pi];
-    for (unsigned int pi = 0; p->q <  0 && pi < hypotheses_size; ++pi)
-        hypotheses[pi] = PID_NEGATIVE[pi];
+    unsigned int counter = 0;
+    for (
+            std::map<int, pid_constants>::const_iterator it = PID_MAP.begin();
+            it != PID_MAP.end();
+            ++it
+    ) {
+        if (
+                (p->q == 0 && it->second.charge == 0) || // both are neutral.
+                (p->q * it->second.charge > 0)           // both are same sign.
+        ) {
+            hypotheses[counter] = it->first;
+            ++counter;
+        }
+    }
 
     // Perform checks.
     bool e_check = is_electron(tot_E, pcal_E, htcc_nphe, P(*p), sf_params);
@@ -167,7 +180,7 @@ int set_pid(
 
     // Check if particle is trigger electron and define mass from PID.
     p->is_trigger_electron = (p->pid == 11 && status < 0);
-    p->mass = PID_MASS.at(abs(p->pid));
+    p->mass = get_mass(p->pid);
 
     // If particle is not a lepton, check if it is a valid hadron.
     if (p->pid >= 100 || p->pid <= -100) p->is_hadron = true;
@@ -214,10 +227,14 @@ int best_pid_from_momentum(
     int min_pid = 0;
     double min_diff = DBL_MAX;
     for (int pi = 0; pi < hypotheses_size; ++pi) {
-        if (abs(hypotheses[pi]) == 45 || hypotheses[pi] == 0 ||
-                abs(hypotheses[pi]) == 11)
+        if (
+                abs(hypotheses[pi]) == 45 ||
+                abs(hypotheses[pi]) == 11 ||
+                hypotheses[pi]      ==  0
+        ) {
             continue;
-        double mass = PID_MASS.at(abs(hypotheses[pi]));
+        }
+        double mass = get_mass(hypotheses[pi]);
         double p_beta = p/(sqrt(mass*mass + p*p));
         double diff = abs(p_beta - beta);
         if (diff < min_diff) {
@@ -355,7 +372,7 @@ float Q2(particle p, double bE) {
 // Calculate x_bjorken from beam energy, particle momentum, and theta angle.
 float Xb(particle p, double bE) {
     if (!p.is_trigger_electron) return 0;
-    return Q2(p, bE) / (2*PID_MASS.at(2212)*nu(p, bE));
+    return Q2(p, bE) / (2*get_mass(2212)*nu(p, bE));
 }
 
 // Calculate y_bjorken from beam energy and nu.
@@ -376,8 +393,7 @@ float W(particle p, double bE) {
 // Calculate the squared invariant mass of the electron-nucleon interaction.
 float W2(particle p, double bE) {
     if (!p.is_trigger_electron) return 0;
-    return PID_MASS.at(2212)*PID_MASS.at(2212) + 2*PID_MASS.at(2212)*nu(p, bE)
-            - Q2(p, bE);
+    return get_mass(2212)*get_mass(2212)+2*get_mass(2212)*nu(p, bE)-Q2(p, bE);
 }
 
 // NOTE. double s(particle p) ?
@@ -459,18 +475,18 @@ float zh(particle p, particle e, double bE) {
 // Return the longitudinal momentum in the center of mass frame.
 float PlCM(particle p, particle e, double bE) {
     if (!(p.is_hadron && e.is_trigger_electron)) return 0;
-    return (nu(e,bE) + PID_MASS.at(2212)) * (sqrt(Pl2(p,e,bE)) - sqrt(Q2(e,bE) +
+    return (nu(e,bE) + get_mass(2212)) * (sqrt(Pl2(p,e,bE)) - sqrt(Q2(e,bE) +
             nu(e,bE)*nu(e,bE))
-            * zh(p,e,bE)*nu(e,bE) / (nu(e,bE) + PID_MASS.at(2212))) / W(e,bE);
+            * zh(p,e,bE)*nu(e,bE) / (nu(e,bE) + get_mass(2212))) / W(e,bE);
 }
 
 // Obtain the maximum possible value that the momentum could've had in the
 //         center of mass frame.
 float PmaxCM(particle p, particle e, double bE) {
     if (!(p.is_hadron && e.is_trigger_electron)) return 0;
-    return sqrt(pow(W(e,bE)*W(e,bE) - PID_MASS.at(2112)*PID_MASS.at(2112) +
-            PID_MASS.at(211)*PID_MASS.at(211), 2)
-            - 4*PID_MASS.at(211)*PID_MASS.at(211)*W(e,bE)*W(e,bE)) /
+    return sqrt(pow(W(e,bE)*W(e,bE) - get_mass(2112)*get_mass(2112) +
+            get_mass(211)*get_mass(211), 2)
+            - 4*get_mass(211)*get_mass(211)*W(e,bE)*W(e,bE)) /
             (2*W(e,bE));
 }
 
@@ -498,7 +514,7 @@ float Xf(particle p, particle e, double bE) {
 float Mx2(particle p, particle e, double bE) {
     if (!(p.is_hadron && e.is_trigger_electron)) return 0;
     return W(e,bE)*W(e,bE) - 2*nu(e,bE)*zh(p,e,bE) * (nu(e,bE) +
-            PID_MASS.at(2212)) + PID_MASS.at(211)*PID_MASS.at(211) +
+            get_mass(2212)) + get_mass(211)*get_mass(211) +
             2*sqrt((Q2(e,bE) + nu(e,bE)*nu(e,bE)) * Pl2(p,e,bE));
 }
 
@@ -506,6 +522,6 @@ float Mx2(particle p, particle e, double bE) {
 float t_mandelstam(particle p, particle e, double bE) {
     if (!(p.is_hadron && e.is_trigger_electron)) return 0;
     return 2*sqrt((nu(e,bE)*nu(e,bE) + Q2(e,bE)) * Pl2(p,e,bE)) +
-            PID_MASS.at(211)*PID_MASS.at(211) - Q2(e,bE) -
+            get_mass(211)*get_mass(211) - Q2(e,bE) -
             2*nu(e,bE)*nu(e,bE)*zh(p,e,bE);
 }
