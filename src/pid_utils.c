@@ -50,8 +50,35 @@ const std::map<int, pid_constants> PID_MAP = {
         // {1000010020, pid_constants_init( 0, 1.875,    "deuterium"         )}
 };
 
-// Functions for getting stuff from a particular PID.
-// TODO. Add an rge_errno if PID is not found in PID_MAP.
-int get_charge(int pid) {return PID_MAP.at(pid).charge;}
-double get_mass(int pid) {return PID_MAP.at(pid).mass;}
-const char *get_name(int pid) {return PID_MAP.at(pid).name;}
+/** Return 0 if PID_MAP contains pid, 1 otherwise. */
+int pid_valid(int pid) {
+    if (PID_MAP.contains(pid)) return 0;
+    else                       return 1;
+}
+
+/** Get charge of particle associated to pid. */
+int get_charge(int pid, int *charge) {
+    if (!pid_valid(pid)) {
+        rge_errno = ERR_PIDNOTFOUND;
+        return 1;
+    }
+
+    *charge = PID_MAP.at(pid).charge;
+    return 0;
+}
+
+/** Get mass of particle associated to pid. */
+int get_mass(int pid, double *mass) {
+    if (!pid_valid(pid)) {
+        rge_errno = ERR_PIDNOTFOUND;
+        return 1;
+    }
+
+    *mass = PID_MAP.at(pid).mass;
+    return 0;
+}
+
+/** Print all PIDs and names in PID_MAP to stdout. */
+int print_names() {
+    return 0;
+}

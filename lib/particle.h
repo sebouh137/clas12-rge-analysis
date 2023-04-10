@@ -34,7 +34,7 @@ typedef struct {
     float vx, vy, vz;
     float px, py, pz;
     // Derived vars.
-    float mass;
+    double mass;
 } particle;
 
 // particle functions.
@@ -51,8 +51,6 @@ int set_pid(particle *p, int recon_pid, int status, double tot_E,
 bool is_electron(double tot_E, double pcal_E, double htcc_nphe, double p,
         double pars[SF_NPARAMS][2]);
 int assign_neutral_pid(double tot_E, double beta);
-int best_pid_from_momentum(double p, double beta, int pid_list[],
-        int pid_list_size);
 int match_pid(int hyp, bool r_match, int q, bool e, bool htcc_s, bool htcc_p);
 float d_from_beamline(particle p);
 float theta_lab(particle p);

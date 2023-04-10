@@ -18,6 +18,7 @@
 
 #include <float.h>
 #include <map>
+#include "../lib/err_handler.h"
 
 /** Data associated to a particular PID. */
 typedef struct {
@@ -30,9 +31,9 @@ static pid_constants pid_constants_init(int c, double m, const char *);
 
 extern const std::map<int, pid_constants> PID_MAP;
 
-// TODO. Change names!
-int get_charge(int pid);
-double get_mass(int pid);
-const char *get_name(int pid);
+int pid_valid(int pid);
+int get_charge(int pid, int *charge);
+int get_mass(int pid, double *mass);
+int print_names();
 
 #endif

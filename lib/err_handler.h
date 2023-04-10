@@ -69,6 +69,7 @@ int handle_err();
 // --+ 900 - 999 miscellaneous +------------------------------------------------
 #define ERR_ANGLEOUTOFRANGE         900
 #define ERR_NOACCDATA               901
+#define ERR_PIDNOTFOUND             902
 // -----------------------------------------------------------------------------
 
 #endif

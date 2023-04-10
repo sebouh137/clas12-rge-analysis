@@ -117,7 +117,10 @@ const std::map<unsigned int, const char *> ERRMAP = {
             "-180 (-pi) and 180 (pi)."},
     {ERR_NOACCDATA,
             "There's no acceptance correction data for the selected PID. Run "
-            "acc_corr and define a binning scheme to use this feature."}
+            "acc_corr and define a binning scheme to use this feature."},
+    {ERR_PIDNOTFOUND,
+            "Program looked for an unavailable PID. Check that all requested "
+            "PIDs are in PID_MAP in pid_utils file."}
 };
 
 // Error number. Initially defined to ERR_UNDEFINED to check if the program

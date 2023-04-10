@@ -336,23 +336,24 @@ static int run(
             double ndf  = bank_trk_dc.ndf ->at(pos);
 
             // Assign PID.
-            set_pid(
+            if (set_pid(
                     &part_trigger, bank_part.pid->at(pindex), status,
                     energy_PCAL + energy_ECIN + energy_ECOU, energy_PCAL,
                     nphe_HTCC, nphe_LTCC,
                     sampling_fraction_params[bank_trk_dc.sector->at(pos)]
-            );
+            )) return 1;
+
 
             // Skip particle if its not the trigger electron.
             if (!part_trigger.is_trigger_electron) continue;
 
             // Fill TNtuple with trigger electron information.
             Float_t arr[VAR_LIST_SIZE];
-            fill_ntuples_arr(
+            if (fill_ntuples_arr(
                     arr, part_trigger, part_trigger, run_no, event, status,
                     energy_beam, chi2, ndf, energy_PCAL, energy_ECIN,
                     energy_ECOU, tof, tof, nphe_LTCC, nphe_HTCC
-            );
+            )) return 1;
 
             tree_out->Fill(arr);
 
@@ -418,21 +419,21 @@ static int run(
             double ndf  = bank_trk_dc.ndf ->at(pos);
 
             // Assign PID.
-            set_pid(
+            if (set_pid(
                     &part, bank_part.pid->at(pindex), status,
                     energy_PCAL + energy_ECIN + energy_ECOU, energy_PCAL,
                     nphe_HTCC, nphe_LTCC,
                     sampling_fraction_params[bank_trk_dc.sector->at(pos)]
-            );
+            )) return 1;
 
             // Fill TNtuples.
             // NOTE. If adding new variables, check their order in S_VAR_LIST.
             Float_t arr[VAR_LIST_SIZE];
-            fill_ntuples_arr(
+            if (fill_ntuples_arr(
                     arr, part, part_trigger, run_no, event, status, energy_beam,
                     chi2, ndf, energy_PCAL, energy_ECIN, energy_ECOU, tof,
                     trigger_tof, nphe_LTCC, nphe_HTCC
-            );
+            )) return 1;
 
             tree_out->Fill(arr);
 

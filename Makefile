@@ -94,7 +94,7 @@ $(BLD)/particle.o: $(SRC)/particle.c $(LIB)/particle.h
 	$(HXX) -c $(SRC)/particle.c -o $(BLD)/particle.o
 
 $(BLD)/pid_utils.o: $(SRC)/pid_utils.c $(LIB)/pid_utils.h
-	$(CXX) -c $(SRC)/pid_utils.c -o $(BLD)/pid_utils.o
+	$(CXX) -std=c++20 -c $(SRC)/pid_utils.c -o $(BLD)/pid_utils.o
 
 $(BLD)/utilities.o: $(SRC)/utilities.c $(LIB)/utilities.h
 	$(RXX) -c $(SRC)/utilities.c -o $(BLD)/utilities.o
