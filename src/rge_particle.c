@@ -15,9 +15,9 @@
 
 #include "../lib/rge_particle.h"
 
-/** Initialize an empty particle. */
-particle particle_init() {
-    particle p;
+// --+ internal +---------------------------------------------------------------
+rge_particle particle_init() {
+    rge_particle p;
     p.is_valid            = false;
     p.is_hadron           = false;
     p.is_trigger_electron = false;
@@ -25,46 +25,196 @@ particle particle_init() {
     return p;
 }
 
-/**
-  * Initialize a new DC-tracked particle from the REC::Particle and REC::TRACK
-  *     banks.
-  *
-  * @param bank_particle : pointer to the Particle class.
-  * @param bank_track    : pointer to the Track class to get DC tracking data.
-  * @param pos           : position of the particle at the track class.
-  */
-particle particle_init(
-        Particle *bank_particle, Track *bank_track, unsigned int pos
+rge_particle particle_init(
+        int charge, double beta, int sector, double vx, double vy, double vz,
+        double px, double py, double pz
 ) {
-    unsigned int pindex =
-            static_cast<unsigned int>(bank_track->pindex->at(pos));
-    return particle_init(
-            bank_particle->charge->at(pindex),
-            bank_particle->beta->at(pindex), bank_track->sector->at(pos),
-            bank_particle->vx->at(pindex), bank_particle->vy->at(pindex),
-            bank_particle->vz->at(pindex), bank_particle->px->at(pindex),
-            bank_particle->py->at(pindex), bank_particle->pz->at(pindex)
-    );
+    rge_particle p;
+
+    p.is_valid            = true;
+    p.is_trigger_electron = false;
+    p.is_hadron           = false;
+
+    p.pid    = 0;
+    p.charge = charge;
+    p.sector = sector;
+    p.beta   = beta;
+
+    p.vx = vx;
+    p.vy = vy;
+    p.vz = vz;
+    p.px = px;
+    p.py = py;
+    p.pz = pz;
+
+    return p;
 }
 
-/**
-  * Initialize a new DC+FMT-tracked particle from the REC::Particle, REC::TRACK,
-  *     and FMT::Tracks banks.
-  *
-  * @param bank_particle   : pointer to the Particle class.
-  * @param bank_track      : pointer to the Track class to get DC tracking data.
-  * @param bank_fmt_tracks : pointer to the FMT_Tracks class to get FMT tracks.
-  * @param pos             : position of the particle at the track class.
-  * @param fmt_nlayers     : number of FMT layers required to make a particle.
-  */
-particle particle_init(
-        Particle *bank_particle, Track *bank_track,
-        FMT_Tracks *bank_fmt_tracks, unsigned int pos, long int fmt_nlayers
+int assign_neutral_pid(double energy, double beta) {
+    return beta < NEUTRON_MAXBETA ? 2112 : (energy > PHOTON_MINENERGY ? 22 : 0);
+}
+
+bool is_electron(
+        double total_energy, double pcal_energy, double htcc_nphe, double p,
+        double pars[SF_NPARAMS][2]
 ) {
-    unsigned int index  =
-            static_cast<unsigned int>(bank_track->index->at(pos));
+    // Require ECAL.
+    if (total_energy < 1e-9)              return false;
+    // Momentum must be greater than 0.
+    if (p < 1e-9)                  return false;
+    // Require HTCC photoelectrons.
+    if (htcc_nphe < HTCC_NPHE_CUT) return false;
+    // Require PCAL.
+    if (pcal_energy < MIN_PCAL_ENERGY)  return false;
+
+    // Require ECAL sampling fraction to be below threshold.
+    double mean  = pars[0][0]*(pars[1][0] + pars[2][0]/total_energy
+            + pars[3][0]/(total_energy*total_energy));
+    double sigma = pars[0][1]*(pars[1][1] + pars[2][1]/total_energy
+            + pars[3][1]/(total_energy*total_energy));
+    if (abs((total_energy/p - mean)/sigma) > E_SF_NSIGMA) return false;
+
+    return true;
+}
+
+int match_pid(
+        int *pid, int hypothesis, bool recon_match, bool electron_check,
+        bool htcc_signal_check, bool htcc_pion_threshold
+) {
+    switch(abs(hypothesis)) {
+        case 11:
+            if (recon_match || electron_check) *pid = hypothesis;
+            break;
+        case 211:
+            if (recon_match || (
+                    !electron_check &&
+                    htcc_signal_check &&
+                    htcc_pion_threshold
+            )) {
+                *pid = hypothesis;
+            }
+            break;
+        case 321: case 2212: case 45: case 2112: case 22:
+            if (recon_match) *pid = hypothesis;
+            break;
+        default:
+            rge_errno = ERR_UNSUPPORTEDPID;
+            return 1;
+    }
+    return 0;
+}
+
+double theta_lab(rge_particle p) {
+    if (p.px + p.py + p.pz < 1e-9) return 0;
+    return atan2(sqrt(p.px*p.px + p.py*p.py), p.pz);
+}
+
+double phi_lab(rge_particle p) {
+    return atan2(p.py, p.px);
+}
+
+double momentum(rge_particle p) {
+    return calc_magnitude(p.px, p.py, p.pz);
+}
+
+double Q2(rge_particle p, double bE) {
+    if (!p.is_trigger_electron) return 0;
+    return 4 * bE * momentum(p) * pow(sin(theta_lab(p)/2), 2);
+}
+
+double nu(rge_particle p, double bE) {
+    if (!p.is_trigger_electron) return 0;
+    return bE - momentum(p);
+}
+
+double Xb(rge_particle p, double bE) {
+    if (!p.is_trigger_electron) return 0;
+    double proton_mass;
+    if (rge_get_mass(2212, &proton_mass)) return 0;
+
+    return Q2(p, bE) / (2*proton_mass*nu(p, bE));
+}
+
+double W(rge_particle p, double bE) {
+    if (!p.is_trigger_electron) return 0;
+    return sqrt(abs(W2(p, bE)));
+}
+
+double W2(rge_particle p, double bE) {
+    if (!p.is_trigger_electron) return 0;
+    double proton_mass;
+    if (rge_get_mass(2212, &proton_mass)) return 0;
+
+    return proton_mass*proton_mass + 2*proton_mass*nu(p, bE)-Q2(p, bE);
+}
+
+double theta_pq(rge_particle p, rge_particle e, double bE) {
+    if (!(p.is_hadron && e.is_trigger_electron)) return 0;
+    return calc_angle(-e.px, -e.py, bE-e.pz, p.px, p.py, p.pz);
+}
+
+double phi_pq(rge_particle p, rge_particle e, double bE) {
+    if (!(p.is_hadron && e.is_trigger_electron)) return 0;
+
+    double gpx = -e.px, gpy = -e.py, gpz = bE-e.pz;
+    double ppx = p.px,  ppy = p.py,  ppz = p.pz;
+
+    // Analyser uses gp isntead of p, i.e. the momentum of virtual photon.
+    double phi_z = M_PI - atan2(gpy, gpx);
+
+    rotate_z(&gpx, &gpy, phi_z);
+    rotate_z(&ppx, &ppy, phi_z);
+
+    double phi_y = calc_angle(gpx, gpy, gpz, 0, 0, 1);
+
+    rotate_y(&ppx, &ppz, phi_y);
+
+    return atan2(ppy, ppx);
+}
+
+double cos_theta_pq(rge_particle p, rge_particle e, double bE) {
+    if (!(p.is_hadron && e.is_trigger_electron)) return 0;
+    return (p.pz*(bE-e.pz) - p.px*e.px - p.py*e.py) /
+            (sqrt(nu(e,bE)*nu(e,bE) + Q2(e,bE)) * momentum(p));
+}
+
+double Pt2(rge_particle p, rge_particle e, double bE) {
+    if (!(p.is_hadron && e.is_trigger_electron)) return 0;
+    return pow(momentum(p),2) * (1 - pow(cos_theta_pq(p,e,bE),2));
+}
+
+double Pl2(rge_particle p, rge_particle e, double bE) {
+    if (!(p.is_hadron && e.is_trigger_electron)) return 0;
+    return pow(momentum(p),2) * pow(cos_theta_pq(p,e,bE),2);
+}
+
+double zh(rge_particle p, rge_particle e, double bE) {
+    if (!(p.is_hadron && e.is_trigger_electron)) return 0;
+    return sqrt(p.mass*p.mass + momentum(p)*momentum(p)) / nu(e,bE);
+}
+
+// --+ library +----------------------------------------------------------------
+rge_particle rge_particle_init(
+        Particle *bank_particle, Track *bank_track, FMT_Tracks *bank_fmt_tracks,
+        unsigned int pos, long int fmt_nlayers
+) {
     unsigned int pindex =
             static_cast<unsigned int>(bank_track->pindex->at(pos));
+
+    // Use only DC tracking data.
+    if (fmt_nlayers == 0) {
+        return particle_init(
+                bank_particle->charge->at(pindex),
+                bank_particle->beta->at(pindex), bank_track->sector->at(pos),
+                bank_particle->vx->at(pindex), bank_particle->vy->at(pindex),
+                bank_particle->vz->at(pindex), bank_particle->px->at(pindex),
+                bank_particle->py->at(pindex), bank_particle->pz->at(pindex)
+        );
+    }
+
+    // Use DC+FMT tracking data.
+    unsigned int index  =
+            static_cast<unsigned int>(bank_track->index->at(pos));
 
     // Apply FMT cuts.
     // Track reconstructed by FMT.
@@ -81,149 +231,57 @@ particle particle_init(
     );
 }
 
-/**
- * Initialize a new particle using data from the Particle and Track banks. This
- *     function should only be called from this same file.
- */
-particle particle_init(
-        int charge, double beta, int sector, double vx, double vy, double vz,
-        double px, double py, double pz
-) {
-    particle p;
-
-    // Inherent vars.
-    p.is_valid            = true;
-    p.is_trigger_electron = false;
-    p.is_hadron           = false;
-
-    p.pid    = 0;
-    p.charge = charge;
-    p.beta   = beta;
-    p.sector = sector;
-
-    // Tracking vars.
-    p.vx = vx;
-    p.vy = vy;
-    p.vz = vz;
-    p.px = px;
-    p.py = py;
-    p.pz = pz;
-
-    // NOTE. If programs gets slow, I should cache values of Q2, nu, etc here.
-    return p;
-}
-
-/**
- * Set PID from all available information. This function mimics PIDMatch from
- *     the EB engine.
- */
-int set_pid(
-        particle *p, int recon_pid, int status, double tot_E, double pcal_E,
-        int htcc_nphe, int ltcc_nphe, double sf_params[SF_NPARAMS][2]
+int rge_set_pid(
+        rge_particle *particle, int recon_pid, int status, double total_energy,
+        double pcal_energy, int htcc_nphe, int ltcc_nphe,
+        double sf_params[SF_NPARAMS][2]
 ) {
     // Assign PID for neutrals and store PID from reconstruction for charged
     //         particles.
-    int rpid = p->charge == 0 ? assign_neutral_pid(tot_E, p->beta) : recon_pid;
+    if (particle->charge == 0) {
+        recon_pid = assign_neutral_pid(total_energy, particle->beta);
+    }
 
     // Create PID list.
     unsigned int hypotheses_size = 0;
-    rge_get_pidlist_size_by_charge(p->charge, &hypotheses_size);
+    rge_get_pidlist_size_by_charge(particle->charge, &hypotheses_size);
 
     __extension__ int hypotheses[hypotheses_size];
-    rge_get_pidlist_by_charge(p->charge, hypotheses);
+    rge_get_pidlist_by_charge(particle->charge, hypotheses);
 
     // Perform checks.
-    bool e_check = is_electron(tot_E, pcal_E, htcc_nphe, P(*p), sf_params);
+    bool e_check = is_electron(
+            total_energy, pcal_energy, htcc_nphe, momentum(*particle), sf_params
+    );
 
     bool htcc_signal_check = htcc_nphe > HTCC_NPHE_CUT;
-    bool htcc_pion_threshold = P(*p) > HTCC_PION_THRESHOLD;
-
-    // NOTE. LTCC signals are used in recon to veto back from kaon and proton to
-    //       pion, but we don't do that here since we're using the PID from
-    //       reconstrution anyway.
-    // bool ltcc_signal_check = ltcc_nphe > LTCC_NPHE_CUT;
-    // bool ltcc_pion_threshold = P(*p) > LTCC_PION_THRESHOLD;
-
-    // NOTE. LTCC kaon threshold is defined in reconstruction, but never
-    //       actually used.
-    // bool ltcc_kaon_threshold = P(*p) > LTCC_KAON_THRESHOLD;
+    bool htcc_pion_threshold = momentum(*particle) > HTCC_PION_THRESHOLD;
 
     // Match PID.
-    for (unsigned int pi = 0; p->pid == 0 && pi < hypotheses_size; ++pi) {
-        p->pid = match_pid(hypotheses[pi], hypotheses[pi] == rpid, p->charge,
-                e_check, htcc_signal_check, htcc_pion_threshold);
+    for (unsigned int pi = 0; particle->pid==0 && pi < hypotheses_size; ++pi) {
+        if (match_pid(
+                &(particle->pid), hypotheses[pi], hypotheses[pi] == recon_pid,
+                e_check, htcc_signal_check, htcc_pion_threshold
+        )) return 1;
     }
 
     // Check if particle is trigger electron and define mass from PID.
-    p->is_trigger_electron = (p->pid == 11 && status < 0);
-    if (rge_get_mass(p->pid, &(p->mass))) return 1;
+    particle->is_trigger_electron = (particle->pid == 11 && status < 0);
+    if (rge_get_mass(particle->pid, &(particle->mass))) return 1;
 
     // If particle is not a lepton, check if it is a valid hadron.
-    if (p->pid >= 100 || p->pid <= -100) p->is_hadron = true;
-
-    return 0;
-}
-
-/**
- * Check if a particle satisfies all requirements to be considered an electron
- *     or positron. Specific requirements can be seen on the function itself.
- */
-bool is_electron(
-        double tot_E, double pcal_E, double htcc_nphe, double p,
-        double pars[SF_NPARAMS][2]
-) {
-    // Require ECAL.
-    if (tot_E < 1e-9)              return false;
-    // Momentum must be greater than 0.
-    if (p < 1e-9)                  return false;
-    // Require HTCC photoelectrons.
-    if (htcc_nphe < HTCC_NPHE_CUT) return false;
-    // Require PCAL.
-    if (pcal_E < MIN_PCAL_ENERGY)  return false;
-
-    // Require ECAL sampling fraction to be below threshold.
-    double mean  = pars[0][0]*(pars[1][0] + pars[2][0]/tot_E
-            + pars[3][0]/(tot_E*tot_E));
-    double sigma = pars[0][1]*(pars[1][1] + pars[2][1]/tot_E
-            + pars[3][1]/(tot_E*tot_E));
-    if (abs((tot_E/p - mean)/sigma) > E_SF_NSIGMA) return false;
-
-    return true;
-}
-
-/** Assign PID to a neutral particle. */
-int assign_neutral_pid(double tot_E, double beta) {
-    return beta < NEUTRON_MAXBETA ? 2212 : (tot_E > 1e-9 ? 22 : 0);
-}
-
-/** Match PID hypothesis with available checks. */
-int match_pid(int hyp, bool r_match, int q, bool e, bool htcc_s, bool htcc_p) {
-    switch(abs(hyp)) {
-        case 11:
-            if (r_match || e) return hyp;
-            break;
-        case 211:
-            if (r_match || (!e && htcc_s && htcc_p)) return hyp;
-            break;
-        case 321: case 2212: case 45: case 2112: case 22:
-            if (r_match) return hyp;
-            break;
-        default:
-            // NOTE. Maybe raise an error or assign pid = 0 in this case.
-            if (r_match) return hyp;
-            break;
+    if (particle->pid >= 100 || particle->pid <= -100) {
+        particle->is_hadron = true;
     }
+
     return 0;
 }
 
-/**
- * Fill array to be stored in ntuples_%06d.root file. Array is of constant size
- * VAR_LIST_SIZE, and the order of variables can be seen in constants.h.
- */
-int fill_ntuples_arr(
-        Float_t *arr, particle p, particle e, int run_no, int evn, int status,
-        double beam_E, float chi2, float ndf, double pcal_E, double ecin_E,
-        double ecou_E, double tof, double tre_tof, int nphe_ltcc, int nphe_htcc
+int rge_fill_ntuples_arr(
+        Float_t *arr, rge_particle p, rge_particle e, int run_no, int evn,
+        int status, double beam_E, float chi2, float ndf, double pcal_energy,
+        double ecin_E, double ecou_E, double tof, double tre_tof, int nphe_ltcc,
+        int nphe_htcc
 ) {
     // Metadata.
     arr[A_RUNNO]   = static_cast<Float_t>(run_no);
@@ -241,7 +299,7 @@ int fill_ntuples_arr(
     arr[A_PX]     = p.px;
     arr[A_PY]     = p.py;
     arr[A_PZ]     = p.pz;
-    arr[A_P]      = P(p);
+    arr[A_P]      = momentum(p);
     arr[A_THETA]  = theta_lab(p);
     arr[A_PHI]    = phi_lab(p);
     arr[A_BETA]   = p.beta;
@@ -251,10 +309,10 @@ int fill_ntuples_arr(
     arr[A_NDF]  = ndf;
 
     // Calorimeter.
-    arr[A_PCAL_E] = pcal_E;
+    arr[A_PCAL_E] = pcal_energy;
     arr[A_ECIN_E] = ecin_E;
     arr[A_ECOU_E] = ecou_E;
-    arr[A_TOT_E]  = pcal_E + ecin_E + ecou_E;
+    arr[A_TOT_E]  = pcal_energy + ecin_E + ecou_E;
 
     // Scintillator.
     arr[A_DTOF] = tof - tre_tof;
@@ -278,221 +336,4 @@ int fill_ntuples_arr(
     arr[A_THETAPQ] = theta_pq(p, e, beam_E);
 
     return 0;
-}
-
-// === PARTICLE FUNCTIONS ======================================================
-// Get distance from beamline.
-float d_from_beamline(particle p) {
-    return (sqrt(p.vx*p.vx + p.vy+p.vy));
-}
-
-// Calculate theta angle in the lab frame from momentum components of particle.
-float theta_lab(particle p) {
-    return p.px == 0.0 && p.py == 0.0 && p.pz == 0.0 ? 0.0 :
-            atan2(sqrt(p.px*p.px + p.py*p.py), p.pz);
-}
-
-// Calculate phi angle in the lab frame from momentum components of particle.
-float phi_lab(particle p) {
-    return atan2(p.py, p.px);
-}
-
-// Calculate momentum magnitude from its components.
-float P(particle p) {
-    return calc_magnitude(p.px, p.py, p.pz);
-}
-
-// Calculate squared mass from momentum and beta.
-float mass2(particle p) {
-    return (P(p)*P(p)) / (p.beta*p.beta);
-}
-
-// === DIS e- FUNCTIONS ========================================================
-// Calculate nu from beam energy and total momentum.
-float nu(particle p, double bE) {
-    // TODO. I need an invalid return value, not zero!
-    if (!p.is_trigger_electron) return 0;
-    return bE - P(p);
-}
-
-// Calculate Q^2 from beam energy, particle momentum, and theta angle.
-float Q2(particle p, double bE) {
-    if (!p.is_trigger_electron) return 0;
-    return 4 * bE * P(p) * pow(sin(theta_lab(p)/2), 2);
-}
-
-// Calculate x_bjorken from beam energy, particle momentum, and theta angle.
-float Xb(particle p, double bE) {
-    if (!p.is_trigger_electron) return 0;
-    double proton_mass;
-    if (rge_get_mass(2212, &proton_mass)) return 0;
-
-    return Q2(p, bE) / (2*proton_mass*nu(p, bE));
-}
-
-// Calculate y_bjorken from beam energy and nu.
-float Yb(particle p, double bE) {
-    if (!p.is_trigger_electron) return 0;
-    return nu(p, bE) / bE;
-}
-
-// Calculate the invariant mass of the electron-nucleon interaction.
-float W(particle p, double bE) {
-    if (!p.is_trigger_electron) return 0;
-    return sqrt(abs(W2(p, bE)));
-}
-
-// TODO. Plot W without any Q2 cuts.
-// TODO. Read a bit about resonances.
-
-// Calculate the squared invariant mass of the electron-nucleon interaction.
-float W2(particle p, double bE) {
-    if (!p.is_trigger_electron) return 0;
-    double proton_mass;
-    if (rge_get_mass(2212, &proton_mass)) return 0;
-
-    return proton_mass*proton_mass + 2*proton_mass*nu(p, bE)-Q2(p, bE);
-}
-
-// NOTE. double s(particle p) ?
-
-// Calculate the virtual photon's theta angle in the lab frame.
-float theta_photon_lab(particle p, double bE) {
-    if (!p.is_trigger_electron) return 0;
-    return acos((bE - P(p)*cos(theta_lab(p))) /
-            (sqrt(Q2(p, bE)+nu(p, bE)*nu(p, bE))));
-}
-
-// Calculate the virtual photon's phi angle in the lab frame.
-float phi_photon_lab(particle p) {
-    if (!p.is_trigger_electron) return 0;
-    return M_PI + phi_lab(p);
-}
-
-// === SIDIS PRODUCED PARTICLE FUNCTIONS =======================================
-// TODO. Many of the methods hereafter assume the particle is a pion. This
-//       probably needs to be fixed for CLAS12.
-
-// Compute the polar angle of a produced particle p with respect to the virtual
-//         photon direction.
-// `p` is the produced particle while `e` is the trigger electron.
-
-float theta_pq(particle p, particle e, double bE) {
-    if (!(p.is_hadron && e.is_trigger_electron)) return 0;
-    return calc_angle(-e.px, -e.py, bE-e.pz, p.px, p.py, p.pz);
-}
-
-// Compute the azimuthal angle of a produced particle p with respect to the
-//         virtual photon direction.
-float phi_pq(particle p, particle e, double bE) {
-    if (!(p.is_hadron && e.is_trigger_electron)) return 0;
-
-    double gpx = -e.px, gpy = -e.py, gpz = bE-e.pz;
-    double ppx = p.px,  ppy = p.py,  ppz = p.pz;
-
-    // Analyser uses gp isntead of p, i.e. the momentum of virtual photon.
-    double phi_z = M_PI - atan2(gpy, gpx);
-
-    rotate_z(&gpx, &gpy, phi_z);
-    rotate_z(&ppx, &ppy, phi_z);
-
-    double phi_y = calc_angle(gpx, gpy, gpz, 0, 0, 1);
-
-    rotate_y(&ppx, &ppz, phi_y);
-
-    return atan2(ppy, ppx);
-}
-
-// Compute the cosine of the polar angle with respect to the virtual photon
-//         direction.
-float cos_theta_pq(particle p, particle e, double bE) {
-    if (!(p.is_hadron && e.is_trigger_electron)) return 0;
-    return (p.pz*(bE-e.pz) - p.px*e.px - p.py*e.py) /
-            (sqrt(nu(e,bE)*nu(e,bE) + Q2(e,bE)) * P(p));
-}
-
-// Return the squared momentum transverse to the virtual photon.
-float Pt2(particle p, particle e, double bE) {
-    if (!(p.is_hadron && e.is_trigger_electron)) return 0;
-    return P(p) * P(p) * (1 - cos_theta_pq(p,e,bE)*cos_theta_pq(p,e,bE));
-}
-
-// Return the squared momentum longitudinal to the virtual photon.
-float Pl2(particle p, particle e, double bE) {
-    if (!(p.is_hadron && e.is_trigger_electron)) return 0;
-    return P(p) * P(p) * cos_theta_pq(p,e,bE) * cos_theta_pq(p,e,bE);
-}
-
-// Obtain the fraction of the virtual photon energy taken by the produced
-//         particle in the lab frame.
-float zh(particle p, particle e, double bE) {
-    if (!(p.is_hadron && e.is_trigger_electron)) return 0;
-    return sqrt(p.mass*p.mass + P(p)*P(p)) / nu(e,bE);
-}
-
-// Return the longitudinal momentum in the center of mass frame.
-float PlCM(particle p, particle e, double bE) {
-    if (!(p.is_hadron && e.is_trigger_electron)) return 0;
-    double proton_mass;
-    if (rge_get_mass(2212, &proton_mass)) return 0;
-
-    return (nu(e,bE) + proton_mass) * (sqrt(Pl2(p,e,bE)) - sqrt(Q2(e,bE) +
-            nu(e,bE)*nu(e,bE))
-            * zh(p,e,bE)*nu(e,bE) / (nu(e,bE) + proton_mass)) / W(e,bE);
-}
-
-// Obtain the maximum possible value that the momentum could've had in the
-//         center of mass frame.
-float PmaxCM(particle p, particle e, double bE) {
-    if (!(p.is_hadron && e.is_trigger_electron)) return 0;
-    double neutron_mass, pion_mass;
-    if (rge_get_mass(2112, &neutron_mass)) return 0;
-    if (rge_get_mass(211,  &pion_mass))    return 0;
-
-    return sqrt(pow(W(e,bE)*W(e,bE) - neutron_mass*neutron_mass +
-            pion_mass*pion_mass, 2)
-            - 4*pion_mass*pion_mass*W(e,bE)*W(e,bE)) /
-            (2*W(e,bE));
-}
-
-// Return the momentum transverse component squared of the produced particle wrt
-//        the virtual photon direction.
-float PTrans2PQ(particle p, particle e, double bE) {
-    if (!(p.is_hadron && e.is_trigger_electron)) return 0;
-    return P(p)*P(p) * (1 - cos_theta_pq(p,e,bE)*cos_theta_pq(p,e,bE));
-}
-
-// Return the momentum longitudinal component squared of the produced particle
-//         wrt the virtual photon direction.
-float PLong2PQ(particle p, particle e, double bE) {
-    if (!(p.is_hadron && e.is_trigger_electron)) return 0;
-    return P(p)*P(p) * cos_theta_pq(p,e,bE)*cos_theta_pq(p,e,bE);
-}
-
-// Calculate X_f (X Feynman).
-float Xf(particle p, particle e, double bE) {
-    if (!(p.is_hadron && e.is_trigger_electron)) return 0;
-    return PlCM(p,e,bE) / PmaxCM(p,e,bE);
-}
-
-// Compute the missing mass
-float Mx2(particle p, particle e, double bE) {
-    if (!(p.is_hadron && e.is_trigger_electron)) return 0;
-    double proton_mass, pion_mass;
-    if (rge_get_mass(2212, &proton_mass)) return 0;
-    if (rge_get_mass(211,  &pion_mass))   return 0;
-
-    return W(e,bE)*W(e,bE) - 2*nu(e,bE)*zh(p,e,bE) * (nu(e,bE) +
-            proton_mass) + pion_mass*pion_mass +
-            2*sqrt((Q2(e,bE) + nu(e,bE)*nu(e,bE)) * Pl2(p,e,bE));
-}
-
-// Compute Mandelstam t.
-float t_mandelstam(particle p, particle e, double bE) {
-    if (!(p.is_hadron && e.is_trigger_electron)) return 0;
-    double pion_mass;
-    if (rge_get_mass(211, &pion_mass)) return 0;
-
-    return 2*sqrt((nu(e,bE)*nu(e,bE) + Q2(e,bE)) * Pl2(p,e,bE)) +
-            pion_mass*pion_mass - Q2(e,bE) - 2*nu(e,bE)*nu(e,bE)*zh(p,e,bE);
 }

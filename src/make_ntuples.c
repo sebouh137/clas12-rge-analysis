@@ -292,7 +292,7 @@ static int run(
         }
 
         // Check existence of trigger electron
-        particle part_trigger;
+        rge_particle part_trigger;
         bool trigger_exist = false;
         unsigned int trigger_pos    = UINT_MAX;
         unsigned int trigger_pindex = UINT_MAX;
@@ -303,15 +303,9 @@ static int run(
             );
 
             // Get reconstructed particle from DC and from FMT.
-            if (fmt_nlayers == 0) {
-                part_trigger = particle_init(&bank_part, &bank_trk_dc, pos);
-            }
-            else {
-                part_trigger = particle_init(
-                        &bank_part, &bank_trk_dc, &bank_trk_fmt, pos,
-                        fmt_nlayers
-                );
-            }
+            part_trigger = rge_particle_init(
+                    &bank_part, &bank_trk_dc, &bank_trk_fmt, pos, fmt_nlayers
+            );
 
             // Skip particle if it doesn't fit requirements.
             if (!part_trigger.is_valid) continue;
@@ -336,7 +330,7 @@ static int run(
             double ndf  = bank_trk_dc.ndf ->at(pos);
 
             // Assign PID.
-            if (set_pid(
+            if (rge_set_pid(
                     &part_trigger, bank_part.pid->at(pindex), status,
                     energy_PCAL + energy_ECIN + energy_ECOU, energy_PCAL,
                     nphe_HTCC, nphe_LTCC,
@@ -349,7 +343,7 @@ static int run(
 
             // Fill TNtuple with trigger electron information.
             Float_t arr[VAR_LIST_SIZE];
-            if (fill_ntuples_arr(
+            if (rge_fill_ntuples_arr(
                     arr, part_trigger, part_trigger, run_no, event, status,
                     energy_beam, chi2, ndf, energy_PCAL, energy_ECIN,
                     energy_ECOU, tof, tof, nphe_LTCC, nphe_HTCC
@@ -367,9 +361,6 @@ static int run(
 
         // Skip events without a trigger electron.
         if (!trigger_exist) continue;
-
-        // NOTE. Temporary code. Create a dummy trigger to get more statistics.
-        // if (!trigger_exist) part_trigger = particle_init();
         ++trigger_counter;
 
         // Processing particles.
@@ -385,16 +376,9 @@ static int run(
             }
 
             // Get reconstructed particle from DC and from FMT.
-            particle part;
-            if (fmt_nlayers == 0) {
-                part = particle_init(&bank_part, &bank_trk_dc, pos);
-            }
-            else {
-                part = particle_init(
-                        &bank_part, &bank_trk_dc, &bank_trk_fmt, pos,
-                        fmt_nlayers
-                );
-            }
+            rge_particle part = rge_particle_init(
+                &bank_part, &bank_trk_dc, &bank_trk_fmt, pos, fmt_nlayers
+            );
 
             // Skip particle if it doesn't fit requirements.
             if (!part.is_valid) continue;
@@ -419,7 +403,7 @@ static int run(
             double ndf  = bank_trk_dc.ndf ->at(pos);
 
             // Assign PID.
-            if (set_pid(
+            if (rge_set_pid(
                     &part, bank_part.pid->at(pindex), status,
                     energy_PCAL + energy_ECIN + energy_ECOU, energy_PCAL,
                     nphe_HTCC, nphe_LTCC,
@@ -429,7 +413,7 @@ static int run(
             // Fill TNtuples.
             // NOTE. If adding new variables, check their order in S_VAR_LIST.
             Float_t arr[VAR_LIST_SIZE];
-            if (fill_ntuples_arr(
+            if (rge_fill_ntuples_arr(
                     arr, part, part_trigger, run_no, event, status, energy_beam,
                     chi2, ndf, energy_PCAL, energy_ECIN, energy_ECOU, tof,
                     trigger_tof, nphe_LTCC, nphe_HTCC

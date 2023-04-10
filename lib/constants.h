@@ -275,22 +275,4 @@ extern const double PLIMITSARR[SF_NPARAMS][2]; // Momentum limits for 1D SF fit.
 #define VZLOWCUT    -40    // vz must be above this value.
 #define VZHIGHCUT    40    // vz must be below this.
 
-// PID Cuts. Most numbers come from `/calibration/eb/` from the CCDB.
-#define NPIDS           6     // # of (signless) PIDs program is capable of
-                              //         identifying.
-#define HTCC_NPHE_CUT   2     // # of HTCC photoelectrons required to consider
-                              //         particle passed HTCC.
-#define LTCC_NPHE_CUT   2     // # of LTCC photoelectrons required to consider
-                              //         particle passed LTCC.
-#define MIN_PCAL_ENERGY 0.060 // Min energy deposited in PCAL to assign pid = 11.
-#define E_SF_NSIGMA     5.0   // Max ECAL sampling fraction sigma to assign
-                              //         pid = 11.
-#define NEUTRON_MAXBETA 0.9   // Max beta allowed to assign pid == 2212.
-#define HTCC_PION_THRESHOLD 4.9 // Momentum required to consider particle
-                                //         crossing HTCC as pion.
-#define LTCC_PION_THRESHOLD 3.0 // Momentum required to consider particle
-                                //         crossing LTCC as pion.
-#define LTCC_KAON_THRESHOLD 5.0 // Momentum required to consider particle
-                                //         crossing LTCC as kaon.
-
 #endif

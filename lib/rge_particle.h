@@ -16,81 +16,202 @@
 #ifndef RGE_PARTICLE
 #define RGE_PARTICLE
 
-#include <map>
 #include "bank_containers.h"
 #include "rge_pid_utils.h"
 #include "utilities.h"
 
-// --+ internal +---------------------------------------------------------------
-
-// --+ library +----------------------------------------------------------------
 typedef struct {
     // Identifier booleans.
     bool is_valid, is_trigger_electron, is_hadron;
+
     // Event Builder (EB) vars.
     int pid;    // PID of the particle.
     int charge; // Particle charge.
     int sector; // CLAS12 Sector in which particle was detected.
-    float beta; // Beta (v/c) of the particle.
+    double beta; // Beta (v/c) of the particle.
+
     // Tracking vars.
-    float vx, vy, vz; // x, y, and z vertex coordinates of the particle.
-    float px, py, pz; // x, y, and z coords of the particle's vertex momentum.
+    double vx, vy, vz; // x, y, and z vertex coordinates of the particle.
+    double px, py, pz; // x, y, and z coords of the particle's vertex momentum.
+
     // Derived vars.
     double mass; // Particle mass.
-} particle;
+} rge_particle;
 
-// --+ unsorted +---------------------------------------------------------------
+// --+ internal +---------------------------------------------------------------
+/** Maximum beta allowed to assign PID 2212 (neutron). */
+static const double NEUTRON_MAXBETA     = .9;
+/** Minimum energy allowed to assign PID 22 (photon). */
+static const double PHOTON_MINENERGY    = 1e-9;
+/** Number of photoelectrons required to assume that particle passed HTCC. */
+static const int    HTCC_NPHE_CUT       = 2;
+/** Number of photoelectrons required to assume that particle passed LTCC. */
+static const int    LTCC_NPHE_CUT       = 2;
+/** Minimum energy deposited in PCAL to assign PID 11 or -11 (electron). */
+static const double MIN_PCAL_ENERGY     = .060;
+/** Maximum ECAL sampling fraction sigma to assign PID 11 or -11 (electron). */
+static const double E_SF_NSIGMA         = 5.0;
+/** Momentum (GeV) required to consider particle crossing HTCC to be a pion. */
+static const double HTCC_PION_THRESHOLD = 4.9 ;
 
-// particle functions.
-particle particle_init();
-particle particle_init(Particle *bank_particle, Track *bank_track,
-        unsigned int pos);
-particle particle_init(Particle *bank_particle, Track *bank_track,
-        FMT_Tracks *bank_fmt_tracks, unsigned int pos, long int fmt_nlayers);
-particle particle_init(int charge, double beta, int sector, double vx,
-        double vy, double vz, double px, double py, double pz);
-int set_pid(particle *p, int recon_pid, int status, double tot_E,
-        double pcal_E, int htcc_nphe, int ltcc_nphe,
-        double sf_params[SF_NPARAMS][2]);
-bool is_electron(double tot_E, double pcal_E, double htcc_nphe, double p,
-        double pars[SF_NPARAMS][2]);
-int assign_neutral_pid(double tot_E, double beta);
-int match_pid(int hyp, bool r_match, int q, bool e, bool htcc_s, bool htcc_p);
-float d_from_beamline(particle p);
-float theta_lab(particle p);
-float phi_lab(particle p);
-float P(particle p);
-float mass2(particle p);
+/**
+ * Initialize a dummy particle. All booleans are defined to false, and all other
+ *     attributes are left undefined.
+ */
+static rge_particle particle_init();
 
-// SIDIS e- functions.
-float nu(particle p, double beam_E);
-float Q2(particle p, double beam_E);
-float Xb(particle p, double beam_E);
-float Yb(particle p, double beam_E);
-float theta_photon_lab(particle p, double beam_E);
-float phi_photon_lab(particle p);
-float W(particle p, double beam_E);
-float W2(particle p, double bE);
+/**
+ * Initialize a new particle using data from the input parameters. Particle is
+ *     declared as valid, but PID and mass remain undetermined -- and thus it is
+ *     not yet defined if particle is a trigger electron or a hadron.
+ *
+ * NOTE. If execution is too slow, DIS variables can be cached here.
+ */
+static rge_particle particle_init(
+        int charge, double beta, int sector, double vx, double vy, double vz,
+        double px, double py, double pz
+);
 
-// SIDIS produced particle functions.
-float theta_pq(particle p, particle e, double bE);
-float phi_pq(particle p, particle e, double bE);
-float cos_theta_pq(particle p, particle e, double bE);
-float Pt2(particle p, particle e, double bE);
-float Pl2(particle p, particle e, double bE);
-float zh(particle p, particle e, double bE);
-float PlCM(particle p, particle e, double bE);
-float PmaxCM(particle p, particle e, double bE);
-float PTrans2PQ(particle p, particle e, double bE);
-float PLong2PQ(particle p, particle e, double bE);
-float Xf(particle p, particle e, double bE);
-float Mx2(particle p, particle e, double bE);
-float t_mandelstam(particle p, particle e, double bE);
+/**
+ * Assign PID to a neutral particle.
+ *   * PID 2112 (neutron) is assigned if particle's beta is below
+ *     NEUTRON_MAXBETA.
+ *   * PID 22 (photon) is assigned if particle's total energy is above
+ *     PHOTON_MINENERGY.
+ *   * PID 0 (undefined) is assigned if none of this criteria are met.
+*/
+static int assign_neutral_pid(double energy, double beta);
 
-// Fill array for ntuples file.
-int fill_ntuples_arr(Float_t *vec, particle p, particle e, int run_no, int evn,
-        int status, double beam_E, float chi2, float ndf, double pcal_E,
-        double ecin_E, double ecou_E, double tof, double tre_tof,
-        int nphe_ltcc, int nphe_htcc);
+/**
+ * Check if a particle satisfies all requirements to be considered an electron
+ *     or positron. Requirements are taken from the Event Builder (EB), and are:
+ *   * Total deposited energy (total_energy) must be above 0.
+ *   * Total particle vertex momentum (p) must be above 0.
+ *   * Number of HTCC photoelectrons (htcc_nphe) must be greater than
+ *     HTCC_NPHE_CUT.
+ *   * Energy deposited in PCAL (pcal_energy) must be greater than MIN_PCAL_ENERGY.
+ *   * ECAL sampling fraction should be below threshold (E_SF_NSIGMA).
+ *
+ * If all requirements are met, the function returns true. Otherwise, it returns
+ *     false.
+ */
+static bool is_electron(
+        double total_energy, double pcal_energy, double htcc_nphe, double p,
+        double pars[SF_NPARAMS][2]
+);
+
+/**
+ * Based on criteria defined in rge_set_pid, match PID hypothesis with available
+ * checks.
+ *
+ * @param pid                 : pointer to int where to write found PID.
+ * @param hypothesis          : PID hypothesis to check.
+ * @param recon_match         : True if hypothesis matches reconstruction PID.
+ * @param electron_check      : True if particle passed is_electron() check.
+ * @param htcc_signal_check   : True if number of photoelectrons is above
+ *                              HTCC_NPHE_CUT.
+ * @param htcc_pion_threshold : True if momentum is above HTCC_PION_THRESHOLD.
+ * @return                    : PID if hypothesis matches criteria, 0 otherwise.
+ */
+static int match_pid(
+        int *pid, int hypothesis, bool recon_match, bool electron_check,
+        bool htcc_signal_check, bool htcc_pion_threshold
+);
+
+/** Compute theta angle in lab frame from the vertex momentum of a particle. */
+static double theta_lab(rge_particle particle);
+
+/** Compute phi angle in lab frame from the vertex momentum of a particle. */
+static double phi_lab(rge_particle p);
+
+/** Compute momentum magnitude from its components. */
+static double momentum(rge_particle p);
+
+/** Compute Q^2 from beam energy, particle momentum, and theta angle. */
+static double Q2(rge_particle p, double beam_E);
+
+/** Compute nu from beam energy and total momentum. */
+static double nu(rge_particle p, double beam_E);
+
+/** Compute x_bjorken from beam energy, particle momentum, and theta angle. */
+static double Xb(rge_particle p, double beam_E);
+
+/** Compute the invariant mass of the electron-nucleon interaction. */
+static double W(rge_particle p, double beam_E);
+
+/** Compute the squared invariant mass of the electron-nucleon interaction. */
+static double W2(rge_particle p, double bE);
+
+/** Compute the polar angle of a particle p wrt the virtual photon direction. */
+static double theta_pq(rge_particle p, rge_particle e, double bE);
+
+/** Compute the azimuthal angle of a particle p wrt the virtual photon. */
+static double phi_pq(rge_particle p, rge_particle e, double bE);
+
+/** Compute the cosine of theta_PQ. */
+static double cos_theta_pq(rge_particle p, rge_particle e, double bE);
+
+/** Compute the squared momentum transverse to the virtual photon. */
+static double Pt2(rge_particle p, rge_particle e, double bE);
+
+/** Compute the squared momentum longitudinal to the virtual photon. */
+static double Pl2(rge_particle p, rge_particle e, double bE);
+
+/**
+ * Compute the fraction of the virtual photon's energy taken by the produced
+ *     particle in the lab frame.
+ */
+static double zh(rge_particle p, rge_particle e, double bE);
+
+// --+ library +----------------------------------------------------------------
+/**
+  * Initialize a new particle from the REC::Particle, REC::TRACK, and
+  *     FMT::Tracks banks. If fmt_nlayers == 0, will only use DC tracking data.
+  *     If it is 2 or 3, it will use DC+FMT tracking data, restricting the
+  *     number of FMT layers the particle passed to a number equal or larger
+  *     than fmt_nlayers.
+  *
+  * @param bank_particle   : pointer to the Particle class.
+  * @param bank_track      : pointer to the Track class to get DC tracking data.
+  * @param bank_fmt_tracks : pointer to the FMT_Tracks class to get FMT tracks.
+  * @param pos             : position of the particle at the track class.
+  * @param fmt_nlayers     : number of FMT layers required to make a particle.
+  */
+rge_particle rge_particle_init(
+        Particle *bank_particle, Track *bank_track, FMT_Tracks *bank_fmt_tracks,
+        unsigned int pos, long int fmt_nlayers
+);
+
+/**
+ * Set PID from all available information. This functions mimics PIDMatch from
+ *     the EB (Event Builder) CLAS12 reconstruction engine.
+ *
+ * @param particle     : instance of rge_particle for which to find the PID.
+ * @param recon_pid    : PID defined by the EB engine.
+ * @param status       : status variable defined in the REC::Particle bank. Used
+ *                       to check for the trigger electron.
+ * @param total_energy : Total deposited energy in ECIN, ECOU, and PCAL.
+ * @param pcal_energy  : Deposited energy in PCAL.
+ * @param htcc_nphe    : Number of photoelectrons generated in HTCC.
+ * @param sf_params    : Array containing the sampling fraction parameters for
+ *                       the particle's sector.
+ * @return             : error code.
+ */
+int rge_set_pid(
+        rge_particle *particle, int recon_pid, int status, double total_energy,
+        double pcal_energy, int htcc_nphe, int ltcc_nphe,
+        double sf_params[SF_NPARAMS][2]
+);
+
+/**
+ * Fill array to be stored in ntuples_%06d.root file. Array is of constant size
+ * VAR_LIST_SIZE, and the order of variables can be seen in constants.h.
+ */
+int rge_fill_ntuples_arr(
+        Float_t *arr, rge_particle p, rge_particle e, int run_no, int evn,
+        int status, double beam_E, float chi2, float ndf, double pcal_energy,
+        double ecin_E, double ecou_E, double tof, double tre_tof, int nphe_ltcc,
+        int nphe_htcc
+);
 
 #endif

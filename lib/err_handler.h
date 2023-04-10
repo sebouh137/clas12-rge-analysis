@@ -66,10 +66,12 @@ int handle_err();
 #define ERR_UNIMPLEMENTEDBEAMENERGY 150
 #define ERR_2DACCEPTANCEPLOT        151
 #define ERR_WRONGACCVARS            152
+// --+ 200 - 249 particle errors +----------------------------------------------
+#define ERR_PIDNOTFOUND             201
+#define ERR_UNSUPPORTEDPID          202
 // --+ 900 - 999 miscellaneous +------------------------------------------------
 #define ERR_ANGLEOUTOFRANGE         900
 #define ERR_NOACCDATA               901
-#define ERR_PIDNOTFOUND             902
 // -----------------------------------------------------------------------------
 
 #endif
