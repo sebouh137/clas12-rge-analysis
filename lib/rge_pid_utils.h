@@ -17,7 +17,6 @@
 #define RGE_PID_UTILS
 
 #include <float.h>
-#include <map>
 #include "../lib/err_handler.h"
 
 /** Data associated to a particular PID. */

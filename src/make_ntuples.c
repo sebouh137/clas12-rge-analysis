@@ -19,7 +19,7 @@
 #include <TROOT.h>
 #include "../lib/err_handler.h"
 #include "../lib/io_handler.h"
-#include "../lib/particle.h"
+#include "../lib/rge_particle.h"
 
 const char *usage_message =
 "Usage: make_ntuples [-hDf:n:w:d:] infile\n"

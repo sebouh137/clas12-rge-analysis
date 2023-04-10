@@ -13,7 +13,7 @@
 //
 // You can see a copy of the GNU Lesser Public License under the LICENSE file.
 
-#include "../lib/particle.h"
+#include "../lib/rge_particle.h"
 
 /** Initialize an empty particle. */
 particle particle_init() {
@@ -97,7 +97,7 @@ particle particle_init(
     p.is_hadron           = false;
 
     p.pid    = 0;
-    p.q      = charge;
+    p.charge = charge;
     p.beta   = beta;
     p.sector = sector;
 
@@ -121,16 +121,16 @@ int set_pid(
         particle *p, int recon_pid, int status, double tot_E, double pcal_E,
         int htcc_nphe, int ltcc_nphe, double sf_params[SF_NPARAMS][2]
 ) {
-    // Assign PID for neutrals and store PID from reconstruction for charge
+    // Assign PID for neutrals and store PID from reconstruction for charged
     //         particles.
-    int rpid = p->q == 0 ? assign_neutral_pid(tot_E, p->beta) : recon_pid;
+    int rpid = p->charge == 0 ? assign_neutral_pid(tot_E, p->beta) : recon_pid;
 
     // Create PID list.
     unsigned int hypotheses_size = 0;
-    rge_get_pidlist_size_by_charge(p->q, &hypotheses_size);
+    rge_get_pidlist_size_by_charge(p->charge, &hypotheses_size);
 
     __extension__ int hypotheses[hypotheses_size];
-    rge_get_pidlist_by_charge(p->q, hypotheses);
+    rge_get_pidlist_by_charge(p->charge, hypotheses);
 
     // Perform checks.
     bool e_check = is_electron(tot_E, pcal_E, htcc_nphe, P(*p), sf_params);
@@ -150,7 +150,7 @@ int set_pid(
 
     // Match PID.
     for (unsigned int pi = 0; p->pid == 0 && pi < hypotheses_size; ++pi) {
-        p->pid = match_pid(hypotheses[pi], hypotheses[pi] == rpid, p->q,
+        p->pid = match_pid(hypotheses[pi], hypotheses[pi] == rpid, p->charge,
                 e_check, htcc_signal_check, htcc_pion_threshold);
     }
 
@@ -232,7 +232,7 @@ int fill_ntuples_arr(
 
     // Particle.
     arr[A_PID]    = static_cast<Float_t>(p.pid);
-    arr[A_CHARGE] = p.q;
+    arr[A_CHARGE] = p.charge;
     arr[A_STATUS] = static_cast<Float_t>(status);
     arr[A_MASS]   = p.mass;
     arr[A_VX]     = p.vx;

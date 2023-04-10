@@ -13,29 +13,33 @@
 //
 // You can see a copy of the GNU Lesser Public License under the LICENSE file.
 
-#ifndef PARTICLE
-#define PARTICLE
+#ifndef RGE_PARTICLE
+#define RGE_PARTICLE
 
 #include <map>
 #include "bank_containers.h"
 #include "rge_pid_utils.h"
 #include "utilities.h"
 
+// --+ internal +---------------------------------------------------------------
+
+// --+ library +----------------------------------------------------------------
 typedef struct {
-    bool is_valid;
-    bool is_trigger_electron;
-    bool is_hadron;
-    // EB vars.
-    int pid;
-    int q;
-    int sector;
-    float beta;
+    // Identifier booleans.
+    bool is_valid, is_trigger_electron, is_hadron;
+    // Event Builder (EB) vars.
+    int pid;    // PID of the particle.
+    int charge; // Particle charge.
+    int sector; // CLAS12 Sector in which particle was detected.
+    float beta; // Beta (v/c) of the particle.
     // Tracking vars.
-    float vx, vy, vz;
-    float px, py, pz;
+    float vx, vy, vz; // x, y, and z vertex coordinates of the particle.
+    float px, py, pz; // x, y, and z coords of the particle's vertex momentum.
     // Derived vars.
-    double mass;
+    double mass; // Particle mass.
 } particle;
+
+// --+ unsorted +---------------------------------------------------------------
 
 // particle functions.
 particle particle_init();
