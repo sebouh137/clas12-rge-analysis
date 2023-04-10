@@ -325,7 +325,7 @@ static int run(
     else if (plot_particle == A_PNEG) plot_charge = -1;
     else if (plot_particle == A_PPID) {
         printf("\nSelect PID from:\n");
-        print_pid_names();
+        rge_print_pid_names();
         plot_pid = catch_long();
     }
 

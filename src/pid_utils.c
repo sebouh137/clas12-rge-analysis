@@ -15,7 +15,32 @@
 
 #include "../lib/pid_utils.h"
 
-/** Initialize one pid_constants struct with the given data. */
+// --+ static +-----------------------------------------------------------------
+/** Map linking PIDs to pid_constants. */
+static const std::map<int, pid_constants> PID_MAP = {
+    {     -2212, pid_constants_init( 1, 0.938272, "antiproton"           )},
+    {      -321, pid_constants_init(-1, 0.493677, "negative kaon"        )},
+    {      -211, pid_constants_init(-1, 0.139570, "negative pion"        )},
+    {       -11, pid_constants_init( 1, 0.000051, "positron"             )},
+    {         0, pid_constants_init( 0, DBL_MAX,  "unidentified particle")},
+    {        11, pid_constants_init(-1, 0.000051, "electron"             )},
+    {        22, pid_constants_init( 0, 0.,       "photon"               )},
+    {        45, pid_constants_init( 0, DBL_MAX,  "unidentified particle")},
+    {       211, pid_constants_init( 1, 0.139570, "positive pion"        )},
+    {       321, pid_constants_init( 1, 0.493677, "positive kaon"        )},
+    {      2112, pid_constants_init( 0, 0.939565, "neutron"              )},
+    {      2212, pid_constants_init( 1, 0.938272, "proton"               )}
+
+    // NOTE. Not yet implemented.
+    // {        13, pid_constants_init( 1, 0.105658, "positive muon"     )},
+    // {       -13, pid_constants_init(-1, 0.105658, "negative muon"     )},
+    // {       111, pid_constants_init( 0, 0.134977, "neutral pion"      )},
+    // {       311, pid_constants_init( 0, 0.497614, "neutral kaon"      )},
+    // {       221, pid_constants_init( 0, 0.548953, "eta"               )},
+    // {       223, pid_constants_init( 0, 0.782650, "omega"             )},
+    // {1000010020, pid_constants_init( 0, 1.875,    "deuterium"         )}
+};
+
 static pid_constants pid_constants_init(int c, double m, const char *n) {
     pid_constants p;
     p.charge = c; // electron charge.
@@ -25,39 +50,13 @@ static pid_constants pid_constants_init(int c, double m, const char *n) {
     return p;
 }
 
-/** Map linking PIDs to pid_constants. */
-static const std::map<int, pid_constants> PID_MAP = {
-        {     -2212, pid_constants_init( 1, 0.938272, "antiproton"           )},
-        {      -321, pid_constants_init(-1, 0.493677, "negative kaon"        )},
-        {      -211, pid_constants_init(-1, 0.139570, "negative pion"        )},
-        {       -11, pid_constants_init( 1, 0.000051, "positron"             )},
-        {         0, pid_constants_init( 0, DBL_MAX,  "unidentified particle")},
-        {        11, pid_constants_init(-1, 0.000051, "electron"             )},
-        {        22, pid_constants_init( 0, 0.,       "photon"               )},
-        {        45, pid_constants_init( 0, DBL_MAX,  "unidentified particle")},
-        {       211, pid_constants_init( 1, 0.139570, "positive pion"        )},
-        {       321, pid_constants_init( 1, 0.493677, "positive kaon"        )},
-        {      2112, pid_constants_init( 0, 0.939565, "neutron"              )},
-        {      2212, pid_constants_init( 1, 0.938272, "proton"               )}
-
-        // NOTE. Not yet implemented.
-        // {        13, pid_constants_init( 1, 0.105658, "positive muon"     )},
-        // {       -13, pid_constants_init(-1, 0.105658, "negative muon"     )},
-        // {       111, pid_constants_init( 0, 0.134977, "neutral pion"      )},
-        // {       311, pid_constants_init( 0, 0.497614, "neutral kaon"      )},
-        // {       221, pid_constants_init( 0, 0.548953, "eta"               )},
-        // {       223, pid_constants_init( 0, 0.782650, "omega"             )},
-        // {1000010020, pid_constants_init( 0, 1.875,    "deuterium"         )}
-};
-
-/** Return 0 if PID_MAP contains pid, 1 otherwise. */
-int pid_invalid(int pid) {
+static int pid_invalid(int pid) {
     if (PID_MAP.contains(pid)) return 0;
     else                       return 1;
 }
 
-/** Get charge of particle associated to pid. */
-int get_charge(int pid, int *charge) {
+// --+ library +----------------------------------------------------------------
+int rge_get_charge(int pid, int *charge) {
     if (pid_invalid(pid)) {
         rge_errno = ERR_PIDNOTFOUND;
         return 1;
@@ -67,8 +66,7 @@ int get_charge(int pid, int *charge) {
     return 0;
 }
 
-/** Get mass of particle associated to pid. */
-int get_mass(int pid, double *mass) {
+int rge_get_mass(int pid, double *mass) {
     if (pid_invalid(pid)) {
         rge_errno = ERR_PIDNOTFOUND;
         return 1;
@@ -78,21 +76,7 @@ int get_mass(int pid, double *mass) {
     return 0;
 }
 
-/** Print all PIDs and names in PID_MAP to stdout. */
-int print_pid_names() {
-    for (
-            std::map<int, pid_constants>::const_iterator it = PID_MAP.begin();
-            it != PID_MAP.end();
-            ++it
-    ) {
-        printf("  * %5d (%s).\n", it->first, it->second.name);
-    }
-
-    return 0;
-}
-
-/** Get number of PIDs that match the given charge. */
-int get_pidlist_size_by_charge(int charge, unsigned int *size) {
+int rge_get_pidlist_size_by_charge(int charge, unsigned int *size) {
     for (
             std::map<int, pid_constants>::const_iterator it = PID_MAP.begin();
             it != PID_MAP.end();
@@ -109,8 +93,7 @@ int get_pidlist_size_by_charge(int charge, unsigned int *size) {
     return 0;
 }
 
-/** Fill an array of PIDs that match the given charge. */
-int get_pidlist_by_charge(int charge, int pidlist[]) {
+int rge_get_pidlist_by_charge(int charge, int pidlist[]) {
     unsigned int counter = 0;
     for (
             std::map<int, pid_constants>::const_iterator it = PID_MAP.begin();
@@ -124,6 +107,18 @@ int get_pidlist_by_charge(int charge, int pidlist[]) {
             pidlist[counter] = it->first;
             ++counter;
         }
+    }
+
+    return 0;
+}
+
+int rge_print_pid_names() {
+    for (
+            std::map<int, pid_constants>::const_iterator it = PID_MAP.begin();
+            it != PID_MAP.end();
+            ++it
+    ) {
+        printf("  * %5d (%s).\n", it->first, it->second.name);
     }
 
     return 0;

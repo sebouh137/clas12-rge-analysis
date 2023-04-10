@@ -127,10 +127,10 @@ int set_pid(
 
     // Create PID list.
     unsigned int hypotheses_size = 0;
-    get_pidlist_size_by_charge(p->q, &hypotheses_size);
+    rge_get_pidlist_size_by_charge(p->q, &hypotheses_size);
 
     __extension__ int hypotheses[hypotheses_size];
-    get_pidlist_by_charge(p->q, hypotheses);
+    rge_get_pidlist_by_charge(p->q, hypotheses);
 
     // Perform checks.
     bool e_check = is_electron(tot_E, pcal_E, htcc_nphe, P(*p), sf_params);
@@ -156,7 +156,7 @@ int set_pid(
 
     // Check if particle is trigger electron and define mass from PID.
     p->is_trigger_electron = (p->pid == 11 && status < 0);
-    if (get_mass(p->pid, &(p->mass))) return 1;
+    if (rge_get_mass(p->pid, &(p->mass))) return 1;
 
     // If particle is not a lepton, check if it is a valid hadron.
     if (p->pid >= 100 || p->pid <= -100) p->is_hadron = true;
@@ -325,7 +325,7 @@ float Q2(particle p, double bE) {
 float Xb(particle p, double bE) {
     if (!p.is_trigger_electron) return 0;
     double proton_mass;
-    if (get_mass(2212, &proton_mass)) return 0;
+    if (rge_get_mass(2212, &proton_mass)) return 0;
 
     return Q2(p, bE) / (2*proton_mass*nu(p, bE));
 }
@@ -349,7 +349,7 @@ float W(particle p, double bE) {
 float W2(particle p, double bE) {
     if (!p.is_trigger_electron) return 0;
     double proton_mass;
-    if (get_mass(2212, &proton_mass)) return 0;
+    if (rge_get_mass(2212, &proton_mass)) return 0;
 
     return proton_mass*proton_mass + 2*proton_mass*nu(p, bE)-Q2(p, bE);
 }
@@ -434,7 +434,7 @@ float zh(particle p, particle e, double bE) {
 float PlCM(particle p, particle e, double bE) {
     if (!(p.is_hadron && e.is_trigger_electron)) return 0;
     double proton_mass;
-    if (get_mass(2212, &proton_mass)) return 0;
+    if (rge_get_mass(2212, &proton_mass)) return 0;
 
     return (nu(e,bE) + proton_mass) * (sqrt(Pl2(p,e,bE)) - sqrt(Q2(e,bE) +
             nu(e,bE)*nu(e,bE))
@@ -446,8 +446,8 @@ float PlCM(particle p, particle e, double bE) {
 float PmaxCM(particle p, particle e, double bE) {
     if (!(p.is_hadron && e.is_trigger_electron)) return 0;
     double neutron_mass, pion_mass;
-    if (get_mass(2112, &neutron_mass)) return 0;
-    if (get_mass(211,  &pion_mass))    return 0;
+    if (rge_get_mass(2112, &neutron_mass)) return 0;
+    if (rge_get_mass(211,  &pion_mass))    return 0;
 
     return sqrt(pow(W(e,bE)*W(e,bE) - neutron_mass*neutron_mass +
             pion_mass*pion_mass, 2)
@@ -479,8 +479,8 @@ float Xf(particle p, particle e, double bE) {
 float Mx2(particle p, particle e, double bE) {
     if (!(p.is_hadron && e.is_trigger_electron)) return 0;
     double proton_mass, pion_mass;
-    if (get_mass(2212, &proton_mass)) return 0;
-    if (get_mass(211,  &pion_mass))   return 0;
+    if (rge_get_mass(2212, &proton_mass)) return 0;
+    if (rge_get_mass(211,  &pion_mass))   return 0;
 
     return W(e,bE)*W(e,bE) - 2*nu(e,bE)*zh(p,e,bE) * (nu(e,bE) +
             proton_mass) + pion_mass*pion_mass +
@@ -491,7 +491,7 @@ float Mx2(particle p, particle e, double bE) {
 float t_mandelstam(particle p, particle e, double bE) {
     if (!(p.is_hadron && e.is_trigger_electron)) return 0;
     double pion_mass;
-    if (get_mass(211, &pion_mass)) return 0;
+    if (rge_get_mass(211, &pion_mass)) return 0;
 
     return 2*sqrt((nu(e,bE)*nu(e,bE) + Q2(e,bE)) * Pl2(p,e,bE)) +
             pion_mass*pion_mass - Q2(e,bE) - 2*nu(e,bE)*nu(e,bE)*zh(p,e,bE);
