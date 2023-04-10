@@ -13,13 +13,11 @@
 //
 // You can see a copy of the GNU Lesser Public License under the LICENSE file.
 
-#ifndef PID_CONSTANTS
-#define PID_CONSTANTS
+#ifndef PID_UTILS
+#define PID_UTILS
 
 #include <float.h>
 #include <map>
-
-// TODO. Change filename.
 
 /** Data associated to a particular PID. */
 typedef struct {

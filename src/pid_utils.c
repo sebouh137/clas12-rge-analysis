@@ -13,7 +13,7 @@
 //
 // You can see a copy of the GNU Lesser Public License under the LICENSE file.
 
-#include "../lib/pid_constants.h"
+#include "../lib/pid_utils.h"
 
 /** Initialize one pid_constants struct with the given data. */
 static pid_constants pid_constants_init(int c, double m, const char *n) {

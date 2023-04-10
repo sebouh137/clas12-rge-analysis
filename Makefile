@@ -53,9 +53,9 @@ O_ACCCORR   := $(BLD)/err_handler.o $(BLD)/file_handler.o $(BLD)/io_handler.o \
  			   $(BLD)/utilities.o
 O_MKNTUPLES := $(BLD)/bank_containers.o $(BLD)/constants.o \
 			   $(BLD)/err_handler.o $(BLD)/file_handler.o $(BLD)/io_handler.o \
-			   $(BLD)/particle.o $(BLD)/pid_constants.o $(BLD)/utilities.o
+			   $(BLD)/particle.o $(BLD)/pid_utils.o $(BLD)/utilities.o
 O_DRAWPLOTS := $(BLD)/constants.o $(BLD)/err_handler.o $(BLD)/file_handler.o \
-			   $(BLD)/io_handler.o $(BLD)/pid_constants.o $(BLD)/utilities.o
+			   $(BLD)/io_handler.o $(BLD)/pid_utils.o $(BLD)/utilities.o
 
 all: $(BIN)/hipo2root $(BIN)/extract_sf $(BIN)/acc_corr \
 	 $(BIN)/make_ntuples $(BIN)/draw_plots
@@ -93,8 +93,8 @@ $(BLD)/file_handler.o: $(SRC)/file_handler.c $(LIB)/file_handler.h
 $(BLD)/particle.o: $(SRC)/particle.c $(LIB)/particle.h
 	$(HXX) -c $(SRC)/particle.c -o $(BLD)/particle.o
 
-$(BLD)/pid_constants.o: $(SRC)/pid_constants.c $(LIB)/pid_constants.h
-	$(CXX) -c $(SRC)/pid_constants.c -o $(BLD)/pid_constants.o
+$(BLD)/pid_utils.o: $(SRC)/pid_utils.c $(LIB)/pid_utils.h
+	$(CXX) -c $(SRC)/pid_utils.c -o $(BLD)/pid_utils.o
 
 $(BLD)/utilities.o: $(SRC)/utilities.c $(LIB)/utilities.h
 	$(RXX) -c $(SRC)/utilities.c -o $(BLD)/utilities.o
