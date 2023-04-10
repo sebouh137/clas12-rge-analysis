@@ -15,7 +15,7 @@
 
 #include "../lib/pid_utils.h"
 
-// --+ static +-----------------------------------------------------------------
+// --+ internal +---------------------------------------------------------------
 /** Map linking PIDs to pid_constants. */
 static const std::map<int, pid_constants> PID_MAP = {
     {     -2212, pid_constants_init( 1, 0.938272, "antiproton"           )},
@@ -41,16 +41,17 @@ static const std::map<int, pid_constants> PID_MAP = {
     // {1000010020, pid_constants_init( 0, 1.875,    "deuterium"         )}
 };
 
-static pid_constants pid_constants_init(int c, double m, const char *n) {
-    pid_constants p;
-    p.charge = c; // electron charge.
-    p.mass   = m; // GeV.
-    p.name   = n;
+pid_constants pid_constants_init(int q, double m, const char *n) {
+    // Update relevant charge counter.
+    if (q  < 0) ++negative_size;
+    if (q == 0) ++neutral_size;
+    if (q  > 0) ++positive_size;
 
-    return p;
+    // Return instance.
+    return __extension__ (pid_constants) {.charge = q, .mass = m, .name = n};
 }
 
-static int pid_invalid(int pid) {
+int pid_invalid(int pid) {
     if (PID_MAP.contains(pid)) return 0;
     else                       return 1;
 }
@@ -77,34 +78,21 @@ int rge_get_mass(int pid, double *mass) {
 }
 
 int rge_get_pidlist_size_by_charge(int charge, unsigned int *size) {
-    for (
-            std::map<int, pid_constants>::const_iterator it = PID_MAP.begin();
-            it != PID_MAP.end();
-            ++it
-    ) {
-        if (
-                (charge == 0 && it->second.charge == 0) || // both are neutral.
-                (charge * it->second.charge > 0)           // equal signs.
-        ) {
-            ++(*size);
-        }
-    }
+    if (charge  < 0) *size = negative_size;
+    if (charge == 0) *size = neutral_size;
+    if (charge  > 0) *size = positive_size;
 
     return 0;
 }
 
 int rge_get_pidlist_by_charge(int charge, int pidlist[]) {
     unsigned int counter = 0;
-    for (
-            std::map<int, pid_constants>::const_iterator it = PID_MAP.begin();
-            it != PID_MAP.end();
-            ++it
-    ) {
+    for (pid_it = PID_MAP.begin(); pid_it != PID_MAP.end(); ++pid_it) {
         if (
-                (charge == 0 && it->second.charge == 0) || // both are neutral.
-                (charge * it->second.charge > 0)           // equal signs.
+                (charge == 0 && pid_it->second.charge == 0) || // both neutral.
+                (charge * pid_it->second.charge > 0)           // equal signs.
         ) {
-            pidlist[counter] = it->first;
+            pidlist[counter] = pid_it->first;
             ++counter;
         }
     }
@@ -113,12 +101,8 @@ int rge_get_pidlist_by_charge(int charge, int pidlist[]) {
 }
 
 int rge_print_pid_names() {
-    for (
-            std::map<int, pid_constants>::const_iterator it = PID_MAP.begin();
-            it != PID_MAP.end();
-            ++it
-    ) {
-        printf("  * %5d (%s).\n", it->first, it->second.name);
+    for (pid_it = PID_MAP.begin(); pid_it != PID_MAP.end(); ++pid_it) {
+        printf("  * %5d (%s).\n", pid_it->first, pid_it->second.name);
     }
 
     return 0;

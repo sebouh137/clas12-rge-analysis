@@ -31,15 +31,23 @@ typedef struct {
 /**
  * Initialize one pid_constants struct with the given input data.
  *
- * @param c : PID charge.
- * @param m : PID mass.
+ * @param q : PID charge (electron charge).
+ * @param m : PID mass (GeV).
  * @param n : PID name.
  * @return  : pid_constants instance with input data.
  */
-static pid_constants pid_constants_init(int c, double m, const char *n);
+static pid_constants pid_constants_init(int q, double m, const char *n);
 
 /** Return 0 if PID_MAP contains pid, 1 otherwise. */
 static int pid_invalid(int pid);
+
+/** PID_MAP global iterator. */
+static std::map<int, pid_constants>::const_iterator pid_it;
+
+/** Counters for negative, neutral, and positive PIDs in list. */
+static unsigned int negative_size = 0;
+static unsigned int neutral_size  = 0;
+static unsigned int positive_size = 0;
 
 // --+ library +----------------------------------------------------------------
 /**
@@ -72,7 +80,9 @@ int rge_get_mass(int pid, double *mass);
 int rge_get_pidlist_size_by_charge(int charge, unsigned int *size);
 
 /**
- * Fill an array of PIDs that match the given charge from PID_MAP.
+ * Fill an array of PIDs that match the given charge from PID_MAP. Function
+ *     assumes that pidlist is of enough size to receive all data -- a segfault
+ *     will happens if this is not the case.
  *
  * @param charge  : charge value of the PIDs to look for.
  * @param pidlist : array of PIDs where to write list of PIDs.
