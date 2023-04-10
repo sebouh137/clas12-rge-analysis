@@ -324,16 +324,8 @@ static int run(
     else if (plot_particle == A_PNEU) plot_charge =  0;
     else if (plot_particle == A_PNEG) plot_charge = -1;
     else if (plot_particle == A_PPID) {
-        // TODO. Turn this into a function in pid_utils.
         printf("\nSelect PID from:\n");
-        for (
-                std::map<int, pid_constants>::const_iterator it =
-                        PID_MAP.begin();
-                it != PID_MAP.end();
-                ++it
-        ) {
-            printf("  * %5d (%s).\n", it->first, it->second.name);
-        }
+        print_pid_names();
         plot_pid = catch_long();
     }
 

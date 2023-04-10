@@ -127,34 +127,10 @@ int set_pid(
 
     // Create PID list.
     unsigned int hypotheses_size = 0;
-    for (
-            std::map<int, pid_constants>::const_iterator it = PID_MAP.begin();
-            it != PID_MAP.end();
-            ++it
-    ) {
-        if (
-                (p->q == 0 && it->second.charge == 0) || // both are neutral.
-                (p->q * it->second.charge > 0)           // both are same sign.
-        ) {
-            ++hypotheses_size;
-        }
-    }
+    get_pidlist_size_by_charge(p->q, &hypotheses_size);
 
     __extension__ int hypotheses[hypotheses_size];
-    unsigned int counter = 0;
-    for (
-            std::map<int, pid_constants>::const_iterator it = PID_MAP.begin();
-            it != PID_MAP.end();
-            ++it
-    ) {
-        if (
-                (p->q == 0 && it->second.charge == 0) || // both are neutral.
-                (p->q * it->second.charge > 0)           // both are same sign.
-        ) {
-            hypotheses[counter] = it->first;
-            ++counter;
-        }
-    }
+    get_pidlist_by_charge(p->q, hypotheses);
 
     // Perform checks.
     bool e_check = is_electron(tot_E, pcal_E, htcc_nphe, P(*p), sf_params);

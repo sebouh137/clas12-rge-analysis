@@ -29,11 +29,11 @@ typedef struct {
 
 static pid_constants pid_constants_init(int c, double m, const char *);
 
-extern const std::map<int, pid_constants> PID_MAP;
-
-int pid_valid(int pid);
+int pid_invalid(int pid);
 int get_charge(int pid, int *charge);
 int get_mass(int pid, double *mass);
-int print_names();
+int print_pid_names();
+int get_pidlist_size_by_charge(int charge, unsigned int *size);
+int get_pidlist_by_charge(int charge, int pidlist[]);
 
 #endif

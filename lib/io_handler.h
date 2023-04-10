@@ -42,8 +42,10 @@ int is_number(char c);
 
 int update_progress_bar(int nevn, int evn, int *evnsplitter, int *divcntr);
 
-int grab_multiarg(int argc, char **argv, int *opt_idx, long unsigned int *size,
-        double **b);
+int grab_multiarg(
+        int argc, char **argv, int *opt_idx, long unsigned int *size,
+        double **arr
+);
 int grab_str(char *optarg, char **str);
 
 bool catch_yn();

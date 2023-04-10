@@ -26,7 +26,7 @@ static pid_constants pid_constants_init(int c, double m, const char *n) {
 }
 
 /** Map linking PIDs to pid_constants. */
-const std::map<int, pid_constants> PID_MAP = {
+static const std::map<int, pid_constants> PID_MAP = {
         {     -2212, pid_constants_init( 1, 0.938272, "antiproton"           )},
         {      -321, pid_constants_init(-1, 0.493677, "negative kaon"        )},
         {      -211, pid_constants_init(-1, 0.139570, "negative pion"        )},
@@ -51,14 +51,14 @@ const std::map<int, pid_constants> PID_MAP = {
 };
 
 /** Return 0 if PID_MAP contains pid, 1 otherwise. */
-int pid_valid(int pid) {
+int pid_invalid(int pid) {
     if (PID_MAP.contains(pid)) return 0;
     else                       return 1;
 }
 
 /** Get charge of particle associated to pid. */
 int get_charge(int pid, int *charge) {
-    if (!pid_valid(pid)) {
+    if (pid_invalid(pid)) {
         rge_errno = ERR_PIDNOTFOUND;
         return 1;
     }
@@ -69,7 +69,7 @@ int get_charge(int pid, int *charge) {
 
 /** Get mass of particle associated to pid. */
 int get_mass(int pid, double *mass) {
-    if (!pid_valid(pid)) {
+    if (pid_invalid(pid)) {
         rge_errno = ERR_PIDNOTFOUND;
         return 1;
     }
@@ -79,6 +79,52 @@ int get_mass(int pid, double *mass) {
 }
 
 /** Print all PIDs and names in PID_MAP to stdout. */
-int print_names() {
+int print_pid_names() {
+    for (
+            std::map<int, pid_constants>::const_iterator it = PID_MAP.begin();
+            it != PID_MAP.end();
+            ++it
+    ) {
+        printf("  * %5d (%s).\n", it->first, it->second.name);
+    }
+
+    return 0;
+}
+
+/** Get number of PIDs that match the given charge. */
+int get_pidlist_size_by_charge(int charge, unsigned int *size) {
+    for (
+            std::map<int, pid_constants>::const_iterator it = PID_MAP.begin();
+            it != PID_MAP.end();
+            ++it
+    ) {
+        if (
+                (charge == 0 && it->second.charge == 0) || // both are neutral.
+                (charge * it->second.charge > 0)           // equal signs.
+        ) {
+            ++(*size);
+        }
+    }
+
+    return 0;
+}
+
+/** Fill an array of PIDs that match the given charge. */
+int get_pidlist_by_charge(int charge, int pidlist[]) {
+    unsigned int counter = 0;
+    for (
+            std::map<int, pid_constants>::const_iterator it = PID_MAP.begin();
+            it != PID_MAP.end();
+            ++it
+    ) {
+        if (
+                (charge == 0 && it->second.charge == 0) || // both are neutral.
+                (charge * it->second.charge > 0)           // equal signs.
+        ) {
+            pidlist[counter] = it->first;
+            ++counter;
+        }
+    }
+
     return 0;
 }
