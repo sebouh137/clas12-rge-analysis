@@ -19,6 +19,8 @@
 #include <float.h>
 #include <map>
 
+// TODO. Change filename.
+
 /** Data associated to a particular PID. */
 typedef struct {
     int charge;
@@ -28,6 +30,9 @@ typedef struct {
 
 static pid_constants pid_constants_init(int c, double m, const char *);
 
+extern const std::map<int, pid_constants> PID_MAP;
+
+// TODO. Change names!
 int get_charge(int pid);
 double get_mass(int pid);
 const char *get_name(int pid);
