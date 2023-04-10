@@ -93,8 +93,8 @@ $(BLD)/file_handler.o: $(SRC)/file_handler.c $(LIB)/file_handler.h
 $(BLD)/particle.o: $(SRC)/particle.c $(LIB)/particle.h
 	$(HXX) -c $(SRC)/particle.c -o $(BLD)/particle.o
 
-$(BLD)/pid_utils.o: $(SRC)/pid_utils.c $(LIB)/pid_utils.h
-	$(CXX) -std=c++20 -c $(SRC)/pid_utils.c -o $(BLD)/pid_utils.o
+$(BLD)/pid_utils.o: $(SRC)/rge_pid_utils.c $(LIB)/rge_pid_utils.h
+	$(CXX) -std=c++20 -c $(SRC)/rge_pid_utils.c -o $(BLD)/pid_utils.o
 
 $(BLD)/utilities.o: $(SRC)/utilities.c $(LIB)/utilities.h
 	$(RXX) -c $(SRC)/utilities.c -o $(BLD)/utilities.o

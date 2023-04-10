@@ -13,8 +13,8 @@
 //
 // You can see a copy of the GNU Lesser Public License under the LICENSE file.
 
-#ifndef PID_UTILS
-#define PID_UTILS
+#ifndef RGE_PID_UTILS
+#define RGE_PID_UTILS
 
 #include <float.h>
 #include <map>

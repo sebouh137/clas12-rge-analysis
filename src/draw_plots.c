@@ -19,7 +19,7 @@
 #include <TNtuple.h>
 #include "../lib/err_handler.h"
 #include "../lib/io_handler.h"
-#include "../lib/pid_utils.h"
+#include "../lib/rge_pid_utils.h"
 #include "../lib/utilities.h"
 
 const char *usage_message =
