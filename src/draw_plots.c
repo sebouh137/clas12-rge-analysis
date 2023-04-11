@@ -302,7 +302,7 @@ static int run(
     int **acc_n_simul;
     if (acc_filename != NULL) {
         acc_plot = true;
-        if (read_acc_corr_file(
+        if (rge_read_acc_corr_file(
                 acc_filename, acc_nedges, &acc_edges, &acc_npids, &acc_nbins,
                 &acc_pids, &acc_n_thrown, &acc_n_simul
         )) return 1;
