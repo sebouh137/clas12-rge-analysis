@@ -319,7 +319,7 @@ static int run(
     for (int part_i = 0; part_i < PART_LIST_SIZE; ++part_i)
         printf("%s, ", PART_LIST[part_i]);
     printf("\b\b]\n");
-    int plot_particle = catch_string(PART_LIST, PART_LIST_SIZE);
+    int plot_particle = rge_catch_string(PART_LIST, PART_LIST_SIZE);
     int plot_charge = INT_MAX;
     int plot_pid    = INT_MAX;
     if      (plot_particle == A_PPOS) plot_charge =  1;
@@ -328,7 +328,7 @@ static int run(
     else if (plot_particle == A_PPID) {
         printf("\nSelect PID from:\n");
         rge_print_pid_names();
-        plot_pid = catch_long();
+        plot_pid = rge_catch_long();
     }
 
     // Find selected particle PID in acceptance correction data. If not found,
@@ -350,13 +350,13 @@ static int run(
     bool geometry_cuts = false;
     bool dis_cuts      = false;
     printf("\nApply all default cuts (general, geometry, DIS)? [y/n]\n");
-    if (!catch_yn()) {
+    if (!rge_catch_yn()) {
         printf("\nApply general cuts? [y/n]\n");
-        general_cuts = catch_yn();
+        general_cuts = rge_catch_yn();
         printf("\nApply geometry cuts? [y/n]\n");
-        geometry_cuts = catch_yn();
+        geometry_cuts = rge_catch_yn();
         printf("\nApply DIS cuts? [y/n]\n");
-        dis_cuts = catch_yn();
+        dis_cuts = rge_catch_yn();
     }
     else {
         general_cuts  = true;
@@ -373,7 +373,8 @@ static int run(
     // TODO. Change bin_range to bin_edges for variable bin sizes.
 
     printf("\nNumber of dimensions for binning?\n");
-    long unsigned int dim_bins = static_cast<long unsigned int>(catch_long());
+    long unsigned int dim_bins =
+            static_cast<long unsigned int>(rge_catch_long());
     __extension__ int    bin_vars[dim_bins];
     __extension__ double bin_range[dim_bins][2];
     __extension__ double bin_binsize[dim_bins];
@@ -385,19 +386,19 @@ static int run(
         for (int var_i = 0; var_i < VAR_LIST_SIZE; ++var_i)
             printf("%s, ", R_VAR_LIST[var_i]);
         printf("\b\b]\n");
-        bin_vars[bin_dim_i] = catch_string(R_VAR_LIST, VAR_LIST_SIZE);
+        bin_vars[bin_dim_i] = rge_catch_string(R_VAR_LIST, VAR_LIST_SIZE);
 
         // range.
         for (int range_i = 0; range_i < 2; ++range_i) {
             printf("\nDefine %s limit for bin in dimension %ld:\n",
                     RAN_LIST[range_i], bin_dim_i);
-            bin_range[bin_dim_i][range_i] = catch_double();
+            bin_range[bin_dim_i][range_i] = rge_catch_double();
         }
 
         // nbins.
         printf("\nDefine number of bins for bin in dimension %ld:\n",
                 bin_dim_i);
-        bin_nbins[bin_dim_i] = static_cast<long unsigned int>(catch_long());
+        bin_nbins[bin_dim_i] = static_cast<long unsigned int>(rge_catch_long());
 
         // binning bin size.
         bin_binsize[bin_dim_i] =
@@ -416,7 +417,7 @@ static int run(
     if (acc_plot) plot_arr_size = ACCPLT_LIST_SIZE;
     else {
         printf("\nDefine number of plots (Set to 0 to draw standard plots).\n");
-        plot_arr_size = static_cast<long unsigned int>(catch_long());
+        plot_arr_size = static_cast<long unsigned int>(rge_catch_long());
     }
 
     bool std_plot = false;
@@ -439,7 +440,7 @@ static int run(
         for (int var_i = 0; var_i < PLOT_LIST_SIZE; ++var_i)
             printf("%s, ", PLOT_LIST[var_i]);
         printf("\b\b]:\n");
-        plot_type[plot_i] = catch_string(PLOT_LIST, PLOT_LIST_SIZE);
+        plot_type[plot_i] = rge_catch_string(PLOT_LIST, PLOT_LIST_SIZE);
 
         for (int dim_i = 0; dim_i < plot_type[plot_i]+1; ++dim_i) {
             // Check variable(s) to be plotted.
@@ -448,19 +449,20 @@ static int run(
             for (int var_i = 0; var_i < VAR_LIST_SIZE; ++var_i)
                 printf("%s, ", R_VAR_LIST[var_i]);
             printf("\b\b]\n");
-            plot_vars[plot_i][dim_i] = catch_string(R_VAR_LIST, VAR_LIST_SIZE);
+            plot_vars[plot_i][dim_i] =
+                    rge_catch_string(R_VAR_LIST, VAR_LIST_SIZE);
 
             // Define ranges.
             for (int range_i = 0; range_i < 2; ++range_i) {
                 printf("\nDefine %s limit for %s axis:\n",
                         RAN_LIST[range_i], DIM_LIST[dim_i]);
-                plot_range[plot_i][dim_i][range_i] = catch_double();
+                plot_range[plot_i][dim_i][range_i] = rge_catch_double();
             }
 
             // Define number of bins in plot.
             printf("\nDefine number of bins for %s axis:\n", DIM_LIST[dim_i]);
             plot_nbins[plot_i][dim_i] =
-                    static_cast<long unsigned int>(catch_long());
+                    static_cast<long unsigned int>(rge_catch_long());
         }
     }
 
@@ -868,7 +870,7 @@ static int handle_args(
                 rge_errno = RGEERR_USAGE;
                 return 1;
             case 'n':
-                if (process_nentries(nentries, optarg)) return 1;
+                if (rge_process_nentries(nentries, optarg)) return 1;
                 break;
             case 'o':
                 tmp_out_filename =

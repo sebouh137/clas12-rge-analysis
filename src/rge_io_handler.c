@@ -15,9 +15,17 @@
 
 #include "../lib/rge_io_handler.h"
 
-// TODO. Separate this file into io_handler, file_handler, and progress_bar.
+// --+ internal +---------------------------------------------------------------
+int is_number(char c) {
+    if (c >= '0' && c <= '9') return 1;
+    return 0;
+}
 
-/* Run strtol, returning appropriate error codes. */
+int is_number(char *s) {
+    if (is_number(s[0]) || (s[0] == '-' && is_number(s[1]))) return 1;
+    return 0;
+}
+
 int run_strtol(long int *n, char *t) {
     char *eptr;
     errno = 0;
@@ -27,61 +35,14 @@ int run_strtol(long int *n, char *t) {
     return 0;
 }
 
-/* Run strtol on arg to get number of FMT layers required. */
-int process_fmtnlayers(long int *nlayers, char *arg) {
-    int err = run_strtol(nlayers, arg);
-    if (err == 1 || (
-            *nlayers != 0 &&
-            (FMTMINLAYERS > *nlayers || *nlayers > FMTNLAYERS)
-    )) {
-        rge_errno = RGEERR_INVALIDFMTNLAYERS;
-        return 1;
-    }
+// --+ library +----------------------------------------------------------------
+int rge_grab_string(char *arg, char **str) {
+    *str = static_cast<char *>(malloc(strlen(arg) + 1));
+    strcpy(*str, arg);
     return 0;
 }
 
-/* Run strtol on arg to get number of entries. */
-int process_nentries(long int *nentries, char *arg) {
-    int err = run_strtol(nentries, arg);
-    if (err == 1) {
-        rge_errno = RGEERR_INVALIDENTRIES;
-        return 1;
-    }
-    if (err == 2) {
-        rge_errno = RGEERR_NENTRIESLARGE;
-        return 1;
-    }
-    if (*nentries <= 0) {
-        rge_errno = RGEERR_NENTRIESNEGATIVE;
-        return 1;
-    }
-
-    return 0;
-}
-
-/** Check if string s is a number. Returns 1 if it is, 0 if it isn't. */
-int is_number(char *s) {
-    if (is_number(s[0]) || (s[0] == '-' && is_number(s[1]))) return 1;
-    return 0;
-}
-
-/** Check if character c is a number. Returns 1 if it is, 0 if it isn't. */
-int is_number(char c) {
-    if (c >= '0' && c <= '9') return 1;
-    return 0;
-}
-
-/**
- * Grab multiple arguments and fill an array with their values.
- *
- * @param argc:    size of list of arguments given to program.
- * @param argv:    list of arguments given to program.
- * @param opt_idx: optind variable from getopt.
- * @param size:    pointer to the size of the array that we'll fill.
- * @param arr:     array that we'll fill.
- * @return:        error code, which is always 0 (no error).
- */
-int grab_multiarg(
+int rge_grab_multiarg(
         int argc, char **argv, int *opt_idx, long unsigned int *size,
         double **arr
 ) {
@@ -114,21 +75,37 @@ int grab_multiarg(
     return 0;
 }
 
-/**
- * Grab a string from an optarg.
- *
- * @param getopt_arg: optarg variable from getopt.
- * @param str:        string to which optarg will be copied.
- * @return:           error code, which is always 0 (no error).
- */
-int grab_str(char *getopt_arg, char **str) {
-    *str = static_cast<char *>(malloc(strlen(getopt_arg) + 1));
-    strcpy(*str, getopt_arg);
+int rge_process_nentries(long int *nentries, char *arg) {
+    int err = run_strtol(nentries, arg);
+    if (err == 1) {
+        rge_errno = RGEERR_INVALIDENTRIES;
+        return 1;
+    }
+    if (err == 2) {
+        rge_errno = RGEERR_NENTRIESLARGE;
+        return 1;
+    }
+    if (*nentries <= 0) {
+        rge_errno = RGEERR_NENTRIESNEGATIVE;
+        return 1;
+    }
+
     return 0;
 }
 
-/** Catch a y (yes) or a n (no) from stdin. */
-bool catch_yn() {
+int rge_process_fmtnlayers(long int *nlayers, char *arg) {
+    int err = run_strtol(nlayers, arg);
+    if (err == 1 || (
+            *nlayers != 0 &&
+            (FMTMINLAYERS > *nlayers || *nlayers > FMTNLAYERS)
+    )) {
+        rge_errno = RGEERR_INVALIDFMTNLAYERS;
+        return 1;
+    }
+    return 0;
+}
+
+bool rge_catch_yn() {
     // TODO. Figure out how to catch no input so that this can be [Y/n].
     while (true) {
         char str[32];
@@ -140,30 +117,7 @@ bool catch_yn() {
     }
 }
 
-/**
- * Catch a string from stdin and find its location in an array of strings. If
- *     string is not in list, ask the user again.
- *
- * @param arr:  array of strings.
- * @param size: size of arr.
- * @return:     location of string in stdin inside arr.
- */
-int catch_string(const char *arr[], int size) {
-    double x;
-    while (true) {
-        char str[32];
-        printf(">>> ");
-        scanf("%31s", str);
-
-        for (int i = 0; i < size; ++i) if (!strcmp(str, arr[i])) x = i;
-        if (x != -1) break;
-    }
-
-    return x;
-}
-
-/** Catch a long value from stdin. */
-long catch_long() {
+long rge_catch_long() {
     long r;
     while (true) {
         char str[32];
@@ -178,12 +132,11 @@ long catch_long() {
     return r;
 }
 
-/** Catch a double value from stdin. */
-double catch_double() {
+double rge_catch_double() {
     double r;
     while (true) {
         char str[32];
-        char * endptr;
+        char *endptr;
         printf(">>> ");
         scanf("%31s", str);
         r = strtod(str, &endptr);
@@ -192,4 +145,18 @@ double catch_double() {
     }
 
     return r;
+}
+
+int rge_catch_string(const char *arr[], int size) {
+    double x;
+    while (true) {
+        char str[32];
+        printf(">>> ");
+        scanf("%31s", str);
+
+        for (int i = 0; i < size; ++i) if (!strcmp(str, arr[i])) x = i;
+        if (x != -1) break;
+    }
+
+    return x;
 }

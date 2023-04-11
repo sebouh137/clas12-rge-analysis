@@ -423,7 +423,7 @@ static int handle_args(
                 rge_errno = RGEERR_USAGE;
                 return 1;
             case 'n':
-                if (process_nentries(nevn, optarg)) return 1;
+                if (rge_process_nentries(nevn, optarg)) return 1;
                 break;
             case 'w':
                 *work_dir = static_cast<char *>(malloc(strlen(optarg) + 1));

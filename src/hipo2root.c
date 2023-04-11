@@ -153,7 +153,7 @@ static int handle_args(
                 *use_fmt = true;
                 break;
             case 'n':
-                if (process_nentries(event_max, optarg)) return 1;
+                if (rge_process_nentries(event_max, optarg)) return 1;
                 break;
             case 'w':
                 *work_dir = static_cast<char *>(malloc(strlen(optarg) + 1));

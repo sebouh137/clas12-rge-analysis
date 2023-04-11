@@ -258,25 +258,25 @@ static int handle_args(
             rge_errno = RGEERR_USAGE;
             return 1;
         case 'q':
-            grab_multiarg(argc, argv, &optind, &(nedges[0]), &(edges[0]));
+            rge_grab_multiarg(argc, argv, &optind, &(nedges[0]), &(edges[0]));
             break;
         case 'n':
-            grab_multiarg(argc, argv, &optind, &(nedges[1]), &(edges[1]));
+            rge_grab_multiarg(argc, argv, &optind, &(nedges[1]), &(edges[1]));
             break;
         case 'z':
-            grab_multiarg(argc, argv, &optind, &(nedges[2]), &(edges[2]));
+            rge_grab_multiarg(argc, argv, &optind, &(nedges[2]), &(edges[2]));
             break;
         case 'p':
-            grab_multiarg(argc, argv, &optind, &(nedges[3]), &(edges[3]));
+            rge_grab_multiarg(argc, argv, &optind, &(nedges[3]), &(edges[3]));
             break;
         case 'f':
-            grab_multiarg(argc, argv, &optind, &(nedges[4]), &(edges[4]));
+            rge_grab_multiarg(argc, argv, &optind, &(nedges[4]), &(edges[4]));
             break;
         case 'g':
-            grab_str(optarg, thrown_filename);
+            rge_grab_string(optarg, thrown_filename);
             break;
         case 's':
-            grab_str(optarg, simul_filename);
+            rge_grab_string(optarg, simul_filename);
             break;
         case 'd':
             *data_dir = static_cast<char *>(malloc(strlen(optarg) + 1));

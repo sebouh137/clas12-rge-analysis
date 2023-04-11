@@ -472,10 +472,10 @@ static int handle_args(
                 *debug = true;
                 break;
             case 'f':
-                if (process_fmtnlayers(fmt_nlayers, optarg)) return 1;
+                if (rge_process_fmtnlayers(fmt_nlayers, optarg)) return 1;
                 break;
             case 'n':
-                if (process_nentries(n_events, optarg)) return 1;
+                if (rge_process_nentries(n_events, optarg)) return 1;
                 break;
             case 'w':
                 *work_dir = static_cast<char *>(malloc(strlen(optarg) + 1));

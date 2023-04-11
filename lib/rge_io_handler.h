@@ -22,22 +22,64 @@
 #include "rge_err_handler.h"
 #include "rge_file_handler.h"
 
-int run_strtol(long int *n, char *t);
-int process_fmtnlayers(long int *nlayers, char *arg);
-int process_nentries(long int *nentries, char *arg);
+// --+ internal +---------------------------------------------------------------
+/** Check if character c is a number. Returns 1 if it is, 0 if it isn't. */
+static int is_number(char c);
 
-int is_number(char *s);
-int is_number(char c);
+/** Check if string s is a number. Returns 1 if it is, 0 if it isn't. */
+static int is_number(char *s);
 
-int grab_multiarg(
+/* Run strtol from n to t, returning appropriate error codes. */
+static int run_strtol(long int *n, char *t);
+
+// --+ library +----------------------------------------------------------------
+/**
+ * Grab a string from an argument.
+ *
+ * @param arg : optarg variable from getopt.
+ * @param str : string to which optarg will be copied.
+ * @return    : error code, which is always 0 (no error).
+ */
+int rge_grab_string(char *arg, char **str);
+
+/**
+ * Grab multiple arguments and fill an array with their values.
+ *
+ * @param argc    : size of list of arguments given to program.
+ * @param argv    : list of arguments given to program.
+ * @param opt_idx : optind variable from getopt.
+ * @param size    : pointer to the size of the array that will be filled.
+ * @param arr     : array that will be filled.
+ * @return        : error code, which is always 0 (no error).
+ */
+int rge_grab_multiarg(
         int argc, char **argv, int *opt_idx, long unsigned int *size,
         double **arr
 );
-int grab_str(char *optarg, char **str);
 
-bool catch_yn();
-int catch_string(const char *arr[], int size);
-double catch_double();
-long catch_long();
+/* Run strtol on arg to get number of entries. */
+int rge_process_nentries(long int *nentries, char *arg);
+
+/* Run strtol on arg to get number of FMT layers required. */
+int rge_process_fmtnlayers(long int *nlayers, char *arg);
+
+/** Catch a y (yes) or a n (no) from stdin. */
+bool rge_catch_yn();
+
+/** Catch a long value from stdin. */
+long rge_catch_long();
+
+/** Catch a double value from stdin. */
+double rge_catch_double();
+
+/**
+ * Catch a string from stdin and find its location in an array of strings. If
+ *     string is not in list, ask the user again.
+ *
+ * @param arr  : array of strings.
+ * @param size : size of arr.
+ * @return     : location of string in stdin inside arr.
+ */
+int rge_catch_string(const char *arr[], int size);
 
 #endif
