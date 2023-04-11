@@ -16,7 +16,8 @@
 #include <libgen.h>
 #include "TFile.h"
 #include "../lib/rge_err_handler.h"
-#include "../lib/io_handler.h"
+#include "../lib/rge_io_handler.h"
+#include "../lib/rge_progress.h"
 #include "../lib/bank_containers.h"
 
 const char *usage_message =
@@ -86,13 +87,11 @@ static int run(
 
     int event_no = 0;
 
-    // Counters for fancy progress bar.
-    int divcntr     = 0;
-    int evnsplitter = 0;
-
+    // Prepare fancy progress bar.
+    rge_pbar_set_nentries(event_max);
     while (reader.next() && event_no < event_max) {
         // Print fancy progress bar.
-        update_progress_bar(event_max, event_no, &evnsplitter, &divcntr);
+        rge_pbar_update(event_no);
         ++event_no;
 
         // Read next event.

@@ -13,11 +13,12 @@
 //
 // You can see a copy of the GNU Lesser Public License under the LICENSE file.
 
-#ifndef IO_HANDLER
-#define IO_HANDLER
+#ifndef RGE_IOHANDLER
+#define RGE_IOHANDLER
 
 #include <errno.h>
 #include <stdlib.h>
+#include <string.h>
 #include "rge_err_handler.h"
 #include "rge_file_handler.h"
 
@@ -37,8 +38,6 @@ int handle_hipo_filename(char *filename, int *run_no);
 
 int is_number(char *s);
 int is_number(char c);
-
-int update_progress_bar(int nevn, int evn, int *evnsplitter, int *divcntr);
 
 int grab_multiarg(
         int argc, char **argv, int *opt_idx, long unsigned int *size,

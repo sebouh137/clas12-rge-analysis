@@ -18,7 +18,8 @@
 #include <TNtuple.h>
 #include <TROOT.h>
 #include "../lib/rge_err_handler.h"
-#include "../lib/io_handler.h"
+#include "../lib/rge_io_handler.h"
+#include "../lib/rge_progress.h"
 #include "../lib/rge_particle.h"
 
 const char *usage_message =
@@ -263,9 +264,8 @@ static int run(
     // Iterate through input file. Each TTree entry is one event.
     printf("Processing %ld events from %s.\n", n_events, filename_in);
 
-    // Counters for fancy progress bar.
-    int divcntr     = 0;
-    int evnsplitter = 0;
+    // Prepare fancy progress bar.
+    rge_pbar_set_nentries(n_events);
 
     // Particle counters.
     int trigger_counter  = 0;
@@ -275,7 +275,7 @@ static int run(
     for (long int event = 0; event < n_events; ++event) {
         // Print fancy progress bar.
         if (!debug) {
-            update_progress_bar(n_events, event, &evnsplitter, &divcntr);
+            rge_pbar_update(event);
         }
 
         // Get entries from input file.

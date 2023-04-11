@@ -13,7 +13,7 @@
 //
 // You can see a copy of the GNU Lesser Public License under the LICENSE file.
 
-#include "../lib/io_handler.h"
+#include "../lib/rge_io_handler.h"
 
 // TODO. Separate this file into io_handler, file_handler, and progress_bar.
 
@@ -232,54 +232,6 @@ int is_number(char *s) {
 int is_number(char c) {
     if (c >= '0' && c <= '9') return 1;
     return 0;
-}
-
-/**
- * Update a progress bar counting the number of events processed. Length of the
- *     bar is defined by the `length` variable defined at the first line of the
- *     function.
- *
- * @param nevn:        total number of events.
- * @param evn:         number of the event being processed.
- * @param evnsplitter: internal state variable used across executions, should be
- *                     set to 0 for first iteration.
- * @param divcntr:     internal state variable used across executions, should be
- *                     set to 0 for first iteration.
- * @return:            0 if no change was made, 1 otherwise, and 2 if bar is
- *                     full.
- */
-int update_progress_bar(int nevn, int evn, int *evnsplitter, int *divcntr) {
-    double length = 50.; // Length of the progress bar.
-
-    // Only update if necessary.
-    if (evn == nevn-1) {
-        printf("\n");
-        return 2;
-    }
-    if (*evnsplitter == -1 || evn < *evnsplitter) return 0;
-
-    // Clear line if a previous bar has been printed.
-    if (evn != 0) printf("\33[2K\r");
-
-    // Print progress bar.
-    printf("[");
-    for (int i = 0; i <= length; ++i) {
-        if (i <= (length/100.) * (*divcntr)) printf("=");
-        else                                 printf(" ");
-    }
-    printf("] %2d%%", *divcntr);
-    fflush(stdout);
-
-    // Update divcntr and evnsplitter.
-    (*divcntr)++;
-    if (*divcntr <= 100) {
-        *evnsplitter = (nevn/100) * (*divcntr);
-        return 1;
-    }
-
-    *evnsplitter = -1;
-    printf("\n");
-    return 2;
 }
 
 /**

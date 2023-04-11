@@ -13,8 +13,8 @@
 //
 // You can see a copy of the GNU Lesser Public License under the LICENSE file.
 
-#ifndef FILE_HANDLER
-#define FILE_HANDLER
+#ifndef RGE_FILEHANDLER
+#define RGE_FILEHANDLER
 
 #include <unistd.h>
 #include "constants.h"

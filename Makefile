@@ -45,17 +45,19 @@ HXX         := $(RXX) $(HIPOCFLAGS)
 
 # Object lists.
 O_HIPO2ROOT := $(BLD)/bank_containers.o $(BLD)/err_handler.o \
-			   $(BLD)/file_handler.o $(BLD)/io_handler.o
+			   $(BLD)/file_handler.o $(BLD)/io_handler.o $(BLD)/progress.o
 O_EXTRACTSF := $(BLD)/bank_containers.o $(BLD)/constants.o \
 			   $(BLD)/err_handler.o $(BLD)/file_handler.o $(BLD)/io_handler.o \
-			   $(BLD)/utilities.o
+			   $(BLD)/utilities.o $(BLD)/progress.o
 O_ACCCORR   := $(BLD)/err_handler.o $(BLD)/file_handler.o $(BLD)/io_handler.o \
- 			   $(BLD)/utilities.o
+ 			   $(BLD)/utilities.o $(BLD)/progress.o
 O_MKNTUPLES := $(BLD)/bank_containers.o $(BLD)/constants.o \
 			   $(BLD)/err_handler.o $(BLD)/file_handler.o $(BLD)/io_handler.o \
-			   $(BLD)/particle.o $(BLD)/pid_utils.o $(BLD)/utilities.o
+			   $(BLD)/particle.o $(BLD)/pid_utils.o $(BLD)/utilities.o \
+			   $(BLD)/progress.o
 O_DRAWPLOTS := $(BLD)/constants.o $(BLD)/err_handler.o $(BLD)/file_handler.o \
-			   $(BLD)/io_handler.o $(BLD)/pid_utils.o $(BLD)/utilities.o
+			   $(BLD)/io_handler.o $(BLD)/pid_utils.o $(BLD)/utilities.o \
+			   $(BLD)/progress.o
 
 all: $(BIN)/hipo2root $(BIN)/extract_sf $(BIN)/acc_corr \
 	 $(BIN)/make_ntuples $(BIN)/draw_plots
@@ -84,8 +86,11 @@ $(BLD)/constants.o: $(SRC)/constants.c $(LIB)/constants.h
 $(BLD)/err_handler.o: $(SRC)/rge_err_handler.c $(LIB)/rge_err_handler.h
 	$(CXX) -std=c++20 -c $(SRC)/rge_err_handler.c -o $(BLD)/err_handler.o
 
-$(BLD)/io_handler.o: $(SRC)/io_handler.c $(LIB)/io_handler.h
-	$(CXX) -c $(SRC)/io_handler.c -o $(BLD)/io_handler.o
+$(BLD)/io_handler.o: $(SRC)/rge_io_handler.c $(LIB)/rge_io_handler.h
+	$(CXX) -c $(SRC)/rge_io_handler.c -o $(BLD)/io_handler.o
+
+$(BLD)/progress.o: $(SRC)/rge_progress.c $(LIB)/rge_progress.h
+	$(CXX) -c $(SRC)/rge_progress.c -o $(BLD)/progress.o
 
 $(BLD)/file_handler.o: $(SRC)/rge_file_handler.c $(LIB)/rge_file_handler.h
 	$(CXX) -c $(SRC)/rge_file_handler.c -o $(BLD)/file_handler.o

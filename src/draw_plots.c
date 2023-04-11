@@ -18,7 +18,8 @@
 #include <TFile.h>
 #include <TNtuple.h>
 #include "../lib/rge_err_handler.h"
-#include "../lib/io_handler.h"
+#include "../lib/rge_io_handler.h"
+#include "../lib/rge_progress.h"
 #include "../lib/rge_pid_utils.h"
 #include "../lib/utilities.h"
 
@@ -503,9 +504,12 @@ static int run(
     // Apply SIDIS cuts, checking which event numbers should be skipped.
     long unsigned int nevents = 0;
 
+    // Prepare progress bar.
+    rge_pbar_set_nentries(nentries);
+
     // Count number of events.
     for (long int entry = 0; entry < nentries; ++entry) {
-        update_progress_bar(nentries, entry, &evnsplitter, &divcntr);
+        rge_pbar_update(entry);
         ntuple->GetEntry(entry);
         if (vars[A_EVENTNO] > nevents) {
             nevents = static_cast<long unsigned int>(vars[A_EVENTNO]+0.5);
@@ -531,8 +535,9 @@ static int run(
     //     one event. Then, we need to check beforehand which events are valid
     //     so that we can skip those when plotting. It is only necessary to do
     //     this if we're applying DIS cuts.
+    rge_pbar_reset();
     for (long int entry = 0; entry < nentries && dis_cuts; ++entry) {
-        update_progress_bar(nentries, entry, &evnsplitter, &divcntr);
+        rge_pbar_update(entry);
 
         ntuple->GetEntry(entry);
         if (vars[A_EVENTNO] != current_evn) {
@@ -603,8 +608,9 @@ static int run(
 
     // Run through events.
     printf("Processing plots...\n");
+    rge_pbar_reset();
     for (long int entry = 0; entry < nentries; ++entry) {
-        update_progress_bar(nentries, entry, &evnsplitter, &divcntr);
+        rge_pbar_update(entry);
         ntuple->GetEntry(entry);
 
         // Apply particle cuts.

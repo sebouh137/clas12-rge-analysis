@@ -21,7 +21,8 @@
 #include <TStyle.h>
 #include "../lib/bank_containers.h"
 #include "../lib/rge_err_handler.h"
-#include "../lib/io_handler.h"
+#include "../lib/rge_io_handler.h"
+#include "../lib/rge_progress.h"
 #include "../lib/utilities.h"
 
 const char *usage_message =
@@ -149,13 +150,12 @@ static int run(
     Calorimeter calorimeter(t);
 
     // Iterate through input file. Each TTree entry is one event.
-    int divcntr = 0;
-    int evnsplitter = 0;
     if (nevn == -1 || t->GetEntries() < nevn) nevn = t->GetEntries();
+    rge_pbar_set_nentries(nevn);
 
     printf("Reading %ld events from %s.\n", nevn, in_filename);
     for (long int evn = 0; evn < nevn; ++evn) {
-        update_progress_bar(nevn, evn, &evnsplitter, &divcntr);
+        rge_pbar_update(evn);
 
         // Get entries from bank containers.
         particle.get_entries(t, evn);

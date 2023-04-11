@@ -18,7 +18,7 @@
 #include <TFile.h>
 #include <TNtuple.h>
 #include "../lib/rge_err_handler.h"
-#include "../lib/io_handler.h"
+#include "../lib/rge_io_handler.h"
 #include "../lib/utilities.h"
 
 const char *usage_message =
