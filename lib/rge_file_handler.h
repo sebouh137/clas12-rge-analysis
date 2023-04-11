@@ -25,11 +25,11 @@
  * Read binning data from text file and fill binning sizes array, bin_edges
  *     array, and an array of PID list sizes.
  *
- * @param file_in:    file from which we extract the data.
- * @param bin_nedges: array of size 5 with binning sizes.
- * @param bin_edges:  2-dimensional array containing all 5 bin_edges.
- * @param pids_size:  number of PIDs in list of PIDs.
- * @return:           success code (0).
+ * @param file_in    : file from which we extract the data.
+ * @param bin_nedges : array of size 5 with binning sizes.
+ * @param bin_edges  : 2-dimensional array containing all 5 bin_edges.
+ * @param pids_size  : number of PIDs in list of PIDs.
+ * @return           : success code (0).
  */
 static int get_bin_edges(
         FILE *file_in, long unsigned int *bin_nedges, double **bin_edges,
@@ -40,15 +40,15 @@ static int get_bin_edges(
  * Read acceptance correction data from text file and fill PIDs list and
  *     accceptance correction array. This function follows from get_bin_edges().
  *
- * @param file_in:   file from which we extract the data.
- * @param pids_size: number of PIDs to process, as found in get_bin_edges().
- * @param nbins:     total number of bins.
- * @param pids:      array of PIDs to process.
- * @param n_thrown:  2-dimensional array containing the number of thrown events
- *                   for each bin, for each PID.
- * @param n_simul:   2-dimensional array containing the number of simul events
- *                   for each bin, for each PID.
- * @return:          success code (0).
+ * @param file_in   : file from which we extract the data.
+ * @param pids_size : number of PIDs to process, as found in get_bin_edges().
+ * @param nbins     : total number of bins.
+ * @param pids      : array of PIDs to process.
+ * @param n_thrown  : 2-dimensional array containing the number of thrown events
+ *                    for each bin, for each PID.
+ * @param n_simul   : 2-dimensional array containing the number of simul events
+ *                    for each bin, for each PID.
+ * @return          : success code (0).
  */
 static int get_acc_corr(
         FILE *file_in, long unsigned int pids_size, long unsigned int nbins,
@@ -60,12 +60,12 @@ static int get_acc_corr(
  * Get sampling fraction parameters from file. File contents must follow CCDB
  *     format, same to what is provided by extract_sf.
  *
- * @param filename: filename to be processed.
- * @param sf[][][]: 3-dimensional array where sampling fraction data is to be
- *                  written. Check the README.md for more information.
- * @return          error code:
- *                    * 0: everything went fine.
- *                    * 1: no file with filename was found.
+ * @param filename : filename to be processed.
+ * @param sf[][][] : 3-dimensional array where sampling fraction data is to be
+ *                   written. Check the README.md for more information.
+ * @return         : error code:
+ *                     * 0: everything went fine.
+ *                     * 1: no file with filename was found.
  */
 int rge_get_sf_params(char *filename, double sf[NSECTORS][SF_NPARAMS][2]);
 
@@ -77,23 +77,23 @@ int rge_get_sf_params(char *filename, double sf[NSECTORS][SF_NPARAMS][2]);
  *     in the shape acc_corr[Q2 bin][nu bin][zh bin][PT2 bin][phiPQ bin],
  *     multiplying each entry by the appropiate size.
  *
- * @param acc_filename: char array with the filename containing the acceptance
- *                      correction to be processed.
- * @param bin_nedges:   array that we'll fill with the size of each of the 5
- *                      bin_edges.
- * @param bin_edges:    pointer to a 2-dimensional array that we'll fill with
- *                      the bin walls for each binning.
- * @param pids_size:    int where we'll write the number of PIDs in the file.
- * @param nbins:        int where we'll write the total number of bins.
- * @param pids:         pointer to an array where we'll write the list of PIDs
- *                      in the acceptance correction file.
- * @param n_thrown:     pointer to a 2-dimensional array where we'll write the
- *                      number of thrown events in each bin for each PID.
- * @param n_simul:      pointer to a 2-dimensional array where we'll write the
- *                      number of simulated events in each bin for each PID.
- * @return: errcode:
- *            * 0: Function performed correctly.
- *            * 1: Failed to access acceptance correction file.
+ * @param acc_filename : char array with the filename containing the acceptance
+ *                       correction to be processed.
+ * @param bin_nedges   : array that we'll fill with the size of each of the 5
+ *                       bin_edges.
+ * @param bin_edges    : pointer to a 2-dimensional array that we'll fill with
+ *                       the bin walls for each binning.
+ * @param pids_size    : int where we'll write the number of PIDs in the file.
+ * @param nbins        : int where we'll write the total number of bins.
+ * @param pids         : pointer to an array where we'll write the list of PIDs
+ *                       in the acceptance correction file.
+ * @param n_thrown     : pointer to a 2-dimensional array where we'll write the
+ *                       number of thrown events in each bin for each PID.
+ * @param n_simul      : pointer to a 2-dimensional array where we'll write the
+ *                       number of simulated events in each bin for each PID.
+ * @return             : error code:
+ *                         * 0: Function performed correctly.
+ *                         * 1: Failed to access acceptance correction file.
  */
 int rge_read_acc_corr_file(
         char *acc_filename, long unsigned int bin_nedges[5],

@@ -23,7 +23,7 @@
 /**
  * Entry point to all error handling. Decides how to react to rge_errno.
  *
- * @return: error code, handled by rge_print_usage().
+ * @return : error code, handled by rge_print_usage().
  *   * 0 : no error was found.
  *   * 1 : a user error was found.
  *   * 2 : a programmer error was found.
