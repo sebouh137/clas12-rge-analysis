@@ -20,7 +20,7 @@
 #include "../lib/rge_err_handler.h"
 #include "../lib/rge_io_handler.h"
 #include "../lib/rge_filename_handler.h"
-#include "../lib/utilities.h"
+#include "../lib/rge_math_utils.h"
 
 const char *usage_message =
 "Usage: acc_corr [-hq:n:z:p:f:g:s:d:FD]\n"

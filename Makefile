@@ -49,15 +49,15 @@ O_HIPO2ROOT := $(BLD)/bank_containers.o $(BLD)/err_handler.o \
 			   $(BLD)/filename_handler.o
 O_EXTRACTSF := $(BLD)/bank_containers.o $(BLD)/constants.o \
 			   $(BLD)/err_handler.o $(BLD)/file_handler.o $(BLD)/io_handler.o \
-			   $(BLD)/utilities.o $(BLD)/progress.o $(BLD)/filename_handler.o
+			   $(BLD)/math_utils.o $(BLD)/progress.o $(BLD)/filename_handler.o
 O_ACCCORR   := $(BLD)/err_handler.o $(BLD)/file_handler.o $(BLD)/io_handler.o \
- 			   $(BLD)/utilities.o $(BLD)/progress.o $(BLD)/filename_handler.o
+ 			   $(BLD)/math_utils.o $(BLD)/progress.o $(BLD)/filename_handler.o
 O_MKNTUPLES := $(BLD)/bank_containers.o $(BLD)/constants.o \
 			   $(BLD)/err_handler.o $(BLD)/file_handler.o $(BLD)/io_handler.o \
-			   $(BLD)/particle.o $(BLD)/pid_utils.o $(BLD)/utilities.o \
+			   $(BLD)/particle.o $(BLD)/pid_utils.o $(BLD)/math_utils.o \
 			   $(BLD)/progress.o $(BLD)/filename_handler.o
 O_DRAWPLOTS := $(BLD)/constants.o $(BLD)/err_handler.o $(BLD)/file_handler.o \
-			   $(BLD)/io_handler.o $(BLD)/pid_utils.o $(BLD)/utilities.o \
+			   $(BLD)/io_handler.o $(BLD)/pid_utils.o $(BLD)/math_utils.o \
 			   $(BLD)/progress.o $(BLD)/filename_handler.o
 
 all: $(BIN)/hipo2root $(BIN)/extract_sf $(BIN)/acc_corr \
@@ -105,8 +105,8 @@ $(BLD)/particle.o: $(SRC)/rge_particle.c $(LIB)/rge_particle.h
 $(BLD)/pid_utils.o: $(SRC)/rge_pid_utils.c $(LIB)/rge_pid_utils.h
 	$(CXX) -std=c++20 -c $(SRC)/rge_pid_utils.c -o $(BLD)/pid_utils.o
 
-$(BLD)/utilities.o: $(SRC)/utilities.c $(LIB)/utilities.h
-	$(RXX) -c $(SRC)/utilities.c -o $(BLD)/utilities.o
+$(BLD)/math_utils.o: $(SRC)/rge_math_utils.c $(LIB)/rge_math_utils.h
+	$(RXX) -c $(SRC)/rge_math_utils.c -o $(BLD)/math_utils.o
 
 clean:
 	@echo "Removing all build files and binaries."

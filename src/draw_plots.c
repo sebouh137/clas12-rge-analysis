@@ -16,13 +16,14 @@
 #include <limits.h>
 #include <libgen.h>
 #include <TFile.h>
+#include <TH2.h>
 #include <TNtuple.h>
 #include "../lib/rge_err_handler.h"
 #include "../lib/rge_io_handler.h"
 #include "../lib/rge_progress.h"
 #include "../lib/rge_pid_utils.h"
 #include "../lib/rge_filename_handler.h"
-#include "../lib/utilities.h"
+#include "../lib/rge_math_utils.h"
 
 const char *usage_message =
 "Usage: draw_plots [-hn:o:a:w:] infile\n"

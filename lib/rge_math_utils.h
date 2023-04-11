@@ -13,11 +13,10 @@
 //
 // You can see a copy of the GNU Lesser Public License under the LICENSE file.
 
-#ifndef UTILS
-#define UTILS
+#ifndef RGE_MATHUTILS
+#define RGE_MATHUTILS
 
-#include <TH2F.h>
-// #include "constants.h"
+#include "math.h"
 #include "rge_err_handler.h"
 
 /** Transform an angle a from degrees to radians. */

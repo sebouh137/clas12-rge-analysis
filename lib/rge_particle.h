@@ -18,7 +18,8 @@
 
 #include "bank_containers.h"
 #include "rge_pid_utils.h"
-#include "utilities.h"
+#include "constants.h"
+#include "rge_math_utils.h"
 
 typedef struct {
     // Identifier booleans.

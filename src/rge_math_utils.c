@@ -13,7 +13,7 @@
 //
 // You can see a copy of the GNU Lesser Public License under the LICENSE file.
 
-#include "../lib/utilities.h"
+#include "../lib/rge_math_utils.h"
 
 int to_rad(double src, double *dest) {
     // Check angle validity.

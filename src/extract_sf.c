@@ -16,6 +16,7 @@
 #include <libgen.h>
 #include <TCanvas.h>
 #include <TFile.h>
+#include <TH2.h>
 #include <TF1.h>
 #include <TGraphErrors.h>
 #include <TStyle.h>
@@ -24,7 +25,7 @@
 #include "../lib/rge_filename_handler.h"
 #include "../lib/rge_io_handler.h"
 #include "../lib/rge_progress.h"
-#include "../lib/utilities.h"
+#include "../lib/rge_math_utils.h"
 
 const char *usage_message =
 "Usage: extract_sf [-hn:w:d:] infile\n"
