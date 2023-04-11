@@ -87,8 +87,8 @@ $(BLD)/err_handler.o: $(SRC)/rge_err_handler.c $(LIB)/rge_err_handler.h
 $(BLD)/io_handler.o: $(SRC)/io_handler.c $(LIB)/io_handler.h
 	$(CXX) -c $(SRC)/io_handler.c -o $(BLD)/io_handler.o
 
-$(BLD)/file_handler.o: $(SRC)/file_handler.c $(LIB)/file_handler.h
-	$(CXX) -c $(SRC)/file_handler.c -o $(BLD)/file_handler.o
+$(BLD)/file_handler.o: $(SRC)/rge_file_handler.c $(LIB)/rge_file_handler.h
+	$(CXX) -c $(SRC)/rge_file_handler.c -o $(BLD)/file_handler.o
 
 $(BLD)/particle.o: $(SRC)/rge_particle.c $(LIB)/rge_particle.h
 	$(HXX) -c $(SRC)/rge_particle.c -o $(BLD)/particle.o

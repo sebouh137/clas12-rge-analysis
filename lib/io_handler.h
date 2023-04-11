@@ -19,7 +19,7 @@
 #include <errno.h>
 #include <stdlib.h>
 #include "rge_err_handler.h"
-#include "file_handler.h"
+#include "rge_file_handler.h"
 
 int get_run_no(char *filename, int *run_no);
 int get_beam_energy(int run_no, double *beam_energy);

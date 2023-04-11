@@ -13,8 +13,8 @@
 //
 // You can see a copy of the GNU Lesser Public License under the LICENSE file.
 
-#ifndef RGE_PID_UTILS
-#define RGE_PID_UTILS
+#ifndef RGE_PIDUTILS
+#define RGE_PIDUTILS
 
 #include <float.h>
 #include "rge_err_handler.h"

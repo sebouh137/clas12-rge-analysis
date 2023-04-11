@@ -13,7 +13,7 @@
 //
 // You can see a copy of the GNU Lesser Public License under the LICENSE file.
 
-#include "../lib/file_handler.h"
+#include "../lib/rge_file_handler.h"
 
 /**
  * Get sampling fraction parameters from file.
