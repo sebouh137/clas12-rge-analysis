@@ -17,22 +17,39 @@
 #define UTILS
 
 #include <TH2F.h>
-#include "constants.h"
+// #include "constants.h"
 #include "rge_err_handler.h"
 
-int find_pos(double v, double *b, int size);
-int to_deg(double src, double *dest);
+/** Transform an angle a from degrees to radians. */
 int to_rad(double src, double *dest);
+
+/** Compute a 2D vector's magntitude from its x and y components. */
 double calc_magnitude(double x, double y);
+
+/** Compute a 3D vector's magnitude from its x, y, and z components. */
 double calc_magnitude(double x, double y, double z);
-double calc_angle(double x1, double y1, double z1, double x2, double y2,
-        double z2);
+
+/** Compute the angle between two vectors (x1,y1,z1) and (x2,y2,z2). */
+double calc_angle(
+        double x1, double y1, double z1, double x2, double y2, double z2
+);
+
+/**
+ * Rotate a 3D vector around the y axis by an angle theta.
+ *
+ * @param x:  x coordinate of the vector. This variable *will be updated*.
+ * @param z:  z coordinate of the vector. This variable *will be updated*.
+ * @param th: theta angle (in radians) for the rotation.
+ */
 void rotate_y(double *x, double *z, double th);
+
+/**
+ * Rotate a 3D vector around the z axis by an angle theta.
+ *
+ * @param x:  x coordinate of the vector. This variable *will be updated*.
+ * @param y:  y coordinate of the vector. This variable *will be updated*.
+ * @param th: theta angle (in radians) for the rotation.
+ */
 void rotate_z(double *x, double *y, double th);
-int insert_TH1F(std::map<const char *, TH1 *> *map, const char *k,
-        const char *n, const char *xn, int bins, double min, double max);
-int insert_TH2F(std::map<const char *, TH1 *> *map, const char *k,
-        const char *n, const char *nx, const char *ny, int xbins, double xmin,
-        double xmax, int ybins, double ymin, double ymax);
 
 #endif

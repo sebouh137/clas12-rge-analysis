@@ -45,6 +45,15 @@ const char *usage_message =
 "    doubles inbetween will be the separators between each bin.\n";
 
 /**
+* Return position of value v inside a doubles array b of size s. If v is not
+*     inside b, return -1.
+*/
+static int find_pos(double v, double *b, int size) {
+    for (int i = 0; i < size; ++i) if (b[i] < v && v < b[i+1]) return i;
+    return -1;
+}
+
+/**
  * Count number of events in a tree for each bin, for a given pid. The number of
  *     bins is equal to the multiplication of the size-1 of each binning.
  *

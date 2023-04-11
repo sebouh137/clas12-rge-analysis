@@ -37,6 +37,55 @@ const char *usage_message =
 " * infile     : input ROOT file. Expected file format: <text>run_no.root.\n\n"
 "    Obtain the EC sampling fraction from an input file.\n";
 
+/**
+ * Insert a 1-dimensional histogram of floats into a map.
+ *
+ * @param map  : Map onto which we'll insert the histogram.
+ * @param k    : Name of the particle (or set of particles) in the histogram.
+ * @param n    : Name of the histogram to be inserted.
+ * @param xn   : Name of the variable in the histogram's x axis.
+ * @param bins : Number of bins in the histogram.
+ * @param min  : Minimum value for the x axis of the histogram.
+ * @param max  : Maximum value for the x axis of the histogram.
+ * @return     : Success code (0).
+ */
+static int insert_TH1F(
+        std::map<const char *, TH1 *> *map, const char *k, const char *n,
+        const char *xn, int bins, double min, double max
+) {
+    map->insert(std::pair<const char *, TH1 *>
+            (n, new TH1F(Form("%s: %s", k, n), Form("%s;%s", n, xn), bins, min,
+            max)));
+    return 0;
+}
+
+/**
+ * Insert a 2-dimensional histogram of floats into a map.
+ *
+ * @param map   : Map onto which we'll insert the histogram.
+ * @param k     : Name of the particle (or set of particles) in the histogram.
+ * @param n     : Name of the histogram to be inserted.
+ * @param nx    : Name of the variable in the histogram's x axis.
+ * @param ny    : Name of the variable in the histogram's y axis.
+ * @param xbins : Number of bins in the x axis of the histogram.
+ * @param ybins : Number of bins in the y axis of the histogram.
+ * @param xmin  : Minimum value for the x axis of the histogram.
+ * @param xmax  : Maximum value for the x axis of the histogram.
+ * @param ymin  : Minimum value for the y axis of the histogram.
+ * @param ymax  : Maximum value for the y axis of the histogram.
+ * @return      : Success code (0).
+ */
+static int insert_TH2F(
+        std::map<const char *, TH1 *> *map, const char *k, const char *n,
+        const char *nx, const char *ny, int xbins, double xmin, double xmax,
+        int ybins, double ymin, double ymax
+) {
+    map->insert(std::pair<const char *, TH1 *>
+            (n, new TH2F(Form("%s: %s", k, n), Form("%s;%s;%s", n, nx, ny),
+                         xbins, xmin, xmax, ybins, ymin, ymax)));
+    return 0;
+}
+
 /** run() function of the program. Check usage_message for details. */
 static int run(
         char *in_filename, char *work_dir, char *data_dir, long int nevn,
