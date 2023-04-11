@@ -17,13 +17,6 @@
 
 // TODO. Separate this file into io_handler, file_handler, and progress_bar.
 
-/* Print usage and exit. */
-int print_usage(const char *msg, int err) {
-    if (err == 0 || err == 2) return err;
-    fprintf(stderr, "\n%s\n", msg);
-    return 1;
-}
-
 /**
  * Get run number from a filename, assuming the filename is in format
  *     <text><run_no>.<extension>. Write run number to *run_no, and return an

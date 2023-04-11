@@ -550,5 +550,5 @@ int main(int argc, char **argv) {
     if (data_dir    != NULL) free(data_dir);
 
     // Return errcode.
-    return print_usage(usage_message, handle_err());
+    return rge_print_usage(usage_message, rge_handle_err());
 }

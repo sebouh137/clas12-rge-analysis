@@ -19,10 +19,33 @@
 #include <stdio.h>
 #include <map>
 
-extern const std::map<unsigned int, const char *> ERRMAP;
+/**
+ * Error number. Initially defined to ERR_UNDEFINED to check if the program
+ *     ends abruptly without setting an error number.
+ *
+ * NOTE. To check for undefined errors, all run() functions in the code should
+ *       have a line with `rge_errno = ERR_NOERR;` before returning 0.
+ */
 extern unsigned int rge_errno;
 
-int handle_err();
+/**
+ * Entry point to all error handling. Decides how to react to errno.
+ *
+ * @return: error code, handled by rge_print_usage().
+ *   * 0 : no error was found.
+ *   * 1 : a user error was found.
+ *   * 2 : a programmer error was found.
+ */
+int rge_handle_err();
+
+/**
+ * Print usage and exit.
+ *
+ * @param msg : usage message.
+ * @param err : error code based on output from handle_err().
+ * @return    : err received from handle_err().
+ */
+int rge_print_usage(const char *msg, int err);
 
 // --+ ERRCODES +---------------------------------------------------------------
 // --+   0 -   9 basic functionalities +----------------------------------------

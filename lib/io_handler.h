@@ -21,8 +21,6 @@
 #include "rge_err_handler.h"
 #include "file_handler.h"
 
-int print_usage(const char *msg, int err);
-
 int get_run_no(char *filename, int *run_no);
 int get_beam_energy(int run_no, double *beam_energy);
 

@@ -15,11 +15,14 @@
 
 #include "../lib/rge_err_handler.h"
 
-// Map linking every error number with an explanation script for the user.
-// NOTE. std::map isn't smart enough to detect if two keys have the same
-//       value, so be *very careful* when adding rge_errnos. An invisibile error
-//       arises if two keys have the same value!
-const std::map<unsigned int, const char *> ERRMAP = {
+/**
+ * Map linking every error number with an explanation script for the user.
+ *
+ * NOTE. std::map isn't smart enough to detect if two keys have the same
+ *       value, so be *very careful* when adding rge_errnos. An invisibile error
+ *       arises if two keys have the same value.
+ */
+static const std::map<unsigned int, const char *> ERRMAP = {
     // Basic functionalities.
     {ERR_NOERR, ""}, // Handled before accessing this map.
     {ERR_USAGE, ""}, // Handled before accessing this map.
@@ -129,21 +132,9 @@ const std::map<unsigned int, const char *> ERRMAP = {
             "acc_corr and define a binning scheme to use this feature."}
 };
 
-// Error number. Initially defined to ERR_UNDEFINED to check if the program
-//     ends abruptly without setting an error number.
-// NOTE. To check for undefined errors, all run() functions in the code should
-//       have a line with `rge_errno = ERR_NOERR;` before returning 0.
 unsigned int rge_errno = ERR_UNDEFINED;
 
-/**
- * Entry point to all error handling. Decides how to react to errno.
- *
- * @return:
- *    * 0 : no error was found.
- *    * 1 : a user error was found.
- *    * 2 : a programmer error was found.
- */
-int handle_err() {
+int rge_handle_err() {
     if (rge_errno == ERR_NOERR) return 0; // No error.
     if (rge_errno == ERR_USAGE) return 1; // Print usage().
 
@@ -157,4 +148,9 @@ int handle_err() {
         fprintf(stderr, "rge_errno %d not implemented.\n\n", rge_errno);
         return 2;
     }
+}
+
+int rge_print_usage(const char *msg, int err) {
+    if (err == 1) fprintf(stderr, "\n%s\n", msg);
+    return err;
 }
