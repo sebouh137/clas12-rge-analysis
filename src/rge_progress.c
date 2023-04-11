@@ -21,8 +21,8 @@ int rge_pbar_set_nentries(long int in_nentries) {
 }
 
 int rge_pbar_reset() {
-    rge_pbar_divcntr     = 0;
-    rge_pbar_entrysplitter = 0;
+    rge_pbar_divcntr  = 0;
+    rge_pbar_splitter = 0;
     return 0;
 }
 
@@ -32,7 +32,7 @@ int rge_pbar_update(long int entry) {
         printf("\n");
         return 2;
     }
-    if (rge_pbar_entrysplitter == -1 || entry < rge_pbar_entrysplitter) return 0;
+    if (rge_pbar_splitter == -1 || entry < rge_pbar_splitter) return 0;
 
     // Clear line if a previous bar has been printed.
     if (entry != 0) printf("\33[2K\r");
@@ -41,19 +41,19 @@ int rge_pbar_update(long int entry) {
     printf("[");
     for (long int i = 0; i < RGE_PBARLENGTH; ++i) {
         if (i <= (RGE_PBARLENGTH/100.) * (rge_pbar_divcntr)) printf("=");
-        else                                 printf(" ");
+        else                                                 printf(" ");
     }
     printf("] %2ld%%", rge_pbar_divcntr);
     fflush(stdout);
 
-    // Update rge_pbar_divcntr and rge_pbar_entrysplitter.
+    // Update rge_pbar_divcntr and rge_pbar_splitter.
     ++rge_pbar_divcntr;
     if (rge_pbar_divcntr <= 100) {
-        rge_pbar_entrysplitter = (rge_pbar_nentries/100) * (rge_pbar_divcntr);
+        rge_pbar_splitter = (rge_pbar_nentries/100) * rge_pbar_divcntr;
         return 1;
     }
 
-    rge_pbar_entrysplitter = -1;
+    rge_pbar_splitter = -1;
     printf("\n");
     return 2;
 }

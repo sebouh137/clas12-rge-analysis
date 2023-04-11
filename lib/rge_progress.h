@@ -20,13 +20,13 @@
 
 // --+ internal +---------------------------------------------------------------
 /** Length (in chars) of the progress bar. */
-static int RGE_PBARLENGTH              = 50;
+static int RGE_PBARLENGTH         = 50;
 /** Total number of entries. */
-static long int rge_pbar_nentries      =  0;
+static long int rge_pbar_nentries =  0;
 /** Counter to check in which part of the progress bar we are. */
-static long int rge_pbar_divcntr       =  0;
+static long int rge_pbar_divcntr  =  0;
 /** Counter to check if the bar needs to be updated or not. */
-static long int rge_pbar_entrysplitter =  0;
+static long int rge_pbar_splitter =  0;
 
 // --+ library +----------------------------------------------------------------
 /** Set the rge_pbar_nentries state variable. */
@@ -36,9 +36,10 @@ int rge_pbar_set_nentries(long int in_nentries);
 int rge_pbar_reset();
 
 /**
- * Update a progress bar counting the number of entries processed.
+ * Update a progress bar counting the number of entries processed. This should
+ *     be called every time entry changes.
  *
- * @param entry : number of the event being processed.
+ * @param entry : number of the entry being processed.
  * @return      : 0 if no change was made, 1 otherwise, and 2 if bar is full.
  */
 int rge_pbar_update(long int entry);
