@@ -845,7 +845,7 @@ static int run(
 
 /**
  * Handle arguments for make_ntuples using optarg. Error codes used are
- *     explained in the rge_handle_err() function.
+ *     explained in the handle_err() function.
  */
 static int handle_args(
         int argc, char **argv, char **in_filename, char **out_filename,
@@ -955,5 +955,5 @@ int main(int argc, char **argv) {
     if (work_dir     != NULL) free(work_dir);
 
     // Return errcode.
-    return rge_print_usage(usage_message, rge_handle_err());
+    return rge_print_usage(usage_message);
 }

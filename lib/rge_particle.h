@@ -205,7 +205,7 @@ int rge_set_pid(
 
 /**
  * Fill array to be stored in ntuples_%06d.root file. Array is of constant size
- * VAR_LIST_SIZE, and the order of variables can be seen in constants.h.
+ *     VAR_LIST_SIZE, and the order of variables can be seen in constants.h.
  */
 int rge_fill_ntuples_arr(
         Float_t *arr, rge_particle p, rge_particle e, int run_no, int evn,

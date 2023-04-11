@@ -19,6 +19,18 @@
 #include <stdio.h>
 #include <map>
 
+// --+ internal +---------------------------------------------------------------
+/**
+ * Entry point to all error handling. Decides how to react to rge_errno.
+ *
+ * @return: error code, handled by rge_print_usage().
+ *   * 0 : no error was found.
+ *   * 1 : a user error was found.
+ *   * 2 : a programmer error was found.
+ */
+static int handle_err();
+
+// --+ library +----------------------------------------------------------------
 /**
  * Error number. Initially defined to RGEERR_UNDEFINED to check if the program
  *     ends abruptly without setting an error number.
@@ -29,25 +41,14 @@
 extern unsigned int rge_errno;
 
 /**
- * Entry point to all error handling. Decides how to react to errno.
- *
- * @return: error code, handled by rge_print_usage().
- *   * 0 : no error was found.
- *   * 1 : a user error was found.
- *   * 2 : a programmer error was found.
- */
-int rge_handle_err();
-
-/**
  * Print usage and exit.
  *
  * @param msg : usage message.
- * @param err : error code based on output from handle_err().
  * @return    : err received from handle_err().
  */
-int rge_print_usage(const char *msg, int err);
+int rge_print_usage(const char *msg);
 
-// --+ ERRCODES +---------------------------------------------------------------
+// --+ error numbers +----------------------------------------------------------
 // --+   0 -   9 basic functionalities +----------------------------------------
 #define RGEERR_NOERR                     0
 #define RGEERR_USAGE                     1

@@ -15,6 +15,7 @@
 
 #include "../lib/rge_err_handler.h"
 
+// --+ internal +---------------------------------------------------------------
 /**
  * Map linking every error number with an explanation script for the user.
  *
@@ -132,9 +133,7 @@ static const std::map<unsigned int, const char *> ERRMAP = {
             "acc_corr and define a binning scheme to use this feature."}
 };
 
-unsigned int rge_errno = RGEERR_UNDEFINED;
-
-int rge_handle_err() {
+int handle_err() {
     if (rge_errno == RGEERR_NOERR) return 0; // No error.
     if (rge_errno == RGEERR_USAGE) return 1; // Print usage().
 
@@ -150,7 +149,11 @@ int rge_handle_err() {
     }
 }
 
-int rge_print_usage(const char *msg, int err) {
+// --+ library +----------------------------------------------------------------
+unsigned int rge_errno = RGEERR_UNDEFINED;
+
+int rge_print_usage(const char *msg) {
+    int err = handle_err();
     if (err == 1) fprintf(stderr, "\n%s\n", msg);
     return err;
 }
