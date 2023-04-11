@@ -627,7 +627,7 @@ static int run(
 
         // Apply geometry cuts.
         if (geometry_cuts) {
-            if (calc_magnitude(vars[A_VX], vars[A_VY]) > VXVYCUT) continue;
+            if (rge_calc_magnitude(vars[A_VX], vars[A_VY]) > VXVYCUT) continue;
             if (VZLOWCUT > vars[A_VZ] || vars[A_VZ] > VZHIGHCUT)  continue;
         }
 

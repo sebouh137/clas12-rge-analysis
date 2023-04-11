@@ -118,7 +118,7 @@ static int count_entries(
         // Find position of event.
         if (in_deg) {
             double tmp; // s_bin is Float_t, so we need a conversion step.
-            if (to_rad(s_bin[4], &tmp)) return 1;
+            if (rge_to_rad(s_bin[4], &tmp)) return 1;
             s_bin[4] = tmp;
         }
         int idx[5];
@@ -318,7 +318,7 @@ static int handle_args(
     // Convert phi_PQ binning to radians.
     for (long unsigned int bbi = 0; bbi < nedges[4]; ++bbi) {
         double tmp;
-        if (to_rad(edges[4][bbi], &tmp)) return 1;
+        if (rge_to_rad(edges[4][bbi], &tmp)) return 1;
         edges[4][bbi] = tmp;
     }
 

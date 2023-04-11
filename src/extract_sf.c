@@ -231,7 +231,7 @@ static int run(
             double px = particle.px->at(pindex);
             double py = particle.py->at(pindex);
             double pz = particle.pz->at(pindex);
-            double total_p = calc_magnitude(px, py, pz);
+            double total_p = rge_calc_magnitude(px, py, pz);
 
             // Compute energy deposited in each calorimeter per sector.
             double sf_E[ncals][NSECTORS];

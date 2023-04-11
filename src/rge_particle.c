@@ -114,7 +114,7 @@ double phi_lab(rge_particle p) {
 }
 
 double momentum(rge_particle p) {
-    return calc_magnitude(p.px, p.py, p.pz);
+    return rge_calc_magnitude(p.px, p.py, p.pz);
 }
 
 double Q2(rge_particle p, double bE) {
@@ -150,7 +150,7 @@ double W2(rge_particle p, double bE) {
 
 double theta_pq(rge_particle p, rge_particle e, double bE) {
     if (!(p.is_hadron && e.is_trigger_electron)) return 0;
-    return calc_angle(-e.px, -e.py, bE-e.pz, p.px, p.py, p.pz);
+    return rge_calc_angle(-e.px, -e.py, bE-e.pz, p.px, p.py, p.pz);
 }
 
 double phi_pq(rge_particle p, rge_particle e, double bE) {
@@ -162,12 +162,12 @@ double phi_pq(rge_particle p, rge_particle e, double bE) {
     // Analyser uses gp isntead of p, i.e. the momentum of virtual photon.
     double phi_z = M_PI - atan2(gpy, gpx);
 
-    rotate_z(&gpx, &gpy, phi_z);
-    rotate_z(&ppx, &ppy, phi_z);
+    rge_rotate_z(&gpx, &gpy, phi_z);
+    rge_rotate_z(&ppx, &ppy, phi_z);
 
-    double phi_y = calc_angle(gpx, gpy, gpz, 0, 0, 1);
+    double phi_y = rge_calc_angle(gpx, gpy, gpz, 0, 0, 1);
 
-    rotate_y(&ppx, &ppz, phi_y);
+    rge_rotate_y(&ppx, &ppz, phi_y);
 
     return atan2(ppy, ppx);
 }

@@ -20,16 +20,16 @@
 #include "rge_err_handler.h"
 
 /** Transform an angle a from degrees to radians. */
-int to_rad(double src, double *dest);
+int rge_to_rad(double src, double *dest);
 
 /** Compute a 2D vector's magntitude from its x and y components. */
-double calc_magnitude(double x, double y);
+double rge_calc_magnitude(double x, double y);
 
 /** Compute a 3D vector's magnitude from its x, y, and z components. */
-double calc_magnitude(double x, double y, double z);
+double rge_calc_magnitude(double x, double y, double z);
 
 /** Compute the angle between two vectors (x1,y1,z1) and (x2,y2,z2). */
-double calc_angle(
+double rge_calc_angle(
         double x1, double y1, double z1, double x2, double y2, double z2
 );
 
@@ -40,7 +40,7 @@ double calc_angle(
  * @param z:  z coordinate of the vector. This variable *will be updated*.
  * @param th: theta angle (in radians) for the rotation.
  */
-void rotate_y(double *x, double *z, double th);
+void rge_rotate_y(double *x, double *z, double th);
 
 /**
  * Rotate a 3D vector around the z axis by an angle theta.
@@ -49,6 +49,6 @@ void rotate_y(double *x, double *z, double th);
  * @param y:  y coordinate of the vector. This variable *will be updated*.
  * @param th: theta angle (in radians) for the rotation.
  */
-void rotate_z(double *x, double *y, double th);
+void rge_rotate_z(double *x, double *y, double th);
 
 #endif

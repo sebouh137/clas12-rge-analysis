@@ -15,7 +15,7 @@
 
 #include "../lib/rge_math_utils.h"
 
-int to_rad(double src, double *dest) {
+int rge_to_rad(double src, double *dest) {
     // Check angle validity.
     if (-180 > src || src > 180) {
         rge_errno = RGEERR_ANGLEOUTOFRANGE;
@@ -27,29 +27,29 @@ int to_rad(double src, double *dest) {
     return 0;
 }
 
-double calc_magnitude(double x, double y) {
+double rge_calc_magnitude(double x, double y) {
     return sqrt(x*x + y*y);
 }
 
-double calc_magnitude(double x, double y, double z) {
+double rge_calc_magnitude(double x, double y, double z) {
     return sqrt(x*x + y*y + z*z);
 }
 
-double calc_angle(
+double rge_calc_angle(
         double x1, double y1, double z1, double x2, double y2, double z2
 ) {
-    return acos((x1*x2 + y1*y2 + z1*z2)/(calc_magnitude(x1,y1,z1) *
-            calc_magnitude(x2,y2,z2)));
+    return acos((x1*x2 + y1*y2 + z1*z2)/(rge_calc_magnitude(x1,y1,z1) *
+            rge_calc_magnitude(x2,y2,z2)));
 }
 
-void rotate_y(double *x, double *z, double th) {
+void rge_rotate_y(double *x, double *z, double th) {
     double x_prev = *x;
     double z_prev = *z;
     *x =  x_prev*cos(th) + z_prev*sin(th);
     *z = -x_prev*sin(th) + z_prev*cos(th);
 }
 
-void rotate_z(double *x, double *y, double th) {
+void rge_rotate_z(double *x, double *y, double th) {
     double x_prev = *x;
     double y_prev = *y;
     *x = x_prev*cos(th) - y_prev*sin(th);
