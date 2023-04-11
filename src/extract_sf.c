@@ -47,7 +47,7 @@ static int run(
     sprintf(out_rootfilename, "%s/sf_study_%06d.root", work_dir, run_no);
     TFile *out_rootfile = TFile::Open(out_rootfilename, "RECREATE");
     if (!out_rootfile || out_rootfile->IsZombie()) {
-        rge_errno = ERR_OUTPUTROOTFAILED;
+        rge_errno = RGEERR_OUTPUTROOTFAILED;
         return 1;
     }
 
@@ -56,14 +56,14 @@ static int run(
     sprintf(out_textfilename, "%s/sf_params_%06d.txt", data_dir, run_no);
     FILE *out_textfile = fopen(out_textfilename, "w");
     if (out_textfile == NULL) {
-        rge_errno = ERR_OUTPUTTEXTFAILED;
+        rge_errno = RGEERR_OUTPUTTEXTFAILED;
         return 1;
     }
 
     // Access input file.
     TFile *f_in = TFile::Open(in_filename, "READ");
     if (!f_in || f_in->IsZombie()) {
-        rge_errno = ERR_BADINPUTFILE;
+        rge_errno = RGEERR_BADINPUTFILE;
         return 1;
     }
 
@@ -207,7 +207,7 @@ static int run(
                 int sector_i = calorimeter.sector->at(entry_i) - 1;
                 if (sector_i == -1) continue;
                 if (sector_i < -1 || sector_i > NSECTORS-1) {
-                    rge_errno = ERR_INVALIDCALSECTOR;
+                    rge_errno = RGEERR_INVALIDCALSECTOR;
                     return 1;
                 }
 
@@ -226,7 +226,7 @@ static int run(
                                 calorimeter.energy->at(entry_i);
                         break;
                     default:
-                        rge_errno = ERR_INVALIDCALLAYER;
+                        rge_errno = RGEERR_INVALIDCALLAYER;
                         return 1;
                 }
             }
@@ -402,7 +402,7 @@ static int run(
     f_in ->Close();
     out_rootfile->Close();
 
-    rge_errno = ERR_NOERR;
+    rge_errno = RGEERR_NOERR;
     return 0;
 }
 
@@ -419,7 +419,7 @@ static int handle_args(
     while ((opt = getopt(argc, argv, "-hn:w:d:")) != -1) {
         switch (opt) {
             case 'h':
-                rge_errno = ERR_USAGE;
+                rge_errno = RGEERR_USAGE;
                 return 1;
             case 'n':
                 if (process_nentries(nevn, optarg)) return 1;
@@ -437,7 +437,7 @@ static int handle_args(
                 strcpy(*in_filename, optarg);
                 break;
             default:
-                rge_errno = ERR_BADOPTARGS;
+                rge_errno = RGEERR_BADOPTARGS;
                 return 1;
         }
     }
@@ -458,7 +458,7 @@ static int handle_args(
 
     // Check positional argument.
     if (*in_filename == NULL) {
-        rge_errno = ERR_NOINPUTFILE;
+        rge_errno = RGEERR_NOINPUTFILE;
         return 1;
     }
 
@@ -482,7 +482,7 @@ int main(int argc, char **argv) {
     );
 
     // Run.
-    if (rge_errno == ERR_UNDEFINED && err == 0) {
+    if (rge_errno == RGEERR_UNDEFINED && err == 0) {
         run(in_filename, work_dir, data_dir, nevn, run_no);
     }
 

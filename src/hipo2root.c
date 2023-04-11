@@ -130,7 +130,7 @@ static int run(
     tree->Write();
     out_file->Close();
 
-    rge_errno = ERR_NOERR;
+    rge_errno = RGEERR_NOERR;
     return 0;
 }
 
@@ -147,7 +147,7 @@ static int handle_args(
     while ((opt = getopt(argc, argv, "-hfn:w:")) != -1) {
         switch (opt) {
             case 'h':
-                rge_errno = ERR_USAGE;
+                rge_errno = RGEERR_USAGE;
                 return 1;
             case 'f':
                 *use_fmt = true;
@@ -164,7 +164,7 @@ static int handle_args(
                 strcpy(*in_filename, optarg);
                 break;
             default:
-                rge_errno = ERR_BADOPTARGS;
+                rge_errno = RGEERR_BADOPTARGS;
                 return 1;
         }
     }
@@ -177,7 +177,7 @@ static int handle_args(
 
     // Check that a positional argument was given.
     if (*in_filename == NULL) {
-        rge_errno = ERR_NOINPUTFILE;
+        rge_errno = RGEERR_NOINPUTFILE;
         return 1;
     }
 
@@ -200,7 +200,7 @@ int main(int argc, char **argv) {
     );
 
     // Run.
-    if (rge_errno == ERR_UNDEFINED) {
+    if (rge_errno == RGEERR_UNDEFINED) {
         run(in_filename, work_dir, use_fmt, run_no, event_max);
     }
 

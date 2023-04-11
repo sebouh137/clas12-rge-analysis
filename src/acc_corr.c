@@ -37,11 +37,11 @@ const char *usage_message =
 "                the simulation file.\n"
 " * -D         : flag to tell program that generated events are in degrees\n"
 "                instead of radians.\n\n"
-"    Get the 5-dimensional acceptance correction factors for Q2, nu, z_h, Pt2,\n"
-"    and phi_PQ. For each optional argument, an array of doubles is expected.\n"
-"    The first double will be the lower limit of the leftmost bin, the final\n"
-"    double will be the upper limit of the rightmost bin, and all doubles\n"
-"    inbetween will be the separators between each bin.\n";
+"    Get the 5-dimensional acceptance correction factors for Q2, nu, z_h,\n"
+"    Pt2, and phi_PQ. For each optional argument, an array of doubles is\n"
+"    expected. The first double will be the lower limit of the leftmost bin,\n"
+"    the final double will be the upper limit of the rightmost bin, and all\n"
+"    doubles inbetween will be the separators between each bin.\n";
 
 /**
  * Count number of events in a tree for each bin, for a given pid. The number of
@@ -143,24 +143,24 @@ static int run(
     printf("\nOpening generated events file...\n");
     TFile *thrown_file = TFile::Open(thrown_filename, "READ");
     if (!thrown_file || thrown_file->IsZombie()) {
-        rge_errno = ERR_WRONGGENFILE;
+        rge_errno = RGEERR_WRONGGENFILE;
         return 1;
     }
     TNtuple *thrown   = thrown_file->Get<TNtuple>(TREENAMETHRN);
     if (thrown == NULL) {
-        rge_errno = ERR_BADGENFILE;
+        rge_errno = RGEERR_BADGENFILE;
         return 1;
     }
 
     printf("Opening simulated events file...\n");
     TFile *simul_file = TFile::Open(simul_filename, "READ");
     if (!simul_file || simul_file->IsZombie()) {
-        rge_errno = ERR_WRONGSIMFILE;
+        rge_errno = RGEERR_WRONGSIMFILE;
         return 1;
     }
     TTree *simul = simul_file->Get<TTree>(TREENAMEDATA);
     if (simul == NULL) {
-        rge_errno = ERR_BADSIMFILE;
+        rge_errno = RGEERR_BADSIMFILE;
         return 1;
     }
 
@@ -168,7 +168,7 @@ static int run(
     char out_filename[PATH_MAX];
     sprintf(out_filename, "%s/acc_corr.txt", data_dir);
     if (!access(out_filename, F_OK)) {
-        rge_errno = ERR_OUTFILEEXISTS;
+        rge_errno = RGEERR_OUTFILEEXISTS;
         return 1;
     }
     FILE *out_file = fopen(out_filename, "w");
@@ -240,7 +240,7 @@ static int run(
     for (int bi = 0; bi < 5; ++bi) free(edges[bi]);
     free(edges);
 
-    rge_errno = ERR_NOERR;
+    rge_errno = RGEERR_NOERR;
     return 0;
 }
 
@@ -254,7 +254,7 @@ static int handle_args(
     while ((opt = getopt(argc, argv, "hq:n:z:p:f:g:s:d:D")) != -1) {
         switch (opt) {
         case 'h':
-            rge_errno = ERR_USAGE;
+            rge_errno = RGEERR_USAGE;
             return 1;
         case 'q':
             grab_multiarg(argc, argv, &optind, &(nedges[0]), &(edges[0]));
@@ -292,7 +292,7 @@ static int handle_args(
     // Check that all arrays were defined.
     for (int bi = 0; bi < 5; ++bi) {
         if (nedges[bi] == 0) {
-            rge_errno = ERR_NOEDGE;
+            rge_errno = RGEERR_NOEDGE;
             return 1;
         }
     }
@@ -300,7 +300,7 @@ static int handle_args(
     // Check that all arrays have *at least* two values.
     for (int bi = 0; bi < 5; ++bi) {
         if (nedges[bi]  < 2) {
-            rge_errno = ERR_BADEDGES;
+            rge_errno = RGEERR_BADEDGES;
             return 1;
         }
     }
@@ -320,14 +320,14 @@ static int handle_args(
 
     // Check genfile.
     if (*thrown_filename == NULL) {
-        rge_errno = ERR_NOGENFILE;
+        rge_errno = RGEERR_NOGENFILE;
         return 1;
     }
     if (check_root_filename(*thrown_filename)) return 1;
 
     // Check simfile.
     if (*simul_filename == NULL) {
-        rge_errno = ERR_NOSIMFILE;
+        rge_errno = RGEERR_NOSIMFILE;
         return 1;
     }
     if (check_root_filename(*simul_filename)) return 1;
@@ -352,7 +352,7 @@ int main(int argc, char **argv) {
     );
 
     // Run.
-    if (rge_errno == ERR_UNDEFINED && err == 0) {
+    if (rge_errno == RGEERR_UNDEFINED && err == 0) {
         run(thrown_filename, simul_filename, data_dir, nedges, edges, in_deg);
     }
 

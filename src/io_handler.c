@@ -35,7 +35,7 @@ int get_run_no(char *filename, int *run_no) {
     // Find position of dot in string.
     char *dot_pos = strrchr(filename, '.');
     if (!dot_pos) {
-        rge_errno = ERR_NODOTFILENAME;
+        rge_errno = RGEERR_NODOTFILENAME;
         return 1; // Couldn't find dot.
     }
 
@@ -48,7 +48,7 @@ int get_run_no(char *filename, int *run_no) {
     errno = 0;
     *run_no = strtoul(run_no_str, &eptr, 10);
     if (errno == EINVAL || errno == ERANGE) {
-        rge_errno = ERR_BADFILENAMEFORMAT;
+        rge_errno = RGEERR_BADFILENAMEFORMAT;
         return 1; // Value not supported.
     }
 
@@ -86,7 +86,7 @@ int get_beam_energy(int run_no, double *beam_energy) {
             *beam_energy = BE12933;
             break;
         default:
-            rge_errno = ERR_UNIMPLEMENTEDBEAMENERGY;
+            rge_errno = RGEERR_UNIMPLEMENTEDBEAMENERGY;
             return 1;
     }
 
@@ -102,13 +102,13 @@ int get_beam_energy(int run_no, double *beam_energy) {
 int check_root_filename(char *filename) {
     // Check that filename extension is correct.
     if (!strstr(filename, ".root")) {
-        rge_errno = ERR_INVALIDROOTFILE;
+        rge_errno = RGEERR_INVALIDROOTFILE;
         return 1;
     }
 
     // Check if file exists.
     if (access(filename, F_OK)) {
-        rge_errno = ERR_NOINPUTFILE;
+        rge_errno = RGEERR_NOINPUTFILE;
         return 1;
     }
 
@@ -140,8 +140,8 @@ int handle_root_filename(char *filename, int *run_no) {
     int err = handle_root_filename(filename, run_no, &dump);
 
     // We don't care about missing beam energy here.
-    if (rge_errno == ERR_UNIMPLEMENTEDBEAMENERGY) {
-        rge_errno = ERR_NOERR;
+    if (rge_errno == RGEERR_UNIMPLEMENTEDBEAMENERGY) {
+        rge_errno = RGEERR_NOERR;
         err = 0;
     }
 
@@ -165,7 +165,7 @@ int process_fmtnlayers(long int *nlayers, char *arg) {
             *nlayers != 0 &&
             (FMTMINLAYERS > *nlayers || *nlayers > FMTNLAYERS)
     )) {
-        rge_errno = ERR_INVALIDFMTNLAYERS;
+        rge_errno = RGEERR_INVALIDFMTNLAYERS;
         return 1;
     }
     return 0;
@@ -175,15 +175,15 @@ int process_fmtnlayers(long int *nlayers, char *arg) {
 int process_nentries(long int *nentries, char *arg) {
     int err = run_strtol(nentries, arg);
     if (err == 1) {
-        rge_errno = ERR_INVALIDENTRIES;
+        rge_errno = RGEERR_INVALIDENTRIES;
         return 1;
     }
     if (err == 2) {
-        rge_errno = ERR_NENTRIESLARGE;
+        rge_errno = RGEERR_NENTRIESLARGE;
         return 1;
     }
     if (*nentries <= 0) {
-        rge_errno = ERR_NENTRIESNEGATIVE;
+        rge_errno = RGEERR_NENTRIESNEGATIVE;
         return 1;
     }
 
@@ -198,11 +198,11 @@ int process_nentries(long int *nentries, char *arg) {
  */
 int check_hipo_filename(char *filename) {
     if (!strstr(filename, ".hipo")) {
-        rge_errno = ERR_INVALIDHIPOFILE;
+        rge_errno = RGEERR_INVALIDHIPOFILE;
         return 1;
     }
     if (access(filename, F_OK)) {
-        rge_errno = ERR_NOINPUTFILE;
+        rge_errno = RGEERR_NOINPUTFILE;
         return 1;
     }
     return 0;

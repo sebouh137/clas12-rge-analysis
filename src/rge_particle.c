@@ -98,7 +98,7 @@ int match_pid(
             if (recon_match) *pid = hypothesis;
             break;
         default:
-            rge_errno = ERR_UNSUPPORTEDPID;
+            rge_errno = RGEERR_UNSUPPORTEDPID;
             return 1;
     }
     return 0;
@@ -326,7 +326,7 @@ int rge_fill_ntuples_arr(
     arr[A_NU] = nu(e, beam_E);
     arr[A_XB] = Xb(e, beam_E);
     arr[A_W2] = W2(e, beam_E);
-    if (rge_errno == ERR_PIDNOTFOUND) return 1;
+    if (rge_errno == RGEERR_PIDNOTFOUND) return 1;
 
     // SIDIS -- if p is trigger electron, all will be 0 by default.
     arr[A_ZH]      = zh(p, e, beam_E);

@@ -156,7 +156,7 @@ static int get_deposited_energy(
         else if (lyr == ECIN_LYR) *energy_ECIN += calorimeter.energy->at(i);
         else if (lyr == ECOU_LYR) *energy_ECOU += calorimeter.energy->at(i);
         else {
-            rge_errno = ERR_INVALIDCALLAYER;
+            rge_errno = RGEERR_INVALIDCALLAYER;
             return 1;
         }
     }
@@ -193,7 +193,7 @@ static int count_photoelectrons(
         if      (detector == HTCC_ID) *nphe_HTCC += cherenkov.nphe->at(i);
         else if (detector == LTCC_ID) *nphe_LTCC += cherenkov.nphe->at(i);
         else {
-            rge_errno = ERR_INVALIDCHERENKOVID;
+            rge_errno = RGEERR_INVALIDCHERENKOVID;
             return 1;
         }
     }
@@ -217,13 +217,13 @@ static int run(
     // Access input file.
     TFile *file_in  = TFile::Open(filename_in, "READ");
     if (!file_in || file_in->IsZombie()) {
-        rge_errno = ERR_BADINPUTFILE;
+        rge_errno = RGEERR_BADINPUTFILE;
         return 1;
     }
 
     // If fmt_nlayers != 0, check that FMT::Tracks bank exists.
     if (fmt_nlayers != 0 && file_in->GetListOfKeys()->Contains(BANKFMTTRACKS)) {
-        rge_errno = ERR_NOFMTBANK;
+        rge_errno = RGEERR_NOFMTBANK;
         return 1;
     }
 
@@ -240,7 +240,7 @@ static int run(
     // Create TTree and TNTuples.
     TTree *tree_in = file_in->Get<TTree>(TREENAMEDATA);
     if (tree_in == NULL) {
-        rge_errno = ERR_BADROOTFILE;
+        rge_errno = RGEERR_BADROOTFILE;
         return 1;
     }
     TNtuple *tree_out;
@@ -450,7 +450,7 @@ static int run(
     file_in ->Close();
     file_out->Close();
 
-    rge_errno = ERR_NOERR;
+    rge_errno = RGEERR_NOERR;
     return 0;
 }
 
@@ -465,7 +465,7 @@ static int handle_args(
     while ((opt = getopt(argc, argv, "-hDf:n:w:d:")) != -1) {
         switch (opt) {
             case 'h':
-                rge_errno = ERR_USAGE;
+                rge_errno = RGEERR_USAGE;
                 return 1;
             case 'D':
                 *debug = true;
@@ -489,7 +489,7 @@ static int handle_args(
                 strcpy(*filename_in, optarg);
                 break;
             default:
-                rge_errno = ERR_BADOPTARGS;
+                rge_errno = RGEERR_BADOPTARGS;
                 return 1;
         }
     }
@@ -511,7 +511,7 @@ static int handle_args(
 
     // Check positional argument.
     if (*filename_in == NULL) {
-        rge_errno = ERR_NOINPUTFILE;
+        rge_errno = RGEERR_NOINPUTFILE;
         return 1;
     }
     if (handle_root_filename(*filename_in, run_no, energy_beam)) return 1;
@@ -537,7 +537,7 @@ int main(int argc, char **argv) {
     );
 
     // Run.
-    if (rge_errno == ERR_UNDEFINED && err == 0) {
+    if (rge_errno == RGEERR_UNDEFINED && err == 0) {
         run(
                 filename_in, work_dir, data_dir, debug, fmt_nlayers, n_events,
                 run_no, energy_beam

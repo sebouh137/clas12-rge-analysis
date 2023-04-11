@@ -24,119 +24,119 @@
  */
 static const std::map<unsigned int, const char *> ERRMAP = {
     // Basic functionalities.
-    {ERR_NOERR, ""}, // Handled before accessing this map.
-    {ERR_USAGE, ""}, // Handled before accessing this map.
-    {ERR_UNDEFINED,
-            "rge_errno = ERR_UNDEFINED. Something is wrong."},
+    {RGEERR_NOERR, ""}, // Handled before accessing this map.
+    {RGEERR_USAGE, ""}, // Handled before accessing this map.
+    {RGEERR_UNDEFINED,
+            "rge_errno = RGEERR_UNDEFINED. Something is wrong."},
 
     // Argument errors.
-    {ERR_BADOPTARGS,
+    {RGEERR_BADOPTARGS,
             "Bad usage of optional arguments."},
-    {ERR_INVALIDENTRIES,
+    {RGEERR_INVALIDENTRIES,
             "Number of entries is invalid. Input a valid number after -n"},
-    {ERR_NENTRIESLARGE,
+    {RGEERR_NENTRIESLARGE,
             "Number of entries is too large. Input a number smaller than "
             "LONG_MAX."},
-    {ERR_NENTRIESNEGATIVE,
+    {RGEERR_NENTRIESNEGATIVE,
             "Number of entries should be greater than 0."},
-    {ERR_NOEDGE,
+    {RGEERR_NOEDGE,
             "Edges for the five binning variables should be specified."},
-    {ERR_BADEDGES,
+    {RGEERR_BADEDGES,
             "All edges should have *at least* two values -- a minimum and a "
             "maximum."},
-    {ERR_INVALIDFMTNLAYERS,
+    {RGEERR_INVALIDFMTNLAYERS,
             "Number of FMT layers is invalid. fmt_nlayers should be at least "
             "FMTMINLAYERS and at most FMTNLAYERS."},
-    {ERR_INVALIDACCEPTANCEOPT,
+    {RGEERR_INVALIDACCEPTANCEOPT,
             "Option -A is only valid if an acceptance correction file is "
             "specified using -a."},
 
     // File errors.
-    {ERR_NOINPUTFILE,
+    {RGEERR_NOINPUTFILE,
             "Input file doesn't exist."},
-    {ERR_NOSAMPFRACFILE,
+    {RGEERR_NOSAMPFRACFILE,
             // NOTE. A smoother behaviour here would be that the program calls
             //       extract_sf itself.
             "No sampling fraction file is available for this run number."},
-    {ERR_NOACCCORRFILE,
+    {RGEERR_NOACCCORRFILE,
             "Failed to access acceptance correction file."},
-    {ERR_NOGENFILE,
+    {RGEERR_NOGENFILE,
             "A generated ntuples file is required to obtain acceptance "
             "correction."},
-    {ERR_NOSIMFILE,
+    {RGEERR_NOSIMFILE,
             "A simulation ntuples file is required to obtain acceptance "
             "correction."},
-    {ERR_NODOTFILENAME,
+    {RGEERR_NODOTFILENAME,
             "Couldn't find a `.` in filename. Provide a valid file."},
-    {ERR_BADFILENAMEFORMAT,
+    {RGEERR_BADFILENAMEFORMAT,
             "Couldn't extract run number from filename. Follow filename "
             "conventions specified in usage()."},
-    {ERR_INVALIDROOTFILE,
+    {RGEERR_INVALIDROOTFILE,
             "Root filename should finish with the `.root` extension."},
-    {ERR_INVALIDHIPOFILE,
+    {RGEERR_INVALIDHIPOFILE,
             "Hipo filename should finish with the `.hipo` extension."},
-    {ERR_BADINPUTFILE,
+    {RGEERR_BADINPUTFILE,
             "Failed to open input file."},
-    {ERR_BADGENFILE,
+    {RGEERR_BADGENFILE,
             "Failed to open generated ntuples file."},
-    {ERR_BADSIMFILE,
+    {RGEERR_BADSIMFILE,
             "Failed to open simulated ntuples file."},
-    {ERR_BADROOTFILE,
+    {RGEERR_BADROOTFILE,
             "Couldn't extract tree/ntuple with TREENAMEDATA from root file."},
-    {ERR_WRONGGENFILE,
+    {RGEERR_WRONGGENFILE,
             "Generated ntuples file is not a valid root file."},
-    {ERR_WRONGSIMFILE,
+    {RGEERR_WRONGSIMFILE,
             "Simulation ntuples file is not a valid root file."},
-    {ERR_OUTFILEEXISTS,
+    {RGEERR_OUTFILEEXISTS,
             "Output file already exists."},
-    {ERR_OUTPUTROOTFAILED,
+    {RGEERR_OUTPUTROOTFAILED,
             "Failed to create output root file."},
-    {ERR_OUTPUTTEXTFAILED,
+    {RGEERR_OUTPUTTEXTFAILED,
             "Failed to create output text file."},
 
     // Detector errors.
-    {ERR_INVALIDCALLAYER,
+    {RGEERR_INVALIDCALLAYER,
             "Invalid layer in the calorimeter bank. Check bank integrity."},
-    {ERR_INVALIDCALSECTOR,
+    {RGEERR_INVALIDCALSECTOR,
             "Invalid sector in the calorimeter bank. Check bank integrity."},
-    {ERR_INVALIDCHERENKOVID,
+    {RGEERR_INVALIDCHERENKOVID,
             "Invalid detector ID in the cherenkov bank. Check bank integrity."},
-    {ERR_NOFMTBANK,
+    {RGEERR_NOFMTBANK,
             "FMT::Tracks bank not found in input. No FMT analysis is available "
             "for this input file."},
 
     // Program errors.
-    {ERR_UNIMPLEMENTEDBEAMENERGY,
+    {RGEERR_UNIMPLEMENTEDBEAMENERGY,
             "No beam energy available in constants for run number. Add it from "
             "RCDB."},
-    {ERR_2DACCEPTANCEPLOT,
+    {RGEERR_2DACCEPTANCEPLOT,
             "2D acceptance correction plots haven't been implemented yet."},
-    {ERR_WRONGACCVARS,
+    {RGEERR_WRONGACCVARS,
             "Erroneous variables in the ACC_VX arr. Check constants."},
 
     // Particle errors.
-    {ERR_PIDNOTFOUND,
+    {RGEERR_PIDNOTFOUND,
             "Program looked for an unavailable PID. Check that all requested "
             "PIDs are in PID_MAP in pid_utils file."},
-    {ERR_UNSUPPORTEDPID,
+    {RGEERR_UNSUPPORTEDPID,
             "Program tried to identify a particle with an unsupported PID. "
             "Check that all hypotheses are implemented in match_pid function in"
             " rge_particle."},
 
     // Miscellaneous.
-    {ERR_ANGLEOUTOFRANGE,
+    {RGEERR_ANGLEOUTOFRANGE,
             "Invalid angle value. By convention, all angles should be between "
             "-180 (-pi) and 180 (pi)."},
-    {ERR_NOACCDATA,
+    {RGEERR_NOACCDATA,
             "There's no acceptance correction data for the selected PID. Run "
             "acc_corr and define a binning scheme to use this feature."}
 };
 
-unsigned int rge_errno = ERR_UNDEFINED;
+unsigned int rge_errno = RGEERR_UNDEFINED;
 
 int rge_handle_err() {
-    if (rge_errno == ERR_NOERR) return 0; // No error.
-    if (rge_errno == ERR_USAGE) return 1; // Print usage().
+    if (rge_errno == RGEERR_NOERR) return 0; // No error.
+    if (rge_errno == RGEERR_USAGE) return 1; // Print usage().
 
     // Print error.
     if (ERRMAP.contains(rge_errno)) {

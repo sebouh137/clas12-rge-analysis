@@ -27,7 +27,7 @@
  */
 int get_sf_params(char *filename, double sf[NSECTORS][SF_NPARAMS][2]) {
     if (access(filename, F_OK) != 0) {
-        rge_errno = ERR_NOSAMPFRACFILE;
+        rge_errno = RGEERR_NOSAMPFRACFILE;
         return 1;
     }
     FILE *file_in = fopen(filename, "r");
@@ -157,7 +157,7 @@ int read_acc_corr_file(
 ) {
     // Access file.
     if (access(acc_filename, F_OK) != 0) {
-        rge_errno = ERR_NOACCCORRFILE;
+        rge_errno = RGEERR_NOACCCORRFILE;
         return 1;
     }
     FILE *acc_file = fopen(acc_filename, "r");

@@ -51,7 +51,7 @@ static unsigned int positive_size = 0;
 // --+ library +----------------------------------------------------------------
 /**
  * Get charge of particle associated to PID. If PID is not found in PID_MAP,
- *     sets rge_errno to ERR_PIDNOTFOUND and returns 1.
+ *     sets rge_errno to RGEERR_PIDNOTFOUND and returns 1.
  *
  * @param pid    : pid value of the charge to look for.
  * @param charge : pointer to integer where to write charge.
@@ -61,7 +61,7 @@ int rge_get_charge(int pid, int *charge);
 
 /**
  * Get mass of particle associated to pid. If PID is not found in PID_MAP, sets
- *     rge_errno to ERR_PIDNOTFOUND and returns 1.
+ *     rge_errno to RGEERR_PIDNOTFOUND and returns 1.
  *
  * @param pid  : pid value of the mass to look for.
  * @param mass : pointer to double where to write mass.

@@ -59,7 +59,7 @@ int pid_invalid(int pid) {
 // --+ library +----------------------------------------------------------------
 int rge_get_charge(int pid, int *charge) {
     if (pid_invalid(pid)) {
-        rge_errno = ERR_PIDNOTFOUND;
+        rge_errno = RGEERR_PIDNOTFOUND;
         return 1;
     }
 
@@ -69,7 +69,7 @@ int rge_get_charge(int pid, int *charge) {
 
 int rge_get_mass(int pid, double *mass) {
     if (pid_invalid(pid)) {
-        rge_errno = ERR_PIDNOTFOUND;
+        rge_errno = RGEERR_PIDNOTFOUND;
         return 1;
     }
 
