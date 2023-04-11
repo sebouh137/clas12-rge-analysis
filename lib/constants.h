@@ -244,12 +244,6 @@ extern const char *SFARR2D[4]; // Sampling Fraction (SF) 2D arr names.
 extern const char *SFARR1D[4]; // SF 1D arr names.
 extern const double PLIMITSARR[SF_NPARAMS][2]; // Momentum limits for 1D SF fit.
 
-// Run constants (TODO. these should be in a map or taken from clas12mon.)
-#define BE11983 10.3894 //  50 nA.
-#define BE12016 10.3894 // 250 nA.
-#define BE12439  2.1864 //  15 nA.
-#define BE12933 10.4057 // 250 nA.
-
 // Detector constants.
 #define FMTMINLAYERS 2 // Minimum number of FMT layers to accept a track.
 #define FMTNLAYERS   3 // Total number of FMT layers.

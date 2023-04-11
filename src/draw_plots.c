@@ -21,6 +21,7 @@
 #include "../lib/rge_io_handler.h"
 #include "../lib/rge_progress.h"
 #include "../lib/rge_pid_utils.h"
+#include "../lib/rge_filename_handler.h"
 #include "../lib/utilities.h"
 
 const char *usage_message =
@@ -914,7 +915,7 @@ static int handle_args(
     }
 
     // Check input filename validity and write run number to run_no.
-    if (handle_root_filename(*in_filename, run_no)) return 1;
+    if (rge_handle_root_filename(*in_filename, run_no)) return 1;
 
     // Define tmp output filename if undefined.
     if (tmp_out_filename == NULL) {

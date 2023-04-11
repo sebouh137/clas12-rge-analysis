@@ -45,19 +45,20 @@ HXX         := $(RXX) $(HIPOCFLAGS)
 
 # Object lists.
 O_HIPO2ROOT := $(BLD)/bank_containers.o $(BLD)/err_handler.o \
-			   $(BLD)/file_handler.o $(BLD)/io_handler.o $(BLD)/progress.o
+			   $(BLD)/file_handler.o $(BLD)/io_handler.o $(BLD)/progress.o \
+			   $(BLD)/filename_handler.o
 O_EXTRACTSF := $(BLD)/bank_containers.o $(BLD)/constants.o \
 			   $(BLD)/err_handler.o $(BLD)/file_handler.o $(BLD)/io_handler.o \
-			   $(BLD)/utilities.o $(BLD)/progress.o
+			   $(BLD)/utilities.o $(BLD)/progress.o $(BLD)/filename_handler.o
 O_ACCCORR   := $(BLD)/err_handler.o $(BLD)/file_handler.o $(BLD)/io_handler.o \
- 			   $(BLD)/utilities.o $(BLD)/progress.o
+ 			   $(BLD)/utilities.o $(BLD)/progress.o $(BLD)/filename_handler.o
 O_MKNTUPLES := $(BLD)/bank_containers.o $(BLD)/constants.o \
 			   $(BLD)/err_handler.o $(BLD)/file_handler.o $(BLD)/io_handler.o \
 			   $(BLD)/particle.o $(BLD)/pid_utils.o $(BLD)/utilities.o \
-			   $(BLD)/progress.o
+			   $(BLD)/progress.o $(BLD)/filename_handler.o
 O_DRAWPLOTS := $(BLD)/constants.o $(BLD)/err_handler.o $(BLD)/file_handler.o \
 			   $(BLD)/io_handler.o $(BLD)/pid_utils.o $(BLD)/utilities.o \
-			   $(BLD)/progress.o
+			   $(BLD)/progress.o $(BLD)/filename_handler.o
 
 all: $(BIN)/hipo2root $(BIN)/extract_sf $(BIN)/acc_corr \
 	 $(BIN)/make_ntuples $(BIN)/draw_plots
@@ -88,6 +89,9 @@ $(BLD)/err_handler.o: $(SRC)/rge_err_handler.c $(LIB)/rge_err_handler.h
 
 $(BLD)/io_handler.o: $(SRC)/rge_io_handler.c $(LIB)/rge_io_handler.h
 	$(CXX) -c $(SRC)/rge_io_handler.c -o $(BLD)/io_handler.o
+
+$(BLD)/filename_handler.o: $(SRC)/rge_filename_handler.c $(LIB)/rge_filename_handler.h
+	$(CXX) -c $(SRC)/rge_filename_handler.c -o $(BLD)/filename_handler.o
 
 $(BLD)/progress.o: $(SRC)/rge_progress.c $(LIB)/rge_progress.h
 	$(CXX) -c $(SRC)/rge_progress.c -o $(BLD)/progress.o

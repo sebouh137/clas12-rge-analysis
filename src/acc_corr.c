@@ -19,6 +19,7 @@
 #include <TNtuple.h>
 #include "../lib/rge_err_handler.h"
 #include "../lib/rge_io_handler.h"
+#include "../lib/rge_filename_handler.h"
 #include "../lib/utilities.h"
 
 const char *usage_message =
@@ -323,14 +324,14 @@ static int handle_args(
         rge_errno = RGEERR_NOGENFILE;
         return 1;
     }
-    if (check_root_filename(*thrown_filename)) return 1;
+    if (rge_check_root_filename(*thrown_filename)) return 1;
 
     // Check simfile.
     if (*simul_filename == NULL) {
         rge_errno = RGEERR_NOSIMFILE;
         return 1;
     }
-    if (check_root_filename(*simul_filename)) return 1;
+    if (rge_check_root_filename(*simul_filename)) return 1;
 
     return 0;
 }

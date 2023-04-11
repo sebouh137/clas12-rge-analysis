@@ -20,6 +20,7 @@
 #include "../lib/rge_err_handler.h"
 #include "../lib/rge_io_handler.h"
 #include "../lib/rge_progress.h"
+#include "../lib/rge_filename_handler.h"
 #include "../lib/rge_particle.h"
 
 const char *usage_message =
@@ -514,7 +515,7 @@ static int handle_args(
         rge_errno = RGEERR_NOINPUTFILE;
         return 1;
     }
-    if (handle_root_filename(*filename_in, run_no, energy_beam)) return 1;
+    if (rge_handle_root_filename(*filename_in, run_no, energy_beam)) return 1;
 
     return 0;
 }

@@ -21,6 +21,7 @@
 #include <TStyle.h>
 #include "../lib/bank_containers.h"
 #include "../lib/rge_err_handler.h"
+#include "../lib/rge_filename_handler.h"
 #include "../lib/rge_io_handler.h"
 #include "../lib/rge_progress.h"
 #include "../lib/utilities.h"
@@ -463,7 +464,7 @@ static int handle_args(
     }
 
     // Handle input filename.
-    if (handle_root_filename(*in_filename, run_no)) return 1;
+    if (rge_handle_root_filename(*in_filename, run_no)) return 1;
 
     return 0;
 }
