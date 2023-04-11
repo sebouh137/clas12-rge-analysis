@@ -18,7 +18,7 @@
 
 #include <TH2F.h>
 #include "constants.h"
-#include "err_handler.h"
+#include "rge_err_handler.h"
 
 int find_pos(double v, double *b, int size);
 int to_deg(double src, double *dest);

@@ -81,8 +81,8 @@ $(BLD)/bank_containers.o: $(SRC)/bank_containers.c $(LIB)/bank_containers.h
 $(BLD)/constants.o: $(SRC)/constants.c $(LIB)/constants.h
 	$(CXX) -c $(SRC)/constants.c -o $(BLD)/constants.o
 
-$(BLD)/err_handler.o: $(SRC)/err_handler.c $(LIB)/err_handler.h
-	$(CXX) -std=c++20 -c $(SRC)/err_handler.c -o $(BLD)/err_handler.o
+$(BLD)/err_handler.o: $(SRC)/rge_err_handler.c $(LIB)/rge_err_handler.h
+	$(CXX) -std=c++20 -c $(SRC)/rge_err_handler.c -o $(BLD)/err_handler.o
 
 $(BLD)/io_handler.o: $(SRC)/io_handler.c $(LIB)/io_handler.h
 	$(CXX) -c $(SRC)/io_handler.c -o $(BLD)/io_handler.o

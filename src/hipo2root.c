@@ -15,7 +15,7 @@
 
 #include <libgen.h>
 #include "TFile.h"
-#include "../lib/err_handler.h"
+#include "../lib/rge_err_handler.h"
 #include "../lib/io_handler.h"
 #include "../lib/bank_containers.h"
 

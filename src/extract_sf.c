@@ -20,7 +20,7 @@
 #include <TGraphErrors.h>
 #include <TStyle.h>
 #include "../lib/bank_containers.h"
-#include "../lib/err_handler.h"
+#include "../lib/rge_err_handler.h"
 #include "../lib/io_handler.h"
 #include "../lib/utilities.h"
 

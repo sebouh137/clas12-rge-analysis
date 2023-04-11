@@ -18,7 +18,7 @@
 
 #include <errno.h>
 #include <stdlib.h>
-#include "err_handler.h"
+#include "rge_err_handler.h"
 #include "file_handler.h"
 
 int print_usage(const char *msg, int err);

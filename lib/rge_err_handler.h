@@ -13,8 +13,8 @@
 //
 // You can see a copy of the GNU Lesser Public License under the LICENSE file.
 
-#ifndef RGE_ANALYSIS_ERRHANDLER
-#define RGE_ANALYSIS_ERRHANDLER
+#ifndef RGE_ERRHANDLER
+#define RGE_ERRHANDLER
 
 #include <stdio.h>
 #include <map>

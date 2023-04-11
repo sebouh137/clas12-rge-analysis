@@ -13,7 +13,7 @@
 //
 // You can see a copy of the GNU Lesser Public License under the LICENSE file.
 
-#include "../lib/err_handler.h"
+#include "../lib/rge_err_handler.h"
 
 // Map linking every error number with an explanation script for the user.
 // NOTE. std::map isn't smart enough to detect if two keys have the same

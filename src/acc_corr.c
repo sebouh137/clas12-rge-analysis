@@ -17,7 +17,7 @@
 #include <limits.h>
 #include <TFile.h>
 #include <TNtuple.h>
-#include "../lib/err_handler.h"
+#include "../lib/rge_err_handler.h"
 #include "../lib/io_handler.h"
 #include "../lib/utilities.h"
 
