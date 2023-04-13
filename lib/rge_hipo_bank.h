@@ -44,6 +44,11 @@ rge_hipoentry entry_writer_init(const char *in_addr, unsigned int in_type);
 
 int rge_set_nrows(rge_hipobank *b, long unsigned int in_nrows);
 rge_hipobank rge_recparticle_init();
+rge_hipobank rge_rectrack_init();
+rge_hipobank rge_reccalorimeter_init();
+rge_hipobank rge_reccherenkov_init();
+rge_hipobank rge_recscintillator_init();
+rge_hipobank rge_fmttracks_init();
 // int rge_set_branches(rge_hipobank b, TTree *t);
 int rge_link_branches(rge_hipobank *b, TTree *t);
 int rge_fill(rge_hipobank *rb, hipo::bank hb);

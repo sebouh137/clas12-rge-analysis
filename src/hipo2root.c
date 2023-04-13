@@ -50,20 +50,20 @@ static int run(
 
     // Create tree for output file and bank containers to read hipo file.
     TTree *tree = new TTree(TREENAMEDATA, TREENAMEDATA);
-    rge_hipobank particle = rge_recparticle_init();
-    Track        track;
-    Calorimeter  calorimeter;
-    Cherenkov    cherenkov;
-    Scintillator scintillator;
-    FMT_Tracks   fmt_tracks;
+    rge_hipobank particle     = rge_recparticle_init();
+    rge_hipobank track        = rge_rectrack_init();
+    rge_hipobank calorimeter  = rge_reccalorimeter_init();
+    rge_hipobank cherenkov    = rge_reccherenkov_init();
+    rge_hipobank scintillator = rge_recscintillator_init();
+    rge_hipobank fmt_tracks   = rge_fmttracks_init();
 
     // Link bank container to tree branches.
-    rge_link_branches(&particle, tree);
-    track       .link_branches(tree);
-    calorimeter .link_branches(tree);
-    cherenkov   .link_branches(tree);
-    scintillator.link_branches(tree);
-    if (use_fmt) fmt_tracks.link_branches(tree);
+    rge_link_branches(&particle,     tree);
+    rge_link_branches(&track,        tree);
+    rge_link_branches(&calorimeter,  tree);
+    rge_link_branches(&cherenkov,    tree);
+    rge_link_branches(&scintillator, tree);
+    if (use_fmt) rge_link_branches(&fmt_tracks, tree);
 
     // Open input file and get hipo schemas.
     hipo::reader reader;
@@ -108,23 +108,20 @@ static int run(
         if (use_fmt) event.getStructure(fmt_tracks_bank);
 
         // Fill banks from hipo event.
-        rge_fill(&particle, particle_bank);
-        track       .fill(track_bank);
-        calorimeter .fill(calorimeter_bank);
-        cherenkov   .fill(cherenkov_bank);
-        scintillator.fill(scintillator_bank);
-        if (use_fmt) fmt_tracks.fill(fmt_tracks_bank);
-
-        else continue;
+        rge_fill(&particle,     particle_bank);
+        rge_fill(&track,        track_bank);
+        rge_fill(&calorimeter,  calorimeter_bank);
+        rge_fill(&cherenkov,    cherenkov_bank);
+        rge_fill(&scintillator, scintillator_bank);
+        if (use_fmt) rge_fill(&fmt_tracks, fmt_tracks_bank);
 
         // Write to tree *if* event is not empty.
-        long unsigned int total_nrows =
-                                        particle.nrows +
-                                        track.get_nrows() +
-                                        calorimeter.get_nrows() +
-                                        cherenkov.get_nrows() +
-                                        scintillator.get_nrows();
-        if (use_fmt) total_nrows += fmt_tracks.get_nrows();
+        long unsigned int total_nrows = particle.nrows +
+                                        track.nrows +
+                                        calorimeter.nrows +
+                                        cherenkov.nrows +
+                                        scintillator.nrows;
+        if (use_fmt) total_nrows += fmt_tracks.nrows;
 
         if (total_nrows > 0) tree->Fill();
     }

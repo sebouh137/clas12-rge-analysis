@@ -15,36 +15,6 @@
 
 #include "../lib/rge_hipo_bank.h"
 
-int rge_set_nrows(rge_hipobank *b, long unsigned int in_nrows) {
-    b->nrows = in_nrows;
-
-    b->entries.at("pid").data    ->resize(b->nrows);
-    b->entries.at("px").data     ->resize(b->nrows);
-    b->entries.at("py").data     ->resize(b->nrows);
-    b->entries.at("pz").data     ->resize(b->nrows);
-    b->entries.at("vx").data     ->resize(b->nrows);
-    b->entries.at("vy").data     ->resize(b->nrows);
-    b->entries.at("vz").data     ->resize(b->nrows);
-    b->entries.at("vt").data     ->resize(b->nrows);
-    b->entries.at("beta").data   ->resize(b->nrows);
-    b->entries.at("chi2pid").data->resize(b->nrows);
-    b->entries.at("charge").data ->resize(b->nrows);
-    b->entries.at("status").data ->resize(b->nrows);
-    return 0;
-}
-
-rge_hipoentry entry_writer_init(const char *in_addr, unsigned int in_type) {
-    return __extension__ (rge_hipoentry) {
-            .addr = in_addr, .data = {}, .branch = nullptr, .type = in_type
-    };
-}
-
-// rge_hipoentry entry_reader_init(const char *in_addr) {
-//     return __extension__ (rge_hipoentry) {
-//             .addr = in_addr, .data = nullptr, .branch = nullptr
-//     };
-// }
-
 rge_hipobank rge_recparticle_init() {
     rge_hipobank b;
     b.nrows = 0;
@@ -66,6 +36,106 @@ rge_hipobank rge_recparticle_init() {
 
     return b;
 }
+
+rge_hipobank rge_rectrack_init() {
+    rge_hipobank b;
+    b.nrows = 0;
+
+    b.entries = {
+        {"index",  entry_writer_init("REC::Track::index",  SHORT)},
+        {"pindex", entry_writer_init("REC::Track::pindex", SHORT)},
+        {"sector", entry_writer_init("REC::Track::sector", BYTE)},
+        {"NDF",    entry_writer_init("REC::Track::ndf",    SHORT)},
+        {"chi2",   entry_writer_init("REC::Track::chi2",   FLOAT)}
+    };
+
+    return b;
+}
+
+rge_hipobank rge_reccalorimeter_init() {
+    rge_hipobank b;
+    b.nrows = 0;
+
+    b.entries = {
+        {"pindex", entry_writer_init("REC::Calorimeter::pindex", SHORT)},
+        {"layer",  entry_writer_init("REC::Calorimeter::layer",  BYTE)},
+        {"sector", entry_writer_init("REC::Calorimeter::sector", BYTE)},
+        {"energy", entry_writer_init("REC::Calorimeter::energy", FLOAT)},
+        {"time",   entry_writer_init("REC::Calorimeter::time",   FLOAT)}
+    };
+
+    return b;
+}
+
+rge_hipobank rge_reccherenkov_init() {
+    rge_hipobank b;
+    b.nrows = 0;
+
+    b.entries = {
+        {"pindex",   entry_writer_init("REC::Cherenkov::pindex",   SHORT)},
+        {"detector", entry_writer_init("REC::Cherenkov::detector", BYTE)},
+        {"nphe",     entry_writer_init("REC::Cherenkov::nphe",     FLOAT)}
+    };
+
+    return b;
+}
+
+rge_hipobank rge_recscintillator_init() {
+    rge_hipobank b;
+    b.nrows = 0;
+
+    b.entries = {
+        {"pindex",   entry_writer_init("REC::Scintillator::pindex",   SHORT)},
+        {"time",     entry_writer_init("REC::Scintillator::time",     FLOAT)},
+        {"detector", entry_writer_init("REC::Scintillator::detector", BYTE)},
+        {"layer",    entry_writer_init("REC::Scintillator::layer",    BYTE)}
+    };
+
+    return b;
+}
+
+rge_hipobank rge_fmttracks_init() {
+    rge_hipobank b;
+    b.nrows = 0;
+
+    b.entries = {
+        {"index",  entry_writer_init("FMT::Tracks::index", SHORT)},
+        {"NDF",    entry_writer_init("FMT::Tracks::ndf",   INT)},
+        {"Vtx0_x", entry_writer_init("FMT::Tracks::vx",    FLOAT)},
+        {"Vtx0_y", entry_writer_init("FMT::Tracks::vy",    FLOAT)},
+        {"Vtx0_z", entry_writer_init("FMT::Tracks::vz",    FLOAT)},
+        {"p0_x",   entry_writer_init("FMT::Tracks::px",    FLOAT)},
+        {"p0_y",   entry_writer_init("FMT::Tracks::py",    FLOAT)},
+        {"p0_z",   entry_writer_init("FMT::Tracks::pz",    FLOAT)}
+    };
+
+    return b;
+}
+
+int rge_set_nrows(rge_hipobank *b, long unsigned int in_nrows) {
+    // Set internal variable.
+    b->nrows = in_nrows;
+
+    // Resize vectors.
+    for (it = b->entries.begin(); it != b->entries.end(); ++it) {
+        const char *key = it->first;
+        b->entries.at(key).data->resize(b->nrows);
+    }
+
+    return 0;
+}
+
+rge_hipoentry entry_writer_init(const char *in_addr, unsigned int in_type) {
+    return __extension__ (rge_hipoentry) {
+            .addr = in_addr, .data = {}, .branch = nullptr, .type = in_type
+    };
+}
+
+// rge_hipoentry entry_reader_init(const char *in_addr) {
+//     return __extension__ (rge_hipoentry) {
+//             .addr = in_addr, .data = nullptr, .branch = nullptr
+//     };
+// }
 
 int rge_link_branches(rge_hipobank *b, TTree *t) {
     for (it = b->entries.begin(); it != b->entries.end(); ++it) {
