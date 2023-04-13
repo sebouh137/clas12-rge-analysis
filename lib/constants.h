@@ -27,14 +27,6 @@
 #define TREENAMETHRN          "ntuple_thrown"
 #define TREENAMETHRNELECTRONS "ntuple_thrown_electrons"
 
-// Bank names.
-#define BANKRECPARTICLE     "REC::Particle"
-#define BANKRECTRACK        "REC::Track"
-#define BANKRECCALORIMETER  "REC::Calorimeter"
-#define BANKRECCHERENKOV    "REC::Cherenkov"
-#define BANKRECSCINTILLATOR "REC::Scintillator"
-#define BANKFMTTRACKS       "FMT::Tracks"
-
 // Particle cut array.
 #define PART_LIST_SIZE 5
 extern const char *PART_LIST[PART_LIST_SIZE];

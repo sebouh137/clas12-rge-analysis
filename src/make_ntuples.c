@@ -22,6 +22,7 @@
 #include "../lib/rge_progress.h"
 #include "../lib/rge_filename_handler.h"
 #include "../lib/rge_particle.h"
+#include "../lib/rge_hipo_bank.h"
 
 const char *usage_message =
 "Usage: make_ntuples [-hDf:n:w:d:] infile\n"
@@ -224,7 +225,7 @@ static int run(
     }
 
     // If fmt_nlayers != 0, check that FMT::Tracks bank exists.
-    if (fmt_nlayers != 0 && file_in->GetListOfKeys()->Contains(BANKFMTTRACKS)) {
+    if (fmt_nlayers != 0 && file_in->GetListOfKeys()->Contains(RGE_FMTTRACKS)) {
         rge_errno = RGEERR_NOFMTBANK;
         return 1;
     }

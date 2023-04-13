@@ -29,17 +29,24 @@ static const unsigned int SHORT = 1;
 static const unsigned int INT   = 2;
 static const unsigned int FLOAT = 3;
 
-/** Definitions to refer to different hipo banks using integers. */
-#define RGE_RECPARTICLE     0
-#define RGE_RECTRACK        1
-#define RGE_RECCALORIMETER  2
-#define RGE_RECCHERENKOV    3
-#define RGE_RECSCINTILLATOR 4
-#define RGE_FMTTRACKS       5
+/** Definitions to refer to different hipo banks using strings. */
+#define RGE_RECPARTICLE     "REC::Particle"
+#define RGE_RECTRACK        "REC::Track"
+#define RGE_RECCALORIMETER  "REC::Calorimeter"
+#define RGE_RECCHERENKOV    "REC::Cherenkov"
+#define RGE_RECSCINTILLATOR "REC::Scintillator"
+#define RGE_FMTTRACKS       "FMT::Tracks"
 
 // --+ structs +----------------------------------------------------------------
+/** String comparer to use const char * as std::map keys. */
+struct cmp_str {
+    bool operator() (char const *a, char const *b) const {
+        return std::strcmp(a, b) < 0;
+    }
+};
+
 /** Struct containing one entry of a particular hipo bank. */
-typedef struct{
+typedef struct {
     const char *addr;          /** Address of entry (BANK::NAME::VAR). */
     std::vector<double> *data; /** Vector with data of the entry. */
     TBranch *branch;           /** Pointer to TBranch where to write data. */
@@ -47,14 +54,14 @@ typedef struct{
 } rge_hipoentry;
 
 /** Struct containing a map of all entries associated to a hipo bank. */
-typedef struct{
+typedef struct {
     long unsigned int nrows;
-    std::map<const char *, rge_hipoentry> entries;
+    std::map<const char *, rge_hipoentry, cmp_str> entries;
 } rge_hipobank;
 
 // --+ internal +---------------------------------------------------------------
 /** Internal iterator used to loop through entries. */
-static std::map<const char *, rge_hipoentry>::const_iterator it;
+static std::map<const char *, rge_hipoentry, cmp_str>::const_iterator it;
 
 /**
  * Initialize and return one rge_hipoentry defined to *write* to a TTree.
@@ -76,7 +83,7 @@ static int set_nrows(rge_hipobank *b, long unsigned int in_nrows);
 
 // --+ library +----------------------------------------------------------------
 /** Initialize rge_hipobank based on static map related to bank_version. */
-rge_hipobank rge_hipobank_init(int bank_version);
+rge_hipobank rge_hipobank_init(const char *bank_version);
 
 // int rge_set_branches(rge_hipobank b, TTree *t);
 

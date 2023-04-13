@@ -42,7 +42,9 @@ int set_nrows(rge_hipobank *b, long unsigned int in_nrows) {
 }
 
 /** Static map containing all entry lists. */
-static std::map<int, std::map<const char *, rge_hipoentry>> ENTRYMAP = {
+static std::map<
+        const char *, std::map<const char *, rge_hipoentry, cmp_str>, cmp_str
+> ENTRYMAP = {
     {RGE_RECPARTICLE, {
         {"pid",     entry_writer_init("REC::Particle::pid",     INT)},
         {"vx",      entry_writer_init("REC::Particle::vx",      FLOAT)},
@@ -95,7 +97,7 @@ static std::map<int, std::map<const char *, rge_hipoentry>> ENTRYMAP = {
 };
 
 // --+ library +----------------------------------------------------------------
-rge_hipobank rge_hipobank_init(int bank_version) {
+rge_hipobank rge_hipobank_init(const char *bank_version) {
     rge_hipobank b;
     b.nrows = 0;
 

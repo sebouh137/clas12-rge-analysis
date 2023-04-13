@@ -74,13 +74,13 @@ static int run(
     reader.readDictionary(factory);
 
     hipo::event event;
-    hipo::bank particle_bank    (factory.getSchema(BANKRECPARTICLE));
-    hipo::bank track_bank       (factory.getSchema(BANKRECTRACK));
-    hipo::bank calorimeter_bank (factory.getSchema(BANKRECCALORIMETER));
-    hipo::bank cherenkov_bank   (factory.getSchema(BANKRECCHERENKOV));
-    hipo::bank scintillator_bank(factory.getSchema(BANKRECSCINTILLATOR));
+    hipo::bank particle_bank    (factory.getSchema(RGE_RECPARTICLE));
+    hipo::bank track_bank       (factory.getSchema(RGE_RECTRACK));
+    hipo::bank calorimeter_bank (factory.getSchema(RGE_RECCALORIMETER));
+    hipo::bank cherenkov_bank   (factory.getSchema(RGE_RECCHERENKOV));
+    hipo::bank scintillator_bank(factory.getSchema(RGE_RECSCINTILLATOR));
     hipo::bank fmt_tracks_bank;
-    if (use_fmt) fmt_tracks_bank = factory.getSchema(BANKFMTTRACKS);
+    if (use_fmt) fmt_tracks_bank = factory.getSchema(RGE_FMTTRACKS);
 
     // Get stuff from hipo file and write to root file.
     if (event_max == -1 || event_max > reader.getEntries()) {
