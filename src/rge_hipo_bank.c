@@ -102,7 +102,7 @@ rge_hipobank rge_hipobank_init(const char *bank_version) {
     b.nrows = 0;
 
     try {b.entries = ENTRYMAP.at(bank_version);}
-    catch (...) {rge_errno = RGEERR_INVALIDDETECTORID;}
+    catch (...) {rge_errno = RGEERR_INVALIDBANKID;}
 
     return b;
 }

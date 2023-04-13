@@ -21,6 +21,7 @@
 #include "../lib/rge_filename_handler.h"
 #include "../lib/rge_hipo_bank.h"
 
+// TODO. Make this static and change name to UPPER CASE.
 const char *usage_message =
 "Usage: hipo2root [-hfn:w:] infile\n"
 " * -h         : show this message and exit.\n"
@@ -35,101 +36,83 @@ const char *usage_message =
 "    banks that are useful for RG-E analysis, as specified in the\n"
 "    lib/bank_containers.h file.\n";
 
+/** Number of banks in BANKLIST. */
+static const unsigned int NBANKS       = 6;
+static const unsigned int NBANKS_NOFMT = 5;
+
+/** List of banks hipo2root is capable of processing. */
+static const char *BANKLIST[NBANKS] = {
+    RGE_RECPARTICLE, RGE_RECTRACK, RGE_RECCALORIMETER, RGE_RECCHERENKOV,
+    RGE_RECSCINTILLATOR, RGE_FMTTRACKS
+};
+
 /** run() function of the program. Check usage_message for details. */
 static int run(
         char *in_filename, char *work_dir, bool use_fmt, int run_no,
-        long int event_max
+        long int nevents
 ) {
-    // Create output file.
-    char out_filename[PATH_MAX];
-    sprintf(out_filename, "%s/banks_%06d.root", work_dir, run_no);
+    // Number of banks to read/write depends on type of analysis.
+    unsigned int nbanks = use_fmt ? NBANKS : NBANKS_NOFMT;
 
-    TFile *out_file = TFile::Open(out_filename, "RECREATE");
-    out_file->SetCompressionAlgorithm(ROOT::kLZ4);
-
-    // Create tree for output file and bank containers to read hipo file.
-    TTree *tree = new TTree(TREENAMEDATA, TREENAMEDATA);
-    rge_hipobank particle     = rge_hipobank_init(RGE_RECPARTICLE);
-    rge_hipobank track        = rge_hipobank_init(RGE_RECTRACK);
-    rge_hipobank calorimeter  = rge_hipobank_init(RGE_RECCALORIMETER);
-    rge_hipobank cherenkov    = rge_hipobank_init(RGE_RECCHERENKOV);
-    rge_hipobank scintillator = rge_hipobank_init(RGE_RECSCINTILLATOR);
-    rge_hipobank fmt_tracks   = rge_hipobank_init(RGE_FMTTRACKS);
-    // Check that all banks were correctly initialized.
-    if (rge_errno != RGEERR_UNDEFINED) return 1;
-
-    // Link bank container to tree branches.
-    rge_link_branches(&particle,     tree);
-    rge_link_branches(&track,        tree);
-    rge_link_branches(&calorimeter,  tree);
-    rge_link_branches(&cherenkov,    tree);
-    rge_link_branches(&scintillator, tree);
-    if (use_fmt) rge_link_branches(&fmt_tracks, tree);
-
-    // Open input file and get hipo schemas.
+    // Access input sources.
     hipo::reader reader;
-    reader.open(in_filename);
-
     hipo::dictionary factory;
+    hipo::event event;
+
+    reader.open(in_filename);
     reader.readDictionary(factory);
 
-    hipo::event event;
-    hipo::bank particle_bank    (factory.getSchema(RGE_RECPARTICLE));
-    hipo::bank track_bank       (factory.getSchema(RGE_RECTRACK));
-    hipo::bank calorimeter_bank (factory.getSchema(RGE_RECCALORIMETER));
-    hipo::bank cherenkov_bank   (factory.getSchema(RGE_RECCHERENKOV));
-    hipo::bank scintillator_bank(factory.getSchema(RGE_RECSCINTILLATOR));
-    hipo::bank fmt_tracks_bank;
-    if (use_fmt) fmt_tracks_bank = factory.getSchema(RGE_FMTTRACKS);
+    // Create output tree and file.
+    TTree *out_tree = new TTree(TREENAMEDATA, TREENAMEDATA);
 
-    // Get stuff from hipo file and write to root file.
-    if (event_max == -1 || event_max > reader.getEntries()) {
-        event_max = reader.getEntries();
+    char out_filename[PATH_MAX];
+    sprintf(out_filename, "%s/banks_%06d.root", work_dir, run_no);
+    TFile *out_file = TFile::Open(out_filename, "RECREATE");
+
+    // Open input file and get hipo schemas.
+    __extension__ hipo::bank   hbanks[nbanks];
+    __extension__ rge_hipobank rbanks[nbanks];
+
+    for (unsigned int i = 0; i < nbanks; ++i) {
+        // Initialize hipo banks.
+        hbanks[i] = hipo::bank(factory.getSchema(BANKLIST[i]));
+
+        // Initialize rge banks.
+        rbanks[i] = rge_hipobank_init(BANKLIST[i]);
+        if (rge_errno != RGEERR_UNDEFINED) return 1;
+        rge_link_branches(&(rbanks[i]), out_tree);
     }
-    printf("Reading %ld events from %s.\n", event_max, in_filename);
 
-    int event_no = 0;
+    // Get event count.
+    if (nevents == -1 || nevents > reader.getEntries())
+        nevents = reader.getEntries();
+    printf("Reading %ld events from %s.\n", nevents, in_filename);
 
     // Prepare fancy progress bar.
-    rge_pbar_set_nentries(event_max);
-    while (reader.next() && event_no < event_max) {
+    rge_pbar_set_nentries(nevents);
+
+    for (int event_no = 0; event_no < nevents; ++event_no) {
         // Print fancy progress bar.
         rge_pbar_update(event_no);
-        ++event_no;
 
         // Read next event.
+        reader.next();
         reader.read(event);
 
-        // Get bank structures from hipo event.
-        event.getStructure(particle_bank);
-        event.getStructure(track_bank);
-        event.getStructure(calorimeter_bank);
-        event.getStructure(cherenkov_bank);
-        event.getStructure(scintillator_bank);
-        if (use_fmt) event.getStructure(fmt_tracks_bank);
-
         // Fill banks from hipo event.
-        rge_fill(&particle,     particle_bank);
-        rge_fill(&track,        track_bank);
-        rge_fill(&calorimeter,  calorimeter_bank);
-        rge_fill(&cherenkov,    cherenkov_bank);
-        rge_fill(&scintillator, scintillator_bank);
-        if (use_fmt) rge_fill(&fmt_tracks, fmt_tracks_bank);
+        long unsigned int total_nrows = 0;
+        for (unsigned int i = 0; i < nbanks; ++i) {
+            event.getStructure(hbanks[i]);
+            rge_fill(&(rbanks[i]), hbanks[i]);
+            total_nrows += rbanks[i].nrows;
+        }
 
         // Write to tree *if* event is not empty.
-        long unsigned int total_nrows = particle.nrows +
-                                        track.nrows +
-                                        calorimeter.nrows +
-                                        cherenkov.nrows +
-                                        scintillator.nrows;
-        if (use_fmt) total_nrows += fmt_tracks.nrows;
-
-        if (total_nrows > 0) tree->Fill();
+        if (total_nrows > 0) out_tree->Fill();
     }
-    printf("\33[2K\rRead %8d events... Done!\n", event_no);
 
     // Write to root tree and clean up after ourselves.
-    tree->Write();
+    out_tree->Write();
     out_file->Close();
 
     rge_errno = RGEERR_NOERR;
@@ -142,7 +125,7 @@ static int run(
  */
 static int handle_args(
         int argc, char **argv, char **in_filename, char **work_dir,
-        bool *use_fmt, int *run_no, long int *event_max
+        bool *use_fmt, int *run_no, long int *nevents
 ) {
     // Handle arguments.
     int opt;
@@ -155,7 +138,7 @@ static int handle_args(
                 *use_fmt = true;
                 break;
             case 'n':
-                if (rge_process_nentries(event_max, optarg)) return 1;
+                if (rge_process_nentries(nevents, optarg)) return 1;
                 break;
             case 'w':
                 *work_dir = static_cast<char *>(malloc(strlen(optarg) + 1));
@@ -195,15 +178,15 @@ int main(int argc, char **argv) {
     char *work_dir     = NULL;
     bool use_fmt       = false;
     int  run_no        = -1;
-    long int event_max = -1;
+    long int nevents   = -1;
 
     handle_args(
-            argc, argv, &in_filename, &work_dir, &use_fmt, &run_no, &event_max
+            argc, argv, &in_filename, &work_dir, &use_fmt, &run_no, &nevents
     );
 
     // Run.
     if (rge_errno == RGEERR_UNDEFINED) {
-        run(in_filename, work_dir, use_fmt, run_no, event_max);
+        run(in_filename, work_dir, use_fmt, run_no, nevents);
     }
 
     // Free up memory.

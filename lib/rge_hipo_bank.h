@@ -22,13 +22,6 @@
 #include "reader.h"
 #include "rge_err_handler.h"
 
-/** internal variables to refer to different primitive types. */
-// NOTE. These could be improved by adding a reference to the primitive itself.
-static const unsigned int BYTE  = 0;
-static const unsigned int SHORT = 1;
-static const unsigned int INT   = 2;
-static const unsigned int FLOAT = 3;
-
 /** Definitions to refer to different hipo banks using strings. */
 #define RGE_RECPARTICLE     "REC::Particle"
 #define RGE_RECTRACK        "REC::Track"
@@ -60,6 +53,13 @@ typedef struct {
 } rge_hipobank;
 
 // --+ internal +---------------------------------------------------------------
+/** internal variables to refer to different primitive types. */
+// NOTE. These could be improved by adding a reference to the primitive itself.
+static const unsigned int BYTE  = 0;
+static const unsigned int SHORT = 1;
+static const unsigned int INT   = 2;
+static const unsigned int FLOAT = 3;
+
 /** Internal iterator used to loop through entries. */
 static std::map<const char *, rge_hipoentry, cmp_str>::const_iterator it;
 
