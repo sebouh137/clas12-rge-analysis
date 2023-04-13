@@ -24,7 +24,7 @@
 #include "../lib/rge_particle.h"
 #include "../lib/rge_hipo_bank.h"
 
-const char *usage_message =
+static const char *USAGE_MESSAGE =
 "Usage: make_ntuples [-hDf:n:w:d:] infile\n"
 " * -h         : show this message and exit.\n"
 " * -D         : activate debug mode.\n"
@@ -204,7 +204,7 @@ static int count_photoelectrons(
     return 0;
 }
 
-/** run() function of the program. Check usage_message for details. */
+/** run() function of the program. Check USAGE_MESSAGE for details. */
 static int run(
         char *filename_in, char *work_dir, char *data_dir, bool debug,
         long int fmt_nlayers, long int n_events, int run_no, double energy_beam
@@ -552,5 +552,5 @@ int main(int argc, char **argv) {
     if (data_dir    != NULL) free(data_dir);
 
     // Return errcode.
-    return rge_print_usage(usage_message);
+    return rge_print_usage(USAGE_MESSAGE);
 }

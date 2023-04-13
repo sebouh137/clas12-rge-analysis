@@ -25,7 +25,7 @@
 #include "../lib/rge_filename_handler.h"
 #include "../lib/rge_math_utils.h"
 
-const char *usage_message =
+static const char *USAGE_MESSAGE =
 "Usage: draw_plots [-hn:o:a:w:] infile\n"
 " * -h          : show this message and exit.\n"
 " * -n nentries : number of entries to process.\n"
@@ -282,7 +282,7 @@ static long int find_idx(
     return -1; // Variable is not within binning range.
 }
 
-/** run() function of the program. Check usage_message for details. */
+/** run() function of the program. Check USAGE_MESSAGE for details. */
 static int run(
         char *in_filename, char *out_filename, char *acc_filename,
         char *work_dir, int run_no, long int nentries, bool apply_acc_corr
@@ -965,5 +965,5 @@ int main(int argc, char **argv) {
     if (work_dir     != NULL) free(work_dir);
 
     // Return errcode.
-    return rge_print_usage(usage_message);
+    return rge_print_usage(USAGE_MESSAGE);
 }

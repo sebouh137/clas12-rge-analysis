@@ -21,8 +21,7 @@
 #include "../lib/rge_filename_handler.h"
 #include "../lib/rge_hipo_bank.h"
 
-// TODO. Make this static and change name to UPPER CASE.
-const char *usage_message =
+static const char *USAGE_MESSAGE =
 "Usage: hipo2root [-hfn:w:] infile\n"
 " * -h         : show this message and exit.\n"
 " * -f         : set this to true to process FMT::Tracks bank. If this is set\n"
@@ -46,7 +45,7 @@ static const char *BANKLIST[NBANKS] = {
     RGE_RECSCINTILLATOR, RGE_FMTTRACKS
 };
 
-/** run() function of the program. Check usage_message for details. */
+/** run() function of the program. Check USAGE_MESSAGE for details. */
 static int run(
         char *in_filename, char *work_dir, bool use_fmt, int run_no,
         long int nevents
@@ -194,5 +193,5 @@ int main(int argc, char **argv) {
     if (work_dir    != NULL) free(work_dir);
 
     // Return errcode.
-    return rge_print_usage(usage_message);
+    return rge_print_usage(USAGE_MESSAGE);
 }

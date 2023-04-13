@@ -27,7 +27,7 @@
 #include "../lib/rge_progress.h"
 #include "../lib/rge_math_utils.h"
 
-const char *usage_message =
+static const char *USAGE_MESSAGE =
 "Usage: extract_sf [-hn:w:d:] infile\n"
 " * -h         : show this message and exit.\n"
 " * -n nevents : number of events\n"
@@ -87,7 +87,7 @@ static int insert_TH2F(
     return 0;
 }
 
-/** run() function of the program. Check usage_message for details. */
+/** run() function of the program. Check USAGE_MESSAGE for details. */
 static int run(
         char *in_filename, char *work_dir, char *data_dir, long int nevn,
         int run_no
@@ -543,5 +543,5 @@ int main(int argc, char **argv) {
     if (data_dir    != NULL) free(data_dir);
 
     // Return errcode.
-    return rge_print_usage(usage_message);
+    return rge_print_usage(USAGE_MESSAGE);
 }

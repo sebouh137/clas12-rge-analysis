@@ -22,7 +22,7 @@
 #include "../lib/rge_filename_handler.h"
 #include "../lib/rge_math_utils.h"
 
-const char *usage_message =
+static const char *USAGE_MESSAGE =
 "Usage: acc_corr [-hq:n:z:p:f:g:s:d:FD]\n"
 " * -h         : show this message and exit.\n"
 " * -q ...     : Q2 bins.\n"
@@ -144,7 +144,7 @@ static int count_entries(
     return 0;
 }
 
-/** run() function of the program. Check usage_message for details. */
+/** run() function of the program. Check USAGE_MESSAGE for details. */
 static int run(
         char *thrown_filename, char *simul_filename, char *data_dir,
         long unsigned int *nedges, double **edges, bool in_deg
@@ -372,5 +372,5 @@ int main(int argc, char **argv) {
     if (data_dir        != NULL) free(data_dir);
 
     // Return errcode.
-    return rge_print_usage(usage_message);
+    return rge_print_usage(USAGE_MESSAGE);
 }
