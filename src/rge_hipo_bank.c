@@ -15,6 +15,33 @@
 
 #include "../lib/rge_hipo_bank.h"
 
+// --+ internal +---------------------------------------------------------------
+rge_hipoentry entry_writer_init(const char *in_addr, unsigned int in_type) {
+    return __extension__ (rge_hipoentry) {
+            .addr = in_addr, .data = {}, .branch = nullptr, .type = in_type
+    };
+}
+
+// rge_hipoentry entry_reader_init(const char *in_addr) {
+//     return __extension__ (rge_hipoentry) {
+//             .addr = in_addr, .data = nullptr, .branch = nullptr
+//     };
+// }
+
+int set_nrows(rge_hipobank *b, long unsigned int in_nrows) {
+    // Set internal variable.
+    b->nrows = in_nrows;
+
+    // Resize vectors.
+    for (it = b->entries.begin(); it != b->entries.end(); ++it) {
+        const char *key = it->first;
+        b->entries.at(key).data->resize(b->nrows);
+    }
+
+    return 0;
+}
+
+// --+ library +----------------------------------------------------------------
 rge_hipobank rge_recparticle_init() {
     rge_hipobank b;
     b.nrows = 0;
@@ -112,31 +139,6 @@ rge_hipobank rge_fmttracks_init() {
     return b;
 }
 
-int rge_set_nrows(rge_hipobank *b, long unsigned int in_nrows) {
-    // Set internal variable.
-    b->nrows = in_nrows;
-
-    // Resize vectors.
-    for (it = b->entries.begin(); it != b->entries.end(); ++it) {
-        const char *key = it->first;
-        b->entries.at(key).data->resize(b->nrows);
-    }
-
-    return 0;
-}
-
-rge_hipoentry entry_writer_init(const char *in_addr, unsigned int in_type) {
-    return __extension__ (rge_hipoentry) {
-            .addr = in_addr, .data = {}, .branch = nullptr, .type = in_type
-    };
-}
-
-// rge_hipoentry entry_reader_init(const char *in_addr) {
-//     return __extension__ (rge_hipoentry) {
-//             .addr = in_addr, .data = nullptr, .branch = nullptr
-//     };
-// }
-
 int rge_link_branches(rge_hipobank *b, TTree *t) {
     for (it = b->entries.begin(); it != b->entries.end(); ++it) {
         const char *key = it->first;
@@ -147,7 +149,7 @@ int rge_link_branches(rge_hipobank *b, TTree *t) {
 }
 
 int rge_fill(rge_hipobank *rb, hipo::bank hb) {
-    rge_set_nrows(rb, static_cast<long unsigned int>(hb.getRows()));
+    set_nrows(rb, static_cast<long unsigned int>(hb.getRows()));
 
     for (long unsigned int row = 0; row < rb->nrows; ++row) {
         for (it = rb->entries.begin(); it != rb->entries.end(); ++it) {

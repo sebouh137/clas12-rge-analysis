@@ -19,7 +19,6 @@
 #include "../lib/rge_io_handler.h"
 #include "../lib/rge_progress.h"
 #include "../lib/rge_filename_handler.h"
-#include "../lib/bank_containers.h"
 #include "../lib/rge_hipo_bank.h"
 
 const char *usage_message =
