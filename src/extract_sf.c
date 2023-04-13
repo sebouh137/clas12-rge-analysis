@@ -22,20 +22,21 @@
 
 // ROOT.
 #include <TCanvas.h>
+#include <TF1.h>
 #include <TFile.h>
+#include <TGraphErrors.h>
 #include <TH1.h>
 #include <TH2.h>
-#include <TF1.h>
-#include <TGraphErrors.h>
 #include <TStyle.h>
 
 // rge-analysis.
-#include "../lib/rge_hipo_bank.h"
+#include "../lib/constants.h"
 #include "../lib/rge_err_handler.h"
 #include "../lib/rge_filename_handler.h"
+#include "../lib/rge_hipo_bank.h"
 #include "../lib/rge_io_handler.h"
-#include "../lib/rge_progress.h"
 #include "../lib/rge_math_utils.h"
+#include "../lib/rge_progress.h"
 
 static const char *USAGE_MESSAGE =
 "Usage: extract_sf [-hn:w:d:] infile\n"
@@ -48,7 +49,50 @@ static const char *USAGE_MESSAGE =
 " * infile     : input ROOT file. Expected file format: <text>run_no.root.\n\n"
 "    Obtain the EC sampling fraction from an input file.\n";
 
-#define NCALS 4
+/** Histogram name. */
+#define S_EDIVP "E/p"
+
+/** Sampling fraction array pre-defined integers. */
+#define NCALS 4    /** Number of calorimeters (PCAL, ECIN, ECOU, ALL). */
+#define PCAL_IDX 0 /** PCAL idx in arrays. */
+#define ECIN_IDX 1 /** ECIN idx in arrays. */
+#define ECOU_IDX 2 /** ECOU idx in arrays. */
+#define CALS_IDX 3 /** CALs idx in arrays. */
+
+/** Momentum bin parameters, in GeV. */
+#define SF_PMIN  1.0 /** Minimum value. */
+#define SF_PMAX  9.0 /** Maximum value. */
+#define SF_PSTEP 0.4 /** Step size to separate each bin. */
+
+/** Chi2 conformity for sampling fraction fits. */
+#define SF_CHI2CONFORMITY 2
+
+/** Calorimeter names. */
+static const char *CALNAME[NCALS] = {
+        "PCAL", "ECIN", "ECOU", "ALL"
+};
+
+/** Sampling fraction 1D and 2D array names. */
+static const char *SFARR1D[NCALS] = {
+        "PCAL Sampling Fraction sector ",
+        "ECIN Sampling Fraction sector ",
+        "ECOU Sampling Fraction sector ",
+        "CALs Sampling Fraction sector "
+};
+static const char *SFARR2D[NCALS] = {
+        "Vp vs E/Vp (PCAL sector ",
+        "Vp vs E/Vp (ECIN sector ",
+        "Vp vs E/Vp (ECOU sector ",
+        "Vp vs E/Vp (CALs sector "
+};
+
+/** Momentum limits for 1D sampling fraction fits. */
+static const double PLIMITSARR[NCALS][2] = {
+        {0.060, 0.250},
+        {0.015, 0.120},
+        {0.000, 0.400},
+        {0.150, 0.300}
+};
 
 /**
  * Insert a 1-dimensional histogram of floats into a map.

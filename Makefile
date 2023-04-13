@@ -47,11 +47,10 @@ HXX         := $(RXX) $(HIPOCFLAGS)
 O_HIPO2ROOT := $(BLD)/constants.o $(BLD)/err_handler.o \
 			   $(BLD)/filename_handler.o $(BLD)/hipo_bank.o \
 			   $(BLD)/io_handler.o $(BLD)/progress.o
+O_EXTRACTSF := $(BLD)/constants.o $(BLD)/err_handler.o \
+			   $(BLD)/filename_handler.o $(BLD)/hipo_bank.o \
+			   $(BLD)/io_handler.o $(BLD)/math_utils.o $(BLD)/progress.o
 
-O_EXTRACTSF := $(BLD)/constants.o \
-			   $(BLD)/err_handler.o $(BLD)/file_handler.o $(BLD)/io_handler.o \
-			   $(BLD)/math_utils.o $(BLD)/progress.o $(BLD)/filename_handler.o \
-			   $(BLD)/hipo_bank.o
 O_ACCCORR   := $(BLD)/err_handler.o $(BLD)/file_handler.o $(BLD)/io_handler.o \
  			   $(BLD)/math_utils.o $(BLD)/progress.o $(BLD)/filename_handler.o
 O_MKNTUPLES := $(BLD)/bank_containers.o $(BLD)/constants.o \
