@@ -16,6 +16,7 @@
 #ifndef RGE_HIPOBANK
 #define RGE_HIPOBANK
 
+// --+ preamble +---------------------------------------------------------------
 // C.
 #include "string.h"
 
@@ -84,11 +85,6 @@ static rge_hipoentry entry_writer_init(
         const char *in_addr, unsigned int in_type
 );
 
-/**
- * Initialize one rge_hipoentry defined to *read* from a TTree.
- */
-// static rge_hipoentry entry_reader_init(const char *in_addr);
-
 /** Set b.nrows to in_rows. */
 static int set_nrows(rge_hipobank *b, long unsigned int in_nrows);
 
@@ -96,12 +92,16 @@ static int set_nrows(rge_hipobank *b, long unsigned int in_nrows);
 /** Initialize rge_hipobank based on static map related to bank_version. */
 rge_hipobank rge_hipobank_init(const char *bank_version);
 
-// int rge_set_branches(rge_hipobank b, TTree *t);
+/** Initialize rge_hipobank and set branch addresses to t's branches. */
+rge_hipobank rge_hipobank_init(const char *bank_version, TTree *t);
 
 /** Link branches of t to entries of b. */
 int rge_link_branches(rge_hipobank *b, TTree *t);
 
 /** Fill entries in rb with data from hb. */
 int rge_fill(rge_hipobank *rb, hipo::bank hb);
+
+/** Read entries from t into b. */
+int rge_get_entries(rge_hipobank *b, TTree *t, int idx);
 
 #endif

@@ -107,6 +107,21 @@ rge_hipobank rge_hipobank_init(const char *bank_version) {
     return b;
 }
 
+rge_hipobank rge_hipobank_init(const char *bank_version, TTree *t) {
+    rge_hipobank b = rge_hipobank_init(bank_version);
+
+    for (it = b.entries.begin(); it != b.entries.end(); ++it) {
+        const char *key = it->first;
+        t->SetBranchAddress(
+                b.entries.at(key).addr,
+                &(b.entries.at(key).data),
+                &(b.entries.at(key).branch)
+        );
+    }
+
+    return b;
+}
+
 int rge_link_branches(rge_hipobank *b, TTree *t) {
     for (it = b->entries.begin(); it != b->entries.end(); ++it) {
         const char *key = it->first;
@@ -147,72 +162,11 @@ int rge_fill(rge_hipobank *rb, hipo::bank hb) {
     return 0;
 }
 
-// int rge_set_branches(rge_hipobank b, TTree *t) {
-//     // for (it = b.entries.begin(); it != b.entries.end(); ++it) {
-//     //     rge_hipoentry e = it->second;
-//     //     t->SetBranchAddress(it->second.addr, &(e.data), &(e.branch));
-//     // }
-//
-//     t->SetBranchAddress(
-//             (b.entries.at("pid").addr),
-//             &(b.entries.at("pid").data),
-//             &(b.entries.at("pid").branch)
-//     );
-//     t->SetBranchAddress(
-//             (b.entries.at("px").addr),
-//             &(b.entries.at("px").data),
-//             &(b.entries.at("px").branch)
-//     );
-//     t->SetBranchAddress(
-//             (b.entries.at("py").addr),
-//             &(b.entries.at("py").data),
-//             &(b.entries.at("py").branch)
-//     );
-//     t->SetBranchAddress(
-//             (b.entries.at("pz").addr),
-//             &(b.entries.at("pz").data),
-//             &(b.entries.at("pz").branch)
-//     );
-//     t->SetBranchAddress(
-//             (b.entries.at("vx").addr),
-//             &(b.entries.at("vx").data),
-//             &(b.entries.at("vx").branch)
-//     );
-//     t->SetBranchAddress(
-//             (b.entries.at("vy").addr),
-//             &(b.entries.at("vy").data),
-//             &(b.entries.at("vy").branch)
-//     );
-//     t->SetBranchAddress(
-//             (b.entries.at("vz").addr),
-//             &(b.entries.at("vz").data),
-//             &(b.entries.at("vz").branch)
-//     );
-//     t->SetBranchAddress(
-//             (b.entries.at("vt").addr),
-//             &(b.entries.at("vt").data),
-//             &(b.entries.at("vt").branch)
-//     );
-//     t->SetBranchAddress(
-//             (b.entries.at("charge").addr),
-//             &(b.entries.at("charge").data),
-//             &(b.entries.at("charge").branch)
-//     );
-//     t->SetBranchAddress(
-//             (b.entries.at("beta").addr),
-//             &(b.entries.at("beta").data),
-//             &(b.entries.at("beta").branch)
-//     );
-//     t->SetBranchAddress(
-//             (b.entries.at("chi2pid").addr),
-//             &(b.entries.at("chi2pid").data),
-//             &(b.entries.at("chi2pid").branch)
-//     );
-//     t->SetBranchAddress(
-//             (b.entries.at("status").addr),
-//             &(b.entries.at("status").data),
-//             &(b.entries.at("status").branch)
-//     );
-//
-//     return 0;
-// }
+int rge_get_entries(rge_hipobank *b, TTree *t, int idx) {
+    for (it = b->entries.begin(); it != b->entries.end(); ++it) {
+        const char *key = it->first;
+        b->entries.at(key).branch->GetEntry(t->LoadTree(idx));
+    }
+
+    return 0;
+}

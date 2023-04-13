@@ -13,14 +13,24 @@
 //
 // You can see a copy of the GNU Lesser Public License under the LICENSE file.
 
-#include <libgen.h>
+// C.
+#include "libgen.h"
+
+// C++.
+#include <map>
+#include <utility>
+
+// ROOT.
 #include <TCanvas.h>
 #include <TFile.h>
+#include <TH1.h>
 #include <TH2.h>
 #include <TF1.h>
 #include <TGraphErrors.h>
 #include <TStyle.h>
-#include "../lib/bank_containers.h"
+
+// rge-analysis.
+#include "../lib/rge_hipo_bank.h"
 #include "../lib/rge_err_handler.h"
 #include "../lib/rge_filename_handler.h"
 #include "../lib/rge_io_handler.h"
@@ -37,6 +47,8 @@ static const char *USAGE_MESSAGE =
 "                is data.\n"
 " * infile     : input ROOT file. Expected file format: <text>run_no.root.\n\n"
 "    Obtain the EC sampling fraction from an input file.\n";
+
+#define NCALS 4
 
 /**
  * Insert a 1-dimensional histogram of floats into a map.
@@ -122,15 +134,14 @@ static int run(
     // Create and organize histos and name arrays.
     std::map<const char *, TH1 *> histos;
 
-    const int ncals = sizeof(CALNAME)/sizeof(CALNAME[0]);
-    char *sf1D_name_arr[ncals][NSECTORS][
+    char *sf1D_name_arr[NCALS][NSECTORS][
             static_cast<long unsigned int>(((SF_PMAX - SF_PMIN)/SF_PSTEP))
     ];
-    char *sf2D_name_arr[ncals][NSECTORS];
-    TGraphErrors *sf_dotgraph[ncals][NSECTORS];
-    char *sf2Dfit_name_arr[ncals][NSECTORS];
-    TF1 *sf_polyfit[ncals][NSECTORS];
-    double sf_fitresults[ncals][NSECTORS][SF_NPARAMS][2];
+    char *sf2D_name_arr[NCALS][NSECTORS];
+    TGraphErrors *sf_dotgraph[NCALS][NSECTORS];
+    char *sf2Dfit_name_arr[NCALS][NSECTORS];
+    TF1 *sf_polyfit[NCALS][NSECTORS];
+    double sf_fitresults[NCALS][NSECTORS][SF_NPARAMS][2];
 
     int cal_idx = -1;
     for (const char *cal : SFARR2D) {
@@ -195,10 +206,10 @@ static int run(
     }
 
     // Create TTree and link bank_containers.
-    TTree *t = f_in->Get<TTree>("Tree");
-    Particle particle(t);
-    Track track(t);
-    Calorimeter calorimeter(t);
+    TTree *t = f_in->Get<TTree>(TREENAMEDATA);
+    rge_hipobank particle    = rge_hipobank_init(RGE_RECPARTICLE,    t);
+    rge_hipobank track       = rge_hipobank_init(RGE_RECTRACK,       t);
+    rge_hipobank calorimeter = rge_hipobank_init(RGE_RECCALORIMETER, t);
 
     // Iterate through input file. Each TTree entry is one event.
     if (nevn == -1 || t->GetEntries() < nevn) nevn = t->GetEntries();
@@ -209,33 +220,35 @@ static int run(
         rge_pbar_update(evn);
 
         // Get entries from bank containers.
-        particle.get_entries(t, evn);
-        track.get_entries(t, evn);
-        calorimeter.get_entries(t, evn);
+        rge_get_entries(&particle,    t, evn);
+        rge_get_entries(&track,       t, evn);
+        rge_get_entries(&calorimeter, t, evn);
 
         // Skip events without the necessary banks.
         if (
-                particle.vz->size()        == 0 ||
-                track.pindex->size()       == 0 ||
-                calorimeter.pindex->size() == 0
+                particle   .entries.at("vz")    .data->size() == 0 ||
+                track      .entries.at("pindex").data->size() == 0 ||
+                calorimeter.entries.at("pindex").data->size() == 0
         ) {
             continue;
         }
 
-        for (long unsigned int pos = 0; pos < track.index->size(); ++pos) {
+        long unsigned int npos = track.entries.at("pindex").data->size();
+        for (long unsigned int pos = 0; pos < npos; ++pos) {
             // Get basic data from track and particle banks.
-            long unsigned int pindex =
-                    static_cast<long unsigned int>(track.pindex->at(pos));
+            long unsigned int pindex = static_cast<long unsigned int>(
+                    track.entries.at("pindex").data->at(pos)
+            );
 
             // Get particle momentum.
-            double px = particle.px->at(pindex);
-            double py = particle.py->at(pindex);
-            double pz = particle.pz->at(pindex);
+            double px = particle.entries.at("px").data->at(pindex);
+            double py = particle.entries.at("py").data->at(pindex);
+            double pz = particle.entries.at("pz").data->at(pindex);
             double total_p = rge_calc_magnitude(px, py, pz);
 
             // Compute energy deposited in each calorimeter per sector.
-            double sf_E[ncals][NSECTORS];
-            for (int cal_i = 0; cal_i < ncals; ++cal_i) {
+            double sf_E[NCALS][NSECTORS];
+            for (int cal_i = 0; cal_i < NCALS; ++cal_i) {
                 for (int sector_i = 0; sector_i < NSECTORS; ++sector_i) {
                     sf_E[cal_i][sector_i] = 0;
                 }
@@ -243,19 +256,18 @@ static int run(
 
             for (
                     unsigned long int entry_i = 0;
-                    entry_i < calorimeter.pindex->size();
+                    entry_i < calorimeter.entries.at("pindex").data->size();
                     ++entry_i
             ) {
-                if (
-                        static_cast<long unsigned int>(
-                                calorimeter.pindex->at(entry_i)
-                        ) != pindex
-                ) {
+                if (static_cast<long unsigned int>(
+                        calorimeter.entries.at("pindex").data->at(entry_i)
+                ) != pindex) {
                     continue;
                 }
 
                 // Get sector.
-                int sector_i = calorimeter.sector->at(entry_i) - 1;
+                int sector_i =
+                        calorimeter.entries.at("sector").data->at(entry_i) - 1;
                 if (sector_i == -1) continue;
                 if (sector_i < -1 || sector_i > NSECTORS-1) {
                     rge_errno = RGEERR_INVALIDCALSECTOR;
@@ -263,18 +275,19 @@ static int run(
                 }
 
                 // Get detector.
-                switch(calorimeter.layer->at(entry_i)) {
+                double energy =
+                        calorimeter.entries.at("energy").data->at(entry_i);
+                switch(static_cast<int>(
+                        calorimeter.entries.at("layer").data->at(entry_i))
+                ) {
                     case PCAL_LYR:
-                        sf_E[PCAL_IDX][sector_i] +=
-                                calorimeter.energy->at(entry_i);
+                        sf_E[PCAL_IDX][sector_i] += energy;
                         break;
                     case ECIN_LYR:
-                        sf_E[ECIN_IDX][sector_i] +=
-                                calorimeter.energy->at(entry_i);
+                        sf_E[ECIN_IDX][sector_i] += energy;
                         break;
                     case ECOU_LYR:
-                        sf_E[ECOU_IDX][sector_i] +=
-                                calorimeter.energy->at(entry_i);
+                        sf_E[ECOU_IDX][sector_i] += energy;
                         break;
                     default:
                         rge_errno = RGEERR_INVALIDCALLAYER;
@@ -282,7 +295,7 @@ static int run(
                 }
             }
 
-            for (int cal_i = 0; cal_i < ncals-1; ++cal_i) {
+            for (int cal_i = 0; cal_i < NCALS-1; ++cal_i) {
                 for (int sector_i = 0; sector_i < NSECTORS; ++sector_i) {
                     sf_E[CALS_IDX][sector_i] += sf_E[cal_i][sector_i];
                 }
@@ -297,7 +310,7 @@ static int run(
             }
 
             // Write to histograms.
-            for (int cal_i = 0; cal_i < ncals; ++cal_i) {
+            for (int cal_i = 0; cal_i < NCALS; ++cal_i) {
                 for (int sector_i = 0; sector_i < NSECTORS; ++sector_i) {
                     if (sf_E[cal_i][sector_i] <= 0) continue;
                     histos[sf2D_name_arr[cal_i][sector_i]]->Fill(
@@ -405,7 +418,7 @@ static int run(
     // Write to output file.
     TString dir;
     TCanvas *gcvs = new TCanvas();
-    for (int cal_i = 0; cal_i < ncals; ++cal_i) {
+    for (int cal_i = 0; cal_i < NCALS; ++cal_i) {
         dir = Form("%s", CALNAME[cal_i]);
         out_rootfile->mkdir(dir);
         out_rootfile->cd(dir);
