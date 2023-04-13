@@ -20,6 +20,7 @@
 #include "../lib/rge_progress.h"
 #include "../lib/rge_filename_handler.h"
 #include "../lib/bank_containers.h"
+#include "../lib/rge_hipo_bank.h"
 
 const char *usage_message =
 "Usage: hipo2root [-hfn:w:] infile\n"
@@ -49,7 +50,7 @@ static int run(
 
     // Create tree for output file and bank containers to read hipo file.
     TTree *tree = new TTree(TREENAMEDATA, TREENAMEDATA);
-    Particle     particle;
+    rge_hipobank particle = rge_recparticle_init();
     Track        track;
     Calorimeter  calorimeter;
     Cherenkov    cherenkov;
@@ -57,7 +58,7 @@ static int run(
     FMT_Tracks   fmt_tracks;
 
     // Link bank container to tree branches.
-    particle    .link_branches(tree);
+    rge_link_branches(&particle, tree);
     track       .link_branches(tree);
     calorimeter .link_branches(tree);
     cherenkov   .link_branches(tree);
@@ -107,15 +108,18 @@ static int run(
         if (use_fmt) event.getStructure(fmt_tracks_bank);
 
         // Fill banks from hipo event.
-        particle    .fill(particle_bank);
+        rge_fill(&particle, particle_bank);
         track       .fill(track_bank);
         calorimeter .fill(calorimeter_bank);
         cherenkov   .fill(cherenkov_bank);
         scintillator.fill(scintillator_bank);
         if (use_fmt) fmt_tracks.fill(fmt_tracks_bank);
 
+        else continue;
+
         // Write to tree *if* event is not empty.
-        long unsigned int total_nrows = particle.get_nrows() +
+        long unsigned int total_nrows =
+                                        particle.nrows +
                                         track.get_nrows() +
                                         calorimeter.get_nrows() +
                                         cherenkov.get_nrows() +

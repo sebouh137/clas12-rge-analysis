@@ -135,18 +135,17 @@ static const std::map<unsigned int, const char *> ERRMAP = {
 
 int handle_err() {
     if (rge_errno == RGEERR_NOERR) return 0; // No error.
-    if (rge_errno == RGEERR_USAGE) return 1; // Print usage().
+    if (rge_errno == RGEERR_USAGE) return 1; // Just print usage.
 
     // Print error.
     if (ERRMAP.contains(rge_errno)) {
         fprintf(stderr, "\n%s\n", ERRMAP.at(rge_errno));
         return 1;
     }
-    else {
-        // Error number not implemented.
-        fprintf(stderr, "rge_errno %d not implemented.\n\n", rge_errno);
-        return 2;
-    }
+
+    // Error number not implemented.
+    fprintf(stderr, "rge_errno %d not implemented.\n\n", rge_errno);
+    return 2;
 }
 
 // --+ library +----------------------------------------------------------------

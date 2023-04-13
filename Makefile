@@ -46,7 +46,7 @@ HXX         := $(RXX) $(HIPOCFLAGS)
 # Object lists.
 O_HIPO2ROOT := $(BLD)/bank_containers.o $(BLD)/err_handler.o \
 			   $(BLD)/file_handler.o $(BLD)/io_handler.o $(BLD)/progress.o \
-			   $(BLD)/filename_handler.o
+			   $(BLD)/filename_handler.o $(BLD)/hipo_bank.o
 O_EXTRACTSF := $(BLD)/bank_containers.o $(BLD)/constants.o \
 			   $(BLD)/err_handler.o $(BLD)/file_handler.o $(BLD)/io_handler.o \
 			   $(BLD)/math_utils.o $(BLD)/progress.o $(BLD)/filename_handler.o
@@ -107,6 +107,9 @@ $(BLD)/pid_utils.o: $(SRC)/rge_pid_utils.c $(LIB)/rge_pid_utils.h
 
 $(BLD)/math_utils.o: $(SRC)/rge_math_utils.c $(LIB)/rge_math_utils.h
 	$(RXX) -c $(SRC)/rge_math_utils.c -o $(BLD)/math_utils.o
+
+$(BLD)/hipo_bank.o: $(SRC)/rge_hipo_bank.c $(LIB)/rge_hipo_bank.h
+	$(HXX) -c $(SRC)/rge_hipo_bank.c -o $(BLD)/hipo_bank.o
 
 clean:
 	@echo "Removing all build files and binaries."

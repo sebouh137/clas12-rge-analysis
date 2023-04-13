@@ -1,0 +1,178 @@
+// CLAS12 RG-E Analyser.
+// Copyright (C) 2022-2023 Bruno Benkel
+//
+// This program is free software: you can redistribute it and/or modify it under
+// the terms of the GNU Lesser General Public License as published by the Free
+// Software Foundation, either version 3 of the License, or (at your option) any
+// later version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+// details.
+//
+// You can see a copy of the GNU Lesser Public License under the LICENSE file.
+
+#include "../lib/rge_hipo_bank.h"
+
+int rge_set_nrows(rge_hipobank *b, long unsigned int in_nrows) {
+    b->nrows = in_nrows;
+
+    b->entries.at("pid").data    ->resize(b->nrows);
+    b->entries.at("px").data     ->resize(b->nrows);
+    b->entries.at("py").data     ->resize(b->nrows);
+    b->entries.at("pz").data     ->resize(b->nrows);
+    b->entries.at("vx").data     ->resize(b->nrows);
+    b->entries.at("vy").data     ->resize(b->nrows);
+    b->entries.at("vz").data     ->resize(b->nrows);
+    b->entries.at("vt").data     ->resize(b->nrows);
+    b->entries.at("beta").data   ->resize(b->nrows);
+    b->entries.at("chi2pid").data->resize(b->nrows);
+    b->entries.at("charge").data ->resize(b->nrows);
+    b->entries.at("status").data ->resize(b->nrows);
+    return 0;
+}
+
+rge_hipoentry entry_writer_init(const char *in_addr, unsigned int in_type) {
+    return __extension__ (rge_hipoentry) {
+            .addr = in_addr, .data = {}, .branch = nullptr, .type = in_type
+    };
+}
+
+// rge_hipoentry entry_reader_init(const char *in_addr) {
+//     return __extension__ (rge_hipoentry) {
+//             .addr = in_addr, .data = nullptr, .branch = nullptr
+//     };
+// }
+
+rge_hipobank rge_recparticle_init() {
+    rge_hipobank b;
+    b.nrows = 0;
+
+    b.entries = {
+        {"pid",     entry_writer_init("REC::Particle::pid",     INT)},
+        {"vx",      entry_writer_init("REC::Particle::vx",      FLOAT)},
+        {"vy",      entry_writer_init("REC::Particle::vy",      FLOAT)},
+        {"vz",      entry_writer_init("REC::Particle::vz",      FLOAT)},
+        {"px",      entry_writer_init("REC::Particle::px",      FLOAT)},
+        {"py",      entry_writer_init("REC::Particle::py",      FLOAT)},
+        {"pz",      entry_writer_init("REC::Particle::pz",      FLOAT)},
+        {"vt",      entry_writer_init("REC::Particle::vt",      FLOAT)},
+        {"charge",  entry_writer_init("REC::Particle::charge",  BYTE)},
+        {"beta",    entry_writer_init("REC::Particle::beta",    FLOAT)},
+        {"chi2pid", entry_writer_init("REC::Particle::chi2pid", FLOAT)},
+        {"status",  entry_writer_init("REC::Particle::status",  SHORT)}
+    };
+
+    return b;
+}
+
+int rge_link_branches(rge_hipobank *b, TTree *t) {
+    for (it = b->entries.begin(); it != b->entries.end(); ++it) {
+        const char *key = it->first;
+        t->Branch(b->entries.at(key).addr, &(b->entries.at(key).data));
+    }
+
+    return 0;
+}
+
+int rge_fill(rge_hipobank *rb, hipo::bank hb) {
+    rge_set_nrows(rb, static_cast<long unsigned int>(hb.getRows()));
+
+    for (long unsigned int row = 0; row < rb->nrows; ++row) {
+        for (it = rb->entries.begin(); it != rb->entries.end(); ++it) {
+            const char *key = it->first;
+            double bank_data = 0;
+            switch (rb->entries.at(key).type) {
+                case BYTE:
+                    bank_data = static_cast<double>(hb.getByte(key, row));
+                    break;
+                case SHORT:
+                    bank_data = static_cast<double>(hb.getShort(key, row));
+                    break;
+                case INT:
+                    bank_data = static_cast<double>(hb.getInt(key, row));
+                    break;
+                case FLOAT:
+                    bank_data = static_cast<double>(hb.getFloat(key, row));
+                    break;
+                default:
+                    // TODO. Set rge_errno.
+                    return 1;
+            }
+            rb->entries.at(key).data->at(row) = bank_data;
+        }
+    }
+
+    return 0;
+}
+
+// int rge_set_branches(rge_hipobank b, TTree *t) {
+//     // for (it = b.entries.begin(); it != b.entries.end(); ++it) {
+//     //     rge_hipoentry e = it->second;
+//     //     t->SetBranchAddress(it->second.addr, &(e.data), &(e.branch));
+//     // }
+//
+//     t->SetBranchAddress(
+//             (b.entries.at("pid").addr),
+//             &(b.entries.at("pid").data),
+//             &(b.entries.at("pid").branch)
+//     );
+//     t->SetBranchAddress(
+//             (b.entries.at("px").addr),
+//             &(b.entries.at("px").data),
+//             &(b.entries.at("px").branch)
+//     );
+//     t->SetBranchAddress(
+//             (b.entries.at("py").addr),
+//             &(b.entries.at("py").data),
+//             &(b.entries.at("py").branch)
+//     );
+//     t->SetBranchAddress(
+//             (b.entries.at("pz").addr),
+//             &(b.entries.at("pz").data),
+//             &(b.entries.at("pz").branch)
+//     );
+//     t->SetBranchAddress(
+//             (b.entries.at("vx").addr),
+//             &(b.entries.at("vx").data),
+//             &(b.entries.at("vx").branch)
+//     );
+//     t->SetBranchAddress(
+//             (b.entries.at("vy").addr),
+//             &(b.entries.at("vy").data),
+//             &(b.entries.at("vy").branch)
+//     );
+//     t->SetBranchAddress(
+//             (b.entries.at("vz").addr),
+//             &(b.entries.at("vz").data),
+//             &(b.entries.at("vz").branch)
+//     );
+//     t->SetBranchAddress(
+//             (b.entries.at("vt").addr),
+//             &(b.entries.at("vt").data),
+//             &(b.entries.at("vt").branch)
+//     );
+//     t->SetBranchAddress(
+//             (b.entries.at("charge").addr),
+//             &(b.entries.at("charge").data),
+//             &(b.entries.at("charge").branch)
+//     );
+//     t->SetBranchAddress(
+//             (b.entries.at("beta").addr),
+//             &(b.entries.at("beta").data),
+//             &(b.entries.at("beta").branch)
+//     );
+//     t->SetBranchAddress(
+//             (b.entries.at("chi2pid").addr),
+//             &(b.entries.at("chi2pid").data),
+//             &(b.entries.at("chi2pid").branch)
+//     );
+//     t->SetBranchAddress(
+//             (b.entries.at("status").addr),
+//             &(b.entries.at("status").data),
+//             &(b.entries.at("status").branch)
+//     );
+//
+//     return 0;
+// }
