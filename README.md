@@ -13,11 +13,13 @@ First, set the environment variable `HIPO` to the location where hipo is install
 ```
 Usage: hipo2root [-hfn:w:] infile
  * -h         : show this message and exit.
- * -f         : set this to true to process FMT::Tracks bank.
+ * -f         : set this to true to process FMT::Tracks bank. If this is set
+                and FMT::Tracks bank is not present in the HIPO file, the
+                program will crash.
  * -n nevents : number of events.
  * -w workdir : location where output root files are to be stored. Default
                 is root_io.
- * infile     : input HIPO file. Expected file format is <text>run_no.hipo.
+ * infile     : input HIPO file. Expected format is <text>run_no.hipo.
 ```
 Convert a file from hipo to root format. This program only conserves the banks that are useful for RG-E analysis, as specified in the `lib/bank_containers.h` file. It is important for the input hipo file to specify the run number at the end of the filename (`<text>run_no.hipo`), so that `hipo2root` can get the beam energy from the run number.
 

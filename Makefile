@@ -44,9 +44,10 @@ HLIBS       := $(RLIBS) -L$(HIPO)/lib -lhipo4
 HXX         := $(RXX) $(HIPOCFLAGS)
 
 # Object lists.
-O_HIPO2ROOT := $(BLD)/bank_containers.o $(BLD)/err_handler.o \
-			   $(BLD)/file_handler.o $(BLD)/io_handler.o $(BLD)/progress.o \
-			   $(BLD)/filename_handler.o $(BLD)/hipo_bank.o
+O_HIPO2ROOT := $(BLD)/constants.o $(BLD)/err_handler.o \
+			   $(BLD)/filename_handler.o $(BLD)/hipo_bank.o \
+			   $(BLD)/io_handler.o $(BLD)/progress.o
+
 O_EXTRACTSF := $(BLD)/bank_containers.o $(BLD)/constants.o \
 			   $(BLD)/err_handler.o $(BLD)/file_handler.o $(BLD)/io_handler.o \
 			   $(BLD)/math_utils.o $(BLD)/progress.o $(BLD)/filename_handler.o
@@ -60,9 +61,11 @@ O_DRAWPLOTS := $(BLD)/constants.o $(BLD)/err_handler.o $(BLD)/file_handler.o \
 			   $(BLD)/io_handler.o $(BLD)/pid_utils.o $(BLD)/math_utils.o \
 			   $(BLD)/progress.o $(BLD)/filename_handler.o
 
+# --+ make +--------------------------------------------------------------------
 all: $(BIN)/hipo2root $(BIN)/extract_sf $(BIN)/acc_corr \
 	 $(BIN)/make_ntuples $(BIN)/draw_plots
 
+# --+ make bin/* +--------------------------------------------------------------
 $(BIN)/hipo2root: $(O_HIPO2ROOT) $(SRC)/hipo2root.c
 	$(HXX) $(O_HIPO2ROOT) $(SRC)/hipo2root.c -o $(BIN)/hipo2root $(HLIBS)
 
@@ -78,6 +81,7 @@ $(BIN)/make_ntuples: $(O_MKNTUPLES) $(SRC)/make_ntuples.c
 $(BIN)/draw_plots: $(O_DRAWPLOTS) $(SRC)/draw_plots.c
 	$(RXX) $(O_DRAWPLOTS) $(SRC)/draw_plots.c -o $(BIN)/draw_plots $(RLIBS)
 
+# --+ make build/* +------------------------------------------------------------
 $(BLD)/bank_containers.o: $(SRC)/bank_containers.c $(LIB)/bank_containers.h
 	$(HXX) -c $(SRC)/bank_containers.c -o $(BLD)/bank_containers.o
 

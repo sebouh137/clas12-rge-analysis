@@ -13,13 +13,26 @@
 //
 // You can see a copy of the GNU Lesser Public License under the LICENSE file.
 
+// C.
 #include <libgen.h>
+
+// ROOT.
 #include "TFile.h"
+#include "TTree.h"
+
+// HIPO.
+#include "bank.h"
+#include "dictionary.h"
+#include "event.h"
+#include "reader.h"
+
+// rge-analysis.
+#include "../lib/constants.h"
 #include "../lib/rge_err_handler.h"
-#include "../lib/rge_io_handler.h"
-#include "../lib/rge_progress.h"
 #include "../lib/rge_filename_handler.h"
 #include "../lib/rge_hipo_bank.h"
+#include "../lib/rge_io_handler.h"
+#include "../lib/rge_progress.h"
 
 static const char *USAGE_MESSAGE =
 "Usage: hipo2root [-hfn:w:] infile\n"

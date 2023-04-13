@@ -16,10 +16,21 @@
 #ifndef RGE_HIPOBANK
 #define RGE_HIPOBANK
 
+// C.
+#include "string.h"
+
+// C++.
 #include <map>
 #include <vector>
+
+// ROOT.
 #include <TTree.h>
+
+// HIPO.
+#include "bank.h"
 #include "reader.h"
+
+// rge-analysis.
 #include "rge_err_handler.h"
 
 /** Definitions to refer to different hipo banks using strings. */
