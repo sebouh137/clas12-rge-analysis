@@ -62,24 +62,23 @@ O_DRAWPLOTS := $(BLD)/constants.o $(BLD)/err_handler.o $(BLD)/file_handler.o \
 			   $(BLD)/progress.o $(BLD)/filename_handler.o
 
 # --+ make +--------------------------------------------------------------------
-all: $(BIN)/hipo2root $(BIN)/extract_sf $(BIN)/acc_corr \
-	 $(BIN)/make_ntuples $(BIN)/draw_plots
-
+all: $(BIN)/acc_corr $(BIN)/draw_plots $(BIN)/extract_sf $(BIN)/hipo2root \
+     $(BIN)/make_ntuples
 # --+ make bin/* +--------------------------------------------------------------
-$(BIN)/hipo2root: $(O_HIPO2ROOT) $(SRC)/hipo2root.c
-	$(HXX) $(O_HIPO2ROOT) $(SRC)/hipo2root.c -o $(BIN)/hipo2root $(HLIBS)
+$(BIN)/acc_corr: $(O_ACCCORR) $(SRC)/acc_corr.c
+	$(RXX) $(O_ACCCORR) $(SRC)/acc_corr.c -o $(BIN)/acc_corr $(RLIBS)
+
+$(BIN)/draw_plots: $(O_DRAWPLOTS) $(SRC)/draw_plots.c
+	$(RXX) $(O_DRAWPLOTS) $(SRC)/draw_plots.c -o $(BIN)/draw_plots $(RLIBS)
 
 $(BIN)/extract_sf: $(O_EXTRACTSF) $(SRC)/extract_sf.c
 	$(HXX) $(O_EXTRACTSF) $(SRC)/extract_sf.c -o $(BIN)/extract_sf $(HLIBS)
 
-$(BIN)/acc_corr: $(O_ACCCORR) $(SRC)/acc_corr.c
-	$(RXX) $(O_ACCCORR) $(SRC)/acc_corr.c -o $(BIN)/acc_corr $(RLIBS)
+$(BIN)/hipo2root: $(O_HIPO2ROOT) $(SRC)/hipo2root.c
+	$(HXX) $(O_HIPO2ROOT) $(SRC)/hipo2root.c -o $(BIN)/hipo2root $(HLIBS)
 
 $(BIN)/make_ntuples: $(O_MKNTUPLES) $(SRC)/make_ntuples.c
 	$(HXX) $(O_MKNTUPLES) $(SRC)/make_ntuples.c -o $(BIN)/make_ntuples $(HLIBS)
-
-$(BIN)/draw_plots: $(O_DRAWPLOTS) $(SRC)/draw_plots.c
-	$(RXX) $(O_DRAWPLOTS) $(SRC)/draw_plots.c -o $(BIN)/draw_plots $(RLIBS)
 
 # --+ make build/* +------------------------------------------------------------
 $(BLD)/bank_containers.o: $(SRC)/bank_containers.c $(LIB)/bank_containers.h
@@ -91,17 +90,20 @@ $(BLD)/constants.o: $(SRC)/constants.c $(LIB)/constants.h
 $(BLD)/err_handler.o: $(SRC)/rge_err_handler.c $(LIB)/rge_err_handler.h
 	$(CXX) -std=c++20 -c $(SRC)/rge_err_handler.c -o $(BLD)/err_handler.o
 
-$(BLD)/io_handler.o: $(SRC)/rge_io_handler.c $(LIB)/rge_io_handler.h
-	$(CXX) -c $(SRC)/rge_io_handler.c -o $(BLD)/io_handler.o
+$(BLD)/file_handler.o: $(SRC)/rge_file_handler.c $(LIB)/rge_file_handler.h
+	$(CXX) -c $(SRC)/rge_file_handler.c -o $(BLD)/file_handler.o
 
 $(BLD)/filename_handler.o: $(SRC)/rge_filename_handler.c $(LIB)/rge_filename_handler.h
 	$(CXX) -c $(SRC)/rge_filename_handler.c -o $(BLD)/filename_handler.o
 
-$(BLD)/progress.o: $(SRC)/rge_progress.c $(LIB)/rge_progress.h
-	$(CXX) -c $(SRC)/rge_progress.c -o $(BLD)/progress.o
+$(BLD)/hipo_bank.o: $(SRC)/rge_hipo_bank.c $(LIB)/rge_hipo_bank.h
+	$(HXX) -c $(SRC)/rge_hipo_bank.c -o $(BLD)/hipo_bank.o
 
-$(BLD)/file_handler.o: $(SRC)/rge_file_handler.c $(LIB)/rge_file_handler.h
-	$(CXX) -c $(SRC)/rge_file_handler.c -o $(BLD)/file_handler.o
+$(BLD)/io_handler.o: $(SRC)/rge_io_handler.c $(LIB)/rge_io_handler.h
+	$(CXX) -c $(SRC)/rge_io_handler.c -o $(BLD)/io_handler.o
+
+$(BLD)/math_utils.o: $(SRC)/rge_math_utils.c $(LIB)/rge_math_utils.h
+	$(RXX) -c $(SRC)/rge_math_utils.c -o $(BLD)/math_utils.o
 
 $(BLD)/particle.o: $(SRC)/rge_particle.c $(LIB)/rge_particle.h
 	$(HXX) -c $(SRC)/rge_particle.c -o $(BLD)/particle.o
@@ -109,11 +111,8 @@ $(BLD)/particle.o: $(SRC)/rge_particle.c $(LIB)/rge_particle.h
 $(BLD)/pid_utils.o: $(SRC)/rge_pid_utils.c $(LIB)/rge_pid_utils.h
 	$(CXX) -std=c++20 -c $(SRC)/rge_pid_utils.c -o $(BLD)/pid_utils.o
 
-$(BLD)/math_utils.o: $(SRC)/rge_math_utils.c $(LIB)/rge_math_utils.h
-	$(RXX) -c $(SRC)/rge_math_utils.c -o $(BLD)/math_utils.o
-
-$(BLD)/hipo_bank.o: $(SRC)/rge_hipo_bank.c $(LIB)/rge_hipo_bank.h
-	$(HXX) -c $(SRC)/rge_hipo_bank.c -o $(BLD)/hipo_bank.o
+$(BLD)/progress.o: $(SRC)/rge_progress.c $(LIB)/rge_progress.h
+	$(CXX) -c $(SRC)/rge_progress.c -o $(BLD)/progress.o
 
 clean:
 	@echo "Removing all build files and binaries."
