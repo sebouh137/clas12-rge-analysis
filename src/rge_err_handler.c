@@ -105,6 +105,9 @@ static const std::map<unsigned int, const char *> ERRMAP = {
     {RGEERR_NOFMTBANK,
             "FMT::Tracks bank not found in input. No FMT analysis is available "
             "for this input file."},
+    {RGEERR_INVALIDDETECTORID,
+            "There was an attempt to initialize an rge_hipobank instance with "
+            "an invalid hipo bank ID. Check availables IDs at rge_hipobank.h."},
 
     // Program errors.
     {RGEERR_UNIMPLEMENTEDBEAMENERGY,

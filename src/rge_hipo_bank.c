@@ -41,12 +41,9 @@ int set_nrows(rge_hipobank *b, long unsigned int in_nrows) {
     return 0;
 }
 
-// --+ library +----------------------------------------------------------------
-rge_hipobank rge_recparticle_init() {
-    rge_hipobank b;
-    b.nrows = 0;
-
-    b.entries = {
+/** Static map containing all entry lists. */
+static std::map<int, std::map<const char *, rge_hipoentry>> ENTRYMAP = {
+    {RGE_RECPARTICLE, {
         {"pid",     entry_writer_init("REC::Particle::pid",     INT)},
         {"vx",      entry_writer_init("REC::Particle::vx",      FLOAT)},
         {"vy",      entry_writer_init("REC::Particle::vy",      FLOAT)},
@@ -59,73 +56,33 @@ rge_hipobank rge_recparticle_init() {
         {"beta",    entry_writer_init("REC::Particle::beta",    FLOAT)},
         {"chi2pid", entry_writer_init("REC::Particle::chi2pid", FLOAT)},
         {"status",  entry_writer_init("REC::Particle::status",  SHORT)}
-    };
-
-    return b;
-}
-
-rge_hipobank rge_rectrack_init() {
-    rge_hipobank b;
-    b.nrows = 0;
-
-    b.entries = {
+    }},
+    {RGE_RECTRACK, {
         {"index",  entry_writer_init("REC::Track::index",  SHORT)},
         {"pindex", entry_writer_init("REC::Track::pindex", SHORT)},
         {"sector", entry_writer_init("REC::Track::sector", BYTE)},
         {"NDF",    entry_writer_init("REC::Track::ndf",    SHORT)},
         {"chi2",   entry_writer_init("REC::Track::chi2",   FLOAT)}
-    };
-
-    return b;
-}
-
-rge_hipobank rge_reccalorimeter_init() {
-    rge_hipobank b;
-    b.nrows = 0;
-
-    b.entries = {
+    }},
+    {RGE_RECCALORIMETER, {
         {"pindex", entry_writer_init("REC::Calorimeter::pindex", SHORT)},
         {"layer",  entry_writer_init("REC::Calorimeter::layer",  BYTE)},
         {"sector", entry_writer_init("REC::Calorimeter::sector", BYTE)},
         {"energy", entry_writer_init("REC::Calorimeter::energy", FLOAT)},
         {"time",   entry_writer_init("REC::Calorimeter::time",   FLOAT)}
-    };
-
-    return b;
-}
-
-rge_hipobank rge_reccherenkov_init() {
-    rge_hipobank b;
-    b.nrows = 0;
-
-    b.entries = {
+    }},
+    {RGE_RECCHERENKOV, {
         {"pindex",   entry_writer_init("REC::Cherenkov::pindex",   SHORT)},
         {"detector", entry_writer_init("REC::Cherenkov::detector", BYTE)},
         {"nphe",     entry_writer_init("REC::Cherenkov::nphe",     FLOAT)}
-    };
-
-    return b;
-}
-
-rge_hipobank rge_recscintillator_init() {
-    rge_hipobank b;
-    b.nrows = 0;
-
-    b.entries = {
+    }},
+    {RGE_RECSCINTILLATOR, {
         {"pindex",   entry_writer_init("REC::Scintillator::pindex",   SHORT)},
         {"time",     entry_writer_init("REC::Scintillator::time",     FLOAT)},
         {"detector", entry_writer_init("REC::Scintillator::detector", BYTE)},
         {"layer",    entry_writer_init("REC::Scintillator::layer",    BYTE)}
-    };
-
-    return b;
-}
-
-rge_hipobank rge_fmttracks_init() {
-    rge_hipobank b;
-    b.nrows = 0;
-
-    b.entries = {
+    }},
+    {RGE_FMTTRACKS, {
         {"index",  entry_writer_init("FMT::Tracks::index", SHORT)},
         {"NDF",    entry_writer_init("FMT::Tracks::ndf",   INT)},
         {"Vtx0_x", entry_writer_init("FMT::Tracks::vx",    FLOAT)},
@@ -134,7 +91,16 @@ rge_hipobank rge_fmttracks_init() {
         {"p0_x",   entry_writer_init("FMT::Tracks::px",    FLOAT)},
         {"p0_y",   entry_writer_init("FMT::Tracks::py",    FLOAT)},
         {"p0_z",   entry_writer_init("FMT::Tracks::pz",    FLOAT)}
-    };
+    }}
+};
+
+// --+ library +----------------------------------------------------------------
+rge_hipobank rge_hipobank_init(int bank_version) {
+    rge_hipobank b;
+    b.nrows = 0;
+
+    try {b.entries = ENTRYMAP.at(bank_version);}
+    catch (...) {rge_errno = RGEERR_INVALIDDETECTORID;}
 
     return b;
 }

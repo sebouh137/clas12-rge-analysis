@@ -86,6 +86,7 @@ int rge_print_usage(const char *msg);
 #define RGEERR_INVALIDCALSECTOR        101
 #define RGEERR_INVALIDCHERENKOVID      102
 #define RGEERR_NOFMTBANK               103
+#define RGEERR_INVALIDDETECTORID       104
 // --+ 150 - 199 program errors +-----------------------------------------------
 #define RGEERR_UNIMPLEMENTEDBEAMENERGY 150
 #define RGEERR_2DACCEPTANCEPLOT        151

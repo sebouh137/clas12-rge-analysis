@@ -49,12 +49,14 @@ static int run(
 
     // Create tree for output file and bank containers to read hipo file.
     TTree *tree = new TTree(TREENAMEDATA, TREENAMEDATA);
-    rge_hipobank particle     = rge_recparticle_init();
-    rge_hipobank track        = rge_rectrack_init();
-    rge_hipobank calorimeter  = rge_reccalorimeter_init();
-    rge_hipobank cherenkov    = rge_reccherenkov_init();
-    rge_hipobank scintillator = rge_recscintillator_init();
-    rge_hipobank fmt_tracks   = rge_fmttracks_init();
+    rge_hipobank particle     = rge_hipobank_init(RGE_RECPARTICLE);
+    rge_hipobank track        = rge_hipobank_init(RGE_RECTRACK);
+    rge_hipobank calorimeter  = rge_hipobank_init(RGE_RECCALORIMETER);
+    rge_hipobank cherenkov    = rge_hipobank_init(RGE_RECCHERENKOV);
+    rge_hipobank scintillator = rge_hipobank_init(RGE_RECSCINTILLATOR);
+    rge_hipobank fmt_tracks   = rge_hipobank_init(RGE_FMTTRACKS);
+    // Check that all banks were correctly initialized.
+    if (rge_errno != RGEERR_UNDEFINED) return 1;
 
     // Link bank container to tree branches.
     rge_link_branches(&particle,     tree);

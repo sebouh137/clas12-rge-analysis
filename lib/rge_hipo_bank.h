@@ -20,6 +20,7 @@
 #include <vector>
 #include <TTree.h>
 #include "reader.h"
+#include "rge_err_handler.h"
 
 /** internal variables to refer to different primitive types. */
 // NOTE. These could be improved by adding a reference to the primitive itself.
@@ -27,6 +28,14 @@ static const unsigned int BYTE  = 0;
 static const unsigned int SHORT = 1;
 static const unsigned int INT   = 2;
 static const unsigned int FLOAT = 3;
+
+/** Definitions to refer to different hipo banks using integers. */
+#define RGE_RECPARTICLE     0
+#define RGE_RECTRACK        1
+#define RGE_RECCALORIMETER  2
+#define RGE_RECCHERENKOV    3
+#define RGE_RECSCINTILLATOR 4
+#define RGE_FMTTRACKS       5
 
 // --+ structs +----------------------------------------------------------------
 /** Struct containing one entry of a particular hipo bank. */
@@ -66,13 +75,9 @@ static rge_hipoentry entry_writer_init(
 static int set_nrows(rge_hipobank *b, long unsigned int in_nrows);
 
 // --+ library +----------------------------------------------------------------
-/** Initializers. TO BE UPDATED. */
-rge_hipobank rge_recparticle_init();
-rge_hipobank rge_rectrack_init();
-rge_hipobank rge_reccalorimeter_init();
-rge_hipobank rge_reccherenkov_init();
-rge_hipobank rge_recscintillator_init();
-rge_hipobank rge_fmttracks_init();
+/** Initialize rge_hipobank based on static map related to bank_version. */
+rge_hipobank rge_hipobank_init(int bank_version);
+
 // int rge_set_branches(rge_hipobank b, TTree *t);
 
 /** Link branches of t to entries of b. */
