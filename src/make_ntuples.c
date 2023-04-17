@@ -67,46 +67,51 @@ static const uint FTOF2_LYR  =  3;
  * In order of decreasing precision, the list of detectors are:
  *     FTOF1B > FTOF1A > FTOF2 > PCAL > ECIN > ECOU.
  *
- * @param scintillator: instance of the Scintillator class.
+ * @param scintillator: Pointer to rge_hipobank containing scintillator data.
  * @param calorimeter:  instance of the Calorimeter class.
  * @param pindex:       particle index of the particle we're studying.
  * @return:             the most accurate TOF available in the scintillator and
  *                      calorimeter banks.
  */
 static double get_tof(
-        Scintillator scintillator, Calorimeter calorimeter, uint pindex
+        rge_hipobank *scintillator, Calorimeter calorimeter, uint pindex
 ) {
     int    most_precise_lyr = 0;
     double tof              = INFINITY;
-    for (uint i = 0; i < scintillator.pindex->size(); ++i) {
+    for (uint i = 0; i < rge_get_size(scintillator, "pindex"); ++i) {
         // Filter out incorrect pindex and hits not from FTOF.
         if (
-                static_cast<uint>(scintillator.pindex->at(i)) != pindex ||
-                scintillator.detector->at(i) != FTOF_ID
+                static_cast<uint>(rge_get_entry(scintillator, "pindex", i))
+                        != pindex ||
+                static_cast<uint>(rge_get_entry(scintillator, "detector", i))
+                        != FTOF_ID
         ) {
             continue;
         }
 
+        uint layer = static_cast<uint>(rge_get_entry(scintillator, "layer", i));
+        double time = rge_get_entry(scintillator, "time", i);
+
         // Check FTOF 1B (most precise FTOF layer).
-        if (scintillator.layer->at(i) == FTOF1B_LYR) {
+        if (layer == FTOF1B_LYR) {
             most_precise_lyr = FTOF1B_LYR;
-            tof = scintillator.time->at(i);
+            tof = time;
             break; // Things won't get better than this.
         }
 
         // Check FTOF 1A.
-        else if (scintillator.layer->at(i) == FTOF1A_LYR) {
+        else if (layer == FTOF1A_LYR) {
             if (most_precise_lyr == FTOF1A_LYR) continue;
             most_precise_lyr = FTOF1A_LYR;
-            tof = scintillator.time->at(i);
+            tof = time;
         }
 
         // Check FTOF 2.
-        else if (scintillator.layer->at(i) == FTOF2_LYR) {
+        else if (layer == FTOF2_LYR) {
             // We already have a similar or better hit.
             if (most_precise_lyr != 0) continue;
             most_precise_lyr = FTOF2_LYR;
-            tof = scintillator.time->at(i);
+            tof = time;
         }
     }
     if (most_precise_lyr != 0) return tof;
@@ -274,11 +279,11 @@ static int run(
     }
 
     // Associate banks to TTree.
-    rge_hipobank bpart = rge_hipobank_init(RGE_RECPARTICLE,  tree_in);
-    rge_hipobank btrk  = rge_hipobank_init(RGE_RECTRACK,     tree_in);
+    rge_hipobank bpart = rge_hipobank_init(RGE_RECPARTICLE,     tree_in);
+    rge_hipobank btrk  = rge_hipobank_init(RGE_RECTRACK,        tree_in);
     Calorimeter  bank_cal   (tree_in);
-    rge_hipobank bchkv = rge_hipobank_init(RGE_RECCHERENKOV, tree_in);
-    Scintillator bank_sci   (tree_in);
+    rge_hipobank bchkv = rge_hipobank_init(RGE_RECCHERENKOV,    tree_in);
+    rge_hipobank bsci  = rge_hipobank_init(RGE_RECSCINTILLATOR, tree_in);
     FMT_Tracks   bank_trk_fmt;
     if (fmt_nlayers != 0) bank_trk_fmt.link_tree(tree_in);
 
@@ -304,7 +309,7 @@ static int run(
         rge_get_entries(&btrk,  tree_in, event);
         bank_cal   .get_entries(tree_in, event);
         rge_get_entries(&bchkv, tree_in, event);
-        bank_sci   .get_entries(tree_in, event);
+        rge_get_entries(&bsci,  tree_in, event);
         if (fmt_nlayers != 0) bank_trk_fmt.get_entries(tree_in, event);
 
         // Filter events without the necessary banks.
@@ -344,7 +349,7 @@ static int run(
                 return 1;
 
             // Get time of flight from scintillators or calorimeters.
-            double tof = get_tof(bank_sci, bank_cal, pindex);
+            double tof = get_tof(&bsci, bank_cal, pindex);
 
             // Get miscellaneous data.
             int status  = rge_get_entry(&bpart, "status", pindex);
@@ -417,7 +422,7 @@ static int run(
                 return 1;
 
             // Get time-of-flight (tof).
-            double tof = get_tof(bank_sci, bank_cal, pindex);
+            double tof = get_tof(&bsci, bank_cal, pindex);
 
             // Get miscellaneous data.
             int status  = rge_get_entry(&bpart, "status", pindex);
