@@ -60,6 +60,8 @@ typedef struct {
 
 /** Struct containing a map of all entries associated to a hipo bank. */
 typedef struct {
+    // NOTE. nrows is only used for hipo_banks dedicated to writing. For
+    //       readers, entries.data.size() should be used.
     long unsigned int nrows;
     std::map<const char *, rge_hipoentry, cmp_str> entries;
 } rge_hipobank;
@@ -103,5 +105,11 @@ int rge_fill(rge_hipobank *rb, hipo::bank hb);
 
 /** Read entries from t into b. */
 int rge_get_entries(rge_hipobank *b, TTree *t, int idx);
+
+/** Get entry list size with name var from bank b. */
+long unsigned int rge_get_size(rge_hipobank *b, const char *var);
+
+/** Get entry number idx with name var from bank b. */
+double rge_get_entry(rge_hipobank *b, const char *var, long unsigned int idx);
 
 #endif

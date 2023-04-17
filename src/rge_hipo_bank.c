@@ -170,3 +170,11 @@ int rge_get_entries(rge_hipobank *b, TTree *t, int idx) {
 
     return 0;
 }
+
+long unsigned int rge_get_size(rge_hipobank *b, const char *var) {
+    return b->entries.at(var).data->size();
+}
+
+double rge_get_entry(rge_hipobank *b, const char *var, long unsigned int idx) {
+    return b->entries.at(var).data->at(idx);
+}

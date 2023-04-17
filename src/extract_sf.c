@@ -110,9 +110,9 @@ static int insert_TH1F(
         std::map<const char *, TH1 *> *map, const char *k, const char *n,
         const char *xn, int bins, double min, double max
 ) {
-    map->insert(std::pair<const char *, TH1 *>
-            (n, new TH1F(Form("%s: %s", k, n), Form("%s;%s", n, xn), bins, min,
-            max)));
+    map->insert(std::pair<const char *, TH1 *> (n, new TH1F(
+            Form("%s: %s", k, n), Form("%s;%s", n, xn), bins, min, max
+    )));
     return 0;
 }
 
@@ -137,9 +137,10 @@ static int insert_TH2F(
         const char *nx, const char *ny, int xbins, double xmin, double xmax,
         int ybins, double ymin, double ymax
 ) {
-    map->insert(std::pair<const char *, TH1 *>
-            (n, new TH2F(Form("%s: %s", k, n), Form("%s;%s;%s", n, nx, ny),
-                         xbins, xmin, xmax, ybins, ymin, ymax)));
+    map->insert(std::pair<const char *, TH1 *> (n, new TH2F(
+            Form("%s: %s", k, n), Form("%s;%s;%s", n, nx, ny),
+            xbins, xmin, xmax, ybins, ymin, ymax
+    )));
     return 0;
 }
 
@@ -273,15 +274,15 @@ static int run(
 
         // Skip events without the necessary banks.
         if (
-                particle   .entries.at("vz")    .data->size() == 0 ||
-                track      .entries.at("pindex").data->size() == 0 ||
-                calorimeter.entries.at("pindex").data->size() == 0
+                rge_get_size(&particle,    "vz")     == 0 ||
+                rge_get_size(&track,       "pindex") == 0 ||
+                rge_get_size(&calorimeter, "pindex") == 0
         ) {
             continue;
         }
 
         // Iterate through entries and write data to histograms.
-        long unsigned int npos = track.entries.at("pindex").data->size();
+        long unsigned int npos = rge_get_size(&track, "pindex");
         for (long unsigned int pos = 0; pos < npos; ++pos) {
             // Get basic data from track and particle banks.
             long unsigned int pindex = static_cast<long unsigned int>(
@@ -289,9 +290,9 @@ static int run(
             );
 
             // Get particle momentum.
-            double px = particle.entries.at("px").data->at(pindex);
-            double py = particle.entries.at("py").data->at(pindex);
-            double pz = particle.entries.at("pz").data->at(pindex);
+            double px = rge_get_entry(&particle, "px", pindex);
+            double py = rge_get_entry(&particle, "py", pindex);
+            double pz = rge_get_entry(&particle, "pz", pindex);
             double total_p = rge_calc_magnitude(px, py, pz);
 
             // Compute energy deposited in each calorimeter per sector.
@@ -304,18 +305,18 @@ static int run(
 
             for (
                     unsigned long int entry_i = 0;
-                    entry_i < calorimeter.entries.at("pindex").data->size();
+                    entry_i < rge_get_size(&calorimeter, "pindex");
                     ++entry_i
             ) {
                 if (static_cast<long unsigned int>(
-                        calorimeter.entries.at("pindex").data->at(entry_i)
+                        rge_get_entry(&calorimeter, "pindex", entry_i)
                 ) != pindex) {
                     continue;
                 }
 
                 // Get sector.
                 int sector_i =
-                        calorimeter.entries.at("sector").data->at(entry_i) - 1;
+                        rge_get_entry(&calorimeter, "sector", entry_i) - 1;
                 if (sector_i == -1) continue;
                 if (sector_i < -1 || sector_i > NSECTORS-1) {
                     rge_errno = RGEERR_INVALIDCALSECTOR;
@@ -323,11 +324,10 @@ static int run(
                 }
 
                 // Get detector.
-                double energy =
-                        calorimeter.entries.at("energy").data->at(entry_i);
+                double energy = rge_get_entry(&calorimeter, "energy", entry_i);
                 switch(static_cast<int>(
-                        calorimeter.entries.at("layer").data->at(entry_i))
-                ) {
+                        rge_get_entry(&calorimeter, "layer", entry_i)
+                )) {
                     case PCAL_LYR:
                         sf_E[PCAL_IDX][sector_i] += energy;
                         break;
