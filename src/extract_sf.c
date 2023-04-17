@@ -272,19 +272,14 @@ static int run(
         rge_get_entries(&calorimeter, t, evn);
 
         // Skip events without the necessary banks.
-        if (
-                rge_get_size(&particle,    "vz")     == 0 ||
-                rge_get_size(&track,       "pindex") == 0 ||
-                rge_get_size(&calorimeter, "pindex") == 0
-        ) {
+        if (particle.nrows == 0 || track.nrows == 0 || calorimeter.nrows == 0) {
             continue;
         }
 
         // Iterate through entries and write data to histograms.
-        luint npos = rge_get_size(&track, "pindex");
-        for (luint pos = 0; pos < npos; ++pos) {
+        for (luint row = 0; row < track.nrows; ++row) {
             // Get basic data from track and particle banks.
-            uint pindex = rge_get_uint(&track, "pindex", pos);
+            uint pindex = rge_get_uint(&track, "pindex", row);
 
             // Get particle momentum.
             double px = rge_get_double(&particle, "px", pindex);
@@ -300,11 +295,7 @@ static int run(
                 }
             }
 
-            for (
-                    luint entry_i = 0;
-                    entry_i < rge_get_size(&calorimeter, "pindex");
-                    ++entry_i
-            ) {
+            for (luint entry_i = 0; entry_i < calorimeter.nrows; ++entry_i) {
                 if (rge_get_uint(&calorimeter, "pindex", entry_i) != pindex) {
                     continue;
                 }

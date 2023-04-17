@@ -65,7 +65,7 @@ typedef struct {
     const char *addr;          /** Address of entry (BANK::NAME::VAR). */
     std::vector<double> *data; /** Vector with data of the entry. */
     TBranch *branch;           /** Pointer to TBranch where to write data. */
-    uint type;         /** Int containing variable type in hypo bank. */
+    uint type;                 /** Int containing variable type in hypo bank. */
 } rge_hipoentry;
 
 /** Struct containing a map of all entries associated to a hipo bank. */
@@ -88,14 +88,11 @@ static const uint FLOAT = 3;
 static std::map<const char *, rge_hipoentry, cmp_str>::const_iterator it;
 
 /**
- * Initialize and return one rge_hipoentry defined to *write* to a TTree.
- *     Parameters addr and type are initialized to input, data is initialized to
- *     an empty vector to be read from hipo, and branch is initialized to a
- *     nullptr to be handled by root.
+ * Initialize and return one rge_hipoentry. Parameters addr and type are
+ *     initialized to input, data is initialized to an empty vector to be read
+ *     from hipo, and branch is initialized to a nullptr to be handled by root.
  */
-static rge_hipoentry entry_writer_init(
-        const char *in_addr, uint in_type
-);
+static rge_hipoentry entry_init(const char *in_addr, uint in_type);
 
 /** Set b.nrows to in_rows. */
 static int set_nrows(rge_hipobank *b, luint in_nrows);
@@ -118,9 +115,6 @@ int rge_fill(rge_hipobank *rb, hipo::bank hb);
 
 /** Read entries from t into b. */
 int rge_get_entries(rge_hipobank *b, TTree *t, int idx);
-
-/** Get entry list size with name var from bank b. */
-luint rge_get_size(rge_hipobank *b, const char *var);
 
 /** Get entry number idx with name var from bank b. */
 double rge_get_double(rge_hipobank *b, const char *var, luint idx);

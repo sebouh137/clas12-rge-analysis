@@ -220,8 +220,7 @@ rge_particle rge_particle_init(
 
     // Apply FMT cuts.
     // Track reconstructed by FMT.
-    if (rge_get_size(fmttrack, "Vtx0_z") < 1)
-        return particle_init();
+    if (fmttrack->nrows < 1) return particle_init();
     // Track crossed enough FMT layers.
     if (rge_get_uint(fmttrack, "NDF", index) < fmt_nlayers)
         return particle_init();

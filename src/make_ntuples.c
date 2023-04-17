@@ -52,9 +52,9 @@ static const uint HTCC_ID    = 15;
 static const uint LTCC_ID    = 16;
 
 /** FTOF layer IDs from CLAS12 reconstruction. */
-static const uint FTOF1A_LYR =  1;
-static const uint FTOF1B_LYR =  2;
-static const uint FTOF2_LYR  =  3;
+static const uint FTOF1A_LYR = 1;
+static const uint FTOF1B_LYR = 2;
+static const uint FTOF2_LYR  = 3;
 
 /**
  * Find and return the most precise time of flight (TOF). Both the Forward Time
@@ -79,7 +79,7 @@ static double get_tof(
     double tof              = INFINITY;
 
     // Find TOF from scintillator.
-    for (uint i = 0; i < rge_get_size(scintillator, "pindex"); ++i) {
+    for (uint i = 0; i < scintillator->nrows; ++i) {
         // Filter out incorrect pindex and hits not from FTOF.
         if (
                 rge_get_uint(scintillator, "pindex", i)   != pindex ||
@@ -116,7 +116,7 @@ static double get_tof(
     if (most_precise_lyr != 0) return tof;
 
     // If no hits from FTOF were found, try to find TOF from calorimeters.
-    for (uint i = 0; i < rge_get_size(calorimeter, "pindex"); ++i) {
+    for (uint i = 0; i < calorimeter->nrows; ++i) {
         // Filter out incorrect pindex.
         if (rge_get_uint(calorimeter, "pindex", i) != pindex) continue;
 
@@ -169,7 +169,7 @@ static int get_deposited_energy(
     *energy_ECIN = 0;
     *energy_ECOU = 0;
 
-    for (uint i = 0; i < rge_get_size(calorimeter, "pindex"); ++i) {
+    for (uint i = 0; i < calorimeter->nrows; ++i) {
         if (rge_get_uint(calorimeter,"pindex",i) != pindex) continue;
 
         int layer     = rge_get_int   (calorimeter, "layer",  i);
@@ -207,7 +207,7 @@ static int count_photoelectrons(
     *nphe_HTCC = 0;
     *nphe_LTCC = 0;
 
-    for (uint i = 0; i < rge_get_size(cherenkov, "pindex"); ++i) {
+    for (uint i = 0; i < cherenkov->nrows; ++i) {
         if (rge_get_uint(cherenkov, "pindex", i) != pindex) continue;
 
         int detector = rge_get_int(cherenkov, "detector", i);
@@ -294,9 +294,7 @@ static int run(
     // Loop through events in input file.
     for (lint event = 0; event < n_events; ++event) {
         // Print fancy progress bar.
-        if (!debug) {
-            rge_pbar_update(event);
-        }
+        if (!debug) rge_pbar_update(event);
 
         // Get entries from input file.
         rge_get_entries(&bpart, tree_in, event);
@@ -307,12 +305,7 @@ static int run(
         if (fmt_nlayers != 0) rge_get_entries(&bfmt, tree_in, event);
 
         // Filter events without the necessary banks.
-        if (
-                rge_get_size(&bpart, "vz")      == 0 ||
-                rge_get_size(&btrk,  "pindex")  == 0
-        ) {
-            continue;
-        }
+        if (bpart.nrows == 0 || btrk.nrows == 0) continue;
 
         // Check existence of trigger electron
         rge_particle part_trigger;
@@ -320,7 +313,7 @@ static int run(
         uint trigger_pos    = UINT_MAX;
         uint trigger_pindex = UINT_MAX;
         double trigger_tof  = -1.;
-        for (uint pos = 0; pos < rge_get_size(&btrk, "index"); ++pos) {
+        for (uint pos = 0; pos < btrk.nrows; ++pos) {
             uint pindex = rge_get_uint(&btrk, "pindex", pos);
 
             // Get reconstructed particle from DC and from FMT.
@@ -384,9 +377,7 @@ static int run(
         ++trigger_counter;
 
         // Processing particles.
-        for (uint pos = 0; pos < rge_get_size(&btrk, "index"); ++pos) {
-            // Currently pindex is always equal to pos, but this is not a given
-            //     in the future of the reconstruction software development.
+        for (uint pos = 0; pos < btrk.nrows; ++pos) {
             uint pindex = rge_get_uint(&btrk, "pindex", pos);
 
             // Avoid double-counting the trigger electron.
