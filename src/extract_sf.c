@@ -148,6 +148,7 @@ static int run(
         char *in_filename, char *work_dir, char *data_dir, long int nevn,
         int run_no
 ) {
+    // Configure ROOT fitting.
     gStyle->SetOptFit();
 
     // Create output root file.
@@ -175,7 +176,7 @@ static int run(
         return 1;
     }
 
-    // Create and organize histos and name arrays.
+    // Create histogram and name arrays.
     std::map<const char *, TH1 *> histos;
 
     char *sf1D_name_arr[NCALS][NSECTORS][
@@ -187,6 +188,7 @@ static int run(
     TF1 *sf_polyfit[NCALS][NSECTORS];
     double sf_fitresults[NCALS][NSECTORS][SF_NPARAMS][2];
 
+    // Configure 2D histogram arrays.
     int cal_idx = -1;
     for (const char *cal : SFARR2D) {
         cal_idx++;
@@ -223,6 +225,7 @@ static int run(
         }
     }
 
+    // Configure 1D histogram arrays.
     cal_idx = -1;
     for (const char *cal : SFARR1D) {
         cal_idx++;
@@ -277,6 +280,7 @@ static int run(
             continue;
         }
 
+        // Iterate through entries and write data to histograms.
         long unsigned int npos = track.entries.at("pindex").data->size();
         for (long unsigned int pos = 0; pos < npos; ++pos) {
             // Get basic data from track and particle banks.
@@ -459,7 +463,7 @@ static int run(
         }
     }
 
-    // Write to output file.
+    // Write to output root file to visualize the fits.
     TString dir;
     TCanvas *gcvs = new TCanvas();
     for (int cal_i = 0; cal_i < NCALS; ++cal_i) {
@@ -490,8 +494,7 @@ static int run(
         }
     }
 
-    // Write results to data file.
-    // NOTE. Only writing ECAL sf results.
+    // Write ECAL sf results to output text file.
     for (int cal_i = 3; cal_i < 4; ++cal_i) {
         for (int sector_i = 0; sector_i < NSECTORS; ++sector_i) {
             for (int sf_i = 0; sf_i < 2; ++sf_i) { // sf and sfs.
@@ -506,10 +509,12 @@ static int run(
         }
     }
 
+    // Clean up after ourselves.
     fclose(out_textfile);
     f_in ->Close();
     out_rootfile->Close();
 
+    // Exit.
     rge_errno = RGEERR_NOERR;
     return 0;
 }
