@@ -42,6 +42,11 @@
 #define RGE_RECSCINTILLATOR "REC::Scintillator"
 #define RGE_FMTTRACKS       "FMT::Tracks"
 
+/** ECAL layer IDs in CLAS12 banks. */
+#define PCAL_LYR 1
+#define ECIN_LYR 4
+#define ECOU_LYR 7
+
 // --+ structs +----------------------------------------------------------------
 /** String comparer to use const char * as std::map keys. */
 struct cmp_str {

@@ -195,26 +195,30 @@ double zh(rge_particle p, rge_particle e, double bE) {
 
 // --+ library +----------------------------------------------------------------
 rge_particle rge_particle_init(
-        Particle *bank_particle, Track *bank_track, FMT_Tracks *bank_fmt_tracks,
+        rge_hipobank *particle, rge_hipobank *track, FMT_Tracks *bank_fmt_tracks,
         unsigned int pos, long int fmt_nlayers
 ) {
     unsigned int pindex =
-            static_cast<unsigned int>(bank_track->pindex->at(pos));
+            static_cast<unsigned int>(rge_get_entry(track, "pindex", pos));
 
     // Use only DC tracking data.
     if (fmt_nlayers == 0) {
         return particle_init(
-                bank_particle->charge->at(pindex),
-                bank_particle->beta->at(pindex), bank_track->sector->at(pos),
-                bank_particle->vx->at(pindex), bank_particle->vy->at(pindex),
-                bank_particle->vz->at(pindex), bank_particle->px->at(pindex),
-                bank_particle->py->at(pindex), bank_particle->pz->at(pindex)
+                rge_get_entry(particle, "charge", pindex),
+                rge_get_entry(particle, "beta",   pindex),
+                rge_get_entry(track,    "sector", pos),
+                rge_get_entry(particle, "vx", pindex),
+                rge_get_entry(particle, "vy", pindex),
+                rge_get_entry(particle, "vz", pindex),
+                rge_get_entry(particle, "px", pindex),
+                rge_get_entry(particle, "py", pindex),
+                rge_get_entry(particle, "pz", pindex)
         );
     }
 
     // Use DC+FMT tracking data.
     unsigned int index  =
-            static_cast<unsigned int>(bank_track->index->at(pos));
+            static_cast<unsigned int>(rge_get_entry(track, "index", pos));
 
     // Apply FMT cuts.
     // Track reconstructed by FMT.
@@ -223,11 +227,15 @@ rge_particle rge_particle_init(
     if (bank_fmt_tracks->ndf->at(index) < fmt_nlayers) return particle_init();
 
     return particle_init(
-            bank_particle->charge->at(pindex),
-            bank_particle->beta->at(pindex), bank_track->sector->at(pos),
-            bank_fmt_tracks->vx->at(index), bank_fmt_tracks->vy->at(index),
-            bank_fmt_tracks->vz->at(index), bank_fmt_tracks->px->at(index),
-            bank_fmt_tracks->py->at(index), bank_fmt_tracks->pz->at(index)
+            rge_get_entry(particle, "charge", pindex),
+            rge_get_entry(particle, "beta",   pindex),
+            rge_get_entry(track,    "sector", pos),
+            bank_fmt_tracks->vx->at(index),
+            bank_fmt_tracks->vy->at(index),
+            bank_fmt_tracks->vz->at(index),
+            bank_fmt_tracks->px->at(index),
+            bank_fmt_tracks->py->at(index),
+            bank_fmt_tracks->pz->at(index)
     );
 }
 

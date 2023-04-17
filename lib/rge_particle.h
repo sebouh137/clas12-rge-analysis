@@ -20,6 +20,7 @@
 // rge-analysis.
 #include "bank_containers.h"
 #include "constants.h"
+#include "rge_hipo_bank.h"
 #include "rge_math_utils.h"
 #include "rge_pid_utils.h"
 
@@ -183,7 +184,7 @@ static double zh(rge_particle p, rge_particle e, double bE);
   * @param fmt_nlayers     : number of FMT layers required to make a particle.
   */
 rge_particle rge_particle_init(
-        Particle *bank_particle, Track *bank_track, FMT_Tracks *bank_fmt_tracks,
+        rge_hipobank *particle, rge_hipobank *track, FMT_Tracks *bank_fmt_tracks,
         unsigned int pos, long int fmt_nlayers
 );
 

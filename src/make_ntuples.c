@@ -13,16 +13,23 @@
 //
 // You can see a copy of the GNU Lesser Public License under the LICENSE file.
 
+// C.
 #include <libgen.h>
+
+// ROOT.
 #include <TFile.h>
 #include <TNtuple.h>
 #include <TROOT.h>
+
+// rge-analysis.
+#include "../lib/bank_containers.h"
+#include "../lib/constants.h"
 #include "../lib/rge_err_handler.h"
-#include "../lib/rge_io_handler.h"
-#include "../lib/rge_progress.h"
 #include "../lib/rge_filename_handler.h"
-#include "../lib/rge_particle.h"
 #include "../lib/rge_hipo_bank.h"
+#include "../lib/rge_io_handler.h"
+#include "../lib/rge_particle.h"
+#include "../lib/rge_progress.h"
 
 static const char *USAGE_MESSAGE =
 "Usage: make_ntuples [-hDf:n:w:d:] infile\n"
@@ -39,6 +46,16 @@ static const char *USAGE_MESSAGE =
 " * infile     : input ROOT file. Expected file format: <text>run_no.root`.\n\n"
 "    Generate ntuples relevant to SIDIS analysis based on the reconstructed\n"
 "    variables from CLAS12 data.\n";
+
+/** Detector IDs from CLAS12 reconstruction. */
+static const unsigned int FTOF_ID    = 12;
+static const unsigned int HTCC_ID    = 15;
+static const unsigned int LTCC_ID    = 16;
+
+/** FTOF layer IDs from CLAS12 reconstruction. */
+static const unsigned int FTOF1A_LYR =  1;
+static const unsigned int FTOF1B_LYR =  2;
+static const unsigned int FTOF2_LYR  =  3;
 
 /**
  * Find and return the most precise time of flight (TOF). Both the Forward Time
@@ -255,8 +272,8 @@ static int run(
     }
 
     // Associate banks to TTree.
-    Particle     bank_part  (tree_in);
-    Track        bank_trk_dc(tree_in);
+    rge_hipobank bpart = rge_hipobank_init(RGE_RECPARTICLE, tree_in);
+    rge_hipobank btrk  = rge_hipobank_init(RGE_RECTRACK,    tree_in);
     Calorimeter  bank_cal   (tree_in);
     Cherenkov    bank_chkv  (tree_in);
     Scintillator bank_sci   (tree_in);
@@ -281,15 +298,18 @@ static int run(
         }
 
         // Get entries from input file.
-        bank_part  .get_entries(tree_in, event);
-        bank_trk_dc.get_entries(tree_in, event);
+        rge_get_entries(&bpart, tree_in, event);
+        rge_get_entries(&btrk,  tree_in, event);
         bank_sci   .get_entries(tree_in, event);
         bank_cal   .get_entries(tree_in, event);
         bank_chkv  .get_entries(tree_in, event);
         if (fmt_nlayers != 0) bank_trk_fmt.get_entries(tree_in, event);
 
         // Filter events without the necessary banks.
-        if (bank_part.vz->size() == 0 || bank_trk_dc.pindex->size() == 0) {
+        if (
+                rge_get_size(&bpart, "vz")      == 0 ||
+                rge_get_size(&btrk,  "pindex")  == 0
+        ) {
             continue;
         }
 
@@ -299,14 +319,14 @@ static int run(
         unsigned int trigger_pos    = UINT_MAX;
         unsigned int trigger_pindex = UINT_MAX;
         double trigger_tof = -1.;
-        for (unsigned int pos = 0; pos < bank_trk_dc.index->size(); ++pos) {
+        for (unsigned int pos = 0; pos < rge_get_size(&btrk, "index"); ++pos) {
             unsigned int pindex = static_cast<unsigned int>(
-                    bank_trk_dc.pindex->at(pos)
+                    rge_get_entry(&btrk, "pindex", pos)
             );
 
             // Get reconstructed particle from DC and from FMT.
             part_trigger = rge_particle_init(
-                    &bank_part, &bank_trk_dc, &bank_trk_fmt, pos, fmt_nlayers
+                    &bpart, &btrk, &bank_trk_fmt, pos, fmt_nlayers
             );
 
             // Skip particle if it doesn't fit requirements.
@@ -327,18 +347,19 @@ static int run(
             double tof = get_tof(bank_sci, bank_cal, pindex);
 
             // Get miscellaneous data.
-            int status  = bank_part.status->at(pindex);
-            double chi2 = bank_trk_dc.chi2->at(pos);
-            double ndf  = bank_trk_dc.ndf ->at(pos);
+            int status  = rge_get_entry(&bpart, "status", pindex);
+            double chi2 = rge_get_entry(&btrk,  "chi2",   pos);
+            double ndf  = rge_get_entry(&btrk,  "NDF",    pos);
 
             // Assign PID.
             if (rge_set_pid(
-                    &part_trigger, bank_part.pid->at(pindex), status,
-                    energy_PCAL + energy_ECIN + energy_ECOU, energy_PCAL,
+                    &part_trigger, rge_get_entry(&bpart, "pid", pindex),
+                    status, energy_PCAL+energy_ECIN+energy_ECOU, energy_PCAL,
                     nphe_HTCC, nphe_LTCC,
-                    sampling_fraction_params[bank_trk_dc.sector->at(pos)]
+                    sampling_fraction_params[static_cast<unsigned int>(
+                            rge_get_entry(&btrk,"sector",pos)
+                    )]
             )) return 1;
-
 
             // Skip particle if its not the trigger electron.
             if (!part_trigger.is_trigger_electron) continue;
@@ -366,11 +387,12 @@ static int run(
         ++trigger_counter;
 
         // Processing particles.
-        for (unsigned int pos = 0; pos < bank_trk_dc.index->size(); ++pos) {
+        for (unsigned int pos = 0; pos < rge_get_size(&btrk, "index"); ++pos) {
             // Currently pindex is always equal to pos, but this is not a given
             //     in the future of the reconstruction software development.
-            unsigned int pindex =
-                    static_cast<unsigned int>(bank_trk_dc.pindex->at(pos));
+            unsigned int pindex = static_cast<unsigned int>(
+                    rge_get_entry(&btrk, "pindex", pos)
+            );
 
             // Avoid double-counting the trigger electron.
             if (trigger_pindex == pindex && trigger_pos == pos) {
@@ -379,7 +401,7 @@ static int run(
 
             // Get reconstructed particle from DC and from FMT.
             rge_particle part = rge_particle_init(
-                &bank_part, &bank_trk_dc, &bank_trk_fmt, pos, fmt_nlayers
+                &bpart, &btrk, &bank_trk_fmt, pos, fmt_nlayers
             );
 
             // Skip particle if it doesn't fit requirements.
@@ -400,16 +422,18 @@ static int run(
             double tof = get_tof(bank_sci, bank_cal, pindex);
 
             // Get miscellaneous data.
-            int status  = bank_part.status->at(pindex);
-            double chi2 = bank_trk_dc.chi2->at(pos);
-            double ndf  = bank_trk_dc.ndf ->at(pos);
+            int status  = rge_get_entry(&bpart, "status", pindex);
+            double chi2 = rge_get_entry(&btrk,  "chi2",   pos);
+            double ndf  = rge_get_entry(&btrk,  "NDF",    pos);
 
             // Assign PID.
             if (rge_set_pid(
-                    &part, bank_part.pid->at(pindex), status,
+                    &part, rge_get_entry(&bpart, "pid", pindex), status,
                     energy_PCAL + energy_ECIN + energy_ECOU, energy_PCAL,
                     nphe_HTCC, nphe_LTCC,
-                    sampling_fraction_params[bank_trk_dc.sector->at(pos)]
+                    sampling_fraction_params[static_cast<unsigned int>(
+                            rge_get_entry(&btrk,"sector",pos)
+                    )]
             )) return 1;
 
             // Fill TNtuples.

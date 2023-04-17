@@ -27,6 +27,11 @@
 #include "rge_file_handler.h"
 
 // --+ internal +---------------------------------------------------------------
+/** Minimum number of FMT layers to accept a track. */
+static unsigned int FMTMINLAYERS = 2;
+/** Total number of FMT layers. */
+static unsigned int FMTNLAYERS   = 3;
+
 /** Check if character c is a number. Returns 1 if it is, 0 if it isn't. */
 static int is_number(char c);
 
