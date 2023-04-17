@@ -19,13 +19,8 @@
 #include <math.h>
 #include <map>
 
-// Physics constants.
-#define SPEEDOFLIGHT 29.9792458
-
 // Data tree name for programs.
-#define TREENAMEDATA          "data"
-#define TREENAMETHRN          "ntuple_thrown"
-#define TREENAMETHRNELECTRONS "ntuple_thrown_electrons"
+#define RGE_TREENAMEDATA "data"
 
 // Particle cut array.
 #define PART_LIST_SIZE 5

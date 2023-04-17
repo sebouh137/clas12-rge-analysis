@@ -484,7 +484,7 @@ static int run(
     }
 
     // === SETUP NTUPLES =======================================================
-    TNtuple *ntuple = static_cast<TNtuple *>(f_in->Get(TREENAMEDATA));
+    TNtuple *ntuple = static_cast<TNtuple *>(f_in->Get(RGE_TREENAMEDATA));
     if (ntuple == NULL) {
         rge_errno = RGEERR_BADROOTFILE;
         return 1;

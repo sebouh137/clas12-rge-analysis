@@ -241,13 +241,13 @@ static int run(
     }
 
     // Create TTree and TNTuples.
-    TTree *tree_in = file_in->Get<TTree>(TREENAMEDATA);
+    TTree *tree_in = file_in->Get<TTree>(RGE_TREENAMEDATA);
     if (tree_in == NULL) {
         rge_errno = RGEERR_BADROOTFILE;
         return 1;
     }
     TNtuple *tree_out;
-    tree_out = new TNtuple(TREENAMEDATA, TREENAMEDATA, vars_string);
+    tree_out = new TNtuple(RGE_TREENAMEDATA, RGE_TREENAMEDATA, vars_string);
 
     // Change n_events to number of entries if it is equal to -1 or invalid.
     if (n_events == -1 || n_events > tree_in->GetEntries()) {

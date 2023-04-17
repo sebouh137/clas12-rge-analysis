@@ -75,7 +75,7 @@ static int run(
     reader.readDictionary(factory);
 
     // Create output tree and file.
-    TTree *out_tree = new TTree(TREENAMEDATA, TREENAMEDATA);
+    TTree *out_tree = new TTree(RGE_TREENAMEDATA, RGE_TREENAMEDATA);
 
     char out_filename[PATH_MAX];
     sprintf(out_filename, "%s/banks_%06d.root", work_dir, run_no);

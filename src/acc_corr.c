@@ -44,6 +44,9 @@ static const char *USAGE_MESSAGE =
 "    the final double will be the upper limit of the rightmost bin, and all\n"
 "    doubles inbetween will be the separators between each bin.\n";
 
+/** Data tree name in generated (thrown) file. */
+#define RGE_TREENAMETHRN "ntuple_thrown"
+
 /**
 * Return position of value v inside a doubles array b of size s. If v is not
 *     inside b, return -1.
@@ -156,7 +159,7 @@ static int run(
         rge_errno = RGEERR_WRONGGENFILE;
         return 1;
     }
-    TNtuple *thrown   = thrown_file->Get<TNtuple>(TREENAMETHRN);
+    TNtuple *thrown   = thrown_file->Get<TNtuple>(RGE_TREENAMETHRN);
     if (thrown == NULL) {
         rge_errno = RGEERR_BADGENFILE;
         return 1;
@@ -168,7 +171,7 @@ static int run(
         rge_errno = RGEERR_WRONGSIMFILE;
         return 1;
     }
-    TTree *simul = simul_file->Get<TTree>(TREENAMEDATA);
+    TTree *simul = simul_file->Get<TTree>(RGE_TREENAMEDATA);
     if (simul == NULL) {
         rge_errno = RGEERR_BADSIMFILE;
         return 1;
