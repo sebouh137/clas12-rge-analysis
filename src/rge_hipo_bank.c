@@ -41,6 +41,12 @@ int set_nrows(rge_hipobank *b, luint in_nrows) {
     return 0;
 }
 
+double get_entry(rge_hipobank *b, const char *var, luint idx) {
+    // TODO. Raise error on invalid var.
+    // TODO. Raise error on invalid idx.
+    return b->entries.at(var).data->at(idx);
+}
+
 /** Static map containing all entry lists. */
 static std::map<
         const char *, std::map<const char *, rge_hipoentry, cmp_str>, cmp_str
@@ -176,8 +182,14 @@ luint rge_get_size(rge_hipobank *b, const char *var) {
     return b->entries.at(var).data->size();
 }
 
-double rge_get_entry(rge_hipobank *b, const char *var, luint idx) {
-    // TODO. Raise error on invalid var.
-    // TODO. Raise error on invalid idx.
-    return b->entries.at(var).data->at(idx);
+double rge_get_double(rge_hipobank *b, const char *var, luint idx) {
+    return get_entry(b, var, idx);
+}
+
+int rge_get_int(rge_hipobank *b, const char *var, luint idx) {
+    return static_cast<int>(get_entry(b, var, idx));
+}
+
+uint rge_get_uint(rge_hipobank *b, const char *var, luint idx) {
+    return static_cast<uint>(get_entry(b, var, idx));
 }

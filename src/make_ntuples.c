@@ -82,16 +82,14 @@ static double get_tof(
     for (uint i = 0; i < rge_get_size(scintillator, "pindex"); ++i) {
         // Filter out incorrect pindex and hits not from FTOF.
         if (
-                static_cast<uint>(rge_get_entry(scintillator, "pindex", i))
-                        != pindex ||
-                static_cast<uint>(rge_get_entry(scintillator, "detector", i))
-                        != FTOF_ID
+                rge_get_uint(scintillator, "pindex", i)   != pindex ||
+                rge_get_uint(scintillator, "detector", i) != FTOF_ID
         ) {
             continue;
         }
 
-        uint layer = static_cast<uint>(rge_get_entry(scintillator, "layer", i));
-        double time = rge_get_entry(scintillator, "time", i);
+        uint layer  = rge_get_uint(scintillator, "layer", i);
+        double time = rge_get_double(scintillator, "time", i);
 
         // Check FTOF 1B (most precise FTOF layer).
         if (layer == FTOF1B_LYR) {
@@ -120,16 +118,11 @@ static double get_tof(
     // If no hits from FTOF were found, try to find TOF from calorimeters.
     for (uint i = 0; i < rge_get_size(calorimeter, "pindex"); ++i) {
         // Filter out incorrect pindex.
-        if (
-                static_cast<uint>(rge_get_entry(calorimeter, "pindex", i)) !=
-                pindex
-        ) {
-            continue;
-        }
+        if (rge_get_uint(calorimeter, "pindex", i) != pindex) continue;
 
         // Check PCAL (Calorimeter with the most precise TOF).
-        uint layer = static_cast<uint>(rge_get_entry(calorimeter, "layer", i));
-        double time = rge_get_entry(calorimeter, "time", i);
+        uint layer  = rge_get_uint(calorimeter, "layer", i);
+        double time = rge_get_double(calorimeter, "time", i);
 
         if (layer == PCAL_LYR) {
             most_precise_lyr = 10 + PCAL_LYR;
@@ -177,11 +170,10 @@ static int get_deposited_energy(
     *energy_ECOU = 0;
 
     for (uint i = 0; i < rge_get_size(calorimeter, "pindex"); ++i) {
-        if (static_cast<uint>(rge_get_entry(calorimeter,"pindex",i))!=pindex) {
-            continue;
-        }
-        int layer = static_cast<int>(rge_get_entry(calorimeter, "layer", i));
-        double energy = rge_get_entry(calorimeter, "energy", i);
+        if (rge_get_uint(calorimeter,"pindex",i) != pindex) continue;
+
+        int layer     = rge_get_int   (calorimeter, "layer",  i);
+        double energy = rge_get_double(calorimeter, "energy", i);
 
         if      (layer == PCAL_LYR) *energy_PCAL += energy;
         else if (layer == ECIN_LYR) *energy_ECIN += energy;
@@ -216,15 +208,10 @@ static int count_photoelectrons(
     *nphe_LTCC = 0;
 
     for (uint i = 0; i < rge_get_size(cherenkov, "pindex"); ++i) {
-        if (
-                static_cast<uint>(rge_get_entry(cherenkov, "pindex", i))
-                != pindex
-        ) {
-            continue;
-        }
+        if (rge_get_uint(cherenkov, "pindex", i) != pindex) continue;
 
-        int detector = static_cast<int>(rge_get_entry(cherenkov, "detector",i));
-        int nphe     = static_cast<int>(rge_get_entry(cherenkov, "nphe",    i));
+        int detector = rge_get_int(cherenkov, "detector", i);
+        int nphe     = rge_get_int(cherenkov, "nphe",     i);
         if      (detector == HTCC_ID) *nphe_HTCC += nphe;
         else if (detector == LTCC_ID) *nphe_LTCC += nphe;
         else {
@@ -334,7 +321,7 @@ static int run(
         uint trigger_pindex = UINT_MAX;
         double trigger_tof  = -1.;
         for (uint pos = 0; pos < rge_get_size(&btrk, "index"); ++pos) {
-            uint pindex = static_cast<uint>(rge_get_entry(&btrk,"pindex",pos));
+            uint pindex = rge_get_uint(&btrk, "pindex", pos);
 
             // Get reconstructed particle from DC and from FMT.
             part_trigger = rge_particle_init(
@@ -359,18 +346,16 @@ static int run(
             double tof = get_tof(&bsci, &bcal, pindex);
 
             // Get miscellaneous data.
-            int status  = rge_get_entry(&bpart, "status", pindex);
-            double chi2 = rge_get_entry(&btrk,  "chi2",   pos);
-            double ndf  = rge_get_entry(&btrk,  "NDF",    pos);
+            int status  = rge_get_double(&bpart, "status", pindex);
+            double chi2 = rge_get_double(&btrk,  "chi2",   pos);
+            double ndf  = rge_get_double(&btrk,  "NDF",    pos);
 
             // Assign PID.
             if (rge_set_pid(
-                    &part_trigger, rge_get_entry(&bpart, "pid", pindex),
+                    &part_trigger, rge_get_double(&bpart, "pid", pindex),
                     status, energy_PCAL+energy_ECIN+energy_ECOU, energy_PCAL,
                     nphe_HTCC, nphe_LTCC,
-                    sampling_fraction_params[static_cast<uint>(
-                            rge_get_entry(&btrk,"sector",pos)
-                    )]
+                    sampling_fraction_params[rge_get_uint(&btrk, "sector", pos)]
             )) return 1;
 
             // Skip particle if its not the trigger electron.
@@ -402,7 +387,7 @@ static int run(
         for (uint pos = 0; pos < rge_get_size(&btrk, "index"); ++pos) {
             // Currently pindex is always equal to pos, but this is not a given
             //     in the future of the reconstruction software development.
-            uint pindex = static_cast<uint>(rge_get_entry(&btrk,"pindex",pos));
+            uint pindex = rge_get_uint(&btrk, "pindex", pos);
 
             // Avoid double-counting the trigger electron.
             if (trigger_pindex == pindex && trigger_pos == pos) {
@@ -432,18 +417,16 @@ static int run(
             double tof = get_tof(&bsci, &bcal, pindex);
 
             // Get miscellaneous data.
-            int status  = rge_get_entry(&bpart, "status", pindex);
-            double chi2 = rge_get_entry(&btrk,  "chi2",   pos);
-            double ndf  = rge_get_entry(&btrk,  "NDF",    pos);
+            int status  = rge_get_double(&bpart, "status", pindex);
+            double chi2 = rge_get_double(&btrk,  "chi2",   pos);
+            double ndf  = rge_get_double(&btrk,  "NDF",    pos);
 
             // Assign PID.
             if (rge_set_pid(
-                    &part, rge_get_entry(&bpart, "pid", pindex), status,
+                    &part, rge_get_double(&bpart, "pid", pindex), status,
                     energy_PCAL + energy_ECIN + energy_ECOU, energy_PCAL,
                     nphe_HTCC, nphe_LTCC,
-                    sampling_fraction_params[static_cast<uint>(
-                            rge_get_entry(&btrk,"sector",pos)
-                    )]
+                    sampling_fraction_params[rge_get_uint(&btrk, "sector", pos)]
             )) return 1;
 
             // Fill TNtuples.

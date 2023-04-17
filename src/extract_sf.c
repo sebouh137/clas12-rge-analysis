@@ -284,14 +284,12 @@ static int run(
         luint npos = rge_get_size(&track, "pindex");
         for (luint pos = 0; pos < npos; ++pos) {
             // Get basic data from track and particle banks.
-            luint pindex = static_cast<luint>(
-                    track.entries.at("pindex").data->at(pos)
-            );
+            uint pindex = rge_get_uint(&track, "pindex", pos);
 
             // Get particle momentum.
-            double px = rge_get_entry(&particle, "px", pindex);
-            double py = rge_get_entry(&particle, "py", pindex);
-            double pz = rge_get_entry(&particle, "pz", pindex);
+            double px = rge_get_double(&particle, "px", pindex);
+            double py = rge_get_double(&particle, "py", pindex);
+            double pz = rge_get_double(&particle, "pz", pindex);
             double total_p = rge_calc_magnitude(px, py, pz);
 
             // Compute energy deposited in each calorimeter per sector.
@@ -307,15 +305,13 @@ static int run(
                     entry_i < rge_get_size(&calorimeter, "pindex");
                     ++entry_i
             ) {
-                if (static_cast<luint>(
-                        rge_get_entry(&calorimeter, "pindex", entry_i)
-                ) != pindex) {
+                if (rge_get_uint(&calorimeter, "pindex", entry_i) != pindex) {
                     continue;
                 }
 
                 // Get sector.
                 int sector_i =
-                        rge_get_entry(&calorimeter, "sector", entry_i) - 1;
+                        rge_get_double(&calorimeter, "sector", entry_i) - 1;
                 if (sector_i == -1) continue;
                 if (sector_i < -1 || sector_i > NSECTORS-1) {
                     rge_errno = RGEERR_INVALIDCALSECTOR;
@@ -323,10 +319,8 @@ static int run(
                 }
 
                 // Get detector.
-                double energy = rge_get_entry(&calorimeter, "energy", entry_i);
-                switch(static_cast<int>(
-                        rge_get_entry(&calorimeter, "layer", entry_i)
-                )) {
+                double energy = rge_get_double(&calorimeter, "energy", entry_i);
+                switch(rge_get_int(&calorimeter, "layer", entry_i)) {
                     case PCAL_LYR:
                         sf_E[PCAL_IDX][sector_i] += energy;
                         break;

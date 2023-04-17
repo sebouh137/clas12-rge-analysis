@@ -100,6 +100,9 @@ static rge_hipoentry entry_writer_init(
 /** Set b.nrows to in_rows. */
 static int set_nrows(rge_hipobank *b, luint in_nrows);
 
+/** Get entry number idx with name var from bank b. */
+static double get_entry(rge_hipobank *b, const char *var, luint idx);
+
 // --+ library +----------------------------------------------------------------
 /** Initialize rge_hipobank based on static map related to bank_version. */
 rge_hipobank rge_hipobank_init(const char *bank_version);
@@ -120,7 +123,10 @@ int rge_get_entries(rge_hipobank *b, TTree *t, int idx);
 luint rge_get_size(rge_hipobank *b, const char *var);
 
 /** Get entry number idx with name var from bank b. */
-// TODO. Split into get_int, get_uint, etc.
-double rge_get_entry(rge_hipobank *b, const char *var, luint idx);
+double rge_get_double(rge_hipobank *b, const char *var, luint idx);
+
+int rge_get_int(rge_hipobank *b, const char *var, luint idx);
+
+uint rge_get_uint(rge_hipobank *b, const char *var, luint idx);
 
 #endif

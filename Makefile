@@ -81,9 +81,6 @@ $(BIN)/make_ntuples: $(O_MKNTUPLES) $(SRC)/make_ntuples.c
 	$(HXX) $(O_MKNTUPLES) $(SRC)/make_ntuples.c -o $(BIN)/make_ntuples $(HLIBS)
 
 # --+ make build/* +------------------------------------------------------------
-$(BLD)/bank_containers.o: $(SRC)/bank_containers.c $(LIB)/bank_containers.h
-	$(HXX) -c $(SRC)/bank_containers.c -o $(BLD)/bank_containers.o
-
 $(BLD)/constants.o: $(SRC)/constants.c $(LIB)/constants.h
 	$(CXX) -c $(SRC)/constants.c -o $(BLD)/constants.o
 
