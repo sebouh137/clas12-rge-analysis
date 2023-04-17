@@ -23,7 +23,7 @@
  *       value, so be *very careful* when adding rge_errnos. An invisibile error
  *       arises if two keys have the same value.
  */
-static const std::map<unsigned int, const char *> ERRMAP = {
+static const std::map<uint, const char *> ERRMAP = {
     // Basic functionalities.
     {RGEERR_NOERR, ""}, // Handled before accessing this map.
     {RGEERR_USAGE, ""}, // Handled before accessing this map.
@@ -153,7 +153,7 @@ int handle_err() {
 }
 
 // --+ library +----------------------------------------------------------------
-unsigned int rge_errno = RGEERR_UNDEFINED;
+uint rge_errno = RGEERR_UNDEFINED;
 
 int rge_print_usage(const char *msg) {
     int err = handle_err();

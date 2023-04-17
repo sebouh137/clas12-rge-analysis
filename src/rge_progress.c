@@ -16,7 +16,7 @@
 #include "../lib/rge_progress.h"
 
 // --+ library +----------------------------------------------------------------
-int rge_pbar_set_nentries(long int in_nentries) {
+int rge_pbar_set_nentries(lint in_nentries) {
     rge_pbar_nentries = in_nentries;
     return 0;
 }
@@ -27,7 +27,7 @@ int rge_pbar_reset() {
     return 0;
 }
 
-int rge_pbar_update(long int entry) {
+int rge_pbar_update(lint entry) {
     // Only update if necessary.
     if (entry == rge_pbar_nentries-1) {
         printf("\n");
@@ -40,7 +40,7 @@ int rge_pbar_update(long int entry) {
 
     // Print progress bar.
     printf("[");
-    for (long int i = 0; i < RGE_PBARLENGTH; ++i) {
+    for (lint i = 0; i < RGE_PBARLENGTH; ++i) {
         if (i <= (RGE_PBARLENGTH/100.) * (rge_pbar_divcntr)) printf("=");
         else                                                 printf(" ");
     }

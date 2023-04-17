@@ -26,6 +26,11 @@
 // rge-analysis.
 #include "rge_err_handler.h"
 
+// typedefs.
+typedef unsigned int uint;
+typedef long unsigned int luint;
+typedef long int lint;
+
 // --+ internal +---------------------------------------------------------------
 // Beam energy of different runs. TODO. This should be taken from RCDB.
 #define RGE_BE11983 10.3894 //  50 nA.

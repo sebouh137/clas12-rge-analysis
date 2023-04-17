@@ -42,8 +42,8 @@ const std::map<int, const char *> PLOT_NAMES {
  *     array, and an array of PID list sizes. Copied from file_handler because
  *     tracking dependencies with ROOT is a bitch.
  */
-int get_binnings(FILE *f_in, long int *b_sizes, double **binnings,
-        long int *pids_size)
+int get_binnings(FILE *f_in, lint *b_sizes, double **binnings,
+        lint *pids_size)
 {
     // Get binning sizes.
     for (int bi = 0; bi < 5; ++bi) fscanf(f_in, "%ld ", &(b_sizes[bi]));
@@ -66,8 +66,8 @@ int get_binnings(FILE *f_in, long int *b_sizes, double **binnings,
  *     accceptance correction array. Copied from file_handler because tracking
  *     dependencies with ROOT is a bitch.
  */
-int get_acc_corr(FILE *f_in, long int pids_size, long int nbins,
-        long int *pids, int **n_thrown, int **n_simul)
+int get_acc_corr(FILE *f_in, lint pids_size, lint nbins,
+        lint *pids, int **n_thrown, int **n_simul)
 {
     // Get PIDs.
     for (int pi = 0; pi < pids_size; ++pi) fscanf(f_in, "%ld ", &(pids[pi]));
@@ -93,9 +93,9 @@ int get_acc_corr(FILE *f_in, long int pids_size, long int nbins,
  *     PID. Copied from file_handler because tracking dependencies with ROOT is
  *     a bitch.
  */
-int read_acc_corr_file(char *acc_filename, long int b_sizes[5],
-        double ***binnings, long int *pids_size, long int *nbins,
-        long int **pids, int ***n_thrown, int ***n_simul)
+int read_acc_corr_file(char *acc_filename, lint b_sizes[5],
+        double ***binnings, lint *pids_size, lint *nbins,
+        lint **pids, int ***n_thrown, int ***n_simul)
 {
     // Access file.
     if (access(acc_filename, F_OK) != 0) return 1;
@@ -110,7 +110,7 @@ int read_acc_corr_file(char *acc_filename, long int b_sizes[5],
     for (int bi = 0; bi < 5; ++bi) *nbins *= b_sizes[bi] - 1;
 
     // Malloc list of pids and first dimension of pids and events.
-    *pids = (long int *) malloc(*pids_size * sizeof(**pids));
+    *pids = (lint *) malloc(*pids_size * sizeof(**pids));
     *n_thrown = (int **) malloc(*pids_size * sizeof(**n_thrown));
     *n_simul  = (int **) malloc(*pids_size * sizeof(**n_simul));
 
@@ -151,11 +151,11 @@ int draw_acc_corr() {
     copy_filename(fmt_filename, FMT_FILENAME);
 
     // Read DC acceptance correction.
-    long int bs[5];
+    lint bs[5];
     double **binnings;
-    long int pids_size;
-    long int nbins;
-    long int *pids;
+    lint pids_size;
+    lint nbins;
+    lint *pids;
     int **n_thrown;
     int **n_simul_dc;
     int **n_simul_fmt;
@@ -207,7 +207,7 @@ int draw_acc_corr() {
     for (int var_idx = 0; var_idx < NPLOTS; ++var_idx) {
         // var_idx represents the variable we're processing, in the order
         //     defined in PLOT_NAMES[].
-        long int bin_size = bs[var_idx];
+        lint bin_size = bs[var_idx];
 
         // Define x and y.
         double x_pos[bin_size - 1];

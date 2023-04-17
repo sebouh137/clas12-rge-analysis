@@ -23,6 +23,11 @@
 // rge-analysis.
 #include "rge_err_handler.h"
 
+// typedefs.
+typedef unsigned int uint;
+typedef long unsigned int luint;
+typedef long int lint;
+
 // --+ structs +----------------------------------------------------------------
 /** Data associated to a particular PID. */
 typedef struct {
@@ -49,9 +54,9 @@ static int pid_invalid(int pid);
 static std::map<int, rge_pidconstants>::const_iterator pid_it;
 
 /** Counters for negative, neutral, and positive PIDs in list. */
-static unsigned int negative_size = 0;
-static unsigned int neutral_size  = 0;
-static unsigned int positive_size = 0;
+static uint negative_size = 0;
+static uint neutral_size  = 0;
+static uint positive_size = 0;
 
 // --+ library +----------------------------------------------------------------
 /**
@@ -81,7 +86,7 @@ int rge_get_mass(int pid, double *mass);
  * @param size   : pointer to int where to write size of pidlist of charge.
  * @param return : error code.
  */
-int rge_get_pidlist_size_by_charge(int charge, unsigned int *size);
+int rge_get_pidlist_size_by_charge(int charge, uint *size);
 
 /**
  * Fill an array of PIDs that match the given charge from PID_MAP. Function

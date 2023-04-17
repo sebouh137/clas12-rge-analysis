@@ -195,11 +195,10 @@ double zh(rge_particle p, rge_particle e, double bE) {
 
 // --+ library +----------------------------------------------------------------
 rge_particle rge_particle_init(
-        rge_hipobank *particle, rge_hipobank *track, FMT_Tracks *bank_fmt_tracks,
-        unsigned int pos, long int fmt_nlayers
+        rge_hipobank *particle, rge_hipobank *track,
+        FMT_Tracks *bank_fmt_tracks, uint pos, lint fmt_nlayers
 ) {
-    unsigned int pindex =
-            static_cast<unsigned int>(rge_get_entry(track, "pindex", pos));
+    uint pindex = static_cast<uint>(rge_get_entry(track, "pindex", pos));
 
     // Use only DC tracking data.
     if (fmt_nlayers == 0) {
@@ -217,8 +216,7 @@ rge_particle rge_particle_init(
     }
 
     // Use DC+FMT tracking data.
-    unsigned int index  =
-            static_cast<unsigned int>(rge_get_entry(track, "index", pos));
+    uint index = static_cast<uint>(rge_get_entry(track, "index", pos));
 
     // Apply FMT cuts.
     // Track reconstructed by FMT.
@@ -251,7 +249,7 @@ int rge_set_pid(
     }
 
     // Create PID list.
-    unsigned int hypotheses_size = 0;
+    uint hypotheses_size = 0;
     rge_get_pidlist_size_by_charge(particle->charge, &hypotheses_size);
 
     __extension__ int hypotheses[hypotheses_size];
@@ -266,7 +264,7 @@ int rge_set_pid(
     bool htcc_pion_threshold = momentum(*particle) > HTCC_PION_THRESHOLD;
 
     // Match PID.
-    for (unsigned int pi = 0; particle->pid==0 && pi < hypotheses_size; ++pi) {
+    for (uint pi = 0; particle->pid==0 && pi < hypotheses_size; ++pi) {
         if (match_pid(
                 &(particle->pid), hypotheses[pi], hypotheses[pi] == recon_pid,
                 e_check, htcc_signal_check, htcc_pion_threshold

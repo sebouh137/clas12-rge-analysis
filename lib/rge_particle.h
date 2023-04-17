@@ -24,6 +24,11 @@
 #include "rge_math_utils.h"
 #include "rge_pid_utils.h"
 
+// typedefs.
+typedef unsigned int uint;
+typedef long unsigned int luint;
+typedef long int lint;
+
 // --+ structs +----------------------------------------------------------------
 typedef struct {
     // Identifier booleans.
@@ -184,8 +189,8 @@ static double zh(rge_particle p, rge_particle e, double bE);
   * @param fmt_nlayers     : number of FMT layers required to make a particle.
   */
 rge_particle rge_particle_init(
-        rge_hipobank *particle, rge_hipobank *track, FMT_Tracks *bank_fmt_tracks,
-        unsigned int pos, long int fmt_nlayers
+        rge_hipobank *particle, rge_hipobank *track,
+        FMT_Tracks *bank_fmt_tracks, uint pos, lint fmt_nlayers
 );
 
 /**

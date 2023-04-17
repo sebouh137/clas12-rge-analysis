@@ -78,11 +78,11 @@ static const char *USAGE_MESSAGE =
  * @return:            Error code. Currently, can only return 0 (success).
  */
 static int create_plots(
-        TH1 *plot_arr[], long unsigned int dim_bins, int *idx,
-        long unsigned int depth, TString *plot_title, const char *x_var,
-        const char *y_var, int plot_type, long unsigned int plot_nbins[],
-        double plot_range[][2], int bin_vars[], long unsigned int bin_nbins[],
-        double bin_range[][2], double bin_binsize[]
+        TH1 *plot_arr[], luint dim_bins, int *idx, luint depth,
+        TString *plot_title, const char *x_var, const char *y_var,
+        int plot_type, luint plot_nbins[], double plot_range[][2],
+        int bin_vars[], luint bin_nbins[], double bin_range[][2],
+        double bin_binsize[]
 ) {
     if (depth == dim_bins) {
         // Create plot and increase index.
@@ -104,7 +104,7 @@ static int create_plots(
         return 0;
     }
 
-    for (long unsigned int bin_i = 0; bin_i < bin_nbins[depth]; ++bin_i) {
+    for (luint bin_i = 0; bin_i < bin_nbins[depth]; ++bin_i) {
         // Find limits.
         double b_low  = bin_range[depth][0] + bin_binsize[depth]* bin_i;
         double b_high = bin_range[depth][0] + bin_binsize[depth]*(bin_i+1);
@@ -127,12 +127,10 @@ static int create_plots(
 
 /** Copy of function above for acceptance corrected plots. */
 static int create_acc_corr_plots(
-        TH1 *plot_arr[], long unsigned int dim_bins, int *idx,
-        long unsigned int depth, TString *plot_title,
-        const char *x_var, const char *y_var, int plot_type,
-        long unsigned int plot_nbins, double plot_edges[], int bin_vars[],
-        long unsigned int bin_nbins[], double bin_range[][2],
-        double bin_binsize[]
+        TH1 *plot_arr[], luint dim_bins, int *idx, luint depth,
+        TString *plot_title, const char *x_var, const char *y_var,
+        int plot_type, luint plot_nbins, double plot_edges[], int bin_vars[],
+        luint bin_nbins[], double bin_range[][2], double bin_binsize[]
 ) {
     if (depth == dim_bins) {
         // Create plot and increase index.
@@ -150,7 +148,7 @@ static int create_acc_corr_plots(
         return 0;
     }
 
-    for (long unsigned int bin_i = 0; bin_i < bin_nbins[depth]; ++bin_i) {
+    for (luint bin_i = 0; bin_i < bin_nbins[depth]; ++bin_i) {
         // Find limits.
         double b_low  = bin_range[depth][0] + bin_binsize[depth]* bin_i;
         double b_high = bin_range[depth][0] + bin_binsize[depth]*(bin_i+1);
@@ -201,19 +199,18 @@ static int create_acc_corr_plots(
  * @return:                Error code. Currently, can only return 0 (success).
  */
 static int find_bin(
-        TString *plot_title, long unsigned int dim_bins, long unsigned int idx,
-        long unsigned int depth, long unsigned int prev_dim_factor, int nplots,
-        int vars[], long unsigned int nbins[], double range[][2],
-        double binsize[]
+        TString *plot_title, luint dim_bins, luint idx, luint depth,
+        luint prev_dim_factor, int nplots, int vars[], luint nbins[],
+        double range[][2], double binsize[]
 ) {
     if (depth == dim_bins) return 0;
 
     // Find index in array (for this dimension).
-    long unsigned int dim_factor = 1;
-    for (long unsigned int depth_i = depth+1; depth_i < dim_bins; ++depth_i) {
+    luint dim_factor = 1;
+    for (luint depth_i = depth+1; depth_i < dim_bins; ++depth_i) {
         dim_factor *= nbins[depth_i];
     }
-    long unsigned int bi = (idx%prev_dim_factor)/dim_factor;
+    luint bi = (idx%prev_dim_factor)/dim_factor;
 
     // Get limits.
     double low  = range[depth][0] + binsize[depth]* bi;
@@ -250,31 +247,27 @@ static int find_bin(
  * @return:         Index of the bin we're looking for. Returns -1 if variable
  *                  is not within binning range.
  */
-static long int find_idx(
-        long unsigned int dim_bins, long unsigned int depth, Float_t var[],
-        long unsigned int nbins[], double range[][2], double binsize[]
+static lint find_idx(
+        luint dim_bins, luint depth, Float_t var[], luint nbins[],
+        double range[][2], double binsize[]
 ) {
     if (depth == dim_bins) return 0;
-    for (long unsigned int bi = 0; bi < nbins[depth]; ++bi) {
+    for (luint bi = 0; bi < nbins[depth]; ++bi) {
         // Define bin limits.
         double low  = range[depth][0] + binsize[depth]* bi;
         double high = range[depth][0] + binsize[depth]*(bi+1);
 
         // Find bin for var.
         if (low < var[depth] && var[depth] < high) {
-            long unsigned int dim_factor = 1;
-            for (
-                    long unsigned int depth_i = depth + 1;
-                    depth_i < dim_bins;
-                    ++depth_i
-            ) {
+            luint dim_factor = 1;
+            for (luint depth_i = depth + 1; depth_i < dim_bins; ++depth_i) {
                 dim_factor *= nbins[depth_i];
             }
-            long int idx =
+            lint idx =
                     find_idx(dim_bins, depth+1, var, nbins, range, binsize);
             if (idx < 0) return idx;
-            else return static_cast<long int>(
-                    bi*dim_factor + static_cast<long unsigned int>(idx)
+            else return static_cast<lint>(
+                    bi*dim_factor + static_cast<luint>(idx)
             );
         }
     }
@@ -285,7 +278,7 @@ static long int find_idx(
 /** run() function of the program. Check USAGE_MESSAGE for details. */
 static int run(
         char *in_filename, char *out_filename, char *acc_filename,
-        char *work_dir, int run_no, long int nentries, bool apply_acc_corr
+        char *work_dir, int run_no, lint nentries, bool apply_acc_corr
 ) {
     // Open input file.
     TFile *f_in  = TFile::Open(in_filename, "READ");
@@ -296,11 +289,11 @@ static int run(
 
     // Get acceptance correction
     bool acc_plot = false;
-    long unsigned int acc_nedges[5];
-    long unsigned int acc_nbins;
-    long unsigned int acc_npids;
+    luint acc_nedges[5];
+    luint acc_nbins;
+    luint acc_npids;
     double **acc_edges;
-    long int *acc_pids;
+    lint *acc_pids;
     int **acc_n_thrown;
     int **acc_n_simul;
     if (acc_filename != NULL) {
@@ -334,10 +327,10 @@ static int run(
 
     // Find selected particle PID in acceptance correction data. If not found,
     //     return an error.
-    unsigned int acc_pid_idx = UINT_MAX;
+    uint acc_pid_idx = UINT_MAX;
     if (acc_plot) {
         // Find index of plot_pid in acc_pids.
-        for (unsigned int pid_i = 0; pid_i < acc_npids; ++pid_i) {
+        for (uint pid_i = 0; pid_i < acc_npids; ++pid_i) {
             if (acc_pids[pid_i] == plot_pid) acc_pid_idx = pid_i;
         }
         if (acc_pid_idx == UINT_MAX) {
@@ -374,13 +367,12 @@ static int run(
     // TODO. Change bin_range to bin_edges for variable bin sizes.
 
     printf("\nNumber of dimensions for binning?\n");
-    long unsigned int dim_bins =
-            static_cast<long unsigned int>(rge_catch_long());
+    luint dim_bins = static_cast<luint>(rge_catch_long());
     __extension__ int    bin_vars[dim_bins];
     __extension__ double bin_range[dim_bins][2];
     __extension__ double bin_binsize[dim_bins];
-    __extension__ long unsigned int bin_nbins[dim_bins];
-    for (long unsigned int bin_dim_i = 0; bin_dim_i < dim_bins; ++bin_dim_i) {
+    __extension__ luint bin_nbins[dim_bins];
+    for (luint bin_dim_i = 0; bin_dim_i < dim_bins; ++bin_dim_i) {
         // variable.
         printf("\nDefine var for bin in dimension %ld. Available vars:\n[",
                 bin_dim_i);
@@ -399,7 +391,7 @@ static int run(
         // nbins.
         printf("\nDefine number of bins for bin in dimension %ld:\n",
                 bin_dim_i);
-        bin_nbins[bin_dim_i] = static_cast<long unsigned int>(rge_catch_long());
+        bin_nbins[bin_dim_i] = static_cast<luint>(rge_catch_long());
 
         // binning bin size.
         bin_binsize[bin_dim_i] =
@@ -411,14 +403,14 @@ static int run(
     // TODO. Change plot_range to plot_edges to get variable bin sizes.
 
     // Number of plots.
-    long unsigned int plot_arr_size;
+    luint plot_arr_size;
 
     // If acceptance correction is being made, only acceptance corrected
     //     variables (Q2, nu, zh, Pt2, and phiPQ) can be plotted.
     if (acc_plot) plot_arr_size = ACCPLT_LIST_SIZE;
     else {
         printf("\nDefine number of plots (Set to 0 to draw standard plots).\n");
-        plot_arr_size = static_cast<long unsigned int>(rge_catch_long());
+        plot_arr_size = static_cast<luint>(rge_catch_long());
     }
 
     bool std_plot = false;
@@ -430,9 +422,9 @@ static int run(
     __extension__ int plot_type[plot_arr_size];
     __extension__ int plot_vars[plot_arr_size][2];
     __extension__ double plot_range[plot_arr_size][2][2];
-    __extension__ long unsigned int plot_nbins[plot_arr_size][2];
+    __extension__ luint plot_nbins[plot_arr_size][2];
     for (
-            unsigned long int plot_i = 0;
+            luint plot_i = 0;
             plot_i < plot_arr_size && !std_plot && !acc_plot;
             ++plot_i
     ) {
@@ -462,8 +454,7 @@ static int run(
 
             // Define number of bins in plot.
             printf("\nDefine number of bins for %s axis:\n", DIM_LIST[dim_i]);
-            plot_nbins[plot_i][dim_i] =
-                    static_cast<long unsigned int>(rge_catch_long());
+            plot_nbins[plot_i][dim_i] = static_cast<luint>(rge_catch_long());
         }
     }
 
@@ -506,17 +497,17 @@ static int run(
     int evnsplitter = 0;
 
     // Apply SIDIS cuts, checking which event numbers should be skipped.
-    long unsigned int nevents = 0;
+    luint nevents = 0;
 
     // Prepare progress bar.
     rge_pbar_set_nentries(nentries);
 
     // Count number of events.
-    for (long int entry = 0; entry < nentries; ++entry) {
+    for (lint entry = 0; entry < nentries; ++entry) {
         rge_pbar_update(entry);
         ntuple->GetEntry(entry);
         if (vars[A_EVENTNO] > nevents) {
-            nevents = static_cast<long unsigned int>(vars[A_EVENTNO]+0.5);
+            nevents = static_cast<luint>(vars[A_EVENTNO]+0.5);
         }
     }
 
@@ -531,7 +522,7 @@ static int run(
 
     // Fill valid_event array with false bools in case the next for loop doesn't
     //     fill every entry in it.
-    for (long unsigned int event = 0; event < nevents && dis_cuts; ++event) {
+    for (luint event = 0; event < nevents && dis_cuts; ++event) {
         valid_event[event] = false;
     }
 
@@ -540,13 +531,13 @@ static int run(
     //     so that we can skip those when plotting. It is only necessary to do
     //     this if we're applying DIS cuts.
     rge_pbar_reset();
-    for (long int entry = 0; entry < nentries && dis_cuts; ++entry) {
+    for (lint entry = 0; entry < nentries && dis_cuts; ++entry) {
         rge_pbar_update(entry);
 
         ntuple->GetEntry(entry);
         if (vars[A_EVENTNO] != current_evn) {
             current_evn = vars[A_EVENTNO];
-            valid_event[static_cast<long unsigned int>(vars[A_EVENTNO]+0.5)] =
+            valid_event[static_cast<luint>(vars[A_EVENTNO]+0.5)] =
                     false;
             no_tre_pass = false;
             Q2_pass     = true;
@@ -560,19 +551,19 @@ static int run(
         W2_pass = vars[A_W2] >= W2CUT;
         // zh_pass = vars[A_ZH] <= ZHCUT;
 
-        valid_event[static_cast<long unsigned int>(vars[A_EVENTNO]+0.5)] =
+        valid_event[static_cast<luint>(vars[A_EVENTNO]+0.5)] =
                 no_tre_pass && Q2_pass && W2_pass && zh_pass;
     }
 
     // === PLOT ================================================================
     // Create plots, separated by n-dimensional binning.
-    long unsigned int bin_arr_size = 1;
-    for (long unsigned int bin_dim_i = 0; bin_dim_i < dim_bins; ++bin_dim_i) {
+    luint bin_arr_size = 1;
+    for (luint bin_dim_i = 0; bin_dim_i < dim_bins; ++bin_dim_i) {
         bin_arr_size *= bin_nbins[bin_dim_i];
     }
 
     __extension__ TH1 *plot_arr[plot_arr_size][bin_arr_size];
-    for (long unsigned int plot_i = 0; plot_i < plot_arr_size; ++plot_i) {
+    for (luint plot_i = 0; plot_i < plot_arr_size; ++plot_i) {
         TString plot_title;
         int idx = 0;
         if (acc_plot) { // Acceptance corrected plots have variable bin sizes.
@@ -613,7 +604,7 @@ static int run(
     // Run through events.
     printf("Processing plots...\n");
     rge_pbar_reset();
-    for (long int entry = 0; entry < nentries; ++entry) {
+    for (lint entry = 0; entry < nentries; ++entry) {
         rge_pbar_update(entry);
         ntuple->GetEntry(entry);
 
@@ -659,16 +650,12 @@ static int run(
 
         // Prepare binning vars.
         __extension__ Float_t bin_vars_idx[dim_bins];
-        for (
-                long unsigned int bin_dim_i = 0;
-                bin_dim_i < dim_bins;
-                ++bin_dim_i
-        ) {
+        for (luint bin_dim_i = 0; bin_dim_i < dim_bins; ++bin_dim_i) {
             bin_vars_idx[bin_dim_i] = vars[bin_vars[bin_dim_i]];
         }
 
         // Fill plots.
-        for (long unsigned int plot_i = 0; plot_i < plot_arr_size; ++plot_i) {
+        for (luint plot_i = 0; plot_i < plot_arr_size; ++plot_i) {
             // SIDIS variables only make sense for some particles.
             bool sidis_pass = true;
             for (int dim_i = 0; dim_i < plot_type[plot_i]+1; ++dim_i) {
@@ -683,7 +670,7 @@ static int run(
             if (!sidis_pass) continue;
 
             // Find corresponding bin.
-            long int idx = find_idx(
+            lint idx = find_idx(
                     dim_bins, 0, bin_vars_idx, bin_nbins, bin_range, bin_binsize
             );
             if (idx == -1) continue;
@@ -702,23 +689,23 @@ static int run(
 
     // === APPLY ACCEPTANCE CORRECTION =========================================
     // Array for storing number of bins (for simplicity).
-    long unsigned int bn[5] = {
+    luint bn[5] = {
             acc_nedges[0]-1, acc_nedges[1]-1, acc_nedges[2]-1,
             acc_nedges[3]-1, acc_nedges[4]-1
     };
 
     // Interate through plot variables and bins.
     for (
-            long unsigned int plot_i = 0;
+            luint plot_i = 0;
             plot_i < plot_arr_size && acc_plot && apply_acc_corr;
             ++plot_i
     ) {
-        for (long unsigned int bin_i = 0; bin_i < bin_arr_size; ++bin_i) {
+        for (luint bin_i = 0; bin_i < bin_arr_size; ++bin_i) {
             // Integrate through other variables.
             __extension__ int y_thrown[bn[plot_i]];
             __extension__ int y_simul [bn[plot_i]];
             for (
-                    long unsigned int acc_bin_i = 0;
+                    luint acc_bin_i = 0;
                     acc_bin_i < bn[plot_i];
                     ++acc_bin_i
             ) {
@@ -727,21 +714,13 @@ static int run(
             }
 
             // Go through each of the five acceptance correction bins.
-            for (long unsigned int i0 = 0; i0 < acc_nedges[0]-1; ++i0) {
-                for (long unsigned int i1 = 0; i1 < acc_nedges[1]-1; ++i1) {
-                    for (long unsigned int i2 = 0; i2 < acc_nedges[2]-1; ++i2) {
-                        for (
-                                long unsigned int i3 = 0;
-                                i3 < acc_nedges[3]-1;
-                                ++i3
-                        ) {
-                            for (
-                                    long unsigned int i4 = 0;
-                                    i4 < acc_nedges[4]-1;
-                                    ++i4
-                            ) {
+            for (luint i0 = 0; i0 < acc_nedges[0]-1; ++i0) {
+                for (luint i1 = 0; i1 < acc_nedges[1]-1; ++i1) {
+                    for (luint i2 = 0; i2 < acc_nedges[2]-1; ++i2) {
+                        for (luint i3 = 0; i3 < acc_nedges[3]-1; ++i3) {
+                            for (luint i4 = 0; i4 < acc_nedges[4]-1; ++i4) {
                                 // Find 1D bin position from 5 indices.
-                                long unsigned int bin_pos =
+                                luint bin_pos =
                                         i0 * (bn[1]*bn[2]*bn[3]*bn[4]) +
                                         i1 * (bn[2]*bn[3]*bn[4]) +
                                         i2 * (bn[3]*bn[4]) +
@@ -753,7 +732,7 @@ static int run(
                                 //       ACC_VX to be Q2, nu, zh, pt2, phiPQ.
                                 //       If that changes, this should change
                                 //       too.
-                                long unsigned int sel_idx;
+                                luint sel_idx;
                                 switch(plot_i) {
                                     case 0: sel_idx = i0; break;
                                     case 1: sel_idx = i1; break;
@@ -779,22 +758,14 @@ static int run(
 
             // Compute acceptance correction factor.
             __extension__ double acc_corr_factor[bn[plot_i]];
-            for (
-                    long unsigned int acc_bin_i = 0;
-                    acc_bin_i < bn[plot_i];
-                    ++acc_bin_i
-            ) {
+            for (luint acc_bin_i = 0; acc_bin_i < bn[plot_i]; ++acc_bin_i) {
                 acc_corr_factor[acc_bin_i] =
                         static_cast<double>(y_thrown[acc_bin_i]) /
                         static_cast<double>(y_simul[acc_bin_i]);
             }
 
             // Multiply each plot bin by its corresponding correction factor.
-            for (
-                    long unsigned int plt_bin_i = 1;
-                    plt_bin_i <= bn[plot_i];
-                    ++plt_bin_i
-            ) {
+            for (luint plt_bin_i = 1; plt_bin_i <= bn[plot_i]; ++plt_bin_i) {
                 double bin = plot_arr[plot_i][bin_i]->GetBinContent(plt_bin_i);
                 plot_arr[plot_i][bin_i]->SetBinContent(
                         plt_bin_i, bin * acc_corr_factor[plt_bin_i-1]
@@ -812,7 +783,7 @@ static int run(
     }
 
     // Write plots to output file.
-    for (long unsigned int bin_i = 0; bin_i < bin_arr_size; ++bin_i) {
+    for (luint bin_i = 0; bin_i < bin_arr_size; ++bin_i) {
         // Find dir.
         TString dir;
         find_bin(&dir, dim_bins, bin_i, 0, INT_MAX, bin_arr_size, bin_vars,
@@ -822,7 +793,7 @@ static int run(
         f_out->cd(dir);
 
         // Write plot(s).
-        for (long unsigned int plot_i = 0; plot_i < plot_arr_size; ++plot_i) {
+        for (luint plot_i = 0; plot_i < plot_arr_size; ++plot_i) {
             plot_arr[plot_i][bin_i]->Write();
         }
     }
@@ -836,12 +807,12 @@ static int run(
     free(valid_event);
 
     if (acc_plot) {
-        for (long unsigned int bin_i = 0; bin_i < 5; ++bin_i) {
+        for (luint bin_i = 0; bin_i < 5; ++bin_i) {
             free(acc_edges[bin_i]);
         }
         free(acc_edges);
         free(acc_pids);
-        for (long unsigned int plot_i = 0; plot_i < acc_npids; ++plot_i) {
+        for (luint plot_i = 0; plot_i < acc_npids; ++plot_i) {
             free(acc_n_thrown[plot_i]);
             free(acc_n_simul[plot_i]);
         }
@@ -859,7 +830,7 @@ static int run(
  */
 static int handle_args(
         int argc, char **argv, char **in_filename, char **out_filename,
-        char **acc_filename, char **work_dir, int *run_no, long int *nentries,
+        char **acc_filename, char **work_dir, int *run_no, lint *nentries,
         bool *apply_acc_corr)
 {
     // Handle arguments.
@@ -942,7 +913,7 @@ int main(int argc, char **argv) {
     char *acc_filename  = NULL;
     char *work_dir      = NULL;
     int run_no          = -1;
-    long int nentries   = -1;
+    lint nentries       = -1;
     bool apply_acc_corr = true;
 
     int err = handle_args(

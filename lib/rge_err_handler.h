@@ -23,6 +23,11 @@
 // C++.
 #include <map>
 
+// typedefs.
+typedef unsigned int uint;
+typedef long unsigned int luint;
+typedef long int lint;
+
 // --+ internal +---------------------------------------------------------------
 /**
  * Entry point to all error handling. Decides how to react to rge_errno.
@@ -42,7 +47,7 @@ static int handle_err();
  * NOTE. To check for undefined errors, all run() functions in the code should
  *       have a line with `rge_errno = RGEERR_NOERR;` before returning 0.
  */
-extern unsigned int rge_errno;
+extern uint rge_errno;
 
 /**
  * Print usage and exit.

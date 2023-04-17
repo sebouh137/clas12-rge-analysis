@@ -77,7 +77,7 @@ int rge_get_mass(int pid, double *mass) {
     return 0;
 }
 
-int rge_get_pidlist_size_by_charge(int charge, unsigned int *size) {
+int rge_get_pidlist_size_by_charge(int charge, uint *size) {
     if (charge  < 0) *size = negative_size;
     if (charge == 0) *size = neutral_size;
     if (charge  > 0) *size = positive_size;
@@ -86,7 +86,7 @@ int rge_get_pidlist_size_by_charge(int charge, unsigned int *size) {
 }
 
 int rge_get_pidlist_by_charge(int charge, int pidlist[]) {
-    unsigned int counter = 0;
+    uint counter = 0;
     for (pid_it = PID_MAP.begin(); pid_it != PID_MAP.end(); ++pid_it) {
         if (
                 (charge == 0 && pid_it->second.charge == 0) || // both neutral.

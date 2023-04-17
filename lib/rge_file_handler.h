@@ -24,6 +24,11 @@
 #include "constants.h"
 #include "rge_err_handler.h"
 
+// typedefs.
+typedef unsigned int uint;
+typedef long unsigned int luint;
+typedef long int lint;
+
 // --+ internal +---------------------------------------------------------------
 /**
  * Read binning data from text file and fill binning sizes array, bin_edges
@@ -36,8 +41,7 @@
  * @return           : success code (0).
  */
 static int get_bin_edges(
-        FILE *file_in, long unsigned int *bin_nedges, double **bin_edges,
-        long unsigned int *pids_size
+        FILE *file_in, luint *bin_nedges, double **bin_edges, luint *pids_size
 );
 
 /**
@@ -55,8 +59,8 @@ static int get_bin_edges(
  * @return          : success code (0).
  */
 static int get_acc_corr(
-        FILE *file_in, long unsigned int pids_size, long unsigned int nbins,
-        long int *pids, int **n_thrown, int **n_simul
+        FILE *file_in, luint pids_size, luint nbins, lint *pids, int **n_thrown,
+        int **n_simul
 );
 
 // --+ library +----------------------------------------------------------------
@@ -100,9 +104,8 @@ int rge_get_sf_params(char *filename, double sf[NSECTORS][SF_NPARAMS][2]);
  *                         * 1: Failed to access acceptance correction file.
  */
 int rge_read_acc_corr_file(
-        char *acc_filename, long unsigned int bin_nedges[5],
-        double ***bin_edges, long unsigned int *pids_size,
-        long unsigned int *nbins, long int **pids, int ***n_thrown,
+        char *acc_filename, luint bin_nedges[5], double ***bin_edges,
+        luint *pids_size, luint *nbins, lint **pids, int ***n_thrown,
         int ***n_simul
 );
 

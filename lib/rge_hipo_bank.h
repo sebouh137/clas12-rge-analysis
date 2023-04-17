@@ -34,6 +34,11 @@
 // rge-analysis.
 #include "rge_err_handler.h"
 
+// typedefs.
+typedef unsigned int uint;
+typedef long unsigned int luint;
+typedef long int lint;
+
 /** Definitions to refer to different hipo banks using strings. */
 #define RGE_RECPARTICLE     "REC::Particle"
 #define RGE_RECTRACK        "REC::Track"
@@ -60,24 +65,24 @@ typedef struct {
     const char *addr;          /** Address of entry (BANK::NAME::VAR). */
     std::vector<double> *data; /** Vector with data of the entry. */
     TBranch *branch;           /** Pointer to TBranch where to write data. */
-    unsigned int type;         /** Int containing variable type in hypo bank. */
+    uint type;         /** Int containing variable type in hypo bank. */
 } rge_hipoentry;
 
 /** Struct containing a map of all entries associated to a hipo bank. */
 typedef struct {
     // NOTE. nrows is only used for hipo_banks dedicated to writing. For
     //       readers, entries.data.size() should be used.
-    long unsigned int nrows;
+    luint nrows;
     std::map<const char *, rge_hipoentry, cmp_str> entries;
 } rge_hipobank;
 
 // --+ internal +---------------------------------------------------------------
 /** internal variables to refer to different primitive types. */
 // NOTE. These could be improved by adding a reference to the primitive itself.
-static const unsigned int BYTE  = 0;
-static const unsigned int SHORT = 1;
-static const unsigned int INT   = 2;
-static const unsigned int FLOAT = 3;
+static const uint BYTE  = 0;
+static const uint SHORT = 1;
+static const uint INT   = 2;
+static const uint FLOAT = 3;
 
 /** Internal iterator used to loop through entries. */
 static std::map<const char *, rge_hipoentry, cmp_str>::const_iterator it;
@@ -89,11 +94,11 @@ static std::map<const char *, rge_hipoentry, cmp_str>::const_iterator it;
  *     nullptr to be handled by root.
  */
 static rge_hipoentry entry_writer_init(
-        const char *in_addr, unsigned int in_type
+        const char *in_addr, uint in_type
 );
 
 /** Set b.nrows to in_rows. */
-static int set_nrows(rge_hipobank *b, long unsigned int in_nrows);
+static int set_nrows(rge_hipobank *b, luint in_nrows);
 
 // --+ library +----------------------------------------------------------------
 /** Initialize rge_hipobank based on static map related to bank_version. */
@@ -112,9 +117,10 @@ int rge_fill(rge_hipobank *rb, hipo::bank hb);
 int rge_get_entries(rge_hipobank *b, TTree *t, int idx);
 
 /** Get entry list size with name var from bank b. */
-long unsigned int rge_get_size(rge_hipobank *b, const char *var);
+luint rge_get_size(rge_hipobank *b, const char *var);
 
 /** Get entry number idx with name var from bank b. */
-double rge_get_entry(rge_hipobank *b, const char *var, long unsigned int idx);
+// TODO. Split into get_int, get_uint, etc.
+double rge_get_entry(rge_hipobank *b, const char *var, luint idx);
 
 #endif

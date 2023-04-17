@@ -26,11 +26,16 @@
 #include "rge_err_handler.h"
 #include "rge_file_handler.h"
 
+// typedefs.
+typedef unsigned int uint;
+typedef long unsigned int luint;
+typedef long int lint;
+
 // --+ internal +---------------------------------------------------------------
 /** Minimum number of FMT layers to accept a track. */
-static unsigned int FMTMINLAYERS = 2;
+static uint FMTMINLAYERS = 2;
 /** Total number of FMT layers. */
-static unsigned int FMTNLAYERS   = 3;
+static uint FMTNLAYERS   = 3;
 
 /** Check if character c is a number. Returns 1 if it is, 0 if it isn't. */
 static int is_number(char c);
@@ -39,7 +44,7 @@ static int is_number(char c);
 static int is_number(char *s);
 
 /* Run strtol from n to t, returning appropriate error codes. */
-static int run_strtol(long int *n, char *t);
+static int run_strtol(lint *n, char *t);
 
 // --+ library +----------------------------------------------------------------
 /**
@@ -62,15 +67,14 @@ int rge_grab_string(char *arg, char **str);
  * @return        : error code, which is always 0 (no error).
  */
 int rge_grab_multiarg(
-        int argc, char **argv, int *opt_idx, long unsigned int *size,
-        double **arr
+        int argc, char **argv, int *opt_idx, luint *size, double **arr
 );
 
 /* Run strtol on arg to get number of entries. */
-int rge_process_nentries(long int *nentries, char *arg);
+int rge_process_nentries(lint *nentries, char *arg);
 
 /* Run strtol on arg to get number of FMT layers required. */
-int rge_process_fmtnlayers(long int *nlayers, char *arg);
+int rge_process_fmtnlayers(lint *nlayers, char *arg);
 
 /** Catch a y (yes) or a n (no) from stdin. */
 bool rge_catch_yn();

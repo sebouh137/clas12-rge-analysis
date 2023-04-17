@@ -49,8 +49,8 @@ static const char *USAGE_MESSAGE =
 "    lib/bank_containers.h file.\n";
 
 /** Number of banks in BANKLIST. */
-static const unsigned int NBANKS       = 6;
-static const unsigned int NBANKS_NOFMT = 5;
+static const uint NBANKS       = 6;
+static const uint NBANKS_NOFMT = 5;
 
 /** List of banks hipo2root is capable of processing. */
 static const char *BANKLIST[NBANKS] = {
@@ -61,10 +61,10 @@ static const char *BANKLIST[NBANKS] = {
 /** run() function of the program. Check USAGE_MESSAGE for details. */
 static int run(
         char *in_filename, char *work_dir, bool use_fmt, int run_no,
-        long int nevents
+        lint nevents
 ) {
     // Number of banks to read/write depends on type of analysis.
-    unsigned int nbanks = use_fmt ? NBANKS : NBANKS_NOFMT;
+    uint nbanks = use_fmt ? NBANKS : NBANKS_NOFMT;
 
     // Access input sources.
     hipo::reader reader;
@@ -85,7 +85,7 @@ static int run(
     __extension__ hipo::bank   hbanks[nbanks];
     __extension__ rge_hipobank rbanks[nbanks];
 
-    for (unsigned int i = 0; i < nbanks; ++i) {
+    for (uint i = 0; i < nbanks; ++i) {
         // Initialize hipo banks.
         hbanks[i] = hipo::bank(factory.getSchema(BANKLIST[i]));
 
@@ -112,8 +112,8 @@ static int run(
         reader.read(event);
 
         // Fill banks from hipo event.
-        long unsigned int total_nrows = 0;
-        for (unsigned int i = 0; i < nbanks; ++i) {
+        luint total_nrows = 0;
+        for (uint i = 0; i < nbanks; ++i) {
             event.getStructure(hbanks[i]);
             rge_fill(&(rbanks[i]), hbanks[i]);
             total_nrows += rbanks[i].nrows;
@@ -137,7 +137,7 @@ static int run(
  */
 static int handle_args(
         int argc, char **argv, char **in_filename, char **work_dir,
-        bool *use_fmt, int *run_no, long int *nevents
+        bool *use_fmt, int *run_no, lint *nevents
 ) {
     // Handle arguments.
     int opt;
@@ -190,7 +190,7 @@ int main(int argc, char **argv) {
     char *work_dir     = NULL;
     bool use_fmt       = false;
     int  run_no        = -1;
-    long int nevents   = -1;
+    lint nevents       = -1;
 
     handle_args(
             argc, argv, &in_filename, &work_dir, &use_fmt, &run_no, &nevents

@@ -26,7 +26,7 @@ int is_number(char *s) {
     return 0;
 }
 
-int run_strtol(long int *n, char *t) {
+int run_strtol(lint *n, char *t) {
     char *eptr;
     errno = 0;
     *n = strtol(t, &eptr, 10);
@@ -43,8 +43,7 @@ int rge_grab_string(char *arg, char **str) {
 }
 
 int rge_grab_multiarg(
-        int argc, char **argv, int *opt_idx, long unsigned int *size,
-        double **arr
+        int argc, char **argv, int *opt_idx, luint *size, double **arr
 ) {
     int idx   = *opt_idx - 1;
     int start = idx;
@@ -75,7 +74,7 @@ int rge_grab_multiarg(
     return 0;
 }
 
-int rge_process_nentries(long int *nentries, char *arg) {
+int rge_process_nentries(lint *nentries, char *arg) {
     int err = run_strtol(nentries, arg);
     if (err == 1) {
         rge_errno = RGEERR_INVALIDENTRIES;
@@ -93,7 +92,7 @@ int rge_process_nentries(long int *nentries, char *arg) {
     return 0;
 }
 
-int rge_process_fmtnlayers(long int *nlayers, char *arg) {
+int rge_process_fmtnlayers(lint *nlayers, char *arg) {
     int err = run_strtol(nlayers, arg);
     if (err == 1 || (
             *nlayers != 0 &&

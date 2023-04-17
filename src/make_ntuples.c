@@ -48,14 +48,14 @@ static const char *USAGE_MESSAGE =
 "    variables from CLAS12 data.\n";
 
 /** Detector IDs from CLAS12 reconstruction. */
-static const unsigned int FTOF_ID    = 12;
-static const unsigned int HTCC_ID    = 15;
-static const unsigned int LTCC_ID    = 16;
+static const uint FTOF_ID    = 12;
+static const uint HTCC_ID    = 15;
+static const uint LTCC_ID    = 16;
 
 /** FTOF layer IDs from CLAS12 reconstruction. */
-static const unsigned int FTOF1A_LYR =  1;
-static const unsigned int FTOF1B_LYR =  2;
-static const unsigned int FTOF2_LYR  =  3;
+static const uint FTOF1A_LYR =  1;
+static const uint FTOF1B_LYR =  2;
+static const uint FTOF2_LYR  =  3;
 
 /**
  * Find and return the most precise time of flight (TOF). Both the Forward Time
@@ -74,16 +74,14 @@ static const unsigned int FTOF2_LYR  =  3;
  *                      calorimeter banks.
  */
 static double get_tof(
-        Scintillator scintillator, Calorimeter calorimeter, unsigned int pindex
+        Scintillator scintillator, Calorimeter calorimeter, uint pindex
 ) {
     int    most_precise_lyr = 0;
     double tof              = INFINITY;
-    for (unsigned int i = 0; i < scintillator.pindex->size(); ++i) {
+    for (uint i = 0; i < scintillator.pindex->size(); ++i) {
         // Filter out incorrect pindex and hits not from FTOF.
         if (
-                static_cast<unsigned int>(
-                        scintillator.pindex->at(i)
-                ) != pindex ||
+                static_cast<uint>(scintillator.pindex->at(i)) != pindex ||
                 scintillator.detector->at(i) != FTOF_ID
         ) {
             continue;
@@ -114,9 +112,9 @@ static double get_tof(
     if (most_precise_lyr != 0) return tof;
 
     // If no hits from FTOF were found, try to find TOF from calorimeters.
-    for (unsigned int i = 0; i < calorimeter.pindex->size(); ++i) {
+    for (uint i = 0; i < calorimeter.pindex->size(); ++i) {
         // Filter out incorrect pindex.
-        if (static_cast<unsigned int>(calorimeter.pindex->at(i)) != pindex) {
+        if (static_cast<uint>(calorimeter.pindex->at(i)) != pindex) {
             continue;
         }
 
@@ -159,15 +157,15 @@ static double get_tof(
  *                     in the REC::Calorimeter bank.
  */
 static int get_deposited_energy(
-        Calorimeter calorimeter, unsigned int pindex, double *energy_PCAL,
+        Calorimeter calorimeter, uint pindex, double *energy_PCAL,
         double *energy_ECIN, double *energy_ECOU
 ) {
     *energy_PCAL = 0;
     *energy_ECIN = 0;
     *energy_ECOU = 0;
 
-    for (unsigned int i = 0; i < calorimeter.pindex->size(); ++i) {
-        if (static_cast<unsigned int>(calorimeter.pindex->at(i)) != pindex) {
+    for (uint i = 0; i < calorimeter.pindex->size(); ++i) {
+        if (static_cast<uint>(calorimeter.pindex->at(i)) != pindex) {
             continue;
         }
         int lyr = static_cast<int>(calorimeter.layer->at(i));
@@ -199,15 +197,14 @@ static int get_deposited_energy(
  *                   in the REC::Cherenkov bank.
  */
 static int count_photoelectrons(
-        rge_hipobank *cherenkov, unsigned int pindex,
-        int *nphe_HTCC, int *nphe_LTCC
+        rge_hipobank *cherenkov, uint pindex, int *nphe_HTCC, int *nphe_LTCC
 ) {
     *nphe_HTCC = 0;
     *nphe_LTCC = 0;
 
-    for (unsigned int i = 0; i < rge_get_size(cherenkov, "pindex"); ++i) {
+    for (uint i = 0; i < rge_get_size(cherenkov, "pindex"); ++i) {
         if (
-                static_cast<unsigned int>(rge_get_entry(cherenkov, "pindex", i))
+                static_cast<uint>(rge_get_entry(cherenkov, "pindex", i))
                 != pindex
         ) {
             continue;
@@ -229,7 +226,7 @@ static int count_photoelectrons(
 /** run() function of the program. Check USAGE_MESSAGE for details. */
 static int run(
         char *filename_in, char *work_dir, char *data_dir, bool debug,
-        long int fmt_nlayers, long int n_events, int run_no, double energy_beam
+        lint fmt_nlayers, lint n_events, int run_no, double energy_beam
 ) {
     // Get sampling fraction.
     char sampling_fraction_file[PATH_MAX];
@@ -296,7 +293,7 @@ static int run(
     int particle_counter = 0;
 
     // Loop through events in input file.
-    for (long int event = 0; event < n_events; ++event) {
+    for (lint event = 0; event < n_events; ++event) {
         // Print fancy progress bar.
         if (!debug) {
             rge_pbar_update(event);
@@ -320,14 +317,12 @@ static int run(
 
         // Check existence of trigger electron
         rge_particle part_trigger;
-        bool trigger_exist = false;
-        unsigned int trigger_pos    = UINT_MAX;
-        unsigned int trigger_pindex = UINT_MAX;
-        double trigger_tof = -1.;
-        for (unsigned int pos = 0; pos < rge_get_size(&btrk, "index"); ++pos) {
-            unsigned int pindex = static_cast<unsigned int>(
-                    rge_get_entry(&btrk, "pindex", pos)
-            );
+        bool trigger_exist  = false;
+        uint trigger_pos    = UINT_MAX;
+        uint trigger_pindex = UINT_MAX;
+        double trigger_tof  = -1.;
+        for (uint pos = 0; pos < rge_get_size(&btrk, "index"); ++pos) {
+            uint pindex = static_cast<uint>(rge_get_entry(&btrk,"pindex",pos));
 
             // Get reconstructed particle from DC and from FMT.
             part_trigger = rge_particle_init(
@@ -361,7 +356,7 @@ static int run(
                     &part_trigger, rge_get_entry(&bpart, "pid", pindex),
                     status, energy_PCAL+energy_ECIN+energy_ECOU, energy_PCAL,
                     nphe_HTCC, nphe_LTCC,
-                    sampling_fraction_params[static_cast<unsigned int>(
+                    sampling_fraction_params[static_cast<uint>(
                             rge_get_entry(&btrk,"sector",pos)
                     )]
             )) return 1;
@@ -392,12 +387,10 @@ static int run(
         ++trigger_counter;
 
         // Processing particles.
-        for (unsigned int pos = 0; pos < rge_get_size(&btrk, "index"); ++pos) {
+        for (uint pos = 0; pos < rge_get_size(&btrk, "index"); ++pos) {
             // Currently pindex is always equal to pos, but this is not a given
             //     in the future of the reconstruction software development.
-            unsigned int pindex = static_cast<unsigned int>(
-                    rge_get_entry(&btrk, "pindex", pos)
-            );
+            uint pindex = static_cast<uint>(rge_get_entry(&btrk,"pindex",pos));
 
             // Avoid double-counting the trigger electron.
             if (trigger_pindex == pindex && trigger_pos == pos) {
@@ -436,7 +429,7 @@ static int run(
                     &part, rge_get_entry(&bpart, "pid", pindex), status,
                     energy_PCAL + energy_ECIN + energy_ECOU, energy_PCAL,
                     nphe_HTCC, nphe_LTCC,
-                    sampling_fraction_params[static_cast<unsigned int>(
+                    sampling_fraction_params[static_cast<uint>(
                             rge_get_entry(&btrk,"sector",pos)
                     )]
             )) return 1;
@@ -488,8 +481,8 @@ static int run(
 /** Handle arguments for make_ntuples using optarg. */
 static int handle_args(
         int argc, char **argv, char **filename_in, char **work_dir,
-        char **data_dir, bool *debug, long int *fmt_nlayers,
-        long int *n_events, int *run_no, double *energy_beam
+        char **data_dir, bool *debug, lint *fmt_nlayers, lint *n_events,
+        int *run_no, double *energy_beam
 ) {
     // Handle arguments.
     int opt;
@@ -553,14 +546,14 @@ static int handle_args(
 /** Entry point of the program. */
 int main(int argc, char **argv) {
     // Handle arguments.
-    char *filename_in    = NULL;
-    char *work_dir       = NULL;
-    char *data_dir       = NULL;
-    bool debug           = false;
-    long int fmt_nlayers = 0;
-    long int n_events    = -1;
-    int run_no           = -1;
-    double energy_beam   = -1;
+    char *filename_in  = NULL;
+    char *work_dir     = NULL;
+    char *data_dir     = NULL;
+    bool debug         = false;
+    lint fmt_nlayers   = 0;
+    lint n_events      = -1;
+    int run_no         = -1;
+    double energy_beam = -1;
 
     int err = handle_args(
             argc, argv, &filename_in, &work_dir, &data_dir, &debug,

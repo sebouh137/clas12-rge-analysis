@@ -23,6 +23,11 @@
 // rge-analysis.
 #include "rge_err_handler.h"
 
+// typedefs.
+typedef unsigned int uint;
+typedef long unsigned int luint;
+typedef long int lint;
+
 // --+ library +----------------------------------------------------------------
 /** Transform an angle a from degrees to radians. */
 int rge_to_rad(double src, double *dest);

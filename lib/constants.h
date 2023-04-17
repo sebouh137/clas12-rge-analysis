@@ -22,6 +22,11 @@
 // C++.
 #include <map>
 
+// typedefs.
+typedef unsigned int uint;
+typedef long unsigned int luint;
+typedef long int lint;
+
 // Data tree name for programs.
 #define RGE_TREENAMEDATA "data"
 

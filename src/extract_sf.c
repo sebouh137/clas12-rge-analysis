@@ -146,8 +146,7 @@ static int insert_TH2F(
 
 /** run() function of the program. Check USAGE_MESSAGE for details. */
 static int run(
-        char *in_filename, char *work_dir, char *data_dir, long int nevn,
-        int run_no
+        char *in_filename, char *work_dir, char *data_dir, lint nevn, int run_no
 ) {
     // Configure ROOT fitting.
     gStyle->SetOptFit();
@@ -181,7 +180,7 @@ static int run(
     std::map<const char *, TH1 *> histos;
 
     char *sf1D_name_arr[NCALS][NSECTORS][
-            static_cast<long unsigned int>(((SF_PMAX - SF_PMIN)/SF_PSTEP))
+            static_cast<luint>(((SF_PMAX - SF_PMIN)/SF_PSTEP))
     ];
     char *sf2D_name_arr[NCALS][NSECTORS];
     TGraphErrors *sf_dotgraph[NCALS][NSECTORS];
@@ -264,7 +263,7 @@ static int run(
     rge_pbar_set_nentries(nevn);
 
     printf("Reading %ld events from %s.\n", nevn, in_filename);
-    for (long int evn = 0; evn < nevn; ++evn) {
+    for (lint evn = 0; evn < nevn; ++evn) {
         rge_pbar_update(evn);
 
         // Get entries from bank containers.
@@ -282,10 +281,10 @@ static int run(
         }
 
         // Iterate through entries and write data to histograms.
-        long unsigned int npos = rge_get_size(&track, "pindex");
-        for (long unsigned int pos = 0; pos < npos; ++pos) {
+        luint npos = rge_get_size(&track, "pindex");
+        for (luint pos = 0; pos < npos; ++pos) {
             // Get basic data from track and particle banks.
-            long unsigned int pindex = static_cast<long unsigned int>(
+            luint pindex = static_cast<luint>(
                     track.entries.at("pindex").data->at(pos)
             );
 
@@ -304,11 +303,11 @@ static int run(
             }
 
             for (
-                    unsigned long int entry_i = 0;
+                    luint entry_i = 0;
                     entry_i < rge_get_size(&calorimeter, "pindex");
                     ++entry_i
             ) {
-                if (static_cast<long unsigned int>(
+                if (static_cast<luint>(
                         rge_get_entry(&calorimeter, "pindex", entry_i)
                 ) != pindex) {
                     continue;
@@ -525,7 +524,7 @@ static int run(
  */
 static int handle_args(
         int argc, char **argv, char **in_filename, char **work_dir,
-        char **data_dir, int *run_no, long int *nevn
+        char **data_dir, int *run_no, lint *nevn
 ) {
     // Handle optional arguments.
     int opt;
@@ -587,7 +586,7 @@ int main(int argc, char **argv) {
     char *in_filename = NULL;
     char *work_dir    = NULL;
     char *data_dir    = NULL;
-    long int nevn     = -1;
+    lint nevn         = -1;
     int run_no        = -1;
 
     int err = handle_args(

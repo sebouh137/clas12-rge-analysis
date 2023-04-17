@@ -72,11 +72,11 @@ static int find_pos(double v, double *b, int size) {
  * @return:       success code (0).
  */
 static int count_entries(
-        FILE *file, TTree *tree, int pid, long unsigned int *nbins,
-        double **edges, bool in_deg, bool simul
+        FILE *file, TTree *tree, int pid, luint *nbins, double **edges,
+        bool in_deg, bool simul
 ) {
     // Store total number of bins for simplicity.
-    long unsigned int total_nbins = 1;
+    luint total_nbins = 1;
     for (int i = 0; i < 5; ++i) total_nbins *= nbins[i];
 
     // Create and initialize evn_cnt.
@@ -87,7 +87,7 @@ static int count_entries(
     //       C++ vectors.
     __extension__ int evn_cnt[nbins[0]][nbins[1]][nbins[2]][nbins[3]][nbins[4]];
     int *iterator = &evn_cnt[0][0][0][0][0];
-    for (long unsigned int bin_i = 0; bin_i < total_nbins; ++bin_i) {
+    for (luint bin_i = 0; bin_i < total_nbins; ++bin_i) {
         *iterator = 0;
         ++iterator;
     }
@@ -138,7 +138,7 @@ static int count_entries(
 
     // Write evn_cnt to file.
     iterator = &evn_cnt[0][0][0][0][0];
-    for (long unsigned int bin_i = 0; bin_i < total_nbins; ++bin_i) {
+    for (luint bin_i = 0; bin_i < total_nbins; ++bin_i) {
         fprintf(file, "%d ", *iterator);
         ++iterator;
     }
@@ -150,7 +150,7 @@ static int count_entries(
 /** run() function of the program. Check USAGE_MESSAGE for details. */
 static int run(
         char *thrown_filename, char *simul_filename, char *data_dir,
-        long unsigned int *nedges, double **edges, bool in_deg
+        luint *nedges, double **edges, bool in_deg
 ) {
     // Open input files and load TTrees.
     printf("\nOpening generated events file...\n");
@@ -192,7 +192,7 @@ static int run(
 
     // Write edges to output file.
     for (int bi = 0; bi < 5; ++bi) {
-        for (long unsigned int bii = 0; bii < nedges[bi]; ++bii) {
+        for (luint bii = 0; bii < nedges[bi]; ++bii) {
             fprintf(out_file, "%12.9f ", edges[bi][bii]);
         }
         fprintf(out_file, "\n");
@@ -227,9 +227,9 @@ static int run(
     fprintf(out_file, "\n");
 
     // Get number of bins.
-    long unsigned int nbins[5];
+    luint nbins[5];
     for (int bin_dim_i = 0; bin_dim_i < 5; ++bin_dim_i) {
-        nbins[bin_dim_i] = static_cast<long unsigned int>(nedges[bin_dim_i]-1);
+        nbins[bin_dim_i] = static_cast<luint>(nedges[bin_dim_i]-1);
     }
 
     // Count and write number of thrown and simulated events in each bin.
@@ -260,7 +260,7 @@ static int run(
 /** Handle arguments for make_ntuples using optarg. */
 static int handle_args(
         int argc, char **argv, char **thrown_filename, char **simul_filename,
-        char **data_dir, long unsigned int *nedges, double **edges, bool *in_deg
+        char **data_dir, luint *nedges, double **edges, bool *in_deg
 ) {
     // Handle arguments.
     int opt;
@@ -319,7 +319,7 @@ static int handle_args(
     }
 
     // Convert phi_PQ binning to radians.
-    for (long unsigned int bbi = 0; bbi < nedges[4]; ++bbi) {
+    for (luint bbi = 0; bbi < nedges[4]; ++bbi) {
         double tmp;
         if (rge_to_rad(edges[4][bbi], &tmp)) return 1;
         edges[4][bbi] = tmp;
@@ -355,7 +355,7 @@ int main(int argc, char **argv) {
     char *simul_filename  = NULL;
     char *data_dir        = NULL;
     bool in_deg           = false;
-    long unsigned int nedges[5] = {0, 0, 0, 0, 0};
+    luint nedges[5] = {0, 0, 0, 0, 0};
     double **edges;
 
     edges = static_cast<double **>(malloc(5 * sizeof(*edges)));

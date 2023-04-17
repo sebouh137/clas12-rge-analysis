@@ -17,8 +17,7 @@
 
 // --+ internal +---------------------------------------------------------------
 int get_bin_edges(
-        FILE *file_in, long unsigned int *bin_nedges, double **bin_edges,
-        long unsigned int *pids_size
+        FILE *file_in, luint *bin_nedges, double **bin_edges, luint *pids_size
 ) {
     // Get binning sizes.
     for (int bin_i = 0; bin_i < 5; ++bin_i) {
@@ -30,8 +29,9 @@ int get_bin_edges(
         bin_edges[bin_i] = static_cast<double *>(
                 malloc(bin_nedges[bin_i] * sizeof(*bin_edges[bin_i]))
         );
-        for (long unsigned int edge_i = 0; edge_i < bin_nedges[bin_i]; ++edge_i)
+        for (luint edge_i = 0; edge_i < bin_nedges[bin_i]; ++edge_i) {
             fscanf(file_in, "%lf ", &(bin_edges[bin_i][edge_i]));
+        }
     }
 
     // Get # of pids.
@@ -41,21 +41,21 @@ int get_bin_edges(
 }
 
 int get_acc_corr(
-        FILE *file_in, long unsigned int pids_size, long unsigned int nbins,
-        long int *pids, int **n_thrown, int **n_simul
+        FILE *file_in, luint pids_size, luint nbins, lint *pids, int **n_thrown,
+        int **n_simul
 ) {
     // Get PIDs.
-    for (long unsigned int pid_i = 0; pid_i < pids_size; ++pid_i) {
+    for (luint pid_i = 0; pid_i < pids_size; ++pid_i) {
         fscanf(file_in, "%ld ", &(pids[pid_i]));
     }
 
     // Get acceptance correction.
-    for (long unsigned int pid_i = 0; pid_i < pids_size; ++pid_i) {
+    for (luint pid_i = 0; pid_i < pids_size; ++pid_i) {
         // Get number of thrown events.
         n_thrown[pid_i] = static_cast<int *>(
                 malloc(nbins * sizeof(*n_thrown[pid_i]))
         );
-        for (long unsigned int bin_i = 0; bin_i < nbins; ++bin_i) {
+        for (luint bin_i = 0; bin_i < nbins; ++bin_i) {
             fscanf(file_in, "%d ", &(n_thrown[pid_i][bin_i]));
         }
 
@@ -63,7 +63,7 @@ int get_acc_corr(
         n_simul[pid_i] = static_cast<int *>(
                 malloc(nbins * sizeof(*n_simul[pid_i]))
         );
-        for (long unsigned int bin_i = 0; bin_i < nbins; ++bin_i) {
+        for (luint bin_i = 0; bin_i < nbins; ++bin_i) {
             fscanf(file_in, "%d ", &(n_simul[pid_i][bin_i]));
         }
     }
@@ -92,9 +92,8 @@ int rge_get_sf_params(char *filename, double sf[NSECTORS][SF_NPARAMS][2]) {
 }
 
 int rge_read_acc_corr_file(
-        char *acc_filename, long unsigned int bin_nedges[5],
-        double ***bin_edges, long unsigned int *pids_size,
-        long unsigned int *nbins, long int **pids, int ***n_thrown,
+        char *acc_filename, luint bin_nedges[5], double ***bin_edges,
+        luint *pids_size, luint *nbins, lint **pids, int ***n_thrown,
         int ***n_simul
 ) {
     // Access file.
@@ -113,7 +112,7 @@ int rge_read_acc_corr_file(
     for (int bi = 0; bi < 5; ++bi) *nbins *= (bin_nedges[bi] - 1);
 
     // Malloc list of pids and first dimension of pids and events.
-    *pids = static_cast<long int *>(malloc(*pids_size * sizeof(**pids)));
+    *pids     = static_cast<lint *>(malloc(*pids_size * sizeof(**pids)));
     *n_thrown = static_cast<int **>(malloc(*pids_size * sizeof(**n_thrown)));
     *n_simul  = static_cast<int **>(malloc(*pids_size * sizeof(**n_simul)));
 

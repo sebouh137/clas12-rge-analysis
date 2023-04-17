@@ -16,7 +16,7 @@
 #include "../lib/rge_hipo_bank.h"
 
 // --+ internal +---------------------------------------------------------------
-rge_hipoentry entry_writer_init(const char *in_addr, unsigned int in_type) {
+rge_hipoentry entry_writer_init(const char *in_addr, uint in_type) {
     return __extension__ (rge_hipoentry) {
             .addr = in_addr, .data = {}, .branch = nullptr, .type = in_type
     };
@@ -28,7 +28,7 @@ rge_hipoentry entry_writer_init(const char *in_addr, unsigned int in_type) {
 //     };
 // }
 
-int set_nrows(rge_hipobank *b, long unsigned int in_nrows) {
+int set_nrows(rge_hipobank *b, luint in_nrows) {
     // Set internal variable.
     b->nrows = in_nrows;
 
@@ -132,9 +132,9 @@ int rge_link_branches(rge_hipobank *b, TTree *t) {
 }
 
 int rge_fill(rge_hipobank *rb, hipo::bank hb) {
-    set_nrows(rb, static_cast<long unsigned int>(hb.getRows()));
+    set_nrows(rb, static_cast<luint>(hb.getRows()));
 
-    for (long unsigned int row = 0; row < rb->nrows; ++row) {
+    for (luint row = 0; row < rb->nrows; ++row) {
         for (it = rb->entries.begin(); it != rb->entries.end(); ++it) {
             const char *key = it->first;
             double bank_data = 0;
@@ -171,12 +171,12 @@ int rge_get_entries(rge_hipobank *b, TTree *t, int idx) {
     return 0;
 }
 
-long unsigned int rge_get_size(rge_hipobank *b, const char *var) {
+luint rge_get_size(rge_hipobank *b, const char *var) {
     // TODO. Raise error on invalid var.
     return b->entries.at(var).data->size();
 }
 
-double rge_get_entry(rge_hipobank *b, const char *var, long unsigned int idx) {
+double rge_get_entry(rge_hipobank *b, const char *var, luint idx) {
     // TODO. Raise error on invalid var.
     // TODO. Raise error on invalid idx.
     return b->entries.at(var).data->at(idx);

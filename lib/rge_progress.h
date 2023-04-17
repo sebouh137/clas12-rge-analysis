@@ -19,19 +19,24 @@
 // C.
 #include "stdio.h"
 
+// typedefs.
+typedef unsigned int uint;
+typedef long unsigned int luint;
+typedef long int lint;
+
 // --+ internal +---------------------------------------------------------------
 /** Length (in chars) of the progress bar. */
 static int RGE_PBARLENGTH         = 50;
 /** Total number of entries. */
-static long int rge_pbar_nentries =  0;
+static lint rge_pbar_nentries =  0;
 /** Counter to check in which part of the progress bar we are. */
-static long int rge_pbar_divcntr  =  0;
+static lint rge_pbar_divcntr  =  0;
 /** Counter to check if the bar needs to be updated or not. */
-static long int rge_pbar_splitter =  0;
+static lint rge_pbar_splitter =  0;
 
 // --+ library +----------------------------------------------------------------
 /** Set the rge_pbar_nentries state variable. */
-int rge_pbar_set_nentries(long int in_nentries);
+int rge_pbar_set_nentries(lint in_nentries);
 
 /** Reset the rge_pbar_nentries and rge_pbar_divcntr state variables to 0. */
 int rge_pbar_reset();
@@ -43,6 +48,6 @@ int rge_pbar_reset();
  * @param entry : number of the entry being processed.
  * @return      : 0 if no change was made, 1 otherwise, and 2 if bar is full.
  */
-int rge_pbar_update(long int entry);
+int rge_pbar_update(lint entry);
 
 #endif
