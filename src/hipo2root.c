@@ -46,7 +46,7 @@ static const char *USAGE_MESSAGE =
 " * infile     : input HIPO file. Expected format is <text>run_no.hipo.\n\n"
 "    Convert a file from hipo to root format. This program only conserves the\n"
 "    banks that are useful for RG-E analysis, as specified in the\n"
-"    lib/bank_containers.h file.\n";
+"    lib/rge_hipo_bank.h file.\n";
 
 /** Number of banks in BANKLIST. */
 static const uint NBANKS       = 6;

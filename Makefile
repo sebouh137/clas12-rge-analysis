@@ -53,7 +53,7 @@ O_EXTRACTSF := $(BLD)/constants.o $(BLD)/err_handler.o \
 
 O_ACCCORR   := $(BLD)/err_handler.o $(BLD)/file_handler.o $(BLD)/io_handler.o \
  			   $(BLD)/math_utils.o $(BLD)/progress.o $(BLD)/filename_handler.o
-O_MKNTUPLES := $(BLD)/bank_containers.o $(BLD)/constants.o $(BLD)/hipo_bank.o \
+O_MKNTUPLES := $(BLD)/constants.o $(BLD)/hipo_bank.o \
 			   $(BLD)/err_handler.o $(BLD)/file_handler.o $(BLD)/io_handler.o \
 			   $(BLD)/particle.o $(BLD)/pid_utils.o $(BLD)/math_utils.o \
 			   $(BLD)/progress.o $(BLD)/filename_handler.o

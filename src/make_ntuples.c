@@ -22,7 +22,6 @@
 #include <TROOT.h>
 
 // rge-analysis.
-#include "../lib/bank_containers.h"
 #include "../lib/constants.h"
 #include "../lib/rge_err_handler.h"
 #include "../lib/rge_filename_handler.h"
@@ -68,16 +67,18 @@ static const uint FTOF2_LYR  =  3;
  *     FTOF1B > FTOF1A > FTOF2 > PCAL > ECIN > ECOU.
  *
  * @param scintillator : pointer to rge_hipobank containing scintillator data.
- * @param calorimeter  : instance of the Calorimeter class.
+ * @param calorimeter  : pointer to rge_hipobank containing calorimeter data.
  * @param pindex       : particle index of the particle we're studying.
  * @return             : the most accurate TOF available in the scintillator and
  *                       calorimeter banks.
  */
 static double get_tof(
-        rge_hipobank *scintillator, Calorimeter calorimeter, uint pindex
+        rge_hipobank *scintillator, rge_hipobank *calorimeter, uint pindex
 ) {
     int    most_precise_lyr = 0;
     double tof              = INFINITY;
+
+    // Find TOF from scintillator.
     for (uint i = 0; i < rge_get_size(scintillator, "pindex"); ++i) {
         // Filter out incorrect pindex and hits not from FTOF.
         if (
@@ -117,31 +118,37 @@ static double get_tof(
     if (most_precise_lyr != 0) return tof;
 
     // If no hits from FTOF were found, try to find TOF from calorimeters.
-    for (uint i = 0; i < calorimeter.pindex->size(); ++i) {
+    for (uint i = 0; i < rge_get_size(calorimeter, "pindex"); ++i) {
         // Filter out incorrect pindex.
-        if (static_cast<uint>(calorimeter.pindex->at(i)) != pindex) {
+        if (
+                static_cast<uint>(rge_get_entry(calorimeter, "pindex", i)) !=
+                pindex
+        ) {
             continue;
         }
 
         // Check PCAL (Calorimeter with the most precise TOF).
-        if (calorimeter.layer->at(i) == PCAL_LYR) {
+        uint layer = static_cast<uint>(rge_get_entry(calorimeter, "layer", i));
+        double time = rge_get_entry(calorimeter, "time", i);
+
+        if (layer == PCAL_LYR) {
             most_precise_lyr = 10 + PCAL_LYR;
-            tof = calorimeter.time->at(i);
+            tof = time;
             break; // Things won't get better than this.
         }
 
         // Check ECIN.
-        else if (calorimeter.layer->at(i) == ECIN_LYR) {
+        else if (layer == ECIN_LYR) {
             if (most_precise_lyr == 10 + ECIN_LYR) continue;
             most_precise_lyr = 10 + ECIN_LYR;
-            tof = calorimeter.time->at(i);
+            tof = time;
         }
 
         // Check ECOU.
-        else if (calorimeter.layer->at(i) == ECOU_LYR) {
+        else if (layer == ECOU_LYR) {
             if (most_precise_lyr != 0) continue;
             most_precise_lyr = 10 + ECOU_LYR;
-            tof = calorimeter.time->at(i);
+            tof = time;
         }
     }
 
@@ -151,33 +158,34 @@ static double get_tof(
 /**
  * Get deposited energy for particle with pindex from PCAL, ECIN, and ECOU.
  *
- * @param calorimeter : instance of the Calorimeter class.
+ * @param calorimeter : pointer to the calorimeter rge_hipobank.
  * @param pindex      : particle index of the particle we're studying
  * @param energy_PCAL : pointer to double to which we'll write the PCAL energy.
  * @param energy_ECIN : pointer to double to which we'll write the ECIN energy.
  * @param energy_ECOU : pointer to double to which we'll write the ECOU energy.
- * @return              error code. 0 if successful, 1 otherwise. The function
+ * @return            : error code. 0 if successful, 1 otherwise. The function
  *                      only returns 1 if there's an invalid layer in the
- *                      Calorimeter instance, suggesting corruption or a change
- *                      in the REC::Calorimeter bank.
+ *                      calorimeter bank, suggesting corruption or a change in
+ *                      the REC::Calorimeter bank structure.
  */
 static int get_deposited_energy(
-        Calorimeter calorimeter, uint pindex, double *energy_PCAL,
+        rge_hipobank *calorimeter, uint pindex, double *energy_PCAL,
         double *energy_ECIN, double *energy_ECOU
 ) {
     *energy_PCAL = 0;
     *energy_ECIN = 0;
     *energy_ECOU = 0;
 
-    for (uint i = 0; i < calorimeter.pindex->size(); ++i) {
-        if (static_cast<uint>(calorimeter.pindex->at(i)) != pindex) {
+    for (uint i = 0; i < rge_get_size(calorimeter, "pindex"); ++i) {
+        if (static_cast<uint>(rge_get_entry(calorimeter,"pindex",i))!=pindex) {
             continue;
         }
-        int lyr = static_cast<int>(calorimeter.layer->at(i));
+        int layer = static_cast<int>(rge_get_entry(calorimeter, "layer", i));
+        double energy = rge_get_entry(calorimeter, "energy", i);
 
-        if      (lyr == PCAL_LYR) *energy_PCAL += calorimeter.energy->at(i);
-        else if (lyr == ECIN_LYR) *energy_ECIN += calorimeter.energy->at(i);
-        else if (lyr == ECOU_LYR) *energy_ECOU += calorimeter.energy->at(i);
+        if      (layer == PCAL_LYR) *energy_PCAL += energy;
+        else if (layer == ECIN_LYR) *energy_ECIN += energy;
+        else if (layer == ECOU_LYR) *energy_ECOU += energy;
         else {
             rge_errno = RGEERR_INVALIDCALLAYER;
             return 1;
@@ -196,7 +204,7 @@ static int get_deposited_energy(
  *                    photoelectrons deposited on HTCC.
  * @param nphe_LTCC : pointer to int where we'll write the number of
  *                    photoelectrons deposited on LTCC.
- * @return            error code. 0 if successful, 1 otherwise. The function
+ * @return          : error code. 0 if successful, 1 otherwise. The function
  *                    only returns 1 if there's an invalid detector ID in the
  *                    cherenkov bank, suggesting data corruption or a change
  *                    in the REC::Cherenkov bank structure.
@@ -281,7 +289,7 @@ static int run(
     // Associate banks to TTree.
     rge_hipobank bpart = rge_hipobank_init(RGE_RECPARTICLE,     tree_in);
     rge_hipobank btrk  = rge_hipobank_init(RGE_RECTRACK,        tree_in);
-    Calorimeter  bank_cal   (tree_in);
+    rge_hipobank bcal  = rge_hipobank_init(RGE_RECCALORIMETER,  tree_in);
     rge_hipobank bchkv = rge_hipobank_init(RGE_RECCHERENKOV,    tree_in);
     rge_hipobank bsci  = rge_hipobank_init(RGE_RECSCINTILLATOR, tree_in);
     rge_hipobank bfmt  = rge_hipobank_init(RGE_FMTTRACKS,       tree_in);
@@ -306,7 +314,7 @@ static int run(
         // Get entries from input file.
         rge_get_entries(&bpart, tree_in, event);
         rge_get_entries(&btrk,  tree_in, event);
-        bank_cal   .get_entries(tree_in, event);
+        rge_get_entries(&bcal,  tree_in, event);
         rge_get_entries(&bchkv, tree_in, event);
         rge_get_entries(&bsci,  tree_in, event);
         if (fmt_nlayers != 0) rge_get_entries(&bfmt, tree_in, event);
@@ -339,7 +347,7 @@ static int run(
             // Get energy deposited in calorimeters.
             double energy_PCAL, energy_ECIN, energy_ECOU;
             if (get_deposited_energy(
-                    bank_cal, pindex, &energy_PCAL, &energy_ECIN, &energy_ECOU
+                    &bcal, pindex, &energy_PCAL, &energy_ECIN, &energy_ECOU
             )) return 1;
 
             // Get number of photoelectrons from Cherenkov counters.
@@ -348,7 +356,7 @@ static int run(
                 return 1;
 
             // Get time of flight from scintillators or calorimeters.
-            double tof = get_tof(&bsci, bank_cal, pindex);
+            double tof = get_tof(&bsci, &bcal, pindex);
 
             // Get miscellaneous data.
             int status  = rge_get_entry(&bpart, "status", pindex);
@@ -412,7 +420,7 @@ static int run(
             // Get energy deposited in calorimeters.
             double energy_PCAL, energy_ECIN, energy_ECOU;
             if (get_deposited_energy(
-                    bank_cal, pindex, &energy_PCAL, &energy_ECIN, &energy_ECOU
+                    &bcal, pindex, &energy_PCAL, &energy_ECIN, &energy_ECOU
             )) return 1;
 
             // Get Cherenkov counters data.
@@ -421,7 +429,7 @@ static int run(
                 return 1;
 
             // Get time-of-flight (tof).
-            double tof = get_tof(&bsci, bank_cal, pindex);
+            double tof = get_tof(&bsci, &bcal, pindex);
 
             // Get miscellaneous data.
             int status  = rge_get_entry(&bpart, "status", pindex);

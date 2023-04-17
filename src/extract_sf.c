@@ -252,7 +252,7 @@ static int run(
         }
     }
 
-    // Create TTree and link bank_containers.
+    // Create TTree and link rge_hipobanks.
     TTree *t = f_in->Get<TTree>(RGE_TREENAMEDATA);
     rge_hipobank particle    = rge_hipobank_init(RGE_RECPARTICLE,    t);
     rge_hipobank track       = rge_hipobank_init(RGE_RECTRACK,       t);

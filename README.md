@@ -21,7 +21,7 @@ Usage: hipo2root [-hfn:w:] infile
                 is root_io.
  * infile     : input HIPO file. Expected format is <text>run_no.hipo.
 ```
-Convert a file from hipo to root format. This program only conserves the banks that are useful for RG-E analysis, as specified in the `lib/bank_containers.h` file. It is important for the input hipo file to specify the run number at the end of the filename (`<text>run_no.hipo`), so that `hipo2root` can get the beam energy from the run number.
+Convert a file from hipo to root format. This program only conserves the banks that are useful for RG-E analysis, as specified in the `lib/rge_hipo_bank.h` file. It is important for the input hipo file to specify the run number at the end of the filename (`<text>run_no.hipo`), so that `hipo2root` can get the beam energy from the run number.
 
 Since simulation files don't have a run number, we use a convention for specifying the beam energy. For this files, the filename should be `<text>999XXX.hipo`, where `XXX` is the beam energy used in the simulation in [0.1*GeV]. Currently, there are only 3 possible run numbers for simulations: 999106, 999110, and 999120. It is a pending task to improve this standard.
 
@@ -129,7 +129,7 @@ Pull requests are welcome. For major changes, open an issue first to discuss the
 - [ ] Implement variable bin sizes for every variable and binning.
 - [ ] Include GitHub tests -- I've no clue on how to do this with ROOT + HIPO.
 - [ ] Add a main program (probably in bash) to call all other programs for working simplicity.
-- [ ] Improve `bank_containers` to be more generic.
+- [x] Improve `bank_containers` to be more generic.
 - [ ] Improve the use of constants thorough the code by using a map or a similar structure.
 - [ ] Apply radiative correction.
 - [ ] Apply Feynman cuts.
