@@ -187,7 +187,7 @@ static int get_deposited_energy(
 /**
  * Count number of photoelectrons deposited on HTCC and LTCC detectors.
  *
- * @param cherenkov: Instance of the Cherenkov class.
+ * @param cherenkov: rge_hipobank struct with Cherenkov's data.
  * @param pindex:    particle index of the particle we're studying.
  * @param nphe_HTCC: pointer to int where we'll write the number of
  *                   photoelectrons deposited on HTCC.
@@ -199,19 +199,24 @@ static int get_deposited_energy(
  *                   in the REC::Cherenkov bank.
  */
 static int count_photoelectrons(
-        Cherenkov cherenkov, unsigned int pindex, int *nphe_HTCC, int *nphe_LTCC
+        rge_hipobank *cherenkov, unsigned int pindex,
+        int *nphe_HTCC, int *nphe_LTCC
 ) {
     *nphe_HTCC = 0;
     *nphe_LTCC = 0;
 
-    for (unsigned int i = 0; i < cherenkov.pindex->size(); ++i) {
-        if (static_cast<unsigned int>(cherenkov.pindex->at(i)) != pindex) {
+    for (unsigned int i = 0; i < rge_get_size(cherenkov, "pindex"); ++i) {
+        if (
+                static_cast<unsigned int>(rge_get_entry(cherenkov, "pindex", i))
+                != pindex
+        ) {
             continue;
         }
 
-        int detector = cherenkov.detector->at(i);
-        if      (detector == HTCC_ID) *nphe_HTCC += cherenkov.nphe->at(i);
-        else if (detector == LTCC_ID) *nphe_LTCC += cherenkov.nphe->at(i);
+        int detector = static_cast<int>(rge_get_entry(cherenkov, "detector",i));
+        int nphe     = static_cast<int>(rge_get_entry(cherenkov, "nphe",    i));
+        if      (detector == HTCC_ID) *nphe_HTCC += nphe;
+        else if (detector == LTCC_ID) *nphe_LTCC += nphe;
         else {
             rge_errno = RGEERR_INVALIDCHERENKOVID;
             return 1;
@@ -272,10 +277,10 @@ static int run(
     }
 
     // Associate banks to TTree.
-    rge_hipobank bpart = rge_hipobank_init(RGE_RECPARTICLE, tree_in);
-    rge_hipobank btrk  = rge_hipobank_init(RGE_RECTRACK,    tree_in);
+    rge_hipobank bpart = rge_hipobank_init(RGE_RECPARTICLE,  tree_in);
+    rge_hipobank btrk  = rge_hipobank_init(RGE_RECTRACK,     tree_in);
     Calorimeter  bank_cal   (tree_in);
-    Cherenkov    bank_chkv  (tree_in);
+    rge_hipobank bchkv = rge_hipobank_init(RGE_RECCHERENKOV, tree_in);
     Scintillator bank_sci   (tree_in);
     FMT_Tracks   bank_trk_fmt;
     if (fmt_nlayers != 0) bank_trk_fmt.link_tree(tree_in);
@@ -300,9 +305,9 @@ static int run(
         // Get entries from input file.
         rge_get_entries(&bpart, tree_in, event);
         rge_get_entries(&btrk,  tree_in, event);
-        bank_sci   .get_entries(tree_in, event);
         bank_cal   .get_entries(tree_in, event);
-        bank_chkv  .get_entries(tree_in, event);
+        rge_get_entries(&bchkv, tree_in, event);
+        bank_sci   .get_entries(tree_in, event);
         if (fmt_nlayers != 0) bank_trk_fmt.get_entries(tree_in, event);
 
         // Filter events without the necessary banks.
@@ -340,7 +345,7 @@ static int run(
 
             // Get number of photoelectrons from Cherenkov counters.
             int nphe_HTCC, nphe_LTCC;
-            if (count_photoelectrons(bank_chkv, pindex, &nphe_HTCC, &nphe_LTCC))
+            if (count_photoelectrons(&bchkv, pindex, &nphe_HTCC, &nphe_LTCC))
                 return 1;
 
             // Get time of flight from scintillators or calorimeters.
@@ -415,7 +420,7 @@ static int run(
 
             // Get Cherenkov counters data.
             int nphe_HTCC, nphe_LTCC;
-            if (count_photoelectrons(bank_chkv, pindex, &nphe_HTCC, &nphe_LTCC))
+            if (count_photoelectrons(&bchkv, pindex, &nphe_HTCC, &nphe_LTCC))
                 return 1;
 
             // Get time-of-flight (tof).
