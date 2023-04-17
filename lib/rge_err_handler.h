@@ -16,7 +16,11 @@
 #ifndef RGE_ERRHANDLER
 #define RGE_ERRHANDLER
 
+// --+ preamble +---------------------------------------------------------------
+// C.
 #include <stdio.h>
+
+// C++.
 #include <map>
 
 // --+ internal +---------------------------------------------------------------

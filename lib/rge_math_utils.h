@@ -16,9 +16,14 @@
 #ifndef RGE_MATHUTILS
 #define RGE_MATHUTILS
 
+// --+ preamble +---------------------------------------------------------------
+// C.
 #include "math.h"
+
+// rge-analysis.
 #include "rge_err_handler.h"
 
+// --+ library +----------------------------------------------------------------
 /** Transform an angle a from degrees to radians. */
 int rge_to_rad(double src, double *dest);
 

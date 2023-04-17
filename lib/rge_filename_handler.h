@@ -16,18 +16,22 @@
 #ifndef RGE_FILENAMEHANDLER
 #define RGE_FILENAMEHANDLER
 
+// --+ preamble +---------------------------------------------------------------
+// C.
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+
+// rge-analysis.
 #include "rge_err_handler.h"
 
 // --+ internal +---------------------------------------------------------------
 // Beam energy of different runs. TODO. This should be taken from RCDB.
-#define BE11983 10.3894 //  50 nA.
-#define BE12016 10.3894 // 250 nA.
-#define BE12439  2.1864 //  15 nA.
-#define BE12933 10.4057 // 250 nA.
+#define RGE_BE11983 10.3894 //  50 nA.
+#define RGE_BE12016 10.3894 // 250 nA.
+#define RGE_BE12439  2.1864 //  15 nA.
+#define RGE_BE12933 10.4057 // 250 nA.
 
 /**
  * Get run number from a filename, assuming the filename is in format

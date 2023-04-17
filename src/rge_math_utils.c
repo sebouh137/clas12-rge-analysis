@@ -15,6 +15,7 @@
 
 #include "../lib/rge_math_utils.h"
 
+// --+ library +----------------------------------------------------------------
 int rge_to_rad(double src, double *dest) {
     // Check angle validity.
     if (-180 > src || src > 180) {

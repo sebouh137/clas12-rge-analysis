@@ -16,11 +16,14 @@
 #ifndef RGE_PARTICLE
 #define RGE_PARTICLE
 
+// --+ preamble +---------------------------------------------------------------
+// rge-analysis.
 #include "bank_containers.h"
-#include "rge_pid_utils.h"
 #include "constants.h"
 #include "rge_math_utils.h"
+#include "rge_pid_utils.h"
 
+// --+ structs +----------------------------------------------------------------
 typedef struct {
     // Identifier booleans.
     bool is_valid, is_trigger_electron, is_hadron;
@@ -90,7 +93,8 @@ static int assign_neutral_pid(double energy, double beta);
  *   * Total particle vertex momentum (p) must be above 0.
  *   * Number of HTCC photoelectrons (htcc_nphe) must be greater than
  *     HTCC_NPHE_CUT.
- *   * Energy deposited in PCAL (pcal_energy) must be greater than MIN_PCAL_ENERGY.
+ *   * Energy deposited in PCAL (pcal_energy) must be greater than
+ *     MIN_PCAL_ENERGY.
  *   * ECAL sampling fraction should be below threshold (E_SF_NSIGMA).
  *
  * If all requirements are met, the function returns true. Otherwise, it returns

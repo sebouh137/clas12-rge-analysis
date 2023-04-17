@@ -16,8 +16,8 @@
 #include "../lib/rge_pid_utils.h"
 
 // --+ internal +---------------------------------------------------------------
-/** Map linking PIDs to pid_constants. */
-static const std::map<int, pid_constants> PID_MAP = {
+/** Map linking PIDs to rge_pidconstants. */
+static const std::map<int, rge_pidconstants> PID_MAP = {
     {     -2212, pid_constants_init( 1, 0.938272, "antiproton"           )},
     {      -321, pid_constants_init(-1, 0.493677, "negative kaon"        )},
     {      -211, pid_constants_init(-1, 0.139570, "negative pion"        )},
@@ -41,14 +41,14 @@ static const std::map<int, pid_constants> PID_MAP = {
     // {1000010020, pid_constants_init( 0, 1.875,    "deuterium"         )}
 };
 
-pid_constants pid_constants_init(int q, double m, const char *n) {
+rge_pidconstants pid_constants_init(int q, double m, const char *n) {
     // Update relevant charge counter.
     if (q  < 0) ++negative_size;
     if (q == 0) ++neutral_size;
     if (q  > 0) ++positive_size;
 
     // Return instance.
-    return __extension__ (pid_constants) {.charge = q, .mass = m, .name = n};
+    return __extension__ (rge_pidconstants) {.charge = q, .mass = m, .name = n};
 }
 
 int pid_invalid(int pid) {

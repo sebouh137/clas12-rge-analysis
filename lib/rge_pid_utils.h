@@ -16,32 +16,37 @@
 #ifndef RGE_PIDUTILS
 #define RGE_PIDUTILS
 
+// --+ preamble +---------------------------------------------------------------
+// C.
 #include <float.h>
+
+// rge-analysis.
 #include "rge_err_handler.h"
 
+// --+ structs +----------------------------------------------------------------
 /** Data associated to a particular PID. */
 typedef struct {
     int charge;
     double mass;
     const char *name;
-} pid_constants;
+} rge_pidconstants;
 
 // --+ internal +---------------------------------------------------------------
 /**
- * Initialize one pid_constants struct with the given input data.
+ * Initialize one rge_pidconstants struct with the given input data.
  *
  * @param q : PID charge (electron charge).
  * @param m : PID mass (GeV).
  * @param n : PID name.
- * @return  : pid_constants instance with input data.
+ * @return  : rge_pidconstants instance with input data.
  */
-static pid_constants pid_constants_init(int q, double m, const char *n);
+static rge_pidconstants pid_constants_init(int q, double m, const char *n);
 
 /** Return 0 if PID_MAP contains pid, 1 otherwise. */
 static int pid_invalid(int pid);
 
 /** PID_MAP global iterator. */
-static std::map<int, pid_constants>::const_iterator pid_it;
+static std::map<int, rge_pidconstants>::const_iterator pid_it;
 
 /** Counters for negative, neutral, and positive PIDs in list. */
 static unsigned int negative_size = 0;

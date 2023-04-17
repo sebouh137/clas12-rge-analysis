@@ -16,7 +16,11 @@
 #ifndef RGE_FILEHANDLER
 #define RGE_FILEHANDLER
 
+// --+ preamble +---------------------------------------------------------------
+// C.
 #include <unistd.h>
+
+// rge-analysis.
 #include "constants.h"
 #include "rge_err_handler.h"
 

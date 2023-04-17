@@ -15,6 +15,7 @@
 
 #include "../lib/rge_progress.h"
 
+// --+ library +----------------------------------------------------------------
 int rge_pbar_set_nentries(long int in_nentries) {
     rge_pbar_nentries = in_nentries;
     return 0;

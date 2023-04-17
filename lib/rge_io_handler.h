@@ -16,9 +16,13 @@
 #ifndef RGE_IOHANDLER
 #define RGE_IOHANDLER
 
+// --+ preamble +---------------------------------------------------------------
+// C.
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
+
+// rge-analysis.
 #include "rge_err_handler.h"
 #include "rge_file_handler.h"
 

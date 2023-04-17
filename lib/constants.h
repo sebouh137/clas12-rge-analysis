@@ -16,7 +16,10 @@
 #ifndef CONSTANTS
 #define CONSTANTS
 
+// C.
 #include <math.h>
+
+// C++.
 #include <map>
 
 // Data tree name for programs.

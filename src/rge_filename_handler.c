@@ -52,16 +52,16 @@ int get_beam_energy(int run_no, double *beam_energy) {
     // TODO. This should be taken directly from RCDB.
     switch (run_no) {
         case 11983:
-            *beam_energy = BE11983;
+            *beam_energy = RGE_BE11983;
             break;
         case 12016:
-            *beam_energy = BE12016;
+            *beam_energy = RGE_BE12016;
             break;
         case 12439:
-            *beam_energy = BE12439;
+            *beam_energy = RGE_BE12439;
             break;
         case 12933:
-            *beam_energy = BE12933;
+            *beam_energy = RGE_BE12933;
             break;
         default:
             rge_errno = RGEERR_UNIMPLEMENTEDBEAMENERGY;
