@@ -67,11 +67,11 @@ static const uint FTOF2_LYR  =  3;
  * In order of decreasing precision, the list of detectors are:
  *     FTOF1B > FTOF1A > FTOF2 > PCAL > ECIN > ECOU.
  *
- * @param scintillator: Pointer to rge_hipobank containing scintillator data.
- * @param calorimeter:  instance of the Calorimeter class.
- * @param pindex:       particle index of the particle we're studying.
- * @return:             the most accurate TOF available in the scintillator and
- *                      calorimeter banks.
+ * @param scintillator : pointer to rge_hipobank containing scintillator data.
+ * @param calorimeter  : instance of the Calorimeter class.
+ * @param pindex       : particle index of the particle we're studying.
+ * @return             : the most accurate TOF available in the scintillator and
+ *                       calorimeter banks.
  */
 static double get_tof(
         rge_hipobank *scintillator, Calorimeter calorimeter, uint pindex
@@ -151,15 +151,15 @@ static double get_tof(
 /**
  * Get deposited energy for particle with pindex from PCAL, ECIN, and ECOU.
  *
- * @param calorimeter: instance of the Calorimeter class.
- * @param pindex:      particle index of the particle we're studying
- * @param energy_PCAL: pointer to double to which we'll write the PCAL energy.
- * @param energy_ECIN: pointer to double to which we'll write the ECIN energy.
- * @param energy_ECOU: pointer to double to which we'll write the ECOU energy.
- * @return             error code. 0 if successful, 1 otherwise. The function
- *                     only returns 1 if there's an invalid layer in the
- *                     Calorimeter instance, suggesting corruption or a change
- *                     in the REC::Calorimeter bank.
+ * @param calorimeter : instance of the Calorimeter class.
+ * @param pindex      : particle index of the particle we're studying
+ * @param energy_PCAL : pointer to double to which we'll write the PCAL energy.
+ * @param energy_ECIN : pointer to double to which we'll write the ECIN energy.
+ * @param energy_ECOU : pointer to double to which we'll write the ECOU energy.
+ * @return              error code. 0 if successful, 1 otherwise. The function
+ *                      only returns 1 if there's an invalid layer in the
+ *                      Calorimeter instance, suggesting corruption or a change
+ *                      in the REC::Calorimeter bank.
  */
 static int get_deposited_energy(
         Calorimeter calorimeter, uint pindex, double *energy_PCAL,
@@ -190,16 +190,16 @@ static int get_deposited_energy(
 /**
  * Count number of photoelectrons deposited on HTCC and LTCC detectors.
  *
- * @param cherenkov: rge_hipobank struct with Cherenkov's data.
- * @param pindex:    particle index of the particle we're studying.
- * @param nphe_HTCC: pointer to int where we'll write the number of
- *                   photoelectrons deposited on HTCC.
- * @param nphe_LTCC: pointer to int where we'll write the number of
- *                   photoelectrons deposited on LTCC.
- * @return           error code. 0 if successful, 1 otherwise. The function only
- *                   returns 1 if there's an invalid detector ID in the
- *                   Cherenkov instance, suggesting data corruption or a change
- *                   in the REC::Cherenkov bank.
+ * @param cherenkov : pointer to rge_hipobank struct with Cherenkov's data.
+ * @param pindex    :    particle index of the particle we're studying.
+ * @param nphe_HTCC : pointer to int where we'll write the number of
+ *                    photoelectrons deposited on HTCC.
+ * @param nphe_LTCC : pointer to int where we'll write the number of
+ *                    photoelectrons deposited on LTCC.
+ * @return            error code. 0 if successful, 1 otherwise. The function
+ *                    only returns 1 if there's an invalid detector ID in the
+ *                    cherenkov bank, suggesting data corruption or a change
+ *                    in the REC::Cherenkov bank structure.
  */
 static int count_photoelectrons(
         rge_hipobank *cherenkov, uint pindex, int *nphe_HTCC, int *nphe_LTCC
@@ -284,8 +284,7 @@ static int run(
     Calorimeter  bank_cal   (tree_in);
     rge_hipobank bchkv = rge_hipobank_init(RGE_RECCHERENKOV,    tree_in);
     rge_hipobank bsci  = rge_hipobank_init(RGE_RECSCINTILLATOR, tree_in);
-    FMT_Tracks   bank_trk_fmt;
-    if (fmt_nlayers != 0) bank_trk_fmt.link_tree(tree_in);
+    rge_hipobank bfmt  = rge_hipobank_init(RGE_FMTTRACKS,       tree_in);
 
     // Iterate through input file. Each TTree entry is one event.
     printf("Processing %ld events from %s.\n", n_events, filename_in);
@@ -310,7 +309,7 @@ static int run(
         bank_cal   .get_entries(tree_in, event);
         rge_get_entries(&bchkv, tree_in, event);
         rge_get_entries(&bsci,  tree_in, event);
-        if (fmt_nlayers != 0) bank_trk_fmt.get_entries(tree_in, event);
+        if (fmt_nlayers != 0) rge_get_entries(&bfmt, tree_in, event);
 
         // Filter events without the necessary banks.
         if (
@@ -331,7 +330,7 @@ static int run(
 
             // Get reconstructed particle from DC and from FMT.
             part_trigger = rge_particle_init(
-                    &bpart, &btrk, &bank_trk_fmt, pos, fmt_nlayers
+                &bpart, &btrk, &bfmt, pos, fmt_nlayers
             );
 
             // Skip particle if it doesn't fit requirements.
@@ -404,7 +403,7 @@ static int run(
 
             // Get reconstructed particle from DC and from FMT.
             rge_particle part = rge_particle_init(
-                &bpart, &btrk, &bank_trk_fmt, pos, fmt_nlayers
+                &bpart, &btrk, &bfmt, pos, fmt_nlayers
             );
 
             // Skip particle if it doesn't fit requirements.

@@ -59,13 +59,13 @@ bool is_electron(
         double pars[SF_NPARAMS][2]
 ) {
     // Require ECAL.
-    if (total_energy < 1e-9)              return false;
+    if (total_energy < 1e-9) return false;
     // Momentum must be greater than 0.
-    if (p < 1e-9)                  return false;
+    if (p < 1e-9) return false;
     // Require HTCC photoelectrons.
     if (htcc_nphe < HTCC_NPHE_CUT) return false;
     // Require PCAL.
-    if (pcal_energy < MIN_PCAL_ENERGY)  return false;
+    if (pcal_energy < MIN_PCAL_ENERGY) return false;
 
     // Require ECAL sampling fraction to be below threshold.
     double mean  = pars[0][0]*(pars[1][0] + pars[2][0]/total_energy
@@ -195,8 +195,8 @@ double zh(rge_particle p, rge_particle e, double bE) {
 
 // --+ library +----------------------------------------------------------------
 rge_particle rge_particle_init(
-        rge_hipobank *particle, rge_hipobank *track,
-        FMT_Tracks *bank_fmt_tracks, uint pos, lint fmt_nlayers
+        rge_hipobank *particle, rge_hipobank *track, rge_hipobank *fmttrack,
+        uint pos, lint fmt_nlayers
 ) {
     uint pindex = static_cast<uint>(rge_get_entry(track, "pindex", pos));
 
@@ -220,20 +220,22 @@ rge_particle rge_particle_init(
 
     // Apply FMT cuts.
     // Track reconstructed by FMT.
-    if (bank_fmt_tracks->vz->size() < 1)               return particle_init();
+    if (rge_get_size(fmttrack, "Vtx0_z") < 1)
+        return particle_init();
     // Track crossed enough FMT layers.
-    if (bank_fmt_tracks->ndf->at(index) < fmt_nlayers) return particle_init();
+    if (static_cast<uint>(rge_get_entry(fmttrack, "NDF", index)) < fmt_nlayers)
+        return particle_init();
 
     return particle_init(
             rge_get_entry(particle, "charge", pindex),
             rge_get_entry(particle, "beta",   pindex),
             rge_get_entry(track,    "sector", pos),
-            bank_fmt_tracks->vx->at(index),
-            bank_fmt_tracks->vy->at(index),
-            bank_fmt_tracks->vz->at(index),
-            bank_fmt_tracks->px->at(index),
-            bank_fmt_tracks->py->at(index),
-            bank_fmt_tracks->pz->at(index)
+            rge_get_entry(fmttrack, "Vtx0_x", index),
+            rge_get_entry(fmttrack, "Vtx0_y", index),
+            rge_get_entry(fmttrack, "Vtx0_z", index),
+            rge_get_entry(fmttrack, "p0_x",   index),
+            rge_get_entry(fmttrack, "p0_y",   index),
+            rge_get_entry(fmttrack, "p0_z",   index)
     );
 }
 

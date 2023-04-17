@@ -18,7 +18,6 @@
 
 // --+ preamble +---------------------------------------------------------------
 // rge-analysis.
-#include "bank_containers.h"
 #include "constants.h"
 #include "rge_hipo_bank.h"
 #include "rge_math_utils.h"
@@ -182,15 +181,15 @@ static double zh(rge_particle p, rge_particle e, double bE);
   *     number of FMT layers the particle passed to a number equal or larger
   *     than fmt_nlayers.
   *
-  * @param bank_particle   : pointer to the Particle class.
-  * @param bank_track      : pointer to the Track class to get DC tracking data.
-  * @param bank_fmt_tracks : pointer to the FMT_Tracks class to get FMT tracks.
-  * @param pos             : position of the particle at the track class.
-  * @param fmt_nlayers     : number of FMT layers required to make a particle.
+  * @param particle    : pointer to the particle rge_hipobank.
+  * @param track       : pointer to the track rge_hipobank to get DC tracks.
+  * @param fmttrack    : pointer to the fmt tracks hipobank to get FMT tracks.
+  * @param pos         : position of the particle at the track class.
+  * @param fmt_nlayers : number of FMT layers required to make a particle.
   */
 rge_particle rge_particle_init(
-        rge_hipobank *particle, rge_hipobank *track,
-        FMT_Tracks *bank_fmt_tracks, uint pos, lint fmt_nlayers
+        rge_hipobank *particle, rge_hipobank *track, rge_hipobank *fmttrack,
+        uint pos, lint fmt_nlayers
 );
 
 /**
