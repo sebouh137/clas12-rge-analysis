@@ -13,8 +13,8 @@
 //
 // You can see a copy of the GNU Lesser Public License under the LICENSE file.
 
-#ifndef CONSTANTS
-#define CONSTANTS
+#ifndef RGE_CONSTANTS
+#define RGE_CONSTANTS
 
 // C.
 #include <math.h>

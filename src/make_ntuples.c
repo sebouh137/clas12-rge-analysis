@@ -22,8 +22,9 @@
 #include <TROOT.h>
 
 // rge-analysis.
-#include "../lib/constants.h"
+#include "../lib/rge_constants.h"
 #include "../lib/rge_err_handler.h"
+#include "../lib/rge_file_handler.h"
 #include "../lib/rge_filename_handler.h"
 #include "../lib/rge_hipo_bank.h"
 #include "../lib/rge_io_handler.h"

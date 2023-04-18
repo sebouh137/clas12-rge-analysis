@@ -21,7 +21,7 @@
 #include <unistd.h>
 
 // rge-analysis.
-#include "constants.h"
+#include "rge_constants.h"
 #include "rge_err_handler.h"
 
 // typedefs.

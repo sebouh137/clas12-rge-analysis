@@ -17,6 +17,7 @@
 #include <limits.h>
 #include <TFile.h>
 #include <TNtuple.h>
+#include "../lib/rge_constants.h"
 #include "../lib/rge_err_handler.h"
 #include "../lib/rge_io_handler.h"
 #include "../lib/rge_filename_handler.h"

@@ -18,7 +18,7 @@
 
 // --+ preamble +---------------------------------------------------------------
 // rge-analysis.
-#include "constants.h"
+#include "rge_constants.h"
 #include "rge_hipo_bank.h"
 #include "rge_math_utils.h"
 #include "rge_pid_utils.h"

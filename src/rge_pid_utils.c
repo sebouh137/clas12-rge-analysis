@@ -52,8 +52,13 @@ rge_pidconstants pid_constants_init(int q, double m, const char *n) {
 }
 
 int pid_invalid(int pid) {
-    if (PID_MAP.contains(pid)) return 0;
-    else                       return 1;
+    try {
+        PID_MAP.at(pid);
+        return 0;
+    }
+    catch (...) {}
+
+    return 1;
 }
 
 // --+ library +----------------------------------------------------------------

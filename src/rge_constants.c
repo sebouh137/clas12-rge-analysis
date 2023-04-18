@@ -13,7 +13,7 @@
 //
 // You can see a copy of the GNU Lesser Public License under the LICENSE file.
 
-#include "../lib/constants.h"
+#include "../lib/rge_constants.h"
 
 // Trackers array.
 const char *TRK_LIST[TRK_LIST_SIZE] = {
