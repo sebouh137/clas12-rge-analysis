@@ -232,7 +232,7 @@ static int run(
     // Get sampling fraction.
     char sampling_fraction_file[PATH_MAX];
     sprintf(sampling_fraction_file, "%s/sf_params_%06d.txt", data_dir, run_no);
-    double sampling_fraction_params[NSECTORS][SF_NPARAMS][2];
+    double sampling_fraction_params[RGE_NSECTORS][RGE_NSFPARAMS][2];
     if (rge_get_sf_params(sampling_fraction_file, sampling_fraction_params)) {
         return 1;
     }

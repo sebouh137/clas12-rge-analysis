@@ -119,10 +119,10 @@ static int count_entries(
         for (int s_i = 0; s_i < 5; ++s_i) if (s_bin[s_i] == 0) continue;
 
         // Apply DIS cuts.
-        if (s_bin[0] < Q2CUT) continue; // Q2 > 1.
-        if (!simul && s_W  < WCUT)  continue; // W  > 2.
-        if (simul  && s_W2 < W2CUT) continue; // W2 > 4.
-        // if (s_y      > YBCUT) continue; // TODO. Yb < 0.85.
+        if (s_bin[0]       < RGE_Q2CUT) continue; // Q2 > 1.
+        if (!simul && s_W  < RGE_WCUT)  continue; // W  > 2.
+        if (simul  && s_W2 < RGE_W2CUT) continue; // W2 > 4.
+        // if (s_y      > RGE_YBCUT) continue; // TODO. Yb < 0.85.
 
         // Find position of event.
         if (in_deg) {

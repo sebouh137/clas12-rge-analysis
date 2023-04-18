@@ -602,9 +602,9 @@ static int run(
 
         if (vars[A_PID] != 11 || vars[A_STATUS] > 0) continue;
         no_tre_pass = true;
-        Q2_pass = vars[A_Q2] >= Q2CUT;
-        W2_pass = vars[A_W2] >= W2CUT;
-        // zh_pass = vars[A_ZH] <= ZHCUT;
+        Q2_pass = vars[A_Q2] >= RGE_Q2CUT;
+        W2_pass = vars[A_W2] >= RGE_W2CUT;
+        // zh_pass = vars[A_ZH] <= RGE_ZHCUT;
 
         valid_event[static_cast<luint>(vars[A_EVENTNO]+0.5)] =
                 no_tre_pass && Q2_pass && W2_pass && zh_pass;
@@ -673,8 +673,10 @@ static int run(
 
         // Apply geometry cuts.
         if (geometry_cuts) {
-            if (rge_calc_magnitude(vars[A_VX], vars[A_VY]) > VXVYCUT) continue;
-            if (VZLOWCUT > vars[A_VZ] || vars[A_VZ] > VZHIGHCUT)  continue;
+            if (rge_calc_magnitude(vars[A_VX], vars[A_VY]) > RGE_VXVYCUT)
+                continue;
+            if (RGE_VZLOWCUT > vars[A_VZ] || vars[A_VZ] > RGE_VZHIGHCUT)
+                continue;
         }
 
         // Apply miscellaneous cuts.
@@ -684,7 +686,7 @@ static int run(
             // Non-identified particle.
             if (44.5 < vars[A_PID] && vars[A_PID] < 45.5) continue;
             // Ignore tracks with high chi2.
-            if (vars[A_CHI2]/vars[A_NDF] >= CHI2NDFCUT)   continue;
+            if (vars[A_CHI2]/vars[A_NDF] >= RGE_CHI2NDFCUT) continue;
         }
 
         // Apply DIS cuts.

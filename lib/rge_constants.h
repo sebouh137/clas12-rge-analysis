@@ -30,9 +30,6 @@ typedef long int lint;
 
 // --+ internal +---------------------------------------------------------------
 // --+ library +----------------------------------------------------------------
-// Data tree name for programs.
-#define RGE_TREENAMEDATA "data"
-
 // All variables.
 #define VAR_LIST_SIZE 35
 extern const char *R_VAR_LIST[VAR_LIST_SIZE];
@@ -167,19 +164,22 @@ extern const char *SIDIS_LIST[SIDIS_LIST_SIZE];
 #define R_THETAPQ "thetapq"
 #define A_THETAPQ  34
 
+/** Data tree name used by various programs. */
+#define RGE_TREENAMEDATA "data"
+
 /** Detector constants. */
-#define NSECTORS     6 /** # of CLAS12 sectors. */
-#define SF_NPARAMS   4 /** # of sampling fraction parameters. */
+#define RGE_NSECTORS     6 /** # of CLAS12 sectors. */
+#define RGE_NSFPARAMS    4 /** # of sampling fraction parameters. */
 
 /** Cuts (geometric, fiducial, SIDIS, etc). */
-#define Q2CUT        1.   /** Q2 of particle must be over this value. */
-#define WCUT         2.   /** W of particle must be over this value. */
-#define W2CUT        4.   /** W2 of particle must be over this value. */
-#define ZHCUT        1.   /** zh of particle must be below this value. */
-#define YBCUT        0.85 /** Yb of particle must be below this value. */
-#define CHI2NDFCUT  15    /** Chi2/NDF must be below this value. */
-#define VXVYCUT      4    /** sqrt(vx^2 + vy^2) must be below this value. */
-#define VZLOWCUT   -40    /** vz must be above this value. */
-#define VZHIGHCUT   40    /** vz must be below this. */
+#define RGE_Q2CUT        1.   /** Q2 of particle must be over this value. */
+#define RGE_WCUT         2.   /** W of particle must be over this value. */
+#define RGE_W2CUT        4.   /** W2 of particle must be over this value. */
+#define RGE_ZHCUT        1.   /** zh of particle must be below this value. */
+#define RGE_YBCUT        0.85 /** Yb of particle must be below this value. */
+#define RGE_CHI2NDFCUT  15    /** Chi2/NDF must be below this value. */
+#define RGE_VXVYCUT      4    /** sqrt(vx^2 + vy^2) must be below this value. */
+#define RGE_VZLOWCUT   -40    /** vz must be above this value. */
+#define RGE_VZHIGHCUT   40    /** vz must be below this. */
 
 #endif

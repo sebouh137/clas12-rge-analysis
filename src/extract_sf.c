@@ -179,20 +179,20 @@ static int run(
     // Create histogram and name arrays.
     std::map<const char *, TH1 *> histos;
 
-    char *sf1D_name_arr[NCALS][NSECTORS][
+    char *sf1D_name_arr[NCALS][RGE_NSECTORS][
             static_cast<luint>(((SF_PMAX - SF_PMIN)/SF_PSTEP))
     ];
-    char *sf2D_name_arr[NCALS][NSECTORS];
-    TGraphErrors *sf_dotgraph[NCALS][NSECTORS];
-    char *sf2Dfit_name_arr[NCALS][NSECTORS];
-    TF1 *sf_polyfit[NCALS][NSECTORS];
-    double sf_fitresults[NCALS][NSECTORS][SF_NPARAMS][2];
+    char *sf2D_name_arr[NCALS][RGE_NSECTORS];
+    TGraphErrors *sf_dotgraph[NCALS][RGE_NSECTORS];
+    char *sf2Dfit_name_arr[NCALS][RGE_NSECTORS];
+    TF1 *sf_polyfit[NCALS][RGE_NSECTORS];
+    double sf_fitresults[NCALS][RGE_NSECTORS][RGE_NSFPARAMS][2];
 
     // Configure 2D histogram arrays.
     int cal_idx = -1;
     for (const char *cal : SFARR2D) {
         cal_idx++;
-        for (int sector_i = 0; sector_i < NSECTORS; ++sector_i) {
+        for (int sector_i = 0; sector_i < RGE_NSECTORS; ++sector_i) {
             // Initialize dotgraphs.
             char *tmp_str = Form("%s%d)", cal, sector_i+1);
             sf2D_name_arr[cal_idx][sector_i] =
@@ -230,7 +230,7 @@ static int run(
     cal_idx = -1;
     for (const char *cal : SFARR1D) {
         cal_idx++;
-        for (int sector_i = 0; sector_i < NSECTORS; ++sector_i) {
+        for (int sector_i = 0; sector_i < RGE_NSECTORS; ++sector_i) {
             int param_i = -1;
             for (double p = SF_PMIN; p < SF_PMAX; p += SF_PSTEP) {
                 param_i++;
@@ -289,9 +289,9 @@ static int run(
             double total_p = rge_calc_magnitude(px, py, pz);
 
             // Compute energy deposited in each calorimeter per sector.
-            double sf_E[NCALS][NSECTORS];
+            double sf_E[NCALS][RGE_NSECTORS];
             for (int cal_i = 0; cal_i < NCALS; ++cal_i) {
-                for (int sector_i = 0; sector_i < NSECTORS; ++sector_i) {
+                for (int sector_i = 0; sector_i < RGE_NSECTORS; ++sector_i) {
                     sf_E[cal_i][sector_i] = 0;
                 }
             }
@@ -305,7 +305,7 @@ static int run(
                 int sector_i =
                         rge_get_double(&calorimeter, "sector", entry_i) - 1;
                 if (sector_i == -1) continue;
-                if (sector_i < -1 || sector_i > NSECTORS-1) {
+                if (sector_i < -1 || sector_i > RGE_NSECTORS-1) {
                     rge_errno = RGEERR_INVALIDCALSECTOR;
                     return 1;
                 }
@@ -329,7 +329,7 @@ static int run(
             }
 
             for (int cal_i = 0; cal_i < NCALS-1; ++cal_i) {
-                for (int sector_i = 0; sector_i < NSECTORS; ++sector_i) {
+                for (int sector_i = 0; sector_i < RGE_NSECTORS; ++sector_i) {
                     sf_E[ECAL_IDX][sector_i] += sf_E[cal_i][sector_i];
                 }
             }
@@ -344,7 +344,7 @@ static int run(
 
             // Write to histograms.
             for (int cal_i = 0; cal_i < NCALS; ++cal_i) {
-                for (int sector_i = 0; sector_i < NSECTORS; ++sector_i) {
+                for (int sector_i = 0; sector_i < RGE_NSECTORS; ++sector_i) {
                     if (sf_E[cal_i][sector_i] <= 0) continue;
                     histos[sf2D_name_arr[cal_i][sector_i]]->Fill(
                             total_p, sf_E[cal_i][sector_i]/total_p
@@ -361,7 +361,7 @@ static int run(
     cal_idx = -1;
     for (const char *cal : SFARR1D) {
         ++cal_idx;
-        for (int sector_i = 0; sector_i < NSECTORS; ++sector_i) {
+        for (int sector_i = 0; sector_i < RGE_NSECTORS; ++sector_i) {
             int param_idx = -1;
             int point_idx = 0;
             // Fit 1D plots for each momentum bin to fill dotgraphs.
@@ -455,7 +455,7 @@ static int run(
         dir = Form("%s", CALNAME[cal_i]);
         out_rootfile->mkdir(dir);
         out_rootfile->cd(dir);
-        for (int sector_i = 0; sector_i < NSECTORS; ++sector_i) {
+        for (int sector_i = 0; sector_i < RGE_NSECTORS; ++sector_i) {
             dir = Form("%s/sector %d", CALNAME[cal_i], sector_i+1);
             out_rootfile->mkdir(dir);
             out_rootfile->cd(dir);
@@ -481,9 +481,9 @@ static int run(
 
     // Write ECAL sf results to output text file.
     for (int cal_i = 3; cal_i < 4; ++cal_i) {
-        for (int sector_i = 0; sector_i < NSECTORS; ++sector_i) {
+        for (int sector_i = 0; sector_i < RGE_NSECTORS; ++sector_i) {
             for (int sf_i = 0; sf_i < 2; ++sf_i) { // sf and sfs.
-                for (int param_i = 0; param_i < SF_NPARAMS; ++param_i) {
+                for (int param_i = 0; param_i < RGE_NSFPARAMS; ++param_i) {
                     fprintf(
                             out_textfile, "%011.8f ",
                             sf_fitresults[cal_i][sector_i][param_i][0]

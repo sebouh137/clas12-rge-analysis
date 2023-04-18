@@ -56,7 +56,7 @@ int assign_neutral_pid(double energy, double beta) {
 
 bool is_electron(
         double total_energy, double pcal_energy, double htcc_nphe, double p,
-        double pars[SF_NPARAMS][2]
+        double pars[RGE_NSFPARAMS][2]
 ) {
     // Require ECAL.
     if (total_energy < 1e-9) return false;
@@ -241,7 +241,7 @@ rge_particle rge_particle_init(
 int rge_set_pid(
         rge_particle *particle, int recon_pid, int status, double total_energy,
         double pcal_energy, int htcc_nphe, int ltcc_nphe,
-        double sf_params[SF_NPARAMS][2]
+        double sf_params[RGE_NSFPARAMS][2]
 ) {
     // Assign PID for neutrals and store PID from reconstruction for charged
     //         particles.

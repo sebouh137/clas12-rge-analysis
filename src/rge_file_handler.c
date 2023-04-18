@@ -72,16 +72,18 @@ int get_acc_corr(
 }
 
 // --+ library +----------------------------------------------------------------
-int rge_get_sf_params(char *filename, double sf[NSECTORS][SF_NPARAMS][2]) {
+int rge_get_sf_params(
+        char *filename, double sf[RGE_NSECTORS][RGE_NSFPARAMS][2]
+) {
     if (access(filename, F_OK) != 0) {
         rge_errno = RGEERR_NOSAMPFRACFILE;
         return 1;
     }
     FILE *file_in = fopen(filename, "r");
 
-    for (int sector_i = 0; sector_i < NSECTORS; ++sector_i) {
+    for (int sector_i = 0; sector_i < RGE_NSECTORS; ++sector_i) {
         for (int edge_i = 0; edge_i < 2; ++edge_i) {
-            for (int param_i = 0; param_i < SF_NPARAMS; ++param_i) {
+            for (int param_i = 0; param_i < RGE_NSFPARAMS; ++param_i) {
                 fscanf(file_in, "%lf ", &sf[sector_i][param_i][edge_i]);
             }
         }

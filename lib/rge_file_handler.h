@@ -75,7 +75,9 @@ static int get_acc_corr(
  *                     * 0: everything went fine.
  *                     * 1: no file with filename was found.
  */
-int rge_get_sf_params(char *filename, double sf[NSECTORS][SF_NPARAMS][2]);
+int rge_get_sf_params(
+        char *filename, double sf[RGE_NSECTORS][RGE_NSFPARAMS][2]
+);
 
 /**
  * Read acc_corr.txt file to get the acceptance correction for each bin for each
