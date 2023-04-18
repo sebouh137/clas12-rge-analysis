@@ -142,10 +142,11 @@ int handle_err() {
     if (rge_errno == RGEERR_USAGE) return 1; // Just print usage.
 
     // Print error.
-    if (ERRMAP.contains(rge_errno)) {
+    try {
         fprintf(stderr, "\n%s\n", ERRMAP.at(rge_errno));
         return 1;
     }
+    catch (...) {}
 
     // Error number not implemented.
     fprintf(stderr, "rge_errno %d not implemented.\n\n", rge_errno);
