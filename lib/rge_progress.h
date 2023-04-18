@@ -16,6 +16,7 @@
 #ifndef RGE_PROGRESS
 #define RGE_PROGRESS
 
+// --+ preamble +---------------------------------------------------------------
 // C.
 #include "stdio.h"
 

@@ -13,11 +13,17 @@
 //
 // You can see a copy of the GNU Lesser Public License under the LICENSE file.
 
+// C.
 #include <limits.h>
 #include <libgen.h>
+
+// ROOT.
 #include <TFile.h>
 #include <TH2.h>
 #include <TNtuple.h>
+
+// rge-analysis.
+#include "../lib/rge_constants.h"
 #include "../lib/rge_err_handler.h"
 #include "../lib/rge_io_handler.h"
 #include "../lib/rge_progress.h"
@@ -38,6 +44,55 @@ static const char *USAGE_MESSAGE =
 " * infile      : input file produced by make_ntuples.\n\n"
 "    Draw plots from a ROOT file built from make_ntuples. File should be\n"
 "    named <text>run_no.root.\n";
+
+/** Particle names array. */
+#define PART_LIST_SIZE 5
+#define A_PPOS 1
+#define A_PNEG 2
+#define A_PNEU 3
+#define A_PPID 4
+static const char *PART_LIST[PART_LIST_SIZE] = {
+        "all", "+", "-", "neutral", "pid"
+};
+
+/** Plotting opts arrays. */
+static const char *PLT_LIST[2] = {"1d", "2d"};
+static const char *DIM_LIST[2] = {"x", "y"};
+static const char *RAN_LIST[2] = {"lower", "upper"};
+
+/** "Standard" plots data. */
+#define STDPLT_LIST_SIZE 11
+static const int STD_PX[STDPLT_LIST_SIZE] = {
+        1, 1, 1, 0,
+        0, 0, 0, 0,
+        0, 0, 1
+};
+static const int STD_VX[STDPLT_LIST_SIZE][2] = {
+        {A_P,   A_BETA}, {A_P,  A_DTOF}, {A_P,   A_TOT_E}, {A_Q2,    -1},
+        {A_NU,  -1},     {A_ZH, -1},     {A_PT2, -1},      {A_PHIPQ, -1},
+        {A_XB,  -1},     {A_W2, -1},     {A_Q2,  A_NU}
+};
+static const double STD_RX[STDPLT_LIST_SIZE][2][2] = {
+        {{ 0,10},{ 0, 1}}, {{ 0,10},{ 0,20}}, {{ 0,10},{ 0, 3}},
+        {{ 0,12},{-1,-1}}, {{ 0,12},{-1,-1}}, {{ 0, 1},{-1,-1}},
+        {{ 0, 2},{-1,-1}}, {{-M_PI,M_PI},{-1,-1}},
+        {{ 0, 1},{-1,-1}}, {{ 0,20},{-1,-1}}, {{ 0,12},{ 0,12}}
+};
+static const long STD_BX[STDPLT_LIST_SIZE][2] = {
+        {200,200}, {200,100}, {200,200},
+        {400, -1}, {400, -1}, {400, -1},
+        {400, -1}, {400, -1},
+        {400, -1}, {400, -1}, {200,200}
+};
+
+/** Acceptance correction plot data. */
+#define ACCPLT_LIST_SIZE 5
+static const int ACC_PX[ACCPLT_LIST_SIZE] = {
+        0, 0, 0, 0, 0
+};
+static const int ACC_VX[ACCPLT_LIST_SIZE][2] = {
+        {A_Q2,-1}, {A_NU,-1}, {A_ZH,-1}, {A_PT2,-1}, {A_PHIPQ,-1}
+};
 
 /**
  * Assign title to plots, recursively going through binnings. The title that
@@ -430,10 +485,10 @@ static int run(
     ) {
         // Check if we are to make a 1D or 2D plot.
         printf("\nPlot %ld type? [", plot_i);
-        for (int var_i = 0; var_i < PLOT_LIST_SIZE; ++var_i)
-            printf("%s, ", PLOT_LIST[var_i]);
+        for (int var_i = 0; var_i < 2; ++var_i)
+            printf("%s, ", PLT_LIST[var_i]);
         printf("\b\b]:\n");
-        plot_type[plot_i] = rge_catch_string(PLOT_LIST, PLOT_LIST_SIZE);
+        plot_type[plot_i] = rge_catch_string(PLT_LIST, 2);
 
         for (int dim_i = 0; dim_i < plot_type[plot_i]+1; ++dim_i) {
             // Check variable(s) to be plotted.

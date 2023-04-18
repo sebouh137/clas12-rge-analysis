@@ -57,7 +57,7 @@ static const char *USAGE_MESSAGE =
 #define PCAL_IDX 0 /** PCAL idx in arrays. */
 #define ECIN_IDX 1 /** ECIN idx in arrays. */
 #define ECOU_IDX 2 /** ECOU idx in arrays. */
-#define CALS_IDX 3 /** CALs idx in arrays. */
+#define ECAL_IDX 3 /** ECAL idx in arrays. */
 
 /** Momentum bin parameters, in GeV. */
 #define SF_PMIN  1.0 /** Minimum value. */
@@ -69,7 +69,7 @@ static const char *USAGE_MESSAGE =
 
 /** Calorimeter names. */
 static const char *CALNAME[NCALS] = {
-        "PCAL", "ECIN", "ECOU", "ALL"
+        "PCAL", "ECIN", "ECOU", "ECAL"
 };
 
 /** Sampling fraction 1D and 2D array names. */
@@ -77,13 +77,13 @@ static const char *SFARR1D[NCALS] = {
         "PCAL Sampling Fraction sector ",
         "ECIN Sampling Fraction sector ",
         "ECOU Sampling Fraction sector ",
-        "CALs Sampling Fraction sector "
+        "ECAL Sampling Fraction sector "
 };
 static const char *SFARR2D[NCALS] = {
         "Vp vs E/Vp (PCAL sector ",
         "Vp vs E/Vp (ECIN sector ",
         "Vp vs E/Vp (ECOU sector ",
-        "Vp vs E/Vp (CALs sector "
+        "Vp vs E/Vp (ECAL sector "
 };
 
 /** Momentum limits for 1D sampling fraction fits. */
@@ -199,8 +199,9 @@ static int run(
                     static_cast<char *>(malloc(strlen(tmp_str)+1));
             strncpy(sf2D_name_arr[cal_idx][sector_i], tmp_str, strlen(tmp_str));
             insert_TH2F(
-                    &histos, R_PALL, sf2D_name_arr[cal_idx][sector_i], S_P,
-                    S_EDIVP, 200, 0, 10, 200, 0, 0.4
+                    &histos, CALNAME[ECAL_IDX],
+                    sf2D_name_arr[cal_idx][sector_i], S_P, S_EDIVP, 200, 0, 10,
+                    200, 0, 0.4
             );
             sf_dotgraph[cal_idx][sector_i] = new TGraphErrors();
             sf_dotgraph[cal_idx][sector_i]->SetMarkerStyle(kFullCircle);
@@ -244,7 +245,7 @@ static int run(
                         strlen(tmp_str)
                 );
                 insert_TH1F(
-                        &histos, R_PALL,
+                        &histos, CALNAME[ECAL_IDX],
                         sf1D_name_arr[cal_idx][sector_i][param_i], S_EDIVP,
                         200, 0, 0.4
                 );
@@ -329,7 +330,7 @@ static int run(
 
             for (int cal_i = 0; cal_i < NCALS-1; ++cal_i) {
                 for (int sector_i = 0; sector_i < NSECTORS; ++sector_i) {
-                    sf_E[CALS_IDX][sector_i] += sf_E[cal_i][sector_i];
+                    sf_E[ECAL_IDX][sector_i] += sf_E[cal_i][sector_i];
                 }
             }
 

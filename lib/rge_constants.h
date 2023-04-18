@@ -16,6 +16,7 @@
 #ifndef RGE_CONSTANTS
 #define RGE_CONSTANTS
 
+// --+ preamble +---------------------------------------------------------------
 // C.
 #include <math.h>
 
@@ -27,63 +28,12 @@ typedef unsigned int uint;
 typedef long unsigned int luint;
 typedef long int lint;
 
+// --+ internal +---------------------------------------------------------------
+// --+ library +----------------------------------------------------------------
 // Data tree name for programs.
 #define RGE_TREENAMEDATA "data"
 
-// Particle cut array.
-#define PART_LIST_SIZE 5
-extern const char *PART_LIST[PART_LIST_SIZE];
-#define R_PALL "all"     // All particles.
-#define A_PALL 0
-#define R_PPOS "+"       // Positive.
-#define A_PPOS 1
-#define R_PNEG "-"       // Negative.
-#define A_PNEG 2
-#define R_PNEU "neutral" // Neutral.
-#define A_PNEU 3
-#define R_PPID "pid"     // Filter by PID.
-#define A_PPID 4
-
-// Tracker types.
-#define TRK_LIST_SIZE 2
-extern const char *TRK_LIST[TRK_LIST_SIZE];
-#define S_DC  "dc"
-#define A_DC  0
-#define S_FMT "fmt"
-#define A_FMT 1
-
-// Plot types.
-#define PLOT_LIST_SIZE 2
-extern const char *PLOT_LIST[PLOT_LIST_SIZE];
-#define R_PLOT1D   "1d"
-#define R_PLOT2D   "2d"
-
-#define DIM_LIST_SIZE 2
-extern const char *DIM_LIST[DIM_LIST_SIZE];
-#define S_DIM1   "x"
-#define S_DIM2   "y"
-
-// Miscellaneous.
-extern const char *RAN_LIST[2];
-#define S_LOWER "lower"
-#define S_UPPER "upper"
-
-// "Standard" plots.
-#define STDPLT_LIST_SIZE 11
-extern const int    STD_PX[STDPLT_LIST_SIZE];
-extern const int    STD_VX[STDPLT_LIST_SIZE][2];
-extern const double STD_RX[STDPLT_LIST_SIZE][2][2];
-extern const long   STD_BX[STDPLT_LIST_SIZE][2];
-
-// Acceptance corrected plots.
-#define ACCPLT_LIST_SIZE 5
-extern const int    ACC_PX[ACCPLT_LIST_SIZE];
-extern const int    ACC_VX[ACCPLT_LIST_SIZE][2];
-extern const double ACC_RX[ACCPLT_LIST_SIZE][2][2];
-extern const long   ACC_BX[ACCPLT_LIST_SIZE][2];
-
 // All variables.
-#define S_PARTICLE "particle"
 #define VAR_LIST_SIZE 35
 extern const char *R_VAR_LIST[VAR_LIST_SIZE];
 extern const char *S_VAR_LIST[VAR_LIST_SIZE];
@@ -198,12 +148,10 @@ extern const char *DIS_LIST[DIS_LIST_SIZE];
 #define A_W2 29
 
 // SIDIS.
-// using usual name convention...
 #define SIDIS_LIST_SIZE 5
 extern const char *SIDIS_LIST[SIDIS_LIST_SIZE];
 
 #define S_ZH      "z_{h}"       // adimensional.
-// #define S_ZH      "zh"
 #define R_ZH      "zh"
 #define A_ZH       30
 #define S_PT2     "Pt2"         // GeV^2.
@@ -213,31 +161,25 @@ extern const char *SIDIS_LIST[SIDIS_LIST_SIZE];
 #define R_PL2     "pl2"
 #define A_PL2      32
 #define S_PHIPQ   "#phi_{PQ}"   // Rad.
-// #define S_PHIPQ   "phiPQ"
 #define R_PHIPQ   "phipq"
 #define A_PHIPQ    33
 #define S_THETAPQ "#theta_{PQ}" // Rad.
 #define R_THETAPQ "thetapq"
 #define A_THETAPQ  34
 
-// #define PHOTONTHETA "virtual photon #theta (lab frame #degree)"
-// #define PHOTONPHI   "virtual photon #phi (lab frame #degree)"
+/** Detector constants. */
+#define NSECTORS     6 /** # of CLAS12 sectors. */
+#define SF_NPARAMS   4 /** # of sampling fraction parameters. */
 
-// Sampling fraction constants.
-#define SF_NPARAMS 4
-
-// Detector constants.
-#define NSECTORS     6 // # of CLAS12 sectors.
-
-// General Cuts.
-#define Q2CUT         1.   // Q2 of particle must be over this value.
-#define WCUT          2.   // W of particle must be over this value.
-#define W2CUT         4.   // W2 of particle must be over this value.
-#define ZHCUT         1.   // zh of particle must be below this value.
-#define YBCUT         0.85 // Yb of particle must be below this value.
-#define CHI2NDFCUT   15    // Chi2/NDF must be below this value.
-#define VXVYCUT       4    // sqrt(vx^2 + vy^2) must be below this value.
-#define VZLOWCUT    -40    // vz must be above this value.
-#define VZHIGHCUT    40    // vz must be below this.
+/** Cuts (geometric, fiducial, SIDIS, etc). */
+#define Q2CUT        1.   /** Q2 of particle must be over this value. */
+#define WCUT         2.   /** W of particle must be over this value. */
+#define W2CUT        4.   /** W2 of particle must be over this value. */
+#define ZHCUT        1.   /** zh of particle must be below this value. */
+#define YBCUT        0.85 /** Yb of particle must be below this value. */
+#define CHI2NDFCUT  15    /** Chi2/NDF must be below this value. */
+#define VXVYCUT      4    /** sqrt(vx^2 + vy^2) must be below this value. */
+#define VZLOWCUT   -40    /** vz must be above this value. */
+#define VZHIGHCUT   40    /** vz must be below this. */
 
 #endif
