@@ -16,7 +16,7 @@
 #include "../lib/rge_constants.h"
 
 // --+ library +----------------------------------------------------------------
-const char *R_VAR_LIST[VAR_LIST_SIZE] = {
+const char *VAR_LIST[VAR_LIST_SIZE] = {
         R_RUNNO, R_EVENTNO, R_BEAME,
         R_PID, R_STATUS, R_CHARGE, R_MASS, R_VX, R_VY, R_VZ, R_PX, R_PY, R_PZ,
                 R_P, R_THETA, R_PHI, R_BETA,
@@ -27,20 +27,6 @@ const char *R_VAR_LIST[VAR_LIST_SIZE] = {
         R_Q2, R_NU, R_XB, R_W2,
         R_ZH, R_PT2, R_PL2, R_PHIPQ, R_THETAPQ
 };
-const char *S_VAR_LIST[VAR_LIST_SIZE] = {
-        S_RUNNO, S_EVENTNO, S_BEAME,
-        S_PID, S_STATUS, S_CHARGE, S_MASS, S_VX, S_VY, S_VZ, S_PX, S_PY, S_PZ,
-                S_P, S_THETA, S_PHI, S_BETA,
-        S_CHI2, S_NDF,
-        S_PCAL_E, S_ECIN_E, S_ECOU_E, S_TOT_E,
-        S_DTOF,
-        S_NPHELTCC, S_NPHEHTCC,
-        S_Q2, S_NU, S_XB, S_W2,
-        S_ZH, S_PT2, S_PL2, S_PHIPQ, S_THETAPQ
-};
 const char *DIS_LIST[DIS_LIST_SIZE] = {
         R_Q2, R_NU, R_XB, R_W2
-};
-const char *SIDIS_LIST[SIDIS_LIST_SIZE] = {
-        R_ZH, R_PT2, R_PL2, R_PHIPQ, R_THETAPQ
 };

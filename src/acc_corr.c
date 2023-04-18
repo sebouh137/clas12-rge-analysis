@@ -100,12 +100,12 @@ static int count_entries(
 
     Float_t s_pid, s_W, s_W2;
     Float_t s_bin[5] = {0, 0, 0, 0, 0};
-    tree->SetBranchAddress(S_PID,   &s_pid);
-    tree->SetBranchAddress(S_Q2,    &(s_bin[0]));
-    tree->SetBranchAddress(S_NU,    &(s_bin[1]));
-    tree->SetBranchAddress(S_ZH,    &(s_bin[2]));
-    tree->SetBranchAddress(S_PT2,   &(s_bin[3]));
-    tree->SetBranchAddress(S_PHIPQ, &(s_bin[4]));
+    tree->SetBranchAddress(R_PID,   &s_pid);
+    tree->SetBranchAddress(R_Q2,    &(s_bin[0]));
+    tree->SetBranchAddress(R_NU,    &(s_bin[1]));
+    tree->SetBranchAddress(R_ZH,    &(s_bin[2]));
+    tree->SetBranchAddress(R_PT2,   &(s_bin[3]));
+    tree->SetBranchAddress(R_PHIPQ, &(s_bin[4]));
     if (!simul) tree->SetBranchAddress("W",  &s_W);
     if (simul)  tree->SetBranchAddress("W2", &s_W2);
 
@@ -210,7 +210,7 @@ static int run(
     Float_t s_pid;
     double pidlist[256];
     int pidlist_size = 0;
-    thrown->SetBranchAddress(S_PID, &s_pid);
+    thrown->SetBranchAddress(R_PID, &s_pid);
 
     for (int evn = 0; evn < thrown->GetEntries(); ++evn) {
         thrown->GetEntry(evn);

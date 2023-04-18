@@ -256,7 +256,7 @@ static int run(
     // Generate lists of variables.
     TString vars_string("");
     for (int var_i = 0; var_i < VAR_LIST_SIZE; ++var_i) {
-        vars_string.Append(Form("%s", S_VAR_LIST[var_i]));
+        vars_string.Append(Form("%s", VAR_LIST[var_i]));
         if (var_i != VAR_LIST_SIZE-1) vars_string.Append(":");
     }
 
@@ -422,7 +422,7 @@ static int run(
             )) return 1;
 
             // Fill TNtuples.
-            // NOTE. If adding new variables, check their order in S_VAR_LIST.
+            // NOTE. If adding new variables, check their order in VAR_LIST.
             Float_t arr[VAR_LIST_SIZE];
             if (rge_fill_ntuples_arr(
                     arr, part, part_trigger, run_no, event, status, energy_beam,

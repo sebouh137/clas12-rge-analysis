@@ -50,7 +50,7 @@ static const char *USAGE_MESSAGE =
 "    Obtain the EC sampling fraction from an input file.\n";
 
 /** Histogram name. */
-#define S_EDIVP "E/p"
+#define R_EDIVP "E/p"
 
 /** Sampling fraction array pre-defined integers. */
 #define NCALS 4    /** Number of calorimeters (PCAL, ECIN, ECOU, ALL). */
@@ -200,7 +200,7 @@ static int run(
             strncpy(sf2D_name_arr[cal_idx][sector_i], tmp_str, strlen(tmp_str));
             insert_TH2F(
                     &histos, CALNAME[ECAL_IDX],
-                    sf2D_name_arr[cal_idx][sector_i], S_P, S_EDIVP, 200, 0, 10,
+                    sf2D_name_arr[cal_idx][sector_i], R_P, R_EDIVP, 200, 0, 10,
                     200, 0, 0.4
             );
             sf_dotgraph[cal_idx][sector_i] = new TGraphErrors();
@@ -246,7 +246,7 @@ static int run(
                 );
                 insert_TH1F(
                         &histos, CALNAME[ECAL_IDX],
-                        sf1D_name_arr[cal_idx][sector_i][param_i], S_EDIVP,
+                        sf1D_name_arr[cal_idx][sector_i][param_i], R_EDIVP,
                         200, 0, 0.4
                 );
             }

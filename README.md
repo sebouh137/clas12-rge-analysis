@@ -130,7 +130,6 @@ Pull requests are welcome. For major changes, open an issue first to discuss the
 - [x] Write a generic usage(const char *msg, int err) function.
 - [ ] Implement variable bin sizes for every variable and binning.
 - [ ] Include GitHub tests -- I've no clue on how to do this with ROOT + HIPO.
-- [ ] Add a main program (probably in bash) to call all other programs for working simplicity.
 - [x] Improve `bank_containers` to be more generic.
 - [ ] Improve the use of constants thorough the code by using a map or a similar structure.
 - [ ] Apply radiative correction.
