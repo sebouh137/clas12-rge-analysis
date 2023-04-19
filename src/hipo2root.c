@@ -1,5 +1,5 @@
 // CLAS12 RG-E Analyser.
-// Copyright (C) 2022 Bruno Benkel
+// Copyright (C) 2022-2023 Bruno Benkel
 //
 // This program is free software: you can redistribute it and/or modify it under
 // the terms of the GNU Lesser General Public License as published by the Free
@@ -13,209 +13,172 @@
 //
 // You can see a copy of the GNU Lesser Public License under the LICENSE file.
 
+// C.
 #include <libgen.h>
+
+// ROOT.
 #include "TFile.h"
-#include "../lib/io_handler.h"
-#include "../lib/bank_containers.h"
+#include "TTree.h"
 
-/** run() function of the program. Check usage() for details. */
-int run(char *in_filename, char *work_dir, bool use_fmt, int run_no,
-        int event_max)
-{
-    // Create output file.
-    char out_file[PATH_MAX];
-    sprintf(out_file, "%s/banks_%06d.root", work_dir, run_no);
+// HIPO.
+#include "bank.h"
+#include "dictionary.h"
+#include "event.h"
+#include "reader.h"
 
-    TFile *f = TFile::Open(out_file, "RECREATE");
-    f->SetCompressionAlgorithm(ROOT::kLZ4);
+// rge-analysis.
+#include "../lib/rge_constants.h"
+#include "../lib/rge_err_handler.h"
+#include "../lib/rge_filename_handler.h"
+#include "../lib/rge_hipo_bank.h"
+#include "../lib/rge_io_handler.h"
+#include "../lib/rge_progress.h"
 
-    // Create tree for output file and bank containers to read hipo file.
-    TTree *tree = new TTree("Tree", "Tree");
-    Particle     particle;
-    Track        track;
-    Calorimeter  calorimeter;
-    Cherenkov    cherenkov;
-    Scintillator scintillator;
-    FMT_Tracks   fmt_tracks;
+static const char *USAGE_MESSAGE =
+"Usage: hipo2root [-hfn:w:] infile\n"
+" * -h         : show this message and exit.\n"
+" * -f         : set this to true to process FMT::Tracks bank. If this is set\n"
+"                and FMT::Tracks bank is not present in the HIPO file, the\n"
+"                program will crash.\n"
+" * -n nevents : number of events.\n"
+" * -w workdir : location where output root files are to be stored. Default\n"
+"                is root_io.\n"
+" * infile     : input HIPO file. Expected format is <text>run_no.hipo.\n\n"
+"    Convert a file from hipo to root format. This program only conserves the\n"
+"    banks that are useful for RG-E analysis, as specified in the\n"
+"    lib/rge_hipo_bank.h file.\n";
 
-    // Link bank container to tree branches.
-    particle    .link_branches(tree);
-    track       .link_branches(tree);
-    calorimeter .link_branches(tree);
-    cherenkov   .link_branches(tree);
-    scintillator.link_branches(tree);
-    if (use_fmt) fmt_tracks.link_branches(tree);
+/** Number of banks in BANKLIST. */
+static const uint NBANKS       = 6;
+static const uint NBANKS_NOFMT = 5;
 
-    // Open input file and get hipo schemas.
+/** List of banks hipo2root is capable of processing. */
+static const char *BANKLIST[NBANKS] = {
+    RGE_RECPARTICLE, RGE_RECTRACK, RGE_RECCALORIMETER, RGE_RECCHERENKOV,
+    RGE_RECSCINTILLATOR, RGE_FMTTRACKS
+};
+
+/** run() function of the program. Check USAGE_MESSAGE for details. */
+static int run(
+        char *in_filename, char *work_dir, bool use_fmt, int run_no,
+        lint nevents
+) {
+    // Number of banks to read/write depends on type of analysis.
+    uint nbanks = use_fmt ? NBANKS : NBANKS_NOFMT;
+
+    // Access input sources.
     hipo::reader reader;
-    reader.open(in_filename);
-
     hipo::dictionary factory;
+    hipo::event event;
+
+    reader.open(in_filename);
     reader.readDictionary(factory);
 
-    hipo::event event;
-    hipo::bank particle_bank    (factory.getSchema("REC::Particle"));
-    hipo::bank track_bank       (factory.getSchema("REC::Track"));
-    hipo::bank calorimeter_bank (factory.getSchema("REC::Calorimeter"));
-    hipo::bank cherenkov_bank   (factory.getSchema("REC::Cherenkov"));
-    hipo::bank scintillator_bank(factory.getSchema("REC::Scintillator"));
-    hipo::bank fmt_tracks_bank;
-    if (use_fmt) fmt_tracks_bank = factory.getSchema("FMT::Tracks");
+    // Create output tree and file.
+    TTree *out_tree = new TTree(RGE_TREENAMEDATA, RGE_TREENAMEDATA);
 
-    // Get stuff from hipo file and write to root file.
-    if (event_max == -1) event_max = reader.getEntries();
-    printf("Reading %d events from %s.\n", event_max, in_filename);
+    char out_filename[PATH_MAX];
+    sprintf(out_filename, "%s/banks_%06d.root", work_dir, run_no);
+    TFile *out_file = TFile::Open(out_filename, "RECREATE");
 
-    int event_no = 0;
+    // Open input file and get hipo schemas.
+    __extension__ hipo::bank   hbanks[nbanks];
+    __extension__ rge_hipobank rbanks[nbanks];
 
-    // Counters for fancy progress bar.
-    int divcntr     = 0;
-    int evnsplitter = 0;
+    for (uint i = 0; i < nbanks; ++i) {
+        // Initialize hipo banks.
+        hbanks[i] = hipo::bank(factory.getSchema(BANKLIST[i]));
 
-    while (reader.next() && event_no < event_max) {
+        // Initialize rge banks.
+        rbanks[i] = rge_hipobank_init(BANKLIST[i]);
+        if (rge_errno != RGEERR_UNDEFINED) return 1;
+        rge_link_branches(&(rbanks[i]), out_tree);
+    }
+
+    // Get event count.
+    if (nevents == -1 || nevents > reader.getEntries())
+        nevents = reader.getEntries();
+    printf("Reading %ld events from %s.\n", nevents, in_filename);
+
+    // Prepare fancy progress bar.
+    rge_pbar_set_nentries(nevents);
+
+    for (int event_no = 0; event_no < nevents; ++event_no) {
         // Print fancy progress bar.
-        update_progress_bar(event_max, event_no, &evnsplitter, &divcntr);
-        ++event_no;
+        rge_pbar_update(event_no);
 
         // Read next event.
+        reader.next();
         reader.read(event);
 
-        // Get bank structures from hipo event.
-        event.getStructure(particle_bank);
-        event.getStructure(track_bank);
-        event.getStructure(calorimeter_bank);
-        event.getStructure(cherenkov_bank);
-        event.getStructure(scintillator_bank);
-        if (use_fmt) event.getStructure(fmt_tracks_bank);
-
         // Fill banks from hipo event.
-        particle    .fill(particle_bank);
-        track       .fill(track_bank);
-        calorimeter .fill(calorimeter_bank);
-        cherenkov   .fill(cherenkov_bank);
-        scintillator.fill(scintillator_bank);
-        if (use_fmt) fmt_tracks.fill(fmt_tracks_bank);
+        luint total_nrows = 0;
+        for (uint i = 0; i < nbanks; ++i) {
+            event.getStructure(hbanks[i]);
+            if (rge_fill(&(rbanks[i]), hbanks[i])) return 1;
+            total_nrows += rbanks[i].nrows;
+        }
 
         // Write to tree *if* event is not empty.
-        int total_nrows = particle.get_nrows() +
-                          track.get_nrows() +
-                          calorimeter.get_nrows() +
-                          cherenkov.get_nrows() +
-                          scintillator.get_nrows();
-        if (use_fmt) total_nrows += fmt_tracks.get_nrows();
-
-        if (total_nrows > 0) tree->Fill();
+        if (total_nrows > 0) out_tree->Fill();
     }
-    printf("\33[2K\rRead %8d events... Done!\n", event_no);
 
     // Write to root tree and clean up after ourselves.
-    tree->Write();
-    f->Close();
+    out_tree->Write();
+    out_file->Close();
 
+    rge_errno = RGEERR_NOERR;
     return 0;
-}
-
-/** Print usage and exit. */
-int usage() {
-    fprintf(stderr,
-            "\n\nUsage: hipo2root [-hfn:w:] infile\n"
-            " * -h         : show this message and exit.\n"
-            " * -f         : set this to true to process FMT::Tracks bank.\n"
-            " * -n nevents : number of events.\n"
-            " * -w workdir : location where output root files are to be "
-            "stored. Default\n                is root_io.\n"
-            " * infile     : input HIPO file. Expected file format is "
-            "<text>run_no.hipo.\n\n"
-            "    Convert a file from hipo to root format. This program only "
-            "conserves the\n    banks that are useful for RG-E analysis, as "
-            "specified in the\n    lib/bank_containers.h file.\n\n"
-    );
-
-    return 1;
-}
-
-/** Print error number and provide a short description of the error. */
-int handle_err(int errcode) {
-    if (errcode > 1) fprintf(stderr, "Error %02d. ", errcode);
-    switch (errcode) {
-        case 0:
-            return 0;
-        case 1:
-            break;
-        case 2:
-            fprintf(stderr, "nevents should be a number greater than 0");
-            break;
-        case 3:
-            fprintf(stderr, "Bad usage of optional arguments.");
-            break;
-        case 4:
-            fprintf(stderr, "No input filename provided.");
-            break;
-        case 5:
-            fprintf(stderr, "Input file should be in hipo format.");
-            break;
-        case 6:
-            fprintf(stderr, "Input file does not exist.");
-            break;
-        case 7:
-            // NOTE. It's technically impossible to get here, this error should
-            //     be fully covered by errcode 5. Better safe than sorry.
-            fprintf(stderr, "Couldn't find extension in input filename.");
-            break;
-        case 8:
-            fprintf(stderr, "Couldn't find run number in input filename.");
-            break;
-        default:
-            fprintf(stderr, "Error code not implemented!\n");
-            return 1;
-    }
-    return usage();
 }
 
 /**
  * Handle arguments for hipo2root using optarg. Error codes used are explained
  *     in the handle_err() function.
  */
-int handle_args(int argc, char **argv, char **in_filename, char **work_dir,
-        bool *use_fmt, int *run_no, int *event_max)
-{
+static int handle_args(
+        int argc, char **argv, char **in_filename, char **work_dir,
+        bool *use_fmt, int *run_no, lint *nevents
+) {
     // Handle arguments.
     int opt;
     while ((opt = getopt(argc, argv, "-hfn:w:")) != -1) {
         switch (opt) {
             case 'h':
+                rge_errno = RGEERR_USAGE;
                 return 1;
             case 'f':
                 *use_fmt = true;
                 break;
             case 'n':
-                *event_max = atoi(optarg);
-                if (*event_max <= 0) return 2; // Check if event_max is valid.
+                if (rge_process_nentries(nevents, optarg)) return 1;
                 break;
             case 'w':
-                *work_dir = (char *) malloc(strlen(optarg) + 1);
+                *work_dir = static_cast<char *>(malloc(strlen(optarg) + 1));
                 strcpy(*work_dir, optarg);
                 break;
             case 1:
-                *in_filename = (char *) malloc(strlen(optarg) + 1);
+                *in_filename = static_cast<char *>(malloc(strlen(optarg) + 1));
                 strcpy(*in_filename, optarg);
                 break;
             default:
-                return 3;
+                rge_errno = RGEERR_BADOPTARGS;
+                return 1;
         }
     }
 
     // Define workdir if undefined.
     if (*work_dir == NULL) {
-        *work_dir = (char *) malloc(PATH_MAX);
+        *work_dir = static_cast<char *>(malloc(PATH_MAX));
         sprintf(*work_dir, "%s/../root_io", dirname(argv[0]));
     }
 
     // Check that a positional argument was given.
-    if (*in_filename == NULL) return 4;
+    if (*in_filename == NULL) {
+        rge_errno = RGEERR_NOINPUTFILE;
+        return 1;
+    }
 
-    int check = handle_hipo_filename(*in_filename, run_no);
-    if (check) return check + 4; // Shift errcode.
+    if (rge_handle_hipo_filename(*in_filename, run_no)) return 1;
 
     return 0;
 }
@@ -223,23 +186,25 @@ int handle_args(int argc, char **argv, char **in_filename, char **work_dir,
 /** Entry point of hipo2root. Check usage() for details. */
 int main(int argc, char **argv) {
     // Handle arguments.
-    char *in_filename = NULL;
-    char *work_dir    = NULL;
-    bool use_fmt      = false;
-    int  run_no       = -1;
-    int  event_max    = -1;
+    char *in_filename  = NULL;
+    char *work_dir     = NULL;
+    bool use_fmt       = false;
+    int  run_no        = -1;
+    lint nevents       = -1;
 
-    int errcode = handle_args(argc, argv, &in_filename, &work_dir, &use_fmt,
-            &run_no, &event_max);
+    handle_args(
+            argc, argv, &in_filename, &work_dir, &use_fmt, &run_no, &nevents
+    );
 
     // Run.
-    if (errcode == 0)
-        errcode = run(in_filename, work_dir, use_fmt, run_no, event_max);
+    if (rge_errno == RGEERR_UNDEFINED) {
+        run(in_filename, work_dir, use_fmt, run_no, nevents);
+    }
 
     // Free up memory.
     if (in_filename != NULL) free(in_filename);
     if (work_dir    != NULL) free(work_dir);
 
     // Return errcode.
-    return handle_err(errcode);
+    return rge_print_usage(USAGE_MESSAGE);
 }

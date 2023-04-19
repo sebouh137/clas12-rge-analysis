@@ -1,5 +1,5 @@
 // CLAS12 RG-E Analyser.
-// Copyright (C) 2022 Bruno Benkel
+// Copyright (C) 2022-2023 Bruno Benkel
 //
 // This program is free software: you can redistribute it and/or modify it under
 // the terms of the GNU Lesser General Public License as published by the Free
@@ -13,12 +13,50 @@
 //
 // You can see a copy of the GNU Lesser Public License under the LICENSE file.
 
+// C.
 #include <libgen.h>
+#include <limits.h>
+
+// ROOT.
 #include <TFile.h>
 #include <TNtuple.h>
 #include <TROOT.h>
-#include "../lib/io_handler.h"
-#include "../lib/particle.h"
+
+// rge-analysis.
+#include "../lib/rge_constants.h"
+#include "../lib/rge_err_handler.h"
+#include "../lib/rge_file_handler.h"
+#include "../lib/rge_filename_handler.h"
+#include "../lib/rge_hipo_bank.h"
+#include "../lib/rge_io_handler.h"
+#include "../lib/rge_particle.h"
+#include "../lib/rge_progress.h"
+
+static const char *USAGE_MESSAGE =
+"Usage: make_ntuples [-hDf:n:w:d:] infile\n"
+" * -h         : show this message and exit.\n"
+" * -D         : activate debug mode.\n"
+" * -f fmtlyrs : define how many FMT layers should the track have hit.\n"
+"                Options are 0 (tracked only by DC), 2, and 3. If set to\n"
+"                something other than 0 and there is no FMT::Tracks bank in\n"
+"                the input file, the program will crash. Default is 0.\n"
+" * -n nevents : number of events.\n"
+" * -w workdir : location where output root files are to be stored. Default\n"
+"                is root_io.\n"
+" * -d datadir : location where sampling fraction files are. Default is data.\n"
+" * infile     : input ROOT file. Expected file format: <text>run_no.root`.\n\n"
+"    Generate ntuples relevant to SIDIS analysis based on the reconstructed\n"
+"    variables from CLAS12 data.\n";
+
+/** Detector IDs from CLAS12 reconstruction. */
+static const uint FTOF_ID = 12;
+static const uint HTCC_ID = 15;
+static const uint LTCC_ID = 16;
+
+/** FTOF layer IDs from CLAS12 reconstruction. */
+static const uint FTOF1A_LYR = 1;
+static const uint FTOF1B_LYR = 2;
+static const uint FTOF2_LYR  = 3;
 
 /**
  * Find and return the most precise time of flight (TOF). Both the Forward Time
@@ -30,58 +68,82 @@
  * In order of decreasing precision, the list of detectors are:
  *     FTOF1B > FTOF1A > FTOF2 > PCAL > ECIN > ECOU.
  *
- * @param scintillator: instance of the Scintillator class.
- * @param calorimeter:  instance of the Calorimeter class.
- * @param pindex:       particle index of the particle we're studying.
- * @return:             the most accurate TOF available in the scintillator and
- *                      calorimeter banks.
+ * @param scintillator : pointer to rge_hipobank containing scintillator data.
+ * @param calorimeter  : pointer to rge_hipobank containing calorimeter data.
+ * @param pindex       : particle index of the particle we're studying.
+ * @return             : the most accurate TOF available in the scintillator and
+ *                       calorimeter banks.
  */
-double get_tof(Scintillator scintillator, Calorimeter calorimeter, int pindex)
-{
+static double get_tof(
+        rge_hipobank *scintillator, rge_hipobank *calorimeter, uint pindex
+) {
     int    most_precise_lyr = 0;
     double tof              = INFINITY;
-    for (UInt_t i = 0; i < scintillator.pindex->size(); ++i) {
+
+    // Find TOF from scintillator.
+    for (uint i = 0; i < scintillator->nrows; ++i) {
         // Filter out incorrect pindex and hits not from FTOF.
-        if (scintillator.pindex->at(i) != pindex
-                || scintillator.detector->at(i) != FTOF_ID)
+        if (
+                rge_get_uint(scintillator, "pindex", i)   != pindex ||
+                rge_get_uint(scintillator, "detector", i) != FTOF_ID
+        ) {
             continue;
-        if (scintillator.layer->at(i) == FTOF1B_LYR) {
+        }
+
+        uint layer  = rge_get_uint(scintillator, "layer", i);
+        double time = rge_get_double(scintillator, "time", i);
+
+        // Check FTOF 1B (most precise FTOF layer).
+        if (layer == FTOF1B_LYR) {
             most_precise_lyr = FTOF1B_LYR;
-            tof = scintillator.time->at(i);
+            tof = time;
             break; // Things won't get better than this.
         }
-        else if (scintillator.layer->at(i) == FTOF1A_LYR) {
+
+        // Check FTOF 1A.
+        else if (layer == FTOF1A_LYR) {
             if (most_precise_lyr == FTOF1A_LYR) continue;
             most_precise_lyr = FTOF1A_LYR;
-            tof = scintillator.time->at(i);
+            tof = time;
         }
-        else if (scintillator.layer->at(i) == FTOF2_LYR) {
+
+        // Check FTOF 2.
+        else if (layer == FTOF2_LYR) {
             // We already have a similar or better hit.
             if (most_precise_lyr != 0) continue;
             most_precise_lyr = FTOF2_LYR;
-            tof = scintillator.time->at(i);
+            tof = time;
         }
     }
-
     if (most_precise_lyr != 0) return tof;
-    // No hits from FTOF, let's try ECAL.
-    for (UInt_t i = 0; i < calorimeter.pindex->size(); ++i) {
+
+    // If no hits from FTOF were found, try to find TOF from calorimeters.
+    for (uint i = 0; i < calorimeter->nrows; ++i) {
         // Filter out incorrect pindex.
-        if (calorimeter.pindex->at(i) != pindex) continue;
-        if (calorimeter.layer->at(i) == PCAL_LYR) {
+        if (rge_get_uint(calorimeter, "pindex", i) != pindex) continue;
+
+        // Check PCAL (Calorimeter with the most precise TOF).
+        uint layer  = rge_get_uint(calorimeter, "layer", i);
+        double time = rge_get_double(calorimeter, "time", i);
+
+        if (layer == PCAL_LYR) {
             most_precise_lyr = 10 + PCAL_LYR;
-            tof = calorimeter.time->at(i);
+            tof = time;
             break; // Things won't get better than this.
         }
-        else if (calorimeter.layer->at(i) == ECIN_LYR) {
+
+        // Check ECIN.
+        else if (layer == ECIN_LYR) {
             if (most_precise_lyr == 10 + ECIN_LYR) continue;
             most_precise_lyr = 10 + ECIN_LYR;
-            tof = calorimeter.time->at(i);
+            tof = time;
         }
-        else if (calorimeter.layer->at(i) == ECOU_LYR) {
+
+        // Check ECOU.
+        else if (layer == ECOU_LYR) {
             if (most_precise_lyr != 0) continue;
             most_precise_lyr = 10 + ECOU_LYR;
-            tof = calorimeter.time->at(i);
+            tof = time;
         }
     }
 
@@ -91,31 +153,37 @@ double get_tof(Scintillator scintillator, Calorimeter calorimeter, int pindex)
 /**
  * Get deposited energy for particle with pindex from PCAL, ECIN, and ECOU.
  *
- * @param calorimeter: instance of the Calorimeter class.
- * @param pindex:      particle index of the particle we're studying
- * @param pcal_E:      pointer to float to which we'll write the PCAL energy.
- * @param ecin_E:      pointer to float to which we'll write the ECIN energy.
- * @param ecou_E:      pointer to float to which we'll write the ECOU energy.
- * @return             error code. 0 if successful, 1 otherwise. The function
- *                     only returns 1 if there's an invalid layer in the
- *                     Calorimeter instance, suggesting corruption or a change
- *                     in the REC::Calorimeter bank.
+ * @param calorimeter : pointer to the calorimeter rge_hipobank.
+ * @param pindex      : particle index of the particle we're studying
+ * @param energy_PCAL : pointer to double to which we'll write the PCAL energy.
+ * @param energy_ECIN : pointer to double to which we'll write the ECIN energy.
+ * @param energy_ECOU : pointer to double to which we'll write the ECOU energy.
+ * @return            : error code. 0 if successful, 1 otherwise. The function
+ *                      only returns 1 if there's an invalid layer in the
+ *                      calorimeter bank, suggesting corruption or a change in
+ *                      the REC::Calorimeter bank structure.
  */
-int get_deposited_energy(Calorimeter calorimeter, int pindex, float *pcal_E,
-        float *ecin_E, float *ecou_E)
-{
-    *pcal_E = 0;
-    *ecin_E = 0;
-    *ecou_E = 0;
+static int get_deposited_energy(
+        rge_hipobank *calorimeter, uint pindex, double *energy_PCAL,
+        double *energy_ECIN, double *energy_ECOU
+) {
+    *energy_PCAL = 0;
+    *energy_ECIN = 0;
+    *energy_ECOU = 0;
 
-    for (UInt_t i = 0; i < calorimeter.pindex->size(); ++i) {
-        if (calorimeter.pindex->at(i) != pindex) continue;
-        int lyr = (int) calorimeter.layer->at(i);
+    for (uint i = 0; i < calorimeter->nrows; ++i) {
+        if (rge_get_uint(calorimeter,"pindex",i) != pindex) continue;
 
-        if      (lyr == PCAL_LYR) *pcal_E += calorimeter.energy->at(i);
-        else if (lyr == ECIN_LYR) *ecin_E += calorimeter.energy->at(i);
-        else if (lyr == ECOU_LYR) *ecou_E += calorimeter.energy->at(i);
-        else return 1;
+        int layer     = rge_get_int   (calorimeter, "layer",  i);
+        double energy = rge_get_double(calorimeter, "energy", i);
+
+        if      (layer == PCAL_LYR) *energy_PCAL += energy;
+        else if (layer == ECIN_LYR) *energy_ECIN += energy;
+        else if (layer == ECOU_LYR) *energy_ECOU += energy;
+        else {
+            rge_errno = RGEERR_INVALIDCALLAYER;
+            return 1;
+        }
     }
 
     return 0;
@@ -124,392 +192,348 @@ int get_deposited_energy(Calorimeter calorimeter, int pindex, float *pcal_E,
 /**
  * Count number of photoelectrons deposited on HTCC and LTCC detectors.
  *
- * @param cherenkov: Instance of the Cherenkov class.
- * @param pindex:    particle index of the particle we're studying.
- * @param htcc_nphe: pointer to int where we'll write the number of
- *                   photoelectrons deposited on HTCC.
- * @param ltcc_nphe: pointer to int where we'll write the number of
- *                   photoelectrons deposited on LTCC.
- * @return           error code. 0 if successful, 1 otherwise. The function only
- *                   returns 1 if there's an invalid detector ID in the
- *                   Cherenkov instance, suggesting data corruption or a change
- *                   in the REC::Cherenkov bank.
+ * @param cherenkov : pointer to rge_hipobank struct with Cherenkov's data.
+ * @param pindex    :    particle index of the particle we're studying.
+ * @param nphe_HTCC : pointer to int where we'll write the number of
+ *                    photoelectrons deposited on HTCC.
+ * @param nphe_LTCC : pointer to int where we'll write the number of
+ *                    photoelectrons deposited on LTCC.
+ * @return          : error code. 0 if successful, 1 otherwise. The function
+ *                    only returns 1 if there's an invalid detector ID in the
+ *                    cherenkov bank, suggesting data corruption or a change
+ *                    in the REC::Cherenkov bank structure.
  */
-int count_photoelectrons(Cherenkov cherenkov, int pindex, int *htcc_nphe,
-        int *ltcc_nphe)
-{
-    *htcc_nphe = 0;
-    *ltcc_nphe = 0;
+static int count_photoelectrons(
+        rge_hipobank *cherenkov, uint pindex, int *nphe_HTCC, int *nphe_LTCC
+) {
+    *nphe_HTCC = 0;
+    *nphe_LTCC = 0;
 
-    for (UInt_t i = 0; i < cherenkov.pindex->size(); ++i) {
-        if (cherenkov.pindex->at(i) != pindex) continue;
+    for (uint i = 0; i < cherenkov->nrows; ++i) {
+        if (rge_get_uint(cherenkov, "pindex", i) != pindex) continue;
 
-        int detector = cherenkov.detector->at(i);
-        if      (detector == HTCC_ID) *htcc_nphe += cherenkov.nphe->at(i);
-        else if (detector == LTCC_ID) *ltcc_nphe += cherenkov.nphe->at(i);
-        else return 1;
+        int detector = rge_get_int(cherenkov, "detector", i);
+        int nphe     = rge_get_int(cherenkov, "nphe",     i);
+        if      (detector == HTCC_ID) *nphe_HTCC += nphe;
+        else if (detector == LTCC_ID) *nphe_LTCC += nphe;
+        else {
+            rge_errno = RGEERR_INVALIDCHERENKOVID;
+            return 1;
+        }
     }
 
     return 0;
 }
 
-/** run() function of the program. Check usage() for details. */
-int run(char *in_file, char *work_dir, char *data_dir, bool debug, bool use_fmt,
-        int nevn, int run_no, double beam_E)
-{
+/** run() function of the program. Check USAGE_MESSAGE for details. */
+static int run(
+        char *filename_in, char *work_dir, char *data_dir, bool debug,
+        lint fmt_nlayers, lint n_events, int run_no, double energy_beam
+) {
     // Get sampling fraction.
-    char t_file[PATH_MAX];
-    sprintf(t_file, "%s/sf_params_%06d.txt", data_dir, run_no);
-    double sf_params[NSECTORS][SF_NPARAMS][2];
-    int errcode = get_sf_params(t_file, sf_params);
-    if (errcode) return 10;
-
-    // Create output file.
-    char out_file[PATH_MAX];
-    sprintf(out_file, "%s/ntuples_%06d.root", work_dir, run_no);
-    TFile *f_out = TFile::Open(out_file, "RECREATE");
+    char sampling_fraction_file[PATH_MAX];
+    if (run_no / 1000 != 999) {
+        sprintf(
+                sampling_fraction_file, "%s/sf_params_%06d.txt",
+                data_dir, run_no
+        );
+    }
+    else {
+        sprintf(sampling_fraction_file, "%s/sf_params_mc.txt", data_dir);
+    }
+    double sampling_fraction_params[RGE_NSECTORS][RGE_NSFPARAMS][2];
+    if (rge_get_sf_params(sampling_fraction_file, sampling_fraction_params)) {
+        return 1;
+    }
 
     // Access input file.
-    TFile *f_in  = TFile::Open(in_file, "READ");
-    if (!f_in || f_in->IsZombie()) return 11;
+    TFile *file_in  = TFile::Open(filename_in, "READ");
+    if (!file_in || file_in->IsZombie()) {
+        rge_errno = RGEERR_BADINPUTFILE;
+        return 1;
+    }
+
+    // If fmt_nlayers != 0, check that FMT::Tracks bank exists.
+    if (fmt_nlayers != 0 && file_in->GetListOfKeys()->Contains(RGE_FMTTRACKS)) {
+        rge_errno = RGEERR_NOFMTBANK;
+        return 1;
+    }
 
     // Return to top directory (weird root stuff).
     gROOT->cd();
 
     // Generate lists of variables.
-    TString vars("");
-    for (int vi = 0; vi < VAR_LIST_SIZE; ++vi) {
-        vars.Append(Form("%s", S_VAR_LIST[vi]));
-        if (vi != VAR_LIST_SIZE-1) vars.Append(":");
+    TString vars_string("");
+    for (int var_i = 0; var_i < RGE_VARS_SIZE; ++var_i) {
+        vars_string.Append(Form("%s", RGE_VARS[var_i]));
+        if (var_i != RGE_VARS_SIZE-1) vars_string.Append(":");
     }
 
     // Create TTree and TNTuples.
-    TTree *t_in = f_in->Get<TTree>("Tree");
-    if (t_in == NULL) return 12;
-    TNtuple *t_out[2];
-    t_out[0] = new TNtuple(S_DC,  S_DC,  vars);
-    t_out[1] = new TNtuple(S_FMT, S_FMT, vars);
+    TTree *tree_in = file_in->Get<TTree>(RGE_TREENAMEDATA);
+    if (tree_in == NULL) {
+        rge_errno = RGEERR_BADROOTFILE;
+        return 1;
+    }
+    TNtuple *tree_out;
+    tree_out = new TNtuple(RGE_TREENAMEDATA, RGE_TREENAMEDATA, vars_string);
 
-    // Change nevn to number of entries if it is equal to -1.
-    if (nevn == -1) nevn = t_in->GetEntries();
+    // Change n_events to number of entries if it is equal to -1 or invalid.
+    if (n_events == -1 || n_events > tree_in->GetEntries()) {
+        n_events = tree_in->GetEntries();
+    }
 
     // Associate banks to TTree.
-    Particle     b_particle    (t_in);
-    Track        b_track       (t_in);
-    Calorimeter  b_calorimeter (t_in);
-    Cherenkov    b_cherenkov   (t_in);
-    Scintillator b_scintillator(t_in);
-    FMT_Tracks   b_fmt_tracks;
-    if (use_fmt) b_fmt_tracks.link_tree(t_in);
+    rge_hipobank bpart = rge_hipobank_init(RGE_RECPARTICLE,     tree_in);
+    rge_hipobank btrk  = rge_hipobank_init(RGE_RECTRACK,        tree_in);
+    rge_hipobank bcal  = rge_hipobank_init(RGE_RECCALORIMETER,  tree_in);
+    rge_hipobank bchkv = rge_hipobank_init(RGE_RECCHERENKOV,    tree_in);
+    rge_hipobank bsci  = rge_hipobank_init(RGE_RECSCINTILLATOR, tree_in);
+    rge_hipobank bfmt  = rge_hipobank_init(RGE_FMTTRACKS,       tree_in);
 
     // Iterate through input file. Each TTree entry is one event.
-    printf("Reading %d events from %s.\n", nevn, in_file);
+    printf("Processing %ld events from %s.\n", n_events, filename_in);
 
-    // Counters for fancy progress bar.
-    int divcntr     = 0;
-    int evnsplitter = 0;
+    // Prepare fancy progress bar.
+    rge_pbar_set_nentries(n_events);
 
-    for (int evn = 0; evn < nevn; ++evn) {
+    // Particle counters.
+    int trigger_counter  = 0;
+    int particle_counter = 0;
+
+    // Loop through events in input file.
+    for (lint event = 0; event < n_events; ++event) {
         // Print fancy progress bar.
-        if (!debug) update_progress_bar(nevn, evn, &evnsplitter, &divcntr);
+        if (!debug) rge_pbar_update(event);
 
         // Get entries from input file.
-        b_particle    .get_entries(t_in, evn);
-        b_track       .get_entries(t_in, evn);
-        b_scintillator.get_entries(t_in, evn);
-        b_calorimeter .get_entries(t_in, evn);
-        b_cherenkov   .get_entries(t_in, evn);
-        if (use_fmt) b_fmt_tracks.get_entries(t_in, evn);
+        rge_get_entries(&bpart, tree_in, event);
+        rge_get_entries(&btrk,  tree_in, event);
+        rge_get_entries(&bcal,  tree_in, event);
+        rge_get_entries(&bchkv, tree_in, event);
+        rge_get_entries(&bsci,  tree_in, event);
+        if (fmt_nlayers != 0) rge_get_entries(&bfmt, tree_in, event);
 
         // Filter events without the necessary banks.
-        if (b_particle.vz->size() == 0 || b_track.pindex->size() == 0) continue;
+        if (bpart.nrows == 0 || btrk.nrows == 0) continue;
 
         // Check existence of trigger electron
-        particle p_el[2];
-        bool    trigger_exist  = false;
-        UInt_t  trigger_pos    = -1;
-        int     trigger_pindex = -1;
-        float   trigger_tof    = -1.;
-        for (UInt_t pos = 0; pos < b_track.index->size(); ++pos) {
-            int pindex = b_track.pindex->at(pos);
+        rge_particle part_trigger;
+        bool trigger_exist  = false;
+        uint trigger_pos    = UINT_MAX;
+        uint trigger_pindex = UINT_MAX;
+        double trigger_tof  = -1.;
+        for (uint pos = 0; pos < btrk.nrows; ++pos) {
+            uint pindex = rge_get_uint(&btrk, "pindex", pos);
 
             // Get reconstructed particle from DC and from FMT.
-            p_el[0] = particle_init(&b_particle, &b_track, pos);
-            if (use_fmt) {
-                p_el[1] = particle_init(&b_particle, &b_track, &b_fmt_tracks,
-                        pos);
-            }
-            else {
-                p_el[1] = particle_init();
-            }
+            part_trigger = rge_particle_init(
+                &bpart, &btrk, &bfmt, pos, fmt_nlayers
+            );
 
-            // Get deposited energy in PCAL, ECIN, and ECOU.
-            float pcal_E, ecin_E, ecou_E;
-            if (get_deposited_energy(b_calorimeter, pindex, &pcal_E, &ecin_E,
-                                     &ecou_E)
-            ) return 13;
+            // Skip particle if it doesn't fit requirements.
+            if (!part_trigger.is_valid) continue;
 
-            // Get Cherenkov counters data.
-            int htcc_nphe, ltcc_nphe;
-            if (count_photoelectrons(b_cherenkov, pindex, &htcc_nphe,
-                                     &ltcc_nphe)
-            ) return 14;
+            // Get energy deposited in calorimeters.
+            double energy_PCAL, energy_ECIN, energy_ECOU;
+            if (get_deposited_energy(
+                    &bcal, pindex, &energy_PCAL, &energy_ECIN, &energy_ECOU
+            )) return 1;
 
-            // Get time of flight.
-            float tof = get_tof(b_scintillator, b_calorimeter, pindex);
+            // Get number of photoelectrons from Cherenkov counters.
+            int nphe_HTCC, nphe_LTCC;
+            if (count_photoelectrons(&bchkv, pindex, &nphe_HTCC, &nphe_LTCC))
+                return 1;
+
+            // Get time of flight from scintillators or calorimeters.
+            double tof = get_tof(&bsci, &bcal, pindex);
 
             // Get miscellaneous data.
-            int status = b_particle.status->at(pindex);
-            float chi2 = b_track.chi2     ->at(pos);
-            float ndf  = b_track.ndf      ->at(pos);
+            int status  = rge_get_double(&bpart, "status", pindex);
+            double chi2 = rge_get_double(&btrk,  "chi2",   pos);
+            double ndf  = rge_get_double(&btrk,  "NDF",    pos);
 
             // Assign PID.
-            for (int pi = 0; pi < 2; ++pi) {
-                set_pid(&(p_el[pi]), b_particle.pid->at(pindex), status,
-                        pcal_E + ecin_E + ecou_E, pcal_E, htcc_nphe, ltcc_nphe,
-                        sf_params[b_track.sector->at(pos)]);
-            }
+            if (rge_set_pid(
+                    &part_trigger, rge_get_double(&bpart, "pid", pindex),
+                    status, energy_PCAL+energy_ECIN+energy_ECOU, energy_PCAL,
+                    nphe_HTCC, nphe_LTCC,
+                    sampling_fraction_params[rge_get_uint(&btrk, "sector", pos)]
+            )) return 1;
 
-            // Fill TNtuples with trigger electron information.
-            for (int pi = 0; pi < 2; ++pi) {
-                if (!(p_el[pi].is_valid && p_el[pi].is_trigger_electron))
-                    continue;
-                trigger_exist = true;
+            // Skip particle if its not the trigger electron.
+            if (!part_trigger.is_trigger) continue;
 
-                Float_t arr[VAR_LIST_SIZE];
-                fill_ntuples_arr(arr, p_el[pi], p_el[pi], run_no, evn, status,
-                        beam_E, chi2, ndf, pcal_E, ecin_E, ecou_E, tof, tof);
+            // Fill TNtuple with trigger electron information.
+            Float_t arr[RGE_VARS_SIZE];
+            if (rge_fill_ntuples_arr(
+                    arr, part_trigger, part_trigger, run_no, event, status,
+                    energy_beam, chi2, ndf, energy_PCAL, energy_ECIN,
+                    energy_ECOU, tof, tof, nphe_LTCC, nphe_HTCC
+            )) return 1;
 
-                t_out[pi]->Fill(arr);
-            }
-            if (trigger_exist) {
-                trigger_pindex = pindex;
-                trigger_pos    = pos;
-                trigger_tof    = tof;
-                break;
-            }
+            tree_out->Fill(arr);
+
+            // Fill out trigger electron data and end loop.
+            trigger_exist  = true;
+            trigger_pindex = pindex;
+            trigger_pos    = pos;
+            trigger_tof    = tof;
+            break;
         }
 
-        // In case no trigger e was found, initiate p_el as dummy particles.
-        if (!trigger_exist) {
-            p_el[0] = particle_init();
-            p_el[1] = particle_init();
-        }
+        // Skip events without a trigger electron.
+        if (!trigger_exist) continue;
+        ++trigger_counter;
 
         // Processing particles.
-        for (UInt_t pos = 0; pos < b_track.index->size(); ++pos) {
-            // Currently pindex is always equal to pos, but this is not a given
-            //     in the future of reconstruction development. Better safe than
-            //     sorry!
-            int pindex = b_track.pindex->at(pos);
+        for (uint pos = 0; pos < btrk.nrows; ++pos) {
+            uint pindex = rge_get_uint(&btrk, "pindex", pos);
 
             // Avoid double-counting the trigger electron.
-            if (trigger_pindex == pindex && trigger_pos == pos) continue;
+            if (trigger_pindex == pindex && trigger_pos == pos) {
+                continue;
+            }
 
             // Get reconstructed particle from DC and from FMT.
-            particle p[2];
-            p[0] = particle_init(&b_particle, &b_track, pos);
-            if (use_fmt)
-                p[1] = particle_init(&b_particle, &b_track, &b_fmt_tracks, pos);
-            else
-                p[1] = particle_init();
+            rge_particle part = rge_particle_init(
+                &bpart, &btrk, &bfmt, pos, fmt_nlayers
+            );
 
-            // Get deposited energy in PCAL, ECIN, and ECOU.
-            float pcal_E, ecin_E, ecou_E;
-            if (get_deposited_energy(b_calorimeter, pindex, &pcal_E, &ecin_E,
-                                     &ecou_E)
-            ) return 13;
+            // Skip particle if it doesn't fit requirements.
+            if (!part.is_valid) continue;
+
+            // Get energy deposited in calorimeters.
+            double energy_PCAL, energy_ECIN, energy_ECOU;
+            if (get_deposited_energy(
+                    &bcal, pindex, &energy_PCAL, &energy_ECIN, &energy_ECOU
+            )) return 1;
 
             // Get Cherenkov counters data.
-            int htcc_nphe, ltcc_nphe;
-            if (count_photoelectrons(b_cherenkov, pindex, &htcc_nphe,
-                                     &ltcc_nphe)
-            ) return 14;
+            int nphe_HTCC, nphe_LTCC;
+            if (count_photoelectrons(&bchkv, pindex, &nphe_HTCC, &nphe_LTCC))
+                return 1;
 
-            // Get TOF.
-            float tof = get_tof(b_scintillator, b_calorimeter, pindex);
+            // Get time-of-flight (tof).
+            double tof = get_tof(&bsci, &bcal, pindex);
 
             // Get miscellaneous data.
-            int status = b_particle.status->at(pindex);
-            float chi2 = b_track.chi2     ->at(pos);
-            float ndf  = b_track.ndf      ->at(pos);
+            int status  = rge_get_double(&bpart, "status", pindex);
+            double chi2 = rge_get_double(&btrk,  "chi2",   pos);
+            double ndf  = rge_get_double(&btrk,  "NDF",    pos);
 
             // Assign PID.
-            for (int pi = 0; pi < 2; ++pi) {
-                set_pid(&(p[pi]), b_particle.pid->at(pindex), status,
-                        pcal_E + ecin_E + ecou_E, pcal_E, htcc_nphe, ltcc_nphe,
-                        sf_params[b_track.sector->at(pos)]);
-            }
+            if (rge_set_pid(
+                    &part, rge_get_double(&bpart, "pid", pindex), status,
+                    energy_PCAL + energy_ECIN + energy_ECOU, energy_PCAL,
+                    nphe_HTCC, nphe_LTCC,
+                    sampling_fraction_params[rge_get_uint(&btrk, "sector", pos)]
+            )) return 1;
 
-            // Fill TNtuples.
-            // NOTE. If adding new variables, check their order in S_VAR_LIST.
-            for (int pi = 0; pi < 2; ++pi) {
-                if (!p[pi].is_valid) continue;
-                Float_t arr[VAR_LIST_SIZE];
-                fill_ntuples_arr(arr, p[pi], p_el[pi], run_no, evn, status,
-                        beam_E, chi2, ndf, pcal_E, ecin_E, ecou_E, tof,
-                        trigger_tof);
+            // Fill TNtuples. If adding new variables, check their order in
+            //     RGE_VARS.
+            Float_t arr[RGE_VARS_SIZE];
+            if (rge_fill_ntuples_arr(
+                    arr, part, part_trigger, run_no, event, status, energy_beam,
+                    chi2, ndf, energy_PCAL, energy_ECIN, energy_ECOU, tof,
+                    trigger_tof, nphe_LTCC, nphe_HTCC
+            )) return 1;
 
-                t_out[pi]->Fill(arr);
-            }
+            tree_out->Fill(arr);
+
+            ++particle_counter;
         }
     }
 
+    // Print number of particles found to detect errors early.
+    printf("Triggers found:  %d\n", trigger_counter);
+    printf("Particles found: %d\n", trigger_counter + particle_counter);
+
+    // Create output file.
+    char filename_out[PATH_MAX];
+    if (fmt_nlayers == 0) {
+        sprintf(filename_out, "%s/ntuples_dc_%06d.root", work_dir, run_no);
+    }
+    else {
+        sprintf(
+                filename_out, "%s/ntuples_fmt%1ld_%06d.root", work_dir,
+                fmt_nlayers, run_no
+        );
+    }
+    TFile *file_out = TFile::Open(filename_out, "RECREATE");
+
     // Write to output file.
-    f_out->cd();
-    t_out[0]->Write();
-    t_out[1]->Write();
+    file_out->cd();
+    tree_out->Write();
 
     // Clean up after ourselves.
-    f_in ->Close();
-    f_out->Close();
+    file_in ->Close();
+    file_out->Close();
 
+    rge_errno = RGEERR_NOERR;
     return 0;
 }
 
-/** Print usage and exit. */
-int usage() {
-    fprintf(stderr,
-            "\n\nUsage: make_ntuples [-hDfn:w:d:] infile\n"
-            " * -h         : show this message and exit.\n"
-            " * -D         : activate debug mode.\n"
-            " * -f         : set this to true to process FMT::Tracks bank.\n"
-            " * -n nevents : number of events.\n"
-            " * -w workdir : location where output root files are to be "
-            "stored. Default\n                is root_io.\n"
-            " * -d datadir : location where sampling fraction files are "
-            "located. Default is\n                data.\n"
-            " * infile     : input ROOT file. Expected file format: "
-            "<text>run_no.root`.\n\n"
-            "    Generate ntuples relevant to SIDIS analysis based on the "
-            "reconstructed\n    variables from CLAS12 data.\n\n"
-    );
-
-    return 1;
-}
-
-/** Print error number and provide a short description of the error. */
-int handle_err(int errcode) {
-    if (errcode > 1) fprintf(stderr, "Error %02d. ", errcode);
-    switch (errcode) {
-        case 0:
-            return 0;
-        case 1:
-            break;
-        case 2:
-            fprintf(stderr, "nevents should be a number greater than 0.");
-            break;
-        case 3:
-            fprintf(stderr, "Bad usage of optional arguments.");
-            break;
-        case 4:
-            fprintf(stderr, "No file name provided.");
-            break;
-        case 5:
-            fprintf(stderr, "Input file should be in root format.");
-            break;
-        case 6:
-            fprintf(stderr, "Input file does not exist.");
-            break;
-        case 7:
-            fprintf(stderr, "Couldn't find dot position in input filename.");
-            break;
-        case 8:
-            fprintf(stderr, "Couldn't find run number in input filename.");
-            break;
-        case 9:
-            fprintf(stderr, "Run number not in constants. Add from RCDB.");
-            break;
-        case 10:
-            // NOTE. In this scenario, a smoother behavior would be that the
-            //       program calls extract_sf itself.
-            fprintf(stderr, "No sampling fraction file is available for run "
-            "number! Run extract_sf on this\nroot file before running "
-            "make_ntuples.");
-            break;
-        case 11:
-            fprintf(stderr, "Input file is not a valid root file.");
-            break;
-        case 12:
-            fprintf(stderr, "Couldn't get relevant trees from input file.");
-            break;
-        case 13:
-            fprintf(stderr, "Invalid Electronic Calorimeter layer. Check bank "
-                            "integrity.\n");
-            break;
-        case 14:
-            fprintf(stderr, "Invalid Cherenkov Counter ID. Check bank "
-                            "integrity.");
-            break;
-        default:
-            fprintf(stderr, "Error code not implemented!\n");
-            return 1;
-    }
-
-    return usage();
-}
-
-/**
- * Handle arguments for make_ntuples using optarg. Error codes used are
- *     explained in the handle_err() function.
- */
-int handle_args(int argc, char **argv, char **in_file, char **work_dir,
-        char **data_dir, bool *debug, bool *use_fmt, int *nevn, int *run_no,
-        double *beam_E)
-{
+/** Handle arguments for make_ntuples using optarg. */
+static int handle_args(
+        int argc, char **argv, char **filename_in, char **work_dir,
+        char **data_dir, bool *debug, lint *fmt_nlayers, lint *n_events,
+        int *run_no, double *energy_beam
+) {
     // Handle arguments.
     int opt;
-    while ((opt = getopt(argc, argv, "-hDfn:w:d:")) != -1) {
+    while ((opt = getopt(argc, argv, "-hDf:n:w:d:")) != -1) {
         switch (opt) {
             case 'h':
+                rge_errno = RGEERR_USAGE;
                 return 1;
             case 'D':
                 *debug = true;
                 break;
             case 'f':
-                *use_fmt = true;
+                if (rge_process_fmtnlayers(fmt_nlayers, optarg)) return 1;
                 break;
             case 'n':
-                *nevn = atoi(optarg);
-                if (*nevn <= 0) return 2; // Check if nevn is valid.
+                if (rge_process_nentries(n_events, optarg)) return 1;
                 break;
             case 'w':
-                *work_dir = (char *) malloc(strlen(optarg) + 1);
+                *work_dir = static_cast<char *>(malloc(strlen(optarg) + 1));
                 strcpy(*work_dir, optarg);
                 break;
             case 'd':
-                *data_dir = (char *) malloc(strlen(optarg) + 1);
+                *data_dir = static_cast<char *>(malloc(strlen(optarg) + 1));
                 strcpy(*data_dir, optarg);
                 break;
             case 1:
-                *in_file = (char *) malloc(strlen(optarg) + 1);
-                strcpy(*in_file, optarg);
+                *filename_in = static_cast<char *>(malloc(strlen(optarg) + 1));
+                strcpy(*filename_in, optarg);
                 break;
             default:
-                return 3; // Bad usage of optional arguments.
+                rge_errno = RGEERR_BADOPTARGS;
+                return 1;
         }
     }
 
     // Define workdir if undefined.
-    // NOTE. We copy argv[0] because sprintf() writes over it.
-    char tmpfile[PATH_MAX];
-    sprintf(tmpfile, "%s", argv[0]);
+    char tmpfilename[PATH_MAX];
+    sprintf(tmpfilename, "%s", argv[0]);
     if (*work_dir == NULL) {
-        *work_dir = (char *) malloc(PATH_MAX);
+        *work_dir = static_cast<char *>(malloc(PATH_MAX));
         sprintf(*work_dir, "%s/../root_io", dirname(argv[0]));
     }
 
     // Define datadir if undefined.
     if (*data_dir == NULL) {
-        *data_dir = (char *) malloc(PATH_MAX);
-        sprintf(*data_dir, "%s/../data", dirname(tmpfile));
+        *data_dir = static_cast<char *>(malloc(PATH_MAX));
+        sprintf(*data_dir, "%s/../data", dirname(tmpfilename));
     }
 
     // Check positional argument.
-    if (*in_file == NULL) return 4;
-
-    int check = handle_root_filename(*in_file, run_no, beam_E);
-    if (check) return check + 4; // Shift errcode.
+    if (*filename_in == NULL) {
+        rge_errno = RGEERR_NOINPUTFILE;
+        return 1;
+    }
+    if (rge_handle_root_filename(*filename_in, run_no, energy_beam)) return 1;
 
     return 0;
 }
@@ -517,28 +541,33 @@ int handle_args(int argc, char **argv, char **in_file, char **work_dir,
 /** Entry point of the program. */
 int main(int argc, char **argv) {
     // Handle arguments.
-    char *in_file  = NULL;
-    char *work_dir = NULL;
-    char *data_dir = NULL;
-    bool debug     = false;
-    bool use_fmt   = false;
-    int nevn       = -1;
-    int run_no     = -1;
-    double beam_E  = -1;
+    char *filename_in  = NULL;
+    char *work_dir     = NULL;
+    char *data_dir     = NULL;
+    bool debug         = false;
+    lint fmt_nlayers   = 0;
+    lint n_events      = -1;
+    int run_no         = -1;
+    double energy_beam = -1;
 
-    int errcode = handle_args(argc, argv, &in_file, &work_dir, &data_dir,
-            &debug, &use_fmt, &nevn, &run_no, &beam_E);
+    int err = handle_args(
+            argc, argv, &filename_in, &work_dir, &data_dir, &debug,
+            &fmt_nlayers, &n_events, &run_no, &energy_beam
+    );
 
     // Run.
-    if (errcode == 0)
-        errcode = run(in_file, work_dir, data_dir, debug, use_fmt, nevn, run_no,
-                beam_E);
+    if (rge_errno == RGEERR_UNDEFINED && err == 0) {
+        run(
+                filename_in, work_dir, data_dir, debug, fmt_nlayers, n_events,
+                run_no, energy_beam
+        );
+    }
 
     // Free up memory.
-    if (in_file  != NULL) free(in_file);
-    if (work_dir != NULL) free(work_dir);
-    if (data_dir != NULL) free(data_dir);
+    if (filename_in != NULL) free(filename_in);
+    if (work_dir    != NULL) free(work_dir);
+    if (data_dir    != NULL) free(data_dir);
 
     // Return errcode.
-    return handle_err(errcode);
+    return rge_print_usage(USAGE_MESSAGE);
 }
