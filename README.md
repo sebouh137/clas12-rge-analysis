@@ -125,18 +125,11 @@ Keep in mind that opening any `TFile` will give you about 140 lines of memory ma
 Pull requests are welcome. For major changes, open an issue first to discuss the changes and figure out a work plan before putting serious work into them.
 
 **Pending tasks are**:
-- [x] Apply acceptance correction.
-- [x] Switch from atoi() to strto*() functions.
-- [x] Write a generic usage(const char *msg, int err) function.
 - [ ] Implement variable bin sizes for every variable and binning.
 - [ ] Include GitHub tests -- I've no clue on how to do this with ROOT + HIPO.
-- [x] Improve `bank_containers` to be more generic.
-- [x] Improve the use of constants thorough the code by using a map or a similar structure.
 - [ ] Apply radiative correction.
 - [ ] Apply Feynman cuts.
-- [x] Improve error code handling.
 - [ ] Improve sampling fraction handling.
-- [x] Improve simulation filename handling so that it can work with any beam energy -- at least up to [0.1*GeV].
 - [ ] Get beam energy from `RCDB` instead of hardcoding it -- check `get_beam_energy()` function from `file_handler.c`.
 
 ## License
