@@ -200,8 +200,8 @@ static int run(
             strncpy(sf2D_name_arr[cal_idx][sector_i], tmp_str, strlen(tmp_str));
             insert_TH2F(
                     &histos, CALNAME[ECAL_IDX],
-                    sf2D_name_arr[cal_idx][sector_i], R_P, R_EDIVP, 200, 0, 10,
-                    200, 0, 0.4
+                    sf2D_name_arr[cal_idx][sector_i], RGE_P.name, R_EDIVP,
+                    200, 0, 10, 200, 0, 0.4
             );
             sf_dotgraph[cal_idx][sector_i] = new TGraphErrors();
             sf_dotgraph[cal_idx][sector_i]->SetMarkerStyle(kFullCircle);

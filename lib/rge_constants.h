@@ -29,6 +29,13 @@ typedef long unsigned int luint;
 typedef long int lint;
 
 // --+ structs +----------------------------------------------------------------
+/**
+ * Struct containing the address in RGE_VARS and name of a variable.
+ * NOTE. This approach is error-prone and hard to work with -- I would prefer to
+ *     use an std::map<const char *, double, cmp_str>, but ROOT's dumb TNTuple
+ *     object constructor rules make this approach uglier in comparison.
+ *         -Bruno.
+ */
 typedef struct {
     int addr;
     const char *name;
@@ -58,89 +65,54 @@ typedef struct {
 extern const char *RGE_VARS[RGE_VARS_SIZE];
 
 // Metadata.
-#define R_RUNNO   "run_no"
-#define A_RUNNO   0
-#define R_EVENTNO "event_no"
-#define A_EVENTNO 1
-#define R_BEAME   "beam_energy"
-#define A_BEAME   2
+__extension__ const RGE_VAR RGE_RUNNO   = {.addr = 0, .name = "run_no"};
+__extension__ const RGE_VAR RGE_EVENTNO = {.addr = 1, .name = "event_no"};
+__extension__ const RGE_VAR RGE_BEAME   = {.addr = 2, .name = "beam_energy"};
 
 // Particle.
-#define R_PID    "pid"
-#define A_PID    3
-#define R_CHARGE "charge"
-#define A_CHARGE 4
-#define R_STATUS "status"
-#define A_STATUS 5
-#define R_MASS   "mass" // GeV.
-#define A_MASS   6
-#define R_VX     "vx" // cm.
-#define A_VX     7
-#define R_VY     "vy" // cm.
-#define A_VY     8
-#define R_VZ     "vz" // cm.
-#define A_VZ     9
-#define R_PX     "px" // GeV.
-#define A_PX     10
-#define R_PY     "py" // GeV.
-#define A_PY     11
-#define R_PZ     "pz" // GeV.
-#define A_PZ     12
-#define R_P      "p" // GeV.
-#define A_P      13
-#define R_THETA  "theta" // #degree.
-#define A_THETA  14
-#define R_PHI    "phi" // #degree.
-#define A_PHI    15
-#define R_BETA   "beta" // adimensional.
-#define A_BETA   16
+__extension__ const RGE_VAR RGE_PID    = {.addr =  3, .name = "pid"};
+__extension__ const RGE_VAR RGE_CHARGE = {.addr =  4, .name = "charge"};
+__extension__ const RGE_VAR RGE_STATUS = {.addr =  5, .name = "status"};
+__extension__ const RGE_VAR RGE_MASS   = {.addr =  6, .name = "mass"};
+__extension__ const RGE_VAR RGE_VX     = {.addr =  7, .name = "vx"};
+__extension__ const RGE_VAR RGE_VY     = {.addr =  8, .name = "vy"};
+__extension__ const RGE_VAR RGE_VZ     = {.addr =  9, .name = "vz"};
+__extension__ const RGE_VAR RGE_PX     = {.addr = 10, .name = "px"};
+__extension__ const RGE_VAR RGE_PY     = {.addr = 11, .name = "py"};
+__extension__ const RGE_VAR RGE_PZ     = {.addr = 12, .name = "px"};
+__extension__ const RGE_VAR RGE_P      = {.addr = 13, .name = "p"};
+__extension__ const RGE_VAR RGE_THETA  = {.addr = 14, .name = "theta"};
+__extension__ const RGE_VAR RGE_PHI    = {.addr = 15, .name = "phi"};
+__extension__ const RGE_VAR RGE_BETA   = {.addr = 16, .name = "beta"};
 
 // Tracking.
-#define R_CHI2   "chi2"
-#define A_CHI2   17
-#define R_NDF    "NDF"
-#define A_NDF    18
+__extension__ const RGE_VAR RGE_CHI2 = {.addr = 17, .name = "chi2"};
+__extension__ const RGE_VAR RGE_NDF  = {.addr = 18, .name = "NDF"};
 
 // Calorimeter.
-#define R_PCAL_E "e_pcal" // GeV.
-#define A_PCAL_E 19
-#define R_ECIN_E "e_ecin" // GeV.
-#define A_ECIN_E 20
-#define R_ECOU_E "e_ecou" // GeV.
-#define A_ECOU_E 21
-#define R_TOT_E  "e_total" // GeV.
-#define A_TOT_E  22
+__extension__ const RGE_VAR RGE_PCALE = {.addr = 19, .name = "e_pcal"};
+__extension__ const RGE_VAR RGE_ECINE = {.addr = 20, .name = "e_ecin"};
+__extension__ const RGE_VAR RGE_ECOUE = {.addr = 21, .name = "e_ecou"};
+__extension__ const RGE_VAR RGE_TOTE  = {.addr = 22, .name = "e_total"};
 
 // Scintillator.
-#define R_DTOF "dtof" // ns.
-#define A_DTOF 23
+__extension__ const RGE_VAR RGE_DTOF = {.addr = 23, .name = "dtof"};
 
 // Cherenkov.
-#define R_NPHELTCC "nphe_ltcc"
-#define A_NPHELTCC 24
-#define R_NPHEHTCC "nphe_htcc"
-#define A_NPHEHTCC 25
+__extension__ const RGE_VAR RGE_NPHELTCC = {.addr = 24, .name = "nphe_ltcc"};
+__extension__ const RGE_VAR RGE_NPHEHTCC = {.addr = 25, .name = "nphe_htcc"};
 
 // DIS.
-#define R_Q2 "q2" // GeV^2.
-#define A_Q2 26
-#define R_NU "nu" // GeV.
-#define A_NU 27
-#define R_XB "x_bjorken" // adimensional.
-#define A_XB 28
-#define R_W2 "w2" // GeV^2.
-#define A_W2 29
+__extension__ const RGE_VAR RGE_Q2 = {.addr = 26, .name = "q2"};
+__extension__ const RGE_VAR RGE_NU = {.addr = 27, .name = "nu"};
+__extension__ const RGE_VAR RGE_XB = {.addr = 28, .name = "x_bjorken"};
+__extension__ const RGE_VAR RGE_W2 = {.addr = 29, .name = "w2"};
 
 // SIDIS.
-#define R_ZH      "zh" // adimensional.
-#define A_ZH       30
-#define R_PT2     "pt2" // GeV^2.
-#define A_PT2      31
-#define R_PL2     "pl2" // GeV^2.
-#define A_PL2      32
-#define R_PHIPQ   "phipq" // radians.
-#define A_PHIPQ    33
-#define R_THETAPQ "thetapq" // radians.
-#define A_THETAPQ  34
+__extension__ const RGE_VAR RGE_ZH      = {.addr = 30, .name = "zh"};
+__extension__ const RGE_VAR RGE_PT2     = {.addr = 31, .name = "pt2"};
+__extension__ const RGE_VAR RGE_PL2     = {.addr = 32, .name = "pl2"};
+__extension__ const RGE_VAR RGE_PHIPQ   = {.addr = 33, .name = "phi_pq"};
+__extension__ const RGE_VAR RGE_THETAPQ = {.addr = 34, .name = "theta_pq"};
 
 #endif

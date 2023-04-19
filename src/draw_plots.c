@@ -63,7 +63,7 @@ static const char *RAN_LIST[2] = {"lower", "upper"};
 /** List of DIS variables. */
 #define DIS_LIST_SIZE 4
 static const char *DIS_LIST[DIS_LIST_SIZE] = {
-        R_Q2, R_NU, R_XB, R_W2
+        RGE_Q2.name, RGE_NU.name, RGE_XB.name, RGE_W2.name
 };
 
 /** "Standard" plots data. */
@@ -74,9 +74,12 @@ static const int STD_PX[STDPLT_LIST_SIZE] = {
         0, 0, 1
 };
 static const int STD_VX[STDPLT_LIST_SIZE][2] = {
-        {A_P,   A_BETA}, {A_P,  A_DTOF}, {A_P,   A_TOT_E}, {A_Q2,    -1},
-        {A_NU,  -1},     {A_ZH, -1},     {A_PT2, -1},      {A_PHIPQ, -1},
-        {A_XB,  -1},     {A_W2, -1},     {A_Q2,  A_NU}
+        {RGE_P.addr,   RGE_BETA.addr}, {RGE_P.addr,     RGE_DTOF.addr},
+        {RGE_P.addr,   RGE_TOTE.addr}, {RGE_Q2.addr,    -1},
+        {RGE_NU.addr,  -1},            {RGE_ZH.addr,    -1},
+        {RGE_PT2.addr, -1},            {RGE_PHIPQ.addr, -1},
+        {RGE_XB.addr,  -1},            {RGE_W2.addr,    -1},
+        {RGE_Q2.addr,  RGE_NU.addr}
 };
 static const double STD_RX[STDPLT_LIST_SIZE][2][2] = {
         {{ 0,10},{ 0, 1}}, {{ 0,10},{ 0,20}}, {{ 0,10},{ 0, 3}},
@@ -97,7 +100,8 @@ static const int ACC_PX[ACCPLT_LIST_SIZE] = {
         0, 0, 0, 0, 0
 };
 static const int ACC_VX[ACCPLT_LIST_SIZE][2] = {
-        {A_Q2,-1}, {A_NU,-1}, {A_ZH,-1}, {A_PT2,-1}, {A_PHIPQ,-1}
+        {RGE_Q2.addr,-1}, {RGE_NU.addr,-1}, {RGE_ZH.addr,-1}, {RGE_PT2.addr,-1},
+        {RGE_PHIPQ.addr,-1}
 };
 
 /**
@@ -570,8 +574,8 @@ static int run(
     for (lint entry = 0; entry < nentries; ++entry) {
         rge_pbar_update(entry);
         ntuple->GetEntry(entry);
-        if (vars[A_EVENTNO] > nevents) {
-            nevents = static_cast<luint>(vars[A_EVENTNO]+0.5);
+        if (vars[RGE_EVENTNO.addr] > nevents) {
+            nevents = static_cast<luint>(vars[RGE_EVENTNO.addr]+0.5);
         }
     }
 
@@ -596,22 +600,22 @@ static int run(
         rge_pbar_update(entry);
 
         ntuple->GetEntry(entry);
-        if (vars[A_EVENTNO] != current_evn) {
-            current_evn = vars[A_EVENTNO];
-            valid_event[static_cast<luint>(vars[A_EVENTNO]+0.5)] = false;
+        if (vars[RGE_EVENTNO.addr] != current_evn) {
+            current_evn = vars[RGE_EVENTNO.addr];
+            valid_event[static_cast<luint>(vars[RGE_EVENTNO.addr]+0.5)] = false;
             no_tre_pass = false;
             Q2_pass     = true;
             W2_pass     = true;
             zh_pass     = true;
         }
 
-        if (vars[A_PID] != 11 || vars[A_STATUS] > 0) continue;
+        if (vars[RGE_PID.addr] != 11 || vars[RGE_STATUS.addr] > 0) continue;
         no_tre_pass = true;
-        Q2_pass = vars[A_Q2] >= RGE_Q2CUT;
-        W2_pass = vars[A_W2] >= RGE_W2CUT;
-        // zh_pass = vars[A_ZH] <= RGE_ZHCUT;
+        Q2_pass = vars[RGE_Q2.addr] >= RGE_Q2CUT;
+        W2_pass = vars[RGE_W2.addr] >= RGE_W2CUT;
+        // zh_pass = vars[RGE_ZH.addr] <= RGE_ZHCUT;
 
-        valid_event[static_cast<luint>(vars[A_EVENTNO]+0.5)] =
+        valid_event[static_cast<luint>(vars[RGE_EVENTNO.addr]+0.5)] =
                 no_tre_pass && Q2_pass && W2_pass && zh_pass;
     }
 
@@ -667,42 +671,56 @@ static int run(
 
         // Apply particle cuts.
         if (plot_charge != INT_MAX) {
-            if (plot_charge ==  1 && !(vars[A_CHARGE] >  0)) continue;
-            if (plot_charge ==  0 && !(vars[A_CHARGE] == 0)) continue;
-            if (plot_charge == -1 && !(vars[A_CHARGE] <  0)) continue;
+            if (plot_charge ==  1 && !(vars[RGE_CHARGE.addr] >  0)) continue;
+            if (plot_charge ==  0 && !(vars[RGE_CHARGE.addr] == 0)) continue;
+            if (plot_charge == -1 && !(vars[RGE_CHARGE.addr] <  0)) continue;
         }
-        if (plot_pid != INT_MAX && vars[A_PID] != plot_pid) continue;
+        if (plot_pid != INT_MAX && vars[RGE_PID.addr] != plot_pid) continue;
 
         // Apply geometry cuts.
         if (geometry_cuts) {
-            if (rge_calc_magnitude(vars[A_VX], vars[A_VY]) > RGE_VXVYCUT)
+            if (
+                    rge_calc_magnitude(vars[RGE_VX.addr], vars[RGE_VY.addr]) >
+                    RGE_VXVYCUT
+            ) {
                 continue;
-            if (RGE_VZLOWCUT > vars[A_VZ] || vars[A_VZ] > RGE_VZHIGHCUT)
+            }
+            if (
+                    RGE_VZLOWCUT > vars[RGE_VZ.addr] ||
+                    vars[RGE_VZ.addr] > RGE_VZHIGHCUT
+            ) {
                 continue;
+            }
         }
 
         // Apply miscellaneous cuts.
         if (general_cuts) {
             // Non-identified particle.
-            if (-0.5 < vars[A_PID] && vars[A_PID] <  0.5) continue;
+            if (-0.5 < vars[RGE_PID.addr] && vars[RGE_PID.addr] <  0.5)
+                continue;
             // Non-identified particle.
-            if (44.5 < vars[A_PID] && vars[A_PID] < 45.5) continue;
+            if (44.5 < vars[RGE_PID.addr] && vars[RGE_PID.addr] < 45.5)
+                continue;
             // Ignore tracks with high chi2.
-            if (vars[A_CHI2]/vars[A_NDF] >= RGE_CHI2NDFCUT) continue;
+            if (vars[RGE_CHI2.addr]/vars[RGE_NDF.addr] >= RGE_CHI2NDFCUT)
+                continue;
         }
 
         // Apply DIS cuts.
         if (
                 dis_cuts &&
-                !valid_event[static_cast<int>(vars[A_EVENTNO]+0.5)]
+                !valid_event[static_cast<int>(vars[RGE_EVENTNO.addr]+0.5)]
         ) {
             continue;
         }
 
         // Remove DIS vars = 0.
         if (
-                vars[A_Q2] == 0 || vars[A_NU] == 0 || vars[A_ZH] == 0 ||
-                vars[A_PT2] == 0 || vars[A_PHIPQ] == 0
+                vars[RGE_Q2.addr]    == 0 ||
+                vars[RGE_NU.addr]    == 0 ||
+                vars[RGE_ZH.addr]    == 0 ||
+                vars[RGE_PT2.addr]   == 0 ||
+                vars[RGE_PHIPQ.addr] == 0
         ) {
             continue;
         }

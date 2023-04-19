@@ -91,6 +91,7 @@ static int count_entries(
     //       ridiculously large, and I'd rather have my memory contiguous than
     //       keeping a 5D array of non-contiguous pointers or -- even worse --
     //       C++ vectors.
+    //          -Bruno
     __extension__ int evn_cnt[nbins[0]][nbins[1]][nbins[2]][nbins[3]][nbins[4]];
     int *iterator = &evn_cnt[0][0][0][0][0];
     for (luint bin_i = 0; bin_i < total_nbins; ++bin_i) {
@@ -100,12 +101,12 @@ static int count_entries(
 
     Float_t s_pid, s_W, s_W2;
     Float_t s_bin[5] = {0, 0, 0, 0, 0};
-    tree->SetBranchAddress(R_PID,   &s_pid);
-    tree->SetBranchAddress(R_Q2,    &(s_bin[0]));
-    tree->SetBranchAddress(R_NU,    &(s_bin[1]));
-    tree->SetBranchAddress(R_ZH,    &(s_bin[2]));
-    tree->SetBranchAddress(R_PT2,   &(s_bin[3]));
-    tree->SetBranchAddress(R_PHIPQ, &(s_bin[4]));
+    tree->SetBranchAddress(RGE_PID.name,   &s_pid);
+    tree->SetBranchAddress(RGE_Q2.name,    &(s_bin[0]));
+    tree->SetBranchAddress(RGE_NU.name,    &(s_bin[1]));
+    tree->SetBranchAddress(RGE_ZH.name,    &(s_bin[2]));
+    tree->SetBranchAddress(RGE_PT2.name,   &(s_bin[3]));
+    tree->SetBranchAddress(RGE_PHIPQ.name, &(s_bin[4]));
     if (!simul) tree->SetBranchAddress("W",  &s_W);
     if (simul)  tree->SetBranchAddress("W2", &s_W2);
 
@@ -210,7 +211,7 @@ static int run(
     Float_t s_pid;
     double pidlist[256];
     int pidlist_size = 0;
-    thrown->SetBranchAddress(R_PID, &s_pid);
+    thrown->SetBranchAddress(RGE_PID.name, &s_pid);
 
     for (int evn = 0; evn < thrown->GetEntries(); ++evn) {
         thrown->GetEntry(evn);

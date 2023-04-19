@@ -17,13 +17,16 @@
 
 // --+ library +----------------------------------------------------------------
 const char *RGE_VARS[RGE_VARS_SIZE] = {
-        R_RUNNO, R_EVENTNO, R_BEAME,
-        R_PID, R_STATUS, R_CHARGE, R_MASS, R_VX, R_VY, R_VZ, R_PX, R_PY, R_PZ,
-                R_P, R_THETA, R_PHI, R_BETA,
-        R_CHI2, R_NDF,
-        R_PCAL_E, R_ECIN_E, R_ECOU_E, R_TOT_E,
-        R_DTOF,
-        R_NPHELTCC, R_NPHEHTCC,
-        R_Q2, R_NU, R_XB, R_W2,
-        R_ZH, R_PT2, R_PL2, R_PHIPQ, R_THETAPQ
+        RGE_RUNNO.name, RGE_EVENTNO.name, RGE_BEAME.name,
+        RGE_PID.name, RGE_STATUS.name, RGE_CHARGE.name, RGE_MASS.name,
+                RGE_VX.name, RGE_VY.name, RGE_VZ.name, RGE_PX.name, RGE_PY.name,
+                RGE_PZ.name, RGE_P.name, RGE_THETA.name, RGE_PHI.name,
+                RGE_BETA.name,
+        RGE_CHI2.name, RGE_NDF.name,
+        RGE_PCALE.name, RGE_ECINE.name, RGE_ECOUE.name, RGE_TOTE.name,
+        RGE_DTOF.name,
+        RGE_NPHELTCC.name, RGE_NPHEHTCC.name,
+        RGE_Q2.name, RGE_NU.name, RGE_XB.name, RGE_W2.name,
+        RGE_ZH.name, RGE_PT2.name, RGE_PL2.name, RGE_PHIPQ.name,
+                RGE_THETAPQ.name
 };

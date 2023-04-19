@@ -291,56 +291,56 @@ int rge_fill_ntuples_arr(
         int nphe_htcc
 ) {
     // Metadata.
-    arr[A_RUNNO]   = static_cast<Float_t>(run_no);
-    arr[A_EVENTNO] = static_cast<Float_t>(evn);
-    arr[A_BEAME]   = beam_E;
+    arr[RGE_RUNNO.addr]   = static_cast<Float_t>(run_no);
+    arr[RGE_EVENTNO.addr] = static_cast<Float_t>(evn);
+    arr[RGE_BEAME.addr]   = beam_E;
 
     // Particle.
-    arr[A_PID]    = static_cast<Float_t>(p.pid);
-    arr[A_CHARGE] = p.charge;
-    arr[A_STATUS] = static_cast<Float_t>(status);
-    arr[A_MASS]   = p.mass;
-    arr[A_VX]     = p.vx;
-    arr[A_VY]     = p.vy;
-    arr[A_VZ]     = p.vz;
-    arr[A_PX]     = p.px;
-    arr[A_PY]     = p.py;
-    arr[A_PZ]     = p.pz;
-    arr[A_P]      = momentum(p);
-    arr[A_THETA]  = theta_lab(p);
-    arr[A_PHI]    = phi_lab(p);
-    arr[A_BETA]   = p.beta;
+    arr[RGE_PID.addr]    = static_cast<Float_t>(p.pid);
+    arr[RGE_CHARGE.addr] = p.charge;
+    arr[RGE_STATUS.addr] = static_cast<Float_t>(status);
+    arr[RGE_MASS.addr]   = p.mass;
+    arr[RGE_VX.addr]     = p.vx;
+    arr[RGE_VY.addr]     = p.vy;
+    arr[RGE_VZ.addr]     = p.vz;
+    arr[RGE_PX.addr]     = p.px;
+    arr[RGE_PY.addr]     = p.py;
+    arr[RGE_PZ.addr]     = p.pz;
+    arr[RGE_P.addr]      = momentum(p);
+    arr[RGE_THETA.addr]  = theta_lab(p);
+    arr[RGE_PHI.addr]    = phi_lab(p);
+    arr[RGE_BETA.addr]   = p.beta;
 
     // Tracking.
-    arr[A_CHI2] = chi2;
-    arr[A_NDF]  = ndf;
+    arr[RGE_CHI2.addr] = chi2;
+    arr[RGE_NDF.addr]  = ndf;
 
     // Calorimeter.
-    arr[A_PCAL_E] = pcal_energy;
-    arr[A_ECIN_E] = ecin_E;
-    arr[A_ECOU_E] = ecou_E;
-    arr[A_TOT_E]  = pcal_energy + ecin_E + ecou_E;
+    arr[RGE_PCALE.addr] = pcal_energy;
+    arr[RGE_ECINE.addr] = ecin_E;
+    arr[RGE_ECOUE.addr] = ecou_E;
+    arr[RGE_TOTE.addr]  = pcal_energy + ecin_E + ecou_E;
 
     // Scintillator.
-    arr[A_DTOF] = tof - tre_tof;
+    arr[RGE_DTOF.addr] = tof - tre_tof;
 
     // Cherenkov.
-    arr[A_NPHELTCC] = nphe_ltcc;
-    arr[A_NPHEHTCC] = nphe_htcc;
+    arr[RGE_NPHELTCC.addr] = nphe_ltcc;
+    arr[RGE_NPHEHTCC.addr] = nphe_htcc;
 
     // DIS -- For hadrons, just use e- data.
-    arr[A_Q2] = Q2(e, beam_E);
-    arr[A_NU] = nu(e, beam_E);
-    arr[A_XB] = Xb(e, beam_E);
-    arr[A_W2] = W2(e, beam_E);
+    arr[RGE_Q2.addr] = Q2(e, beam_E);
+    arr[RGE_NU.addr] = nu(e, beam_E);
+    arr[RGE_XB.addr] = Xb(e, beam_E);
+    arr[RGE_W2.addr] = W2(e, beam_E);
     if (rge_errno == RGEERR_PIDNOTFOUND) return 1;
 
     // SIDIS -- if p is trigger electron, all will be 0 by default.
-    arr[A_ZH]      = zh(p, e, beam_E);
-    arr[A_PT2]     = Pt2(p, e, beam_E);
-    arr[A_PL2]     = Pl2(p, e, beam_E);
-    arr[A_PHIPQ]   = phi_pq(p, e, beam_E);
-    arr[A_THETAPQ] = theta_pq(p, e, beam_E);
+    arr[RGE_ZH.addr]      = zh(p, e, beam_E);
+    arr[RGE_PT2.addr]     = Pt2(p, e, beam_E);
+    arr[RGE_PL2.addr]     = Pl2(p, e, beam_E);
+    arr[RGE_PHIPQ.addr]   = phi_pq(p, e, beam_E);
+    arr[RGE_THETAPQ.addr] = theta_pq(p, e, beam_E);
 
     return 0;
 }
