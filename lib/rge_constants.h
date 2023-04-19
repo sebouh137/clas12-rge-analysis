@@ -28,11 +28,34 @@ typedef unsigned int uint;
 typedef long unsigned int luint;
 typedef long int lint;
 
-// --+ internal +---------------------------------------------------------------
+// --+ structs +----------------------------------------------------------------
+typedef struct {
+    int addr;
+    const char *name;
+} RGE_VAR;
+
 // --+ library +----------------------------------------------------------------
-// All variables.
-#define VAR_LIST_SIZE 35
-extern const char *VAR_LIST[VAR_LIST_SIZE];
+/** Data tree name used by various programs. */
+#define RGE_TREENAMEDATA "data"
+
+/** Detector constants. */
+#define RGE_NSECTORS     6 /** # of CLAS12 sectors. */
+#define RGE_NSFPARAMS    4 /** # of sampling fraction parameters. */
+
+/** Cuts (geometric, fiducial, SIDIS, etc). */
+#define RGE_Q2CUT        1.   /** Q2 of particle must be over this value. */
+#define RGE_WCUT         2.   /** W of particle must be over this value. */
+#define RGE_W2CUT        4.   /** W2 of particle must be over this value. */
+#define RGE_ZHCUT        1.   /** zh of particle must be below this value. */
+#define RGE_YBCUT        0.85 /** Yb of particle must be below this value. */
+#define RGE_CHI2NDFCUT  15    /** Chi2/NDF must be below this value. */
+#define RGE_VXVYCUT      4    /** sqrt(vx^2 + vy^2) must be below this value. */
+#define RGE_VZLOWCUT   -40    /** vz must be above this value. */
+#define RGE_VZHIGHCUT   40    /** vz must be below this. */
+
+/** Variable array data. */
+#define RGE_VARS_SIZE 35
+extern const char *RGE_VARS[RGE_VARS_SIZE];
 
 // Metadata.
 #define R_RUNNO   "run_no"
@@ -99,9 +122,6 @@ extern const char *VAR_LIST[VAR_LIST_SIZE];
 #define A_NPHEHTCC 25
 
 // DIS.
-#define DIS_LIST_SIZE 4
-extern const char *DIS_LIST[DIS_LIST_SIZE];
-
 #define R_Q2 "q2" // GeV^2.
 #define A_Q2 26
 #define R_NU "nu" // GeV.
@@ -122,23 +142,5 @@ extern const char *DIS_LIST[DIS_LIST_SIZE];
 #define A_PHIPQ    33
 #define R_THETAPQ "thetapq" // radians.
 #define A_THETAPQ  34
-
-/** Data tree name used by various programs. */
-#define RGE_TREENAMEDATA "data"
-
-/** Detector constants. */
-#define RGE_NSECTORS     6 /** # of CLAS12 sectors. */
-#define RGE_NSFPARAMS    4 /** # of sampling fraction parameters. */
-
-/** Cuts (geometric, fiducial, SIDIS, etc). */
-#define RGE_Q2CUT        1.   /** Q2 of particle must be over this value. */
-#define RGE_WCUT         2.   /** W of particle must be over this value. */
-#define RGE_W2CUT        4.   /** W2 of particle must be over this value. */
-#define RGE_ZHCUT        1.   /** zh of particle must be below this value. */
-#define RGE_YBCUT        0.85 /** Yb of particle must be below this value. */
-#define RGE_CHI2NDFCUT  15    /** Chi2/NDF must be below this value. */
-#define RGE_VXVYCUT      4    /** sqrt(vx^2 + vy^2) must be below this value. */
-#define RGE_VZLOWCUT   -40    /** vz must be above this value. */
-#define RGE_VZHIGHCUT   40    /** vz must be below this. */
 
 #endif

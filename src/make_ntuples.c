@@ -255,9 +255,9 @@ static int run(
 
     // Generate lists of variables.
     TString vars_string("");
-    for (int var_i = 0; var_i < VAR_LIST_SIZE; ++var_i) {
-        vars_string.Append(Form("%s", VAR_LIST[var_i]));
-        if (var_i != VAR_LIST_SIZE-1) vars_string.Append(":");
+    for (int var_i = 0; var_i < RGE_VARS_SIZE; ++var_i) {
+        vars_string.Append(Form("%s", RGE_VARS[var_i]));
+        if (var_i != RGE_VARS_SIZE-1) vars_string.Append(":");
     }
 
     // Create TTree and TNTuples.
@@ -356,7 +356,7 @@ static int run(
             if (!part_trigger.is_trigger_electron) continue;
 
             // Fill TNtuple with trigger electron information.
-            Float_t arr[VAR_LIST_SIZE];
+            Float_t arr[RGE_VARS_SIZE];
             if (rge_fill_ntuples_arr(
                     arr, part_trigger, part_trigger, run_no, event, status,
                     energy_beam, chi2, ndf, energy_PCAL, energy_ECIN,
@@ -422,8 +422,8 @@ static int run(
             )) return 1;
 
             // Fill TNtuples.
-            // NOTE. If adding new variables, check their order in VAR_LIST.
-            Float_t arr[VAR_LIST_SIZE];
+            // NOTE. If adding new variables, check their order in RGE_VARS.
+            Float_t arr[RGE_VARS_SIZE];
             if (rge_fill_ntuples_arr(
                     arr, part, part_trigger, run_no, event, status, energy_beam,
                     chi2, ndf, energy_PCAL, energy_ECIN, energy_ECOU, tof,

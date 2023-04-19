@@ -60,6 +60,12 @@ static const char *PLT_LIST[2] = {"1d", "2d"};
 static const char *DIM_LIST[2] = {"x", "y"};
 static const char *RAN_LIST[2] = {"lower", "upper"};
 
+/** List of DIS variables. */
+#define DIS_LIST_SIZE 4
+static const char *DIS_LIST[DIS_LIST_SIZE] = {
+        R_Q2, R_NU, R_XB, R_W2
+};
+
 /** "Standard" plots data. */
 #define STDPLT_LIST_SIZE 11
 static const int STD_PX[STDPLT_LIST_SIZE] = {
@@ -142,14 +148,14 @@ static int create_plots(
     if (depth == dim_bins) {
         // Create plot and increase index.
         if (plot_type == 0) {
-            plot_arr[*idx] = new TH1F(*plot_title,
-                    Form("%s;%s", plot_title->Data(), x_var),
+            plot_arr[*idx] = new TH1F(
+                    *plot_title, Form("%s;%s", plot_title->Data(), x_var),
                     plot_nbins[0], plot_range[0][0], plot_range[0][1]
             );
-
         }
         if (plot_type == 1) {
-            plot_arr[*idx] = new TH2F(*plot_title,
+            plot_arr[*idx] = new TH2F(
+                    *plot_title,
                     Form("%s;%s;%s", plot_title->Data(), x_var, y_var),
                     plot_nbins[0], plot_range[0][0], plot_range[0][1],
                     plot_nbins[1], plot_range[1][0], plot_range[1][1]
@@ -166,7 +172,7 @@ static int create_plots(
 
         // Append bin limits to title.
         TString name_cpy = plot_title->Copy();
-        name_cpy.Append(Form(" (%s: %6.2f, %6.2f)", VAR_LIST[bin_vars[depth]],
+        name_cpy.Append(Form(" (%s: %6.2f, %6.2f)", RGE_VARS[bin_vars[depth]],
                              b_low, b_high));
 
         // Continue down the recursive line...
@@ -190,14 +196,14 @@ static int create_acc_corr_plots(
     if (depth == dim_bins) {
         // Create plot and increase index.
         if (plot_type == 0) {
-            plot_arr[*idx] = new TH1F(*plot_title,
-                    Form("%s;%s", plot_title->Data(), x_var),
+            plot_arr[*idx] = new TH1F(
+                    *plot_title, Form("%s;%s", plot_title->Data(), x_var),
                     plot_nbins-1, plot_edges
             );
         }
         if (plot_type == 1) {
             rge_errno = RGEERR_2DACCEPTANCEPLOT;
-            return 1; // NOTE. Feature not available yet.
+            return 1; // NOTE. Feature not available.
         }
         ++(*idx);
         return 0;
@@ -210,7 +216,7 @@ static int create_acc_corr_plots(
 
         // Append bin limits to title.
         TString name_cpy = plot_title->Copy();
-        name_cpy.Append(Form(" (%s: %6.2f, %6.2f)", VAR_LIST[bin_vars[depth]],
+        name_cpy.Append(Form(" (%s: %6.2f, %6.2f)", RGE_VARS[bin_vars[depth]],
                              b_low, b_high));
 
         // Continue down the recursive line...
@@ -273,7 +279,7 @@ static int find_bin(
 
     // Append dir to title.
     plot_title->Append(Form(
-            "%s (%6.2f, %6.2f)/", VAR_LIST[vars[depth]], low, high
+            "%s (%6.2f, %6.2f)/", RGE_VARS[vars[depth]], low, high
     ));
 
     return find_bin(
@@ -416,7 +422,6 @@ static int run(
     // TODO. Apply custom cuts.
 
     // === SETUP BINNING =======================================================
-
     // TODO. If acc_plot == true, limit binning in Q2, nu, z_h, Pt2, and
     //       phi_PQ to acceptance correction bins.
     // TODO. Change bin_range to bin_edges for variable bin sizes.
@@ -429,12 +434,15 @@ static int run(
     __extension__ luint bin_nbins[dim_bins];
     for (luint bin_dim_i = 0; bin_dim_i < dim_bins; ++bin_dim_i) {
         // variable.
-        printf("\nDefine var for bin in dimension %ld. Available vars:\n[",
-                bin_dim_i);
-        for (int var_i = 0; var_i < VAR_LIST_SIZE; ++var_i)
-            printf("%s, ", VAR_LIST[var_i]);
+        printf(
+                "\nDefine var for bin in dimension %ld. Available vars:\n[",
+                bin_dim_i
+        );
+
+        for (int var_i = 0; var_i < RGE_VARS_SIZE; ++var_i)
+            printf("%s, ", RGE_VARS[var_i]);
         printf("\b\b]\n");
-        bin_vars[bin_dim_i] = rge_catch_string(VAR_LIST, VAR_LIST_SIZE);
+        bin_vars[bin_dim_i] = rge_catch_string(RGE_VARS, RGE_VARS_SIZE);
 
         // range.
         for (int range_i = 0; range_i < 2; ++range_i) {
@@ -444,8 +452,9 @@ static int run(
         }
 
         // nbins.
-        printf("\nDefine number of bins for bin in dimension %ld:\n",
-                bin_dim_i);
+        printf(
+                "\nDefine number of bins for bin in dimension %ld:\n", bin_dim_i
+        );
         bin_nbins[bin_dim_i] = static_cast<luint>(rge_catch_long());
 
         // binning bin size.
@@ -492,13 +501,15 @@ static int run(
 
         for (int dim_i = 0; dim_i < plot_type[plot_i]+1; ++dim_i) {
             // Check variable(s) to be plotted.
-            printf("\nDefine var to be plotted on the %s axis. Available "
-                   "vars:\n[", DIM_LIST[dim_i]);
-            for (int var_i = 0; var_i < VAR_LIST_SIZE; ++var_i)
-                printf("%s, ", VAR_LIST[var_i]);
+            printf(
+                    "\nDefine var to be plotted on the %s axis. Available "
+                    "vars:\n[", DIM_LIST[dim_i]
+            );
+            for (int var_i = 0; var_i < RGE_VARS_SIZE; ++var_i)
+                printf("%s, ", RGE_VARS[var_i]);
             printf("\b\b]\n");
             plot_vars[plot_i][dim_i] =
-                    rge_catch_string(VAR_LIST, VAR_LIST_SIZE);
+                    rge_catch_string(RGE_VARS, RGE_VARS_SIZE);
 
             // Define ranges.
             for (int range_i = 0; range_i < 2; ++range_i) {
@@ -536,9 +547,9 @@ static int run(
         return 1;
     }
 
-    Float_t vars[VAR_LIST_SIZE];
-    for (int var_i = 0; var_i < VAR_LIST_SIZE; ++var_i) {
-        ntuple->SetBranchAddress(VAR_LIST[var_i], &vars[var_i]);
+    Float_t vars[RGE_VARS_SIZE];
+    for (int var_i = 0; var_i < RGE_VARS_SIZE; ++var_i) {
+        ntuple->SetBranchAddress(RGE_VARS[var_i], &vars[var_i]);
     }
 
     // === APPLY CUTS ==========================================================
@@ -548,8 +559,6 @@ static int run(
     if (nentries == -1 || nentries > ntuple->GetEntries()) {
         nentries = ntuple->GetEntries();
     }
-    int divcntr     = 0;
-    int evnsplitter = 0;
 
     // Apply SIDIS cuts, checking which event numbers should be skipped.
     luint nevents = 0;
@@ -568,9 +577,6 @@ static int run(
 
     // Apply previously setup cuts.
     if (dis_cuts) printf("Applying cuts...\n");
-    divcntr     = 0;
-    evnsplitter = 0;
-
     bool *valid_event = static_cast<bool *>(malloc(nevents * sizeof(bool)));
     Float_t current_evn = -1;
     bool no_tre_pass, Q2_pass, W2_pass, zh_pass;
@@ -592,8 +598,7 @@ static int run(
         ntuple->GetEntry(entry);
         if (vars[A_EVENTNO] != current_evn) {
             current_evn = vars[A_EVENTNO];
-            valid_event[static_cast<luint>(vars[A_EVENTNO]+0.5)] =
-                    false;
+            valid_event[static_cast<luint>(vars[A_EVENTNO]+0.5)] = false;
             no_tre_pass = false;
             Q2_pass     = true;
             W2_pass     = true;
@@ -622,39 +627,36 @@ static int run(
         TString plot_title;
         int idx = 0;
         if (acc_plot) { // Acceptance corrected plots have variable bin sizes.
-            plot_title = Form("%s", VAR_LIST[plot_vars[plot_i][0]]);
+            plot_title = Form("%s", RGE_VARS[plot_vars[plot_i][0]]);
             create_acc_corr_plots(
                     plot_arr[plot_i], dim_bins, &idx, 0, &plot_title,
-                    VAR_LIST[plot_vars[plot_i][0]], "",
+                    RGE_VARS[plot_vars[plot_i][0]], "",
                     plot_type[plot_i], acc_nedges[plot_i], acc_edges[plot_i],
                     bin_vars, bin_nbins, bin_range, bin_binsize
             );
             continue;
         }
         if (plot_type[plot_i] == 0) { // 1D plot.
-            plot_title = Form("%s", VAR_LIST[plot_vars[plot_i][0]]);
+            plot_title = Form("%s", RGE_VARS[plot_vars[plot_i][0]]);
             create_plots(
                     plot_arr[plot_i], dim_bins, &idx, 0, &plot_title,
-                    VAR_LIST[plot_vars[plot_i][0]], "",
+                    RGE_VARS[plot_vars[plot_i][0]], "",
                     plot_type[plot_i], plot_nbins[plot_i], plot_range[plot_i],
                     bin_vars, bin_nbins, bin_range, bin_binsize
             );
         }
         if (plot_type[plot_i] == 1) { // 2D plot.
-            plot_title = Form("%s vs %s", VAR_LIST[plot_vars[plot_i][0]],
-                    VAR_LIST[plot_vars[plot_i][1]]);
+            plot_title = Form("%s vs %s", RGE_VARS[plot_vars[plot_i][0]],
+                    RGE_VARS[plot_vars[plot_i][1]]);
             create_plots(
                     plot_arr[plot_i], dim_bins, &idx, 0, &plot_title,
-                    VAR_LIST[plot_vars[plot_i][0]],
-                    VAR_LIST[plot_vars[plot_i][1]],
+                    RGE_VARS[plot_vars[plot_i][0]],
+                    RGE_VARS[plot_vars[plot_i][1]],
                     plot_type[plot_i], plot_nbins[plot_i], plot_range[plot_i],
                     bin_vars, bin_nbins, bin_range, bin_binsize
             );
         }
     }
-
-    divcntr     = 0;
-    evnsplitter = 0;
 
     // Run through events.
     printf("Processing plots...\n");
@@ -716,10 +718,12 @@ static int run(
             // SIDIS variables only make sense for some particles.
             bool sidis_pass = true;
             for (int dim_i = 0; dim_i < plot_type[plot_i]+1; ++dim_i) {
+                const char **plot_var = &RGE_VARS[plot_vars[plot_i][dim_i]];
                 for (int list_i = 0; list_i < DIS_LIST_SIZE; ++list_i) {
-                    if (!strcmp(VAR_LIST[plot_vars[plot_i][dim_i]],
-                            DIS_LIST[list_i]) &&
-                            vars[plot_vars[plot_i][dim_i]] < 1e-9) {
+                    if (
+                            !strcmp(*plot_var, DIS_LIST[list_i]) &&
+                            vars[plot_vars[plot_i][dim_i]] < 1e-9
+                    ) {
                         sidis_pass = false;
                     }
                 }

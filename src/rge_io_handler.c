@@ -147,7 +147,7 @@ double rge_catch_double() {
 }
 
 int rge_catch_string(const char *arr[], int size) {
-    double x;
+    int x;
     while (true) {
         char str[32];
         printf(">>> ");

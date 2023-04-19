@@ -16,7 +16,7 @@
 #include "../lib/rge_constants.h"
 
 // --+ library +----------------------------------------------------------------
-const char *VAR_LIST[VAR_LIST_SIZE] = {
+const char *RGE_VARS[RGE_VARS_SIZE] = {
         R_RUNNO, R_EVENTNO, R_BEAME,
         R_PID, R_STATUS, R_CHARGE, R_MASS, R_VX, R_VY, R_VZ, R_PX, R_PY, R_PZ,
                 R_P, R_THETA, R_PHI, R_BETA,
@@ -26,7 +26,4 @@ const char *VAR_LIST[VAR_LIST_SIZE] = {
         R_NPHELTCC, R_NPHEHTCC,
         R_Q2, R_NU, R_XB, R_W2,
         R_ZH, R_PT2, R_PL2, R_PHIPQ, R_THETAPQ
-};
-const char *DIS_LIST[DIS_LIST_SIZE] = {
-        R_Q2, R_NU, R_XB, R_W2
 };
