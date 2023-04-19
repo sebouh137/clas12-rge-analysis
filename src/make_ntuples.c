@@ -231,7 +231,15 @@ static int run(
 ) {
     // Get sampling fraction.
     char sampling_fraction_file[PATH_MAX];
-    sprintf(sampling_fraction_file, "%s/sf_params_%06d.txt", data_dir, run_no);
+    if (run_no / 1000 != 999) {
+        sprintf(
+                sampling_fraction_file, "%s/sf_params_%06d.txt",
+                data_dir, run_no
+        );
+    }
+    else {
+        sprintf(sampling_fraction_file, "%s/sf_params_mc.txt", data_dir);
+    }
     double sampling_fraction_params[RGE_NSECTORS][RGE_NSFPARAMS][2];
     if (rge_get_sf_params(sampling_fraction_file, sampling_fraction_params)) {
         return 1;
