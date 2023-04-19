@@ -63,54 +63,54 @@ typedef struct {
 extern const char *RGE_VARS[RGE_VARS_SIZE];
 
 // Metadata.
-__extension__ const RGE_VAR RGE_RUNNO   = {.addr = 0, .name = "run_no"};
-__extension__ const RGE_VAR RGE_EVENTNO = {.addr = 1, .name = "event_no"};
-__extension__ const RGE_VAR RGE_BEAME   = {.addr = 2, .name = "beam_energy"};
+__extension__ const RGE_VAR RGE_RUNNO   = {.addr = 0, .name = "N_{run}"};
+__extension__ const RGE_VAR RGE_EVENTNO = {.addr = 1, .name = "N_{event}"};
+__extension__ const RGE_VAR RGE_BEAME   = {.addr = 2, .name = "E_{beam}"};
 
 // Particle.
-__extension__ const RGE_VAR RGE_PID    = {.addr =  3, .name = "pid"};
+__extension__ const RGE_VAR RGE_PID    = {.addr =  3, .name = "PID"};
 __extension__ const RGE_VAR RGE_CHARGE = {.addr =  4, .name = "charge"};
 __extension__ const RGE_VAR RGE_STATUS = {.addr =  5, .name = "status"};
 __extension__ const RGE_VAR RGE_MASS   = {.addr =  6, .name = "mass"};
-__extension__ const RGE_VAR RGE_VX     = {.addr =  7, .name = "vx"};
-__extension__ const RGE_VAR RGE_VY     = {.addr =  8, .name = "vy"};
-__extension__ const RGE_VAR RGE_VZ     = {.addr =  9, .name = "vz"};
-__extension__ const RGE_VAR RGE_PX     = {.addr = 10, .name = "px"};
-__extension__ const RGE_VAR RGE_PY     = {.addr = 11, .name = "py"};
-__extension__ const RGE_VAR RGE_PZ     = {.addr = 12, .name = "px"};
+__extension__ const RGE_VAR RGE_VX     = {.addr =  7, .name = "v_{x}"};
+__extension__ const RGE_VAR RGE_VY     = {.addr =  8, .name = "v_{y}"};
+__extension__ const RGE_VAR RGE_VZ     = {.addr =  9, .name = "v_{z}"};
+__extension__ const RGE_VAR RGE_PX     = {.addr = 10, .name = "p_{x}"};
+__extension__ const RGE_VAR RGE_PY     = {.addr = 11, .name = "p_{y}"};
+__extension__ const RGE_VAR RGE_PZ     = {.addr = 12, .name = "p_{z}"};
 __extension__ const RGE_VAR RGE_P      = {.addr = 13, .name = "p"};
-__extension__ const RGE_VAR RGE_THETA  = {.addr = 14, .name = "theta"};
-__extension__ const RGE_VAR RGE_PHI    = {.addr = 15, .name = "phi"};
-__extension__ const RGE_VAR RGE_BETA   = {.addr = 16, .name = "beta"};
+__extension__ const RGE_VAR RGE_THETA  = {.addr = 14, .name = "#theta"};
+__extension__ const RGE_VAR RGE_PHI    = {.addr = 15, .name = "#phi"};
+__extension__ const RGE_VAR RGE_BETA   = {.addr = 16, .name = "#beta"};
 
 // Tracking.
 __extension__ const RGE_VAR RGE_CHI2 = {.addr = 17, .name = "chi2"};
 __extension__ const RGE_VAR RGE_NDF  = {.addr = 18, .name = "NDF"};
 
 // Calorimeter.
-__extension__ const RGE_VAR RGE_PCALE = {.addr = 19, .name = "e_pcal"};
-__extension__ const RGE_VAR RGE_ECINE = {.addr = 20, .name = "e_ecin"};
-__extension__ const RGE_VAR RGE_ECOUE = {.addr = 21, .name = "e_ecou"};
-__extension__ const RGE_VAR RGE_TOTE  = {.addr = 22, .name = "e_total"};
+__extension__ const RGE_VAR RGE_PCALE = {.addr = 19, .name = "E_{PCAL}"};
+__extension__ const RGE_VAR RGE_ECINE = {.addr = 20, .name = "E_{ECIN}"};
+__extension__ const RGE_VAR RGE_ECOUE = {.addr = 21, .name = "E_{ECOU}"};
+__extension__ const RGE_VAR RGE_TOTE  = {.addr = 22, .name = "E_{total}"};
 
 // Scintillator.
-__extension__ const RGE_VAR RGE_DTOF = {.addr = 23, .name = "dtof"};
+__extension__ const RGE_VAR RGE_DTOF = {.addr = 23, .name = "#Delta_{TOF}"};
 
 // Cherenkov.
-__extension__ const RGE_VAR RGE_NPHELTCC = {.addr = 24, .name = "nphe_ltcc"};
-__extension__ const RGE_VAR RGE_NPHEHTCC = {.addr = 25, .name = "nphe_htcc"};
+__extension__ const RGE_VAR RGE_NPHELTCC = {.addr = 24, .name = "Nphe_{LTCC}"};
+__extension__ const RGE_VAR RGE_NPHEHTCC = {.addr = 25, .name = "Nphe_{HTCC}"};
 
 // DIS.
-__extension__ const RGE_VAR RGE_Q2 = {.addr = 26, .name = "q2"};
-__extension__ const RGE_VAR RGE_NU = {.addr = 27, .name = "nu"};
-__extension__ const RGE_VAR RGE_XB = {.addr = 28, .name = "x_bjorken"};
-__extension__ const RGE_VAR RGE_W2 = {.addr = 29, .name = "w2"};
+__extension__ const RGE_VAR RGE_Q2 = {.addr = 26, .name = "Q2"};
+__extension__ const RGE_VAR RGE_NU = {.addr = 27, .name = "#nu"};
+__extension__ const RGE_VAR RGE_XB = {.addr = 28, .name = "x_{bjorken}"};
+__extension__ const RGE_VAR RGE_W2 = {.addr = 29, .name = "W2"};
 
 // SIDIS.
-__extension__ const RGE_VAR RGE_ZH      = {.addr = 30, .name = "zh"};
-__extension__ const RGE_VAR RGE_PT2     = {.addr = 31, .name = "pt2"};
-__extension__ const RGE_VAR RGE_PL2     = {.addr = 32, .name = "pl2"};
-__extension__ const RGE_VAR RGE_PHIPQ   = {.addr = 33, .name = "phi_pq"};
-__extension__ const RGE_VAR RGE_THETAPQ = {.addr = 34, .name = "theta_pq"};
+__extension__ const RGE_VAR RGE_ZH      = {.addr = 30, .name = "z_{h}"};
+__extension__ const RGE_VAR RGE_PT2     = {.addr = 31, .name = "Pt2"};
+__extension__ const RGE_VAR RGE_PL2     = {.addr = 32, .name = "Pl2"};
+__extension__ const RGE_VAR RGE_PHIPQ   = {.addr = 33, .name = "#phi_{PQ}"};
+__extension__ const RGE_VAR RGE_THETAPQ = {.addr = 34, .name = "#theta_{PQ}"};
 
 #endif
