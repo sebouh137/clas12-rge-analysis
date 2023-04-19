@@ -115,8 +115,14 @@ static const std::map<uint, const char *> ERRMAP = {
     {RGEERR_WRONGACCVARS,
             "Erroneous variables in the ACC_VX arr. Check constants."},
     {RGEERR_INVALIDBANKID,
-        "There was an attempt to initialize an rge_hipobank instance with "
-        "an invalid hipo bank ID. Check availables IDs at rge_hipobank.h."},
+            "There was an attempt to initialize an rge_hipobank instance with "
+            "an invalid hipo bank ID. Check availables IDs at rge_hipobank.h."},
+    {RGEERR_UNSUPPORTEDTYPE,
+            "An unsupported type was accessed in rge_fill. Check the function "
+            "input in rge_hipo_hank.c."},
+    {RGEERR_INVALIDENTRY,
+            "An invalid entry access was attempted at the get_entry function. "
+            "Check the function input in rge_hipo_bank.c."},
 
     // Particle errors.
     {RGEERR_PIDNOTFOUND,

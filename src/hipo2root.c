@@ -115,7 +115,7 @@ static int run(
         luint total_nrows = 0;
         for (uint i = 0; i < nbanks; ++i) {
             event.getStructure(hbanks[i]);
-            rge_fill(&(rbanks[i]), hbanks[i]);
+            if (rge_fill(&(rbanks[i]), hbanks[i])) return 1;
             total_nrows += rbanks[i].nrows;
         }
 

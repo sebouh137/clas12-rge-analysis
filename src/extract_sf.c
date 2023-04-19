@@ -286,6 +286,7 @@ static int run(
             double px = rge_get_double(&particle, "px", pindex);
             double py = rge_get_double(&particle, "py", pindex);
             double pz = rge_get_double(&particle, "pz", pindex);
+            if (rge_errno != RGEERR_UNDEFINED) return 1;
             double total_p = rge_calc_magnitude(px, py, pz);
 
             // Compute energy deposited in each calorimeter per sector.
@@ -304,6 +305,7 @@ static int run(
                 // Get sector.
                 int sector_i =
                         rge_get_double(&calorimeter, "sector", entry_i) - 1;
+                if (rge_errno != RGEERR_UNDEFINED) return 1;
                 if (sector_i == -1) continue;
                 if (sector_i < -1 || sector_i > RGE_NSECTORS-1) {
                     rge_errno = RGEERR_INVALIDCALSECTOR;
@@ -312,6 +314,7 @@ static int run(
 
                 // Get detector.
                 double energy = rge_get_double(&calorimeter, "energy", entry_i);
+                if (rge_errno != RGEERR_UNDEFINED) return 1;
                 switch(rge_get_int(&calorimeter, "layer", entry_i)) {
                     case PCAL_LYR:
                         sf_E[PCAL_IDX][sector_i] += energy;

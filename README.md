@@ -131,7 +131,7 @@ Pull requests are welcome. For major changes, open an issue first to discuss the
 - [ ] Implement variable bin sizes for every variable and binning.
 - [ ] Include GitHub tests -- I've no clue on how to do this with ROOT + HIPO.
 - [x] Improve `bank_containers` to be more generic.
-- [ ] Improve the use of constants thorough the code by using a map or a similar structure.
+- [x] Improve the use of constants thorough the code by using a map or a similar structure.
 - [ ] Apply radiative correction.
 - [ ] Apply Feynman cuts.
 - [x] Improve error code handling.

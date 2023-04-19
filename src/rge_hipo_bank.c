@@ -36,9 +36,16 @@ int set_nrows(rge_hipobank *b, luint in_nrows) {
 }
 
 double get_entry(rge_hipobank *b, const char *var, luint idx) {
-    // TODO. Raise error on invalid var.
-    // TODO. Raise error on invalid idx.
-    return b->entries.at(var).data->at(idx);
+    double entry;
+    try {
+        entry = b->entries.at(var).data->at(idx);
+    }
+    catch (...) {
+        entry = 0;
+        rge_errno = RGEERR_INVALIDENTRY;
+    }
+
+    return entry;
 }
 
 /** Static map containing all entry lists. */
@@ -152,7 +159,7 @@ int rge_fill(rge_hipobank *rb, hipo::bank hb) {
                     bank_data = static_cast<double>(hb.getFloat(key, row));
                     break;
                 default:
-                    // TODO. Set rge_errno.
+                    rge_errno = RGEERR_UNSUPPORTEDTYPE;
                     return 1;
             }
             rb->entries.at(key).data->at(row) = bank_data;
