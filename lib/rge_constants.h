@@ -68,7 +68,7 @@ __extension__ const RGE_VAR RGE_EVENTNO = {.addr = 1, .name = "N_{event}"};
 __extension__ const RGE_VAR RGE_BEAME   = {.addr = 2, .name = "E_{beam}"};
 
 // Particle.
-__extension__ const RGE_VAR RGE_PID    = {.addr =  3, .name = "PID"};
+__extension__ const RGE_VAR RGE_PID    = {.addr =  3, .name = "pid"};
 __extension__ const RGE_VAR RGE_CHARGE = {.addr =  4, .name = "charge"};
 __extension__ const RGE_VAR RGE_STATUS = {.addr =  5, .name = "status"};
 __extension__ const RGE_VAR RGE_MASS   = {.addr =  6, .name = "mass"};

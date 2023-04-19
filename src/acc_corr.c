@@ -107,8 +107,8 @@ static int count_entries(
     tree->SetBranchAddress(RGE_ZH.name,    &(s_bin[2]));
     tree->SetBranchAddress(RGE_PT2.name,   &(s_bin[3]));
     tree->SetBranchAddress(RGE_PHIPQ.name, &(s_bin[4]));
-    if (!simul) tree->SetBranchAddress("W",  &s_W);
-    if (simul)  tree->SetBranchAddress("W2", &s_W2);
+    if (!simul) tree->SetBranchAddress("W", &s_W);
+    if (simul)  tree->SetBranchAddress(RGE_W2.name, &s_W2);
 
     for (int evn = 0; evn < tree->GetEntries(); ++evn) {
         tree->GetEntry(evn);
