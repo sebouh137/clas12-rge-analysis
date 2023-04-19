@@ -29,7 +29,6 @@
 
 // HIPO.
 #include "bank.h"
-#include "reader.h"
 
 // rge-analysis.
 #include "rge_err_handler.h"
@@ -56,16 +55,24 @@ typedef long int lint;
 /** String comparer to use const char * as std::map keys. */
 struct cmp_str {
     bool operator() (char const *a, char const *b) const {
-        return std::strcmp(a, b) < 0;
+        return strcmp(a, b) < 0;
     }
 };
 
-/** Struct containing one entry of a particular hipo bank. */
+/**
+ * Struct containing one entry of a particular hipo bank.
+ *
+ * @param addr   : address of the entry in the hipo bank, as in BANK::NAME::VAR.
+ * @param data   : vector with the data of the entry.
+ * @param branch : pointer to TBranch where to write the data.
+ * @param type   : integer containing primitive type in hipo bank, as defined in
+ *                 the internal variables.
+ */
 typedef struct {
-    const char *addr;          /** Address of entry (BANK::NAME::VAR). */
-    std::vector<double> *data; /** Vector with the data of the entry. */
-    TBranch *branch;           /** Pointer to TBranch where to write data. */
-    uint type;                 /** Int containing variable type in hypo bank. */
+    const char *addr;
+    std::vector<double> *data;
+    TBranch *branch;
+    uint type;
 } rge_hipoentry;
 
 /** Struct containing a map of all entries associated to a hipo bank. */
@@ -113,11 +120,13 @@ int rge_fill(rge_hipobank *rb, hipo::bank hb);
 /** Read entries from t into b. */
 int rge_get_entries(rge_hipobank *b, TTree *t, int idx);
 
-/** Get entry number idx with name var from bank b. */
+/** Get entry number idx with name var from bank b as a double. */
 double rge_get_double(rge_hipobank *b, const char *var, luint idx);
 
+/** Get entry number idx with name var from bank b as an int. */
 int rge_get_int(rge_hipobank *b, const char *var, luint idx);
 
+/** Get entry number idx with name var from bank b as an unsigned int. */
 uint rge_get_uint(rge_hipobank *b, const char *var, luint idx);
 
 #endif

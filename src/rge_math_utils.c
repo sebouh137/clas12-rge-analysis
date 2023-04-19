@@ -39,8 +39,9 @@ double rge_calc_magnitude(double x, double y, double z) {
 double rge_calc_angle(
         double x1, double y1, double z1, double x2, double y2, double z2
 ) {
-    return acos((x1*x2 + y1*y2 + z1*z2)/(rge_calc_magnitude(x1,y1,z1) *
-            rge_calc_magnitude(x2,y2,z2)));
+    return acos((x1*x2 + y1*y2 + z1*z2) / (
+            rge_calc_magnitude(x1,y1,z1) * rge_calc_magnitude(x2,y2,z2)
+    ));
 }
 
 void rge_rotate_y(double *x, double *z, double th) {

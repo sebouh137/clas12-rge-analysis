@@ -17,6 +17,10 @@
 #define RGE_PARTICLE
 
 // --+ preamble +---------------------------------------------------------------
+// C.
+#include <math.h>
+#include <stdlib.h>
+
 // rge-analysis.
 #include "rge_constants.h"
 #include "rge_hipo_bank.h"
@@ -29,22 +33,36 @@ typedef long unsigned int luint;
 typedef long int lint;
 
 // --+ structs +----------------------------------------------------------------
+/**
+ * Data associated to a detected particle in CLAS12.
+ *
+ *     IDENTIFIER BOOLEANS.
+ * @param is_valid   : boolean identifying if the particle is valid.
+ * @param is_trigger : boolean identifying if the particle is the trigger
+ *                     electron.
+ * @param is_hadron  : boolean identifying if the particle is a hadron.
+ *
+ *     EVENT BUILDER VARIABLES.
+ * @param pid        : PID of the particle.
+ * @param charge     : charge of the particle.
+ * @param sector     : CLAS12 sector where the particle was detected.
+ * @param beta       : beta (v/c) of the particle.
+ *
+ *     TRACKING VARIABLES.
+ * @param vx         : vertex x position coordinate of the particle.
+ * @param vy         : vertex y position coordinate of the particle.
+ * @param vz         : vertex z position coordinate of the particle.
+ * @param px         : vertex x momentum coordinate of the particle.
+ * @param py         : vertex y momentum coordinate of the particle.
+ * @param pz         : vertex z momentum coordinate of the particle.
+ *
+ *     VARIABLES DERIVED FROM PID.
+ * @param mass       : mass of the particle.
+ */
 typedef struct {
-    // Identifier booleans.
-    bool is_valid, is_trigger_electron, is_hadron;
-
-    // Event Builder (EB) vars.
-    int pid;    // PID of the particle.
-    int charge; // Particle charge.
-    int sector; // CLAS12 Sector in which particle was detected.
-    double beta; // Beta (v/c) of the particle.
-
-    // Tracking vars.
-    double vx, vy, vz; // x, y, and z vertex coordinates of the particle.
-    double px, py, pz; // x, y, and z coords of the particle's vertex momentum.
-
-    // Derived vars.
-    double mass; // Particle mass.
+    bool is_valid, is_trigger, is_hadron;
+    int pid, charge, sector;
+    double beta, vx, vy, vz, px, py, pz, mass;
 } rge_particle;
 
 // --+ internal +---------------------------------------------------------------

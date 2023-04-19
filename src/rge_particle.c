@@ -20,7 +20,7 @@ rge_particle particle_init() {
     rge_particle p;
     p.is_valid            = false;
     p.is_hadron           = false;
-    p.is_trigger_electron = false;
+    p.is_trigger = false;
 
     return p;
 }
@@ -31,9 +31,9 @@ rge_particle particle_init(
 ) {
     rge_particle p;
 
-    p.is_valid            = true;
-    p.is_trigger_electron = false;
-    p.is_hadron           = false;
+    p.is_valid   = true;
+    p.is_trigger = false;
+    p.is_hadron  = false;
 
     p.pid    = 0;
     p.charge = charge;
@@ -68,11 +68,18 @@ bool is_electron(
     if (pcal_energy < MIN_PCAL_ENERGY) return false;
 
     // Require ECAL sampling fraction to be below threshold.
-    double mean  = pars[0][0]*(pars[1][0] + pars[2][0]/total_energy
-            + pars[3][0]/(total_energy*total_energy));
-    double sigma = pars[0][1]*(pars[1][1] + pars[2][1]/total_energy
-            + pars[3][1]/(total_energy*total_energy));
-    if (abs((total_energy/p - mean)/sigma) > E_SF_NSIGMA) return false;
+    double mean = pars[0][0] * (
+            pars[1][0] +
+            pars[2][0] / total_energy +
+            pars[3][0] / (total_energy*total_energy)
+    );
+    double sigma = pars[0][1] * (
+            pars[1][1] +
+            pars[2][1] / total_energy +
+            pars[3][1] / (total_energy*total_energy)
+    );
+
+    if (fabs((total_energy/p - mean)/sigma) > E_SF_NSIGMA) return false;
 
     return true;
 }
@@ -118,17 +125,17 @@ double momentum(rge_particle p) {
 }
 
 double Q2(rge_particle p, double bE) {
-    if (!p.is_trigger_electron) return 0;
+    if (!p.is_trigger) return 0;
     return 4 * bE * momentum(p) * pow(sin(theta_lab(p)/2), 2);
 }
 
 double nu(rge_particle p, double bE) {
-    if (!p.is_trigger_electron) return 0;
+    if (!p.is_trigger) return 0;
     return bE - momentum(p);
 }
 
 double Xb(rge_particle p, double bE) {
-    if (!p.is_trigger_electron) return 0;
+    if (!p.is_trigger) return 0;
     double proton_mass;
     if (rge_get_mass(2212, &proton_mass)) return 0;
 
@@ -136,12 +143,12 @@ double Xb(rge_particle p, double bE) {
 }
 
 double W(rge_particle p, double bE) {
-    if (!p.is_trigger_electron) return 0;
-    return sqrt(abs(W2(p, bE)));
+    if (!p.is_trigger) return 0;
+    return sqrt(fabs(W2(p, bE)));
 }
 
 double W2(rge_particle p, double bE) {
-    if (!p.is_trigger_electron) return 0;
+    if (!p.is_trigger) return 0;
     double proton_mass;
     if (rge_get_mass(2212, &proton_mass)) return 0;
 
@@ -149,12 +156,12 @@ double W2(rge_particle p, double bE) {
 }
 
 double theta_pq(rge_particle p, rge_particle e, double bE) {
-    if (!(p.is_hadron && e.is_trigger_electron)) return 0;
+    if (!(p.is_hadron && e.is_trigger)) return 0;
     return rge_calc_angle(-e.px, -e.py, bE-e.pz, p.px, p.py, p.pz);
 }
 
 double phi_pq(rge_particle p, rge_particle e, double bE) {
-    if (!(p.is_hadron && e.is_trigger_electron)) return 0;
+    if (!(p.is_hadron && e.is_trigger)) return 0;
 
     double gpx = -e.px, gpy = -e.py, gpz = bE-e.pz;
     double ppx = p.px,  ppy = p.py,  ppz = p.pz;
@@ -173,24 +180,24 @@ double phi_pq(rge_particle p, rge_particle e, double bE) {
 }
 
 double cos_theta_pq(rge_particle p, rge_particle e, double bE) {
-    if (!(p.is_hadron && e.is_trigger_electron)) return 0;
+    if (!(p.is_hadron && e.is_trigger)) return 0;
     return (p.pz*(bE-e.pz) - p.px*e.px - p.py*e.py) /
             (sqrt(nu(e,bE)*nu(e,bE) + Q2(e,bE)) * momentum(p));
 }
 
 double Pt2(rge_particle p, rge_particle e, double bE) {
-    if (!(p.is_hadron && e.is_trigger_electron)) return 0;
+    if (!(p.is_hadron && e.is_trigger)) return 0;
     return pow(momentum(p),2) * (1 - pow(cos_theta_pq(p,e,bE),2));
 }
 
 double Pl2(rge_particle p, rge_particle e, double bE) {
-    if (!(p.is_hadron && e.is_trigger_electron)) return 0;
+    if (!(p.is_hadron && e.is_trigger)) return 0;
     return pow(momentum(p),2) * pow(cos_theta_pq(p,e,bE),2);
 }
 
 double zh(rge_particle p, rge_particle e, double bE) {
-    if (!(p.is_hadron && e.is_trigger_electron)) return 0;
-    return sqrt(p.mass*p.mass + momentum(p)*momentum(p)) / nu(e,bE);
+    if (!(p.is_hadron && e.is_trigger)) return 0;
+    return sqrt(p.mass*p.mass + pow(momentum(p), 2)) / nu(e,bE);
 }
 
 // --+ library +----------------------------------------------------------------
@@ -273,7 +280,7 @@ int rge_set_pid(
     }
 
     // Check if particle is trigger electron and define mass from PID.
-    particle->is_trigger_electron = (particle->pid == 11 && status < 0);
+    particle->is_trigger = (particle->pid == 11 && status < 0);
     if (rge_get_mass(particle->pid, &(particle->mass))) return 1;
 
     // If particle is not a lepton, check if it is a valid hadron.

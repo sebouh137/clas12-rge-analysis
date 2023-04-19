@@ -17,12 +17,6 @@
 #define RGE_CONSTANTS
 
 // --+ preamble +---------------------------------------------------------------
-// C.
-#include <math.h>
-
-// C++.
-#include <map>
-
 // typedefs.
 typedef unsigned int uint;
 typedef long unsigned int luint;
@@ -35,6 +29,9 @@ typedef long int lint;
  *     use an std::map<const char *, double, cmp_str>, but ROOT's dumb TNTuple
  *     object constructor rules make this approach uglier in comparison.
  *         -Bruno.
+ *
+ * @param addr : address of the variable in the RGE_VARS array.
+ * @param name : name of the variable in ROOT's string format.
  */
 typedef struct {
     int addr;
@@ -62,12 +59,12 @@ typedef struct {
 #define RGE_VARS_SIZE 35
 extern const char *RGE_VARS[RGE_VARS_SIZE];
 
-// Metadata.
+/** Metadata variables. */
 __extension__ const RGE_VAR RGE_RUNNO   = {.addr = 0, .name = "N_{run}"};
 __extension__ const RGE_VAR RGE_EVENTNO = {.addr = 1, .name = "N_{event}"};
 __extension__ const RGE_VAR RGE_BEAME   = {.addr = 2, .name = "E_{beam}"};
 
-// Particle.
+/** Particle variables. */
 __extension__ const RGE_VAR RGE_PID    = {.addr =  3, .name = "pid"};
 __extension__ const RGE_VAR RGE_CHARGE = {.addr =  4, .name = "charge"};
 __extension__ const RGE_VAR RGE_STATUS = {.addr =  5, .name = "status"};
@@ -83,30 +80,30 @@ __extension__ const RGE_VAR RGE_THETA  = {.addr = 14, .name = "#theta"};
 __extension__ const RGE_VAR RGE_PHI    = {.addr = 15, .name = "#phi"};
 __extension__ const RGE_VAR RGE_BETA   = {.addr = 16, .name = "#beta"};
 
-// Tracking.
+/** Tracking variables. */
 __extension__ const RGE_VAR RGE_CHI2 = {.addr = 17, .name = "chi2"};
 __extension__ const RGE_VAR RGE_NDF  = {.addr = 18, .name = "NDF"};
 
-// Calorimeter.
+/** Calorimeter variables. */
 __extension__ const RGE_VAR RGE_PCALE = {.addr = 19, .name = "E_{PCAL}"};
 __extension__ const RGE_VAR RGE_ECINE = {.addr = 20, .name = "E_{ECIN}"};
 __extension__ const RGE_VAR RGE_ECOUE = {.addr = 21, .name = "E_{ECOU}"};
 __extension__ const RGE_VAR RGE_TOTE  = {.addr = 22, .name = "E_{total}"};
 
-// Scintillator.
+/** Scintillator variables. */
 __extension__ const RGE_VAR RGE_DTOF = {.addr = 23, .name = "#Delta_{TOF}"};
 
-// Cherenkov.
+/** Cherenkov counters variables. */
 __extension__ const RGE_VAR RGE_NPHELTCC = {.addr = 24, .name = "Nphe_{LTCC}"};
 __extension__ const RGE_VAR RGE_NPHEHTCC = {.addr = 25, .name = "Nphe_{HTCC}"};
 
-// DIS.
+/** DIS variables. */
 __extension__ const RGE_VAR RGE_Q2 = {.addr = 26, .name = "Q2"};
 __extension__ const RGE_VAR RGE_NU = {.addr = 27, .name = "#nu"};
 __extension__ const RGE_VAR RGE_XB = {.addr = 28, .name = "x_{bjorken}"};
 __extension__ const RGE_VAR RGE_W2 = {.addr = 29, .name = "W2"};
 
-// SIDIS.
+/** SIDIS variables. */
 __extension__ const RGE_VAR RGE_ZH      = {.addr = 30, .name = "z_{h}"};
 __extension__ const RGE_VAR RGE_PT2     = {.addr = 31, .name = "Pt2"};
 __extension__ const RGE_VAR RGE_PL2     = {.addr = 32, .name = "Pl2"};

@@ -20,6 +20,9 @@
 // C.
 #include <float.h>
 
+// C++.
+#include <map>
+
 // rge-analysis.
 #include "rge_err_handler.h"
 
@@ -29,7 +32,14 @@ typedef long unsigned int luint;
 typedef long int lint;
 
 // --+ structs +----------------------------------------------------------------
-/** Data associated to a particular PID. */
+/**
+ * Data associated to a particule associated to a particular PID. The PIDs are
+ *     defined from the LUND convention.
+ *
+ * @param charge : charge of the particle.
+ * @param mass   : mass of the particle.
+ * @param name   : name under which the particle is known.
+ */
 typedef struct {
     int charge;
     double mass;

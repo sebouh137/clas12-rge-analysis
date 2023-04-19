@@ -15,6 +15,7 @@
 
 // C.
 #include <libgen.h>
+#include <limits.h>
 
 // ROOT.
 #include <TFile.h>
@@ -48,9 +49,9 @@ static const char *USAGE_MESSAGE =
 "    variables from CLAS12 data.\n";
 
 /** Detector IDs from CLAS12 reconstruction. */
-static const uint FTOF_ID    = 12;
-static const uint HTCC_ID    = 15;
-static const uint LTCC_ID    = 16;
+static const uint FTOF_ID = 12;
+static const uint HTCC_ID = 15;
+static const uint LTCC_ID = 16;
 
 /** FTOF layer IDs from CLAS12 reconstruction. */
 static const uint FTOF1A_LYR = 1;
@@ -361,7 +362,7 @@ static int run(
             )) return 1;
 
             // Skip particle if its not the trigger electron.
-            if (!part_trigger.is_trigger_electron) continue;
+            if (!part_trigger.is_trigger) continue;
 
             // Fill TNtuple with trigger electron information.
             Float_t arr[RGE_VARS_SIZE];

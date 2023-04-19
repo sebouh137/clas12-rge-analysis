@@ -18,6 +18,7 @@
 
 // --+ preamble +---------------------------------------------------------------
 // C.
+#include <stdlib.h>
 #include <unistd.h>
 
 // rge-analysis.

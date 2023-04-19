@@ -32,11 +32,11 @@ typedef long unsigned int luint;
 typedef long int lint;
 
 // --+ internal +---------------------------------------------------------------
-// Beam energy of different runs.
-#define RGE_BE11983 10.3894 //  50 nA.
-#define RGE_BE12016 10.3894 // 250 nA.
-#define RGE_BE12439  2.1864 //  15 nA.
-#define RGE_BE12933 10.4057 // 250 nA.
+/** Beam energies in GeV of different runs. */
+#define RGE_BE11983 10.3894 /**  50 nA. */
+#define RGE_BE12016 10.3894 /** 250 nA. */
+#define RGE_BE12439  2.1864 /**  15 nA. */
+#define RGE_BE12933 10.4057 /** 250 nA. */
 
 /**
  * Get run number from a filename, assuming the filename is in format
@@ -93,8 +93,8 @@ int rge_check_root_filename(char *filename);
 int rge_handle_root_filename(char *filename, int *run_no, double *beam_energy);
 
 /**
- * Run rge_handle_root_filename(char *, int *, double *) without writing
- *     beam_energy.
+ * Run rge_handle_root_filename(char *, int *, double *) without writing the
+ *     beam_energy to a variable.
  */
 int rge_handle_root_filename(char *filename, int *run_no);
 
