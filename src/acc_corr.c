@@ -48,7 +48,7 @@ static const char *USAGE_MESSAGE =
 "    Pt2, and phi_PQ. For each optional argument, an array of doubles is\n"
 "    expected. The first double will be the lower limit of the leftmost bin,\n"
 "    the final double will be the upper limit of the rightmost bin, and all\n"
-"    doubles inbetween will be the separators between each bin.\n";
+"    doubles between them will be the separators between each bin.\n";
 
 /** Data tree name in generated (thrown) file. */
 #define RGE_TREENAMETHRN "ntuple_thrown"
