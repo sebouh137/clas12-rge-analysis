@@ -63,22 +63,19 @@ struct cmp_str {
 /** Struct containing one entry of a particular hipo bank. */
 typedef struct {
     const char *addr;          /** Address of entry (BANK::NAME::VAR). */
-    std::vector<double> *data; /** Vector with data of the entry. */
+    std::vector<double> *data; /** Vector with the data of the entry. */
     TBranch *branch;           /** Pointer to TBranch where to write data. */
     uint type;                 /** Int containing variable type in hypo bank. */
 } rge_hipoentry;
 
 /** Struct containing a map of all entries associated to a hipo bank. */
 typedef struct {
-    // NOTE. nrows is only used for hipo_banks dedicated to writing. For
-    //       readers, entries.data.size() should be used.
     luint nrows;
     std::map<const char *, rge_hipoentry, cmp_str> entries;
 } rge_hipobank;
 
 // --+ internal +---------------------------------------------------------------
 /** internal variables to refer to different primitive types. */
-// NOTE. These could be improved by adding a reference to the primitive itself.
 static const uint BYTE  = 0;
 static const uint SHORT = 1;
 static const uint INT   = 2;

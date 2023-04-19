@@ -30,15 +30,6 @@ static const std::map<int, rge_pidconstants> PID_MAP = {
     {       321, pid_constants_init( 1, 0.493677, "positive kaon"        )},
     {      2112, pid_constants_init( 0, 0.939565, "neutron"              )},
     {      2212, pid_constants_init( 1, 0.938272, "proton"               )}
-
-    // NOTE. Not yet implemented.
-    // {        13, pid_constants_init( 1, 0.105658, "positive muon"     )},
-    // {       -13, pid_constants_init(-1, 0.105658, "negative muon"     )},
-    // {       111, pid_constants_init( 0, 0.134977, "neutral pion"      )},
-    // {       311, pid_constants_init( 0, 0.497614, "neutral kaon"      )},
-    // {       221, pid_constants_init( 0, 0.548953, "eta"               )},
-    // {       223, pid_constants_init( 0, 0.782650, "omega"             )},
-    // {1000010020, pid_constants_init( 0, 1.875,    "deuterium"         )}
 };
 
 rge_pidconstants pid_constants_init(int q, double m, const char *n) {

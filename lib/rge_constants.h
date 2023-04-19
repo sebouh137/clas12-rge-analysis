@@ -53,8 +53,6 @@ typedef struct {
 #define RGE_Q2CUT        1.   /** Q2 of particle must be over this value. */
 #define RGE_WCUT         2.   /** W of particle must be over this value. */
 #define RGE_W2CUT        4.   /** W2 of particle must be over this value. */
-#define RGE_ZHCUT        1.   /** zh of particle must be below this value. */
-#define RGE_YBCUT        0.85 /** Yb of particle must be below this value. */
 #define RGE_CHI2NDFCUT  15    /** Chi2/NDF must be below this value. */
 #define RGE_VXVYCUT      4    /** sqrt(vx^2 + vy^2) must be below this value. */
 #define RGE_VZLOWCUT   -40    /** vz must be above this value. */

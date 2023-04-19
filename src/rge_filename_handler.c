@@ -49,7 +49,6 @@ int get_beam_energy(int run_no, double *beam_energy) {
         return 0;
     }
 
-    // TODO. This should be taken directly from RCDB.
     switch (run_no) {
         case 11983:
             *beam_energy = RGE_BE11983;

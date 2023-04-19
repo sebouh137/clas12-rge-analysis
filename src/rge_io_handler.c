@@ -105,7 +105,6 @@ int rge_process_fmtnlayers(lint *nlayers, char *arg) {
 }
 
 bool rge_catch_yn() {
-    // TODO. Figure out how to catch no input so that this can be [Y/n].
     while (true) {
         char str[32];
         printf(">>> ");

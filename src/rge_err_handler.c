@@ -22,6 +22,7 @@
  * NOTE. std::map isn't smart enough to detect if two keys have the same
  *       value, so be *very careful* when adding rge_errnos. An invisibile error
  *       arises if two keys have the same value.
+ *          -Bruno
  */
 static const std::map<uint, const char *> ERRMAP = {
     // Basic functionalities.
@@ -56,8 +57,6 @@ static const std::map<uint, const char *> ERRMAP = {
     {RGEERR_NOINPUTFILE,
             "Input file doesn't exist."},
     {RGEERR_NOSAMPFRACFILE,
-            // NOTE. A smoother behaviour here would be that the program calls
-            //       extract_sf itself.
             "No sampling fraction file is available for this run number."},
     {RGEERR_NOACCCORRFILE,
             "Failed to access acceptance correction file."},

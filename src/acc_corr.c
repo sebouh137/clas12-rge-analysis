@@ -123,7 +123,6 @@ static int count_entries(
         if (s_bin[0]       < RGE_Q2CUT) continue; // Q2 > 1.
         if (!simul && s_W  < RGE_WCUT)  continue; // W  > 2.
         if (simul  && s_W2 < RGE_W2CUT) continue; // W2 > 4.
-        // if (s_y      > RGE_YBCUT) continue; // TODO. Yb < 0.85.
 
         // Find position of event.
         if (in_deg) {
@@ -206,7 +205,8 @@ static int run(
     }
 
     // Get list of PIDs.
-    // NOTE. We assume that we'll deal with at most 256 PIDs.
+    // We assume that we'll deal with at most 256 PIDs. Extend this list if that
+    //     stops being the case.
     printf("Getting list of PIDs from generated file...\n");
     Float_t s_pid;
     double pidlist[256];

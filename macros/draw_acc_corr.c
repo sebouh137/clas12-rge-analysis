@@ -225,8 +225,7 @@ int draw_acc_corr() {
             y_err[bii]       = 0.; // Dummy variable.
         }
 
-        // Fill y. NOTE. This is a very sub-optimal and ugly approach, but it
-        //     gets the job done -- and this is just a macro anyway.
+        // Fill y.
         for (int i0 = 0; i0 < bs[0]-1; ++i0) {
             for (int i1 = 0; i1 < bs[1]-1; ++i1) {
                 for (int i2 = 0; i2 < bs[2]-1; ++i2) {

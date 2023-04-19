@@ -421,8 +421,8 @@ static int run(
                     sampling_fraction_params[rge_get_uint(&btrk, "sector", pos)]
             )) return 1;
 
-            // Fill TNtuples.
-            // NOTE. If adding new variables, check their order in RGE_VARS.
+            // Fill TNtuples. If adding new variables, check their order in
+            //     RGE_VARS.
             Float_t arr[RGE_VARS_SIZE];
             if (rge_fill_ntuples_arr(
                     arr, part, part_trigger, run_no, event, status, energy_beam,
@@ -506,7 +506,6 @@ static int handle_args(
     }
 
     // Define workdir if undefined.
-    // NOTE. We copy argv[0] because sprintf() writes over it.
     char tmpfilename[PATH_MAX];
     sprintf(tmpfilename, "%s", argv[0]);
     if (*work_dir == NULL) {

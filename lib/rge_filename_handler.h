@@ -32,7 +32,7 @@ typedef long unsigned int luint;
 typedef long int lint;
 
 // --+ internal +---------------------------------------------------------------
-// Beam energy of different runs. TODO. This should be taken from RCDB.
+// Beam energy of different runs.
 #define RGE_BE11983 10.3894 //  50 nA.
 #define RGE_BE12016 10.3894 // 250 nA.
 #define RGE_BE12439  2.1864 //  15 nA.

@@ -73,8 +73,6 @@ static rge_particle particle_init();
  * Initialize a new particle using data from the input parameters. Particle is
  *     declared as valid, but PID and mass remain undetermined -- and thus it is
  *     not yet defined if particle is a trigger electron or a hadron.
- *
- * NOTE. If execution is too slow, DIS variables can be cached here.
  */
 static rge_particle particle_init(
         int charge, double beta, int sector, double vx, double vy, double vz,

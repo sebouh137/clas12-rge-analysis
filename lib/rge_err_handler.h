@@ -42,10 +42,9 @@ static int handle_err();
 // --+ library +----------------------------------------------------------------
 /**
  * Error number. Initially defined to RGEERR_UNDEFINED to check if the program
- *     ends abruptly without setting an error number.
- *
- * NOTE. To check for undefined errors, all run() functions in the code should
- *       have a line with `rge_errno = RGEERR_NOERR;` before returning 0.
+ *     ends abruptly without setting an error number. To check for undefined
+ *     errors, all run() functions in the code should have a line with
+ *     `rge_errno = RGEERR_NOERR;` before returning 0.
  */
 extern uint rge_errno;
 

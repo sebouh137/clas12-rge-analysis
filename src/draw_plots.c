@@ -207,7 +207,7 @@ static int create_acc_corr_plots(
         }
         if (plot_type == 1) {
             rge_errno = RGEERR_2DACCEPTANCEPLOT;
-            return 1; // NOTE. Feature not available.
+            return 1; // Feature not available.
         }
         ++(*idx);
         return 0;
@@ -369,10 +369,6 @@ static int run(
         )) return 1;
     }
 
-    // NOTE. This function could receive a few arguments to speed IO up.
-    //       Pre-configured cuts, binnings, and corrections would be nice.
-    // TODO. Prepare corrections (acceptance, radiative, Feynman, etc...).
-
     // === PARTICLE SELECTION ==================================================
     printf("\nWhat particle should be plotted? Available cuts:\n[");
     for (int part_i = 0; part_i < PART_LIST_SIZE; ++part_i)
@@ -423,13 +419,7 @@ static int run(
         dis_cuts      = true;
     }
 
-    // TODO. Apply custom cuts.
-
     // === SETUP BINNING =======================================================
-    // TODO. If acc_plot == true, limit binning in Q2, nu, z_h, Pt2, and
-    //       phi_PQ to acceptance correction bins.
-    // TODO. Change bin_range to bin_edges for variable bin sizes.
-
     printf("\nNumber of dimensions for binning?\n");
     luint dim_bins = static_cast<luint>(rge_catch_long());
     __extension__ int    bin_vars[dim_bins];
@@ -468,8 +458,6 @@ static int run(
     }
 
     // === SETUP PLOT ==========================================================
-    // TODO. Change plot_range to plot_edges to get variable bin sizes.
-
     // Number of plots.
     luint plot_arr_size;
 
@@ -540,8 +528,6 @@ static int run(
     if (acc_plot) {
         memcpy(plot_type,  ACC_PX, sizeof plot_type);
         memcpy(plot_vars,  ACC_VX, sizeof plot_vars);
-        // NOTE. plot_nbins is given by acc_nbins. Then, each bin size is given
-        //       by acc_edges.
     }
 
     // === SETUP NTUPLES =======================================================
@@ -613,7 +599,6 @@ static int run(
         no_tre_pass = true;
         Q2_pass = vars[RGE_Q2.addr] >= RGE_Q2CUT;
         W2_pass = vars[RGE_W2.addr] >= RGE_W2CUT;
-        // zh_pass = vars[RGE_ZH.addr] <= RGE_ZHCUT;
 
         valid_event[static_cast<luint>(vars[RGE_EVENTNO.addr]+0.5)] =
                 no_tre_pass && Q2_pass && W2_pass && zh_pass;
@@ -807,10 +792,9 @@ static int run(
                                         i4;
 
                                 // Find which ID should be updated.
-                                // NOTE. This assumes the order of variables of
-                                //       ACC_VX to be Q2, nu, zh, pt2, phiPQ.
-                                //       If that changes, this should change
-                                //       too.
+                                // This assumes the order of variables of ACC_VX
+                                // to be Q2, nu, zh, pt2, phiPQ. If that
+                                // changes, this should change as well.
                                 luint sel_idx;
                                 switch(plot_i) {
                                     case 0: sel_idx = i0; break;
