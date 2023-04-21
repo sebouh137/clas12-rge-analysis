@@ -21,7 +21,7 @@ int get_bin_edges(
 ) {
     // Get binning sizes.
     for (int bin_i = 0; bin_i < 5; ++bin_i) {
-        fscanf(file_in, "%lu ", &(bin_nedges[bin_i]));
+        fscanf_dump = fscanf(file_in, "%lu ", &(bin_nedges[bin_i]));
     }
 
     // Get bin edges.
@@ -30,12 +30,12 @@ int get_bin_edges(
                 malloc(bin_nedges[bin_i] * sizeof(*bin_edges[bin_i]))
         );
         for (luint edge_i = 0; edge_i < bin_nedges[bin_i]; ++edge_i) {
-            fscanf(file_in, "%lf ", &(bin_edges[bin_i][edge_i]));
+            fscanf_dump = fscanf(file_in, "%lf ", &(bin_edges[bin_i][edge_i]));
         }
     }
 
     // Get # of pids.
-    fscanf(file_in, "%lu", pids_size);
+    fscanf_dump = fscanf(file_in, "%lu", pids_size);
 
     return 0;
 }
@@ -46,7 +46,7 @@ int get_acc_corr(
 ) {
     // Get PIDs.
     for (luint pid_i = 0; pid_i < pids_size; ++pid_i) {
-        fscanf(file_in, "%ld ", &(pids[pid_i]));
+        fscanf_dump = fscanf(file_in, "%ld ", &(pids[pid_i]));
     }
 
     // Get acceptance correction.
@@ -56,7 +56,7 @@ int get_acc_corr(
                 malloc(nbins * sizeof(*n_thrown[pid_i]))
         );
         for (luint bin_i = 0; bin_i < nbins; ++bin_i) {
-            fscanf(file_in, "%d ", &(n_thrown[pid_i][bin_i]));
+            fscanf_dump = fscanf(file_in, "%d ", &(n_thrown[pid_i][bin_i]));
         }
 
         // Get number of simulated events.
@@ -64,7 +64,7 @@ int get_acc_corr(
                 malloc(nbins * sizeof(*n_simul[pid_i]))
         );
         for (luint bin_i = 0; bin_i < nbins; ++bin_i) {
-            fscanf(file_in, "%d ", &(n_simul[pid_i][bin_i]));
+            fscanf_dump = fscanf(file_in, "%d ", &(n_simul[pid_i][bin_i]));
         }
     }
 
@@ -84,7 +84,9 @@ int rge_get_sf_params(
     for (int sector_i = 0; sector_i < RGE_NSECTORS; ++sector_i) {
         for (int edge_i = 0; edge_i < 2; ++edge_i) {
             for (int param_i = 0; param_i < RGE_NSFPARAMS; ++param_i) {
-                fscanf(file_in, "%lf ", &sf[sector_i][param_i][edge_i]);
+                fscanf_dump = fscanf(
+                        file_in, "%lf ", &sf[sector_i][param_i][edge_i]
+                );
             }
         }
     }

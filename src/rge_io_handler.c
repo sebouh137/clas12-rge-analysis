@@ -108,7 +108,7 @@ bool rge_catch_yn() {
     while (true) {
         char str[32];
         printf(">>> ");
-        scanf("%31s", str);
+        scanf_dump = scanf("%31s", str);
 
         if (!strcmp(str, "y") || !strcmp(str, "Y")) return true;
         if (!strcmp(str, "n") || !strcmp(str, "N")) return false;
@@ -121,7 +121,7 @@ long rge_catch_long() {
         char str[32];
         char *endptr;
         printf(">>> ");
-        scanf("%31s", str);
+        scanf_dump = scanf("%31s", str);
         r = strtol(str, &endptr, 10);
 
         if (endptr != str) break;
@@ -136,7 +136,7 @@ double rge_catch_double() {
         char str[32];
         char *endptr;
         printf(">>> ");
-        scanf("%31s", str);
+        scanf_dump = scanf("%31s", str);
         r = strtod(str, &endptr);
 
         if (endptr != str) break;
@@ -150,7 +150,7 @@ int rge_catch_string(const char *arr[], int size) {
     while (true) {
         char str[32];
         printf(">>> ");
-        scanf("%31s", str);
+        scanf_dump = scanf("%31s", str);
 
         for (int i = 0; i < size; ++i) if (!strcmp(str, arr[i])) x = i;
         if (x != -1) break;

@@ -32,6 +32,9 @@ typedef long unsigned int luint;
 typedef long int lint;
 
 // --+ internal +---------------------------------------------------------------
+/** Integer where to dump the unused return value of scanf. */
+static int scanf_dump;
+
 /** Minimum number of FMT layers to accept a track. */
 static uint FMTMINLAYERS = 2;
 /** Total number of FMT layers. */
