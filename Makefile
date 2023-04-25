@@ -17,10 +17,10 @@
 CXX_STD = -std=c++17
 
 # Locations.
-BIN         := ./bin
-BLD         := ./build
-SRC         := ./src
-LIB         := ./lib
+BIN := ./bin
+BLD := ./build
+SRC := ./src
+LIB := ./lib
 
 # C++ compiler + flags.
 CXX         := g++
@@ -47,6 +47,7 @@ HXX         := $(RXX) $(HIPOCFLAGS)
 # Objects.
 OBJS := $(BLD)/constants.o \
 		$(BLD)/err_handler.o \
+		$(BLD)/extract_sf.o \
 		$(BLD)/file_handler.o \
 		$(BLD)/filename_handler.o \
 		$(BLD)/hipo_bank.o \
