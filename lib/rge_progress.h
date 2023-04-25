@@ -27,19 +27,19 @@ typedef long int lint;
 
 // --+ internal +---------------------------------------------------------------
 /** Length (in chars) of the progress bar. */
-static int RGE_PBARLENGTH         = 50;
+static const int PBARLENGTH = 50;
 /** Total number of entries. */
-static lint rge_pbar_nentries =  0;
+static lint pbar_nentries = 0;
 /** Counter to check in which part of the progress bar we are. */
-static lint rge_pbar_divcntr  =  0;
+static lint pbar_divcntr  = 0;
 /** Counter to check if the bar needs to be updated or not. */
-static lint rge_pbar_splitter =  0;
+static lint pbar_splitter = 0;
 
 // --+ library +----------------------------------------------------------------
-/** Set the rge_pbar_nentries state variable. */
+/** Set the pbar_nentries state variable. */
 int rge_pbar_set_nentries(lint in_nentries);
 
-/** Reset the rge_pbar_nentries and rge_pbar_divcntr state variables to 0. */
+/** Reset the pbar_nentries and pbar_divcntr state variables to 0. */
 int rge_pbar_reset();
 
 /**
