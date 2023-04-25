@@ -134,7 +134,7 @@ Pull requests are welcome. For major changes, open an issue first to discuss the
 - [ ] Include GitHub tests -- I've no clue on how to do this with ROOT + HIPO.
 - [ ] Apply radiative correction.
 - [ ] Apply Feynman cuts.
-- [ ] Improve sampling fraction handling.
+- [x] Improve sampling fraction handling.
 - [ ] Get beam energy from `RCDB` instead of hardcoding it -- check `get_beam_energy()` function from `file_handler.c`.
 
 ## License

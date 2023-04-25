@@ -25,6 +25,7 @@
 // rge-analysis.
 #include "../lib/rge_constants.h"
 #include "../lib/rge_err_handler.h"
+#include "../lib/rge_extract_sf.h"
 #include "../lib/rge_file_handler.h"
 #include "../lib/rge_filename_handler.h"
 #include "../lib/rge_hipo_bank.h"
@@ -233,15 +234,29 @@ static int run(
     // Get sampling fraction.
     char sampling_fraction_file[PATH_MAX];
     if (run_no / 1000 != 999) {
+        // Input file is data.
         sprintf(
                 sampling_fraction_file, "%s/sf_params_%06d.txt",
                 data_dir, run_no
         );
     }
     else {
+        // Input file is simulation.
         sprintf(sampling_fraction_file, "%s/sf_params_mc.txt", data_dir);
     }
     double sampling_fraction_params[RGE_NSECTORS][RGE_NSFPARAMS][2];
+    if (access(sampling_fraction_file, F_OK) != 0) {
+        // No sampling fraction file for this run, we need to extract it.
+        printf(
+                "No sampling fraction data found for run %d. Running "
+                "extract_sf().\n", run_no
+        );
+        if (rge_extract_sf(filename_in, work_dir, data_dir, n_events, run_no)) {
+            return 1;
+        }
+        printf("Done!\n\n");
+        rge_errno = RGEERR_UNDEFINED;
+    }
     if (rge_get_sf_params(sampling_fraction_file, sampling_fraction_params)) {
         return 1;
     }
@@ -295,6 +310,7 @@ static int run(
     printf("Processing %ld events from %s.\n", n_events, filename_in);
 
     // Prepare fancy progress bar.
+    rge_pbar_reset();
     rge_pbar_set_nentries(n_events);
 
     // Particle counters.
