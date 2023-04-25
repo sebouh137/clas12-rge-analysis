@@ -15,29 +15,13 @@
 
 // C.
 #include "libgen.h"
-
-// C++.
-#include <map>
-#include <utility>
-
-// ROOT.
-#include <TCanvas.h>
-#include <TF1.h>
-#include <TFile.h>
-#include <TGraphErrors.h>
-#include <TH1.h>
-#include <TH2.h>
-#include <TStyle.h>
+#include "limits.h"
 
 // rge-analysis.
-#include "../lib/rge_constants.h"
 #include "../lib/rge_err_handler.h"
 #include "../lib/rge_extract_sf.h"
 #include "../lib/rge_filename_handler.h"
-#include "../lib/rge_hipo_bank.h"
 #include "../lib/rge_io_handler.h"
-#include "../lib/rge_math_utils.h"
-#include "../lib/rge_progress.h"
 
 static const char *USAGE_MESSAGE =
 "Usage: extract_sf [-hn:w:d:] infile\n"

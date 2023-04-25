@@ -18,8 +18,8 @@
 // --+ internal +---------------------------------------------------------------
 rge_particle particle_init() {
     rge_particle p;
-    p.is_valid            = false;
-    p.is_hadron           = false;
+    p.is_valid   = false;
+    p.is_hadron  = false;
     p.is_trigger = false;
 
     return p;

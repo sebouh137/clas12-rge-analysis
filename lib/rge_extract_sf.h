@@ -18,7 +18,7 @@
 
 // --+ preamble +---------------------------------------------------------------
 // C.
-#include "libgen.h"
+#include <limits.h>
 
 // C++.
 #include <map>
@@ -36,9 +36,7 @@
 // rge-analysis.
 #include "../lib/rge_constants.h"
 #include "../lib/rge_err_handler.h"
-#include "../lib/rge_filename_handler.h"
 #include "../lib/rge_hipo_bank.h"
-#include "../lib/rge_io_handler.h"
 #include "../lib/rge_math_utils.h"
 #include "../lib/rge_progress.h"
 
