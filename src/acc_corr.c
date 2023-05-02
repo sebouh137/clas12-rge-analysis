@@ -54,6 +54,13 @@ static const char *USAGE_MESSAGE =
 #define RGE_TREENAMETHRN "ntuple_thrown"
 
 /**
+ * List of PIDs that can appear in thrown events, but are not interesting for
+ * SIDIS analysis.
+ */
+#define BADPIDS_SIZE 4
+static int badpids[BADPIDS_SIZE] = {-2112, -2212, -12, 12};
+
+/**
 * Return position of value v inside a doubles array b of size s. If v is not
 *     inside b, return -1.
 */
@@ -215,13 +222,25 @@ static int run(
 
     for (int evn = 0; evn < thrown->GetEntries(); ++evn) {
         thrown->GetEntry(evn);
-        bool found = false;
-        for (int pid_i = 0; pid_i < pidlist_size; ++pid_i) {
-            if (pidlist[pid_i] - .5 <= s_pid && s_pid <= pidlist[pid_i] + .5) {
-                found = true;
+        bool skip = false;
+
+        // Check that PID is useful for SIDIS analysis.
+        for (int pid_i = 0; pid_i < BADPIDS_SIZE; ++pid_i) {
+            if (badpids[pid_i] - .5 <= s_pid && s_pid <= badpids[pid_i] + .5) {
+                skip = true;
             }
         }
-        if (found) continue;
+        if (skip) continue;
+
+        // Check if we have already found this PID.
+        for (int pid_i = 0; pid_i < pidlist_size; ++pid_i) {
+            if (pidlist[pid_i] - .5 <= s_pid && s_pid <= pidlist[pid_i] + .5) {
+                skip = true;
+            }
+        }
+        if (skip) continue;
+
+        // Add PID to list.
         pidlist[pidlist_size] = s_pid;
         ++pidlist_size;
     }

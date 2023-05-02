@@ -130,6 +130,7 @@ Keep in mind that opening any `TFile` will give you about 140 lines of memory ma
 Pull requests are welcome. For major changes, open an issue first to discuss the changes and figure out a work plan before putting serious work into them.
 
 **Pending tasks are**:
+- [ ] Implement electron handling in `acc_corr.c`.
 - [ ] Implement variable bin sizes for every variable and binning.
 - [ ] Include GitHub tests -- I've no clue on how to do this with ROOT + HIPO.
 - [ ] Apply radiative correction.
