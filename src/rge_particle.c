@@ -101,7 +101,7 @@ int match_pid(
                 *pid = hypothesis;
             }
             break;
-        case 321: case 2212: case 45: case 2112: case 22:
+        case 321: case 2212: case 45: case 2112: case 22: case 13: case -13:
             if (recon_match) *pid = hypothesis;
             break;
         default:
