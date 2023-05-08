@@ -57,8 +57,10 @@ static const char *USAGE_MESSAGE =
  * List of PIDs that can appear in thrown events, but are not interesting for
  * SIDIS analysis.
  */
-#define BADPIDS_SIZE 4
-static int badpids[BADPIDS_SIZE] = {-2112, -2212, -12, 12};
+#define BADPIDS_SIZE 11
+static int badpids[BADPIDS_SIZE] = {
+        2112, -2112, 2212, -2212, -12, 12, -13, 13, 321, -321, 130
+};
 
 /**
 * Return position of value v inside a doubles array b of size s. If v is not
