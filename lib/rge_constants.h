@@ -81,7 +81,7 @@ __extension__ const RGE_VAR RGE_PHI    = {.addr = 15, .name = "#phi"};
 __extension__ const RGE_VAR RGE_BETA   = {.addr = 16, .name = "#beta"};
 
 /** Tracking variables. */
-__extension__ const RGE_VAR RGE_CHI2 = {.addr = 17, .name = "chi2"};
+__extension__ const RGE_VAR RGE_CHI2 = {.addr = 17, .name = "#chi^{2}"};
 __extension__ const RGE_VAR RGE_NDF  = {.addr = 18, .name = "NDF"};
 
 /** Calorimeter variables. */
@@ -98,15 +98,15 @@ __extension__ const RGE_VAR RGE_NPHELTCC = {.addr = 24, .name = "Nphe_{LTCC}"};
 __extension__ const RGE_VAR RGE_NPHEHTCC = {.addr = 25, .name = "Nphe_{HTCC}"};
 
 /** DIS variables. */
-__extension__ const RGE_VAR RGE_Q2 = {.addr = 26, .name = "Q2"};
+__extension__ const RGE_VAR RGE_Q2 = {.addr = 26, .name = "Q^{2}"};
 __extension__ const RGE_VAR RGE_NU = {.addr = 27, .name = "#nu"};
 __extension__ const RGE_VAR RGE_XB = {.addr = 28, .name = "x_{bjorken}"};
-__extension__ const RGE_VAR RGE_W2 = {.addr = 29, .name = "W2"};
+__extension__ const RGE_VAR RGE_W2 = {.addr = 29, .name = "W^{2}"};
 
 /** SIDIS variables. */
 __extension__ const RGE_VAR RGE_ZH      = {.addr = 30, .name = "z_{h}"};
-__extension__ const RGE_VAR RGE_PT2     = {.addr = 31, .name = "Pt2"};
-__extension__ const RGE_VAR RGE_PL2     = {.addr = 32, .name = "Pl2"};
+__extension__ const RGE_VAR RGE_PT2     = {.addr = 31, .name = "P_{T}{2}"};
+__extension__ const RGE_VAR RGE_PL2     = {.addr = 32, .name = "P_{L}{2}"};
 __extension__ const RGE_VAR RGE_PHIPQ   = {.addr = 33, .name = "#phi_{PQ}"};
 __extension__ const RGE_VAR RGE_THETAPQ = {.addr = 34, .name = "#theta_{PQ}"};
 
