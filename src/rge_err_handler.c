@@ -52,6 +52,8 @@ static const std::map<uint, const char *> ERRMAP = {
     {RGEERR_INVALIDACCEPTANCEOPT,
             "Option -A is only valid if an acceptance correction file is "
             "specified using -a."},
+    {RGEERR_INVALIDPID,
+            "Selected PID is invalid. Input a valid PID after -p."},
 
     // File errors.
     {RGEERR_NOINPUTFILE,

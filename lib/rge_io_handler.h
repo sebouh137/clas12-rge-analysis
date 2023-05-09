@@ -46,7 +46,7 @@ static int is_number(char c);
 /** Check if string s is a number. Returns 1 if it is, 0 if it isn't. */
 static int is_number(char *s);
 
-/* Run strtol from n to t, returning appropriate error codes. */
+/** Run strtol from n to t, returning appropriate error codes. */
 static int run_strtol(lint *n, char *t);
 
 // --+ library +----------------------------------------------------------------
@@ -73,10 +73,13 @@ int rge_grab_multiarg(
         int argc, char **argv, int *opt_idx, luint *size, double **arr
 );
 
-/* Run strtol on arg to get number of entries. */
+/** Run strtol on arg to get number of entries. */
 int rge_process_nentries(lint *nentries, char *arg);
 
-/* Run strtol on arg to get number of FMT layers required. */
+/** Run strtol on arg to get PID. */
+int rge_process_pid(lint *pid, char *arg);
+
+/** Run strtol on arg to get number of FMT layers required. */
 int rge_process_fmtnlayers(lint *nlayers, char *arg);
 
 /** Catch a y (yes) or a n (no) from stdin. */

@@ -45,32 +45,27 @@ rge_pidconstants pid_constants_init(int q, double m, const char *n) {
     return __extension__ (rge_pidconstants) {.charge = q, .mass = m, .name = n};
 }
 
-int pid_invalid(int pid) {
+// --+ library +----------------------------------------------------------------
+int rge_pid_invalid(int pid) {
     try {
         PID_MAP.at(pid);
         return 0;
     }
     catch (...) {}
 
+    rge_errno = RGEERR_PIDNOTFOUND;
     return 1;
 }
 
-// --+ library +----------------------------------------------------------------
 int rge_get_charge(int pid, int *charge) {
-    if (pid_invalid(pid)) {
-        rge_errno = RGEERR_PIDNOTFOUND;
-        return 1;
-    }
+    if (rge_pid_invalid(pid)) return 1;
 
     *charge = PID_MAP.at(pid).charge;
     return 0;
 }
 
 int rge_get_mass(int pid, double *mass) {
-    if (pid_invalid(pid)) {
-        rge_errno = RGEERR_PIDNOTFOUND;
-        return 1;
-    }
+    if (rge_pid_invalid(pid)) return 1;
 
     *mass = PID_MAP.at(pid).mass;
     return 0;

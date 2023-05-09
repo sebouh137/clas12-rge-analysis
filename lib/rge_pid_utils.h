@@ -57,9 +57,6 @@ typedef struct {
  */
 static rge_pidconstants pid_constants_init(int q, double m, const char *n);
 
-/** Return 0 if PID_MAP contains pid, 1 otherwise. */
-static int pid_invalid(int pid);
-
 /** PID_MAP global iterator. */
 static std::map<int, rge_pidconstants>::const_iterator pid_it;
 
@@ -69,6 +66,9 @@ static uint neutral_size  = 0;
 static uint positive_size = 0;
 
 // --+ library +----------------------------------------------------------------
+/** Return 0 if PID_MAP contains pid, 1 otherwise. */
+int rge_pid_invalid(int pid);
+
 /**
  * Get charge of particle associated to PID. If PID is not found in PID_MAP,
  *     sets rge_errno to RGEERR_PIDNOTFOUND and returns 1.

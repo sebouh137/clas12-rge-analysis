@@ -92,6 +92,16 @@ int rge_process_nentries(lint *nentries, char *arg) {
     return 0;
 }
 
+int rge_process_pid(lint *pid, char *arg) {
+    int err = run_strtol(pid, arg);
+    if (err == 1 || err == 2) {
+        rge_errno = RGEERR_INVALIDPID;
+        return 1;
+    }
+
+    return 0;
+}
+
 int rge_process_fmtnlayers(lint *nlayers, char *arg) {
     int err = run_strtol(nlayers, arg);
     if (err == 1 || (

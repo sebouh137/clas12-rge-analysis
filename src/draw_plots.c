@@ -32,8 +32,9 @@
 #include "../lib/rge_math_utils.h"
 
 static const char *USAGE_MESSAGE =
-"Usage: draw_plots [-hn:o:a:w:] infile\n"
+"Usage: draw_plots [-hp:n:o:a:w:] infile\n"
 " * -h          : show this message and exit.\n"
+" * -p pid      : skip particle selection and draw plots for pid.\n"
 " * -n nentries : number of entries to process.\n"
 " * -o outfile  : output file name. Default is plots_<run_no>.root.\n"
 " * -a accfile  : apply acceptance correction using acc_filename.\n"
@@ -343,7 +344,8 @@ static lint find_idx(
 /** run() function of the program. Check USAGE_MESSAGE for details. */
 static int run(
         char *in_filename, char *out_filename, char *acc_filename,
-        char *work_dir, int run_no, lint nentries, bool apply_acc_corr
+        char *work_dir, int run_no, lint nentries, lint sel_pid,
+        bool apply_acc_corr
 ) {
     // Open input file.
     TFile *f_in  = TFile::Open(in_filename, "READ");
@@ -370,21 +372,31 @@ static int run(
     }
 
     // === PARTICLE SELECTION ==================================================
-    printf("\nWhat particle should be plotted? Available cuts:\n[");
-    for (int part_i = 0; part_i < PART_LIST_SIZE; ++part_i)
-        printf("%s, ", PART_LIST[part_i]);
-    printf("\b\b]\n");
-    int plot_particle = rge_catch_string(PART_LIST, PART_LIST_SIZE);
-    int plot_charge = INT_MAX;
-    int plot_pid    = INT_MAX;
-    if      (plot_particle == A_PPOS) plot_charge =  1;
-    else if (plot_particle == A_PNEU) plot_charge =  0;
-    else if (plot_particle == A_PNEG) plot_charge = -1;
-    else if (plot_particle == A_PPID) {
-        printf("\nSelect PID from:\n");
-        rge_print_pid_names();
-        plot_pid = rge_catch_long();
+    int plot_particle = INT_MAX;
+    int plot_charge   = INT_MAX;
+    int plot_pid      = INT_MAX;
+    if (sel_pid == 0) {
+        printf("\nWhat particle should be plotted? Available cuts:\n[");
+        for (int part_i = 0; part_i < PART_LIST_SIZE; ++part_i) {
+            printf("%s, ", PART_LIST[part_i]);
+        }
+        printf("\b\b]\n");
+        plot_particle = rge_catch_string(PART_LIST, PART_LIST_SIZE);
+        if      (plot_particle == A_PPOS) plot_charge =  1;
+        else if (plot_particle == A_PNEU) plot_charge =  0;
+        else if (plot_particle == A_PNEG) plot_charge = -1;
+        else if (plot_particle == A_PPID) {
+            printf("\nSelect PID from:\n");
+            rge_print_pid_names();
+            plot_pid = rge_catch_long();
+        }
     }
+    else {
+        plot_pid = sel_pid;
+    }
+
+    // If a PID was selected, check that it's valid.
+    if (plot_pid != INT_MAX && rge_pid_invalid(plot_pid)) return 1;
 
     // Find selected particle PID in acceptance correction data. If not found,
     //     return an error.
@@ -892,18 +904,21 @@ static int run(
  *     explained in the handle_err() function.
  */
 static int handle_args(
-        int argc, char **argv, char **in_filename, char **out_filename,
-        char **acc_filename, char **work_dir, int *run_no, lint *nentries,
-        bool *apply_acc_corr)
-{
+        int argc, char **argv, lint *sel_pid, lint *nentries, char **out_filename,
+        char **acc_filename, bool *apply_acc_corr, char **work_dir,
+        char **in_filename, int *run_no
+) {
     // Handle arguments.
     int opt;
     char *tmp_out_filename = NULL;
-    while ((opt = getopt(argc, argv, "-hn:o:a:Aw:")) != -1) {
+    while ((opt = getopt(argc, argv, "-hp:n:o:a:Aw:")) != -1) {
         switch (opt) {
             case 'h':
                 rge_errno = RGEERR_USAGE;
                 return 1;
+            case 'p':
+                if (rge_process_pid(sel_pid, optarg)) return 1;
+                break;
             case 'n':
                 if (rge_process_nentries(nentries, optarg)) return 1;
                 break;
@@ -971,24 +986,25 @@ static int handle_args(
 /** Entry point of the program. */
 int main(int argc, char **argv) {
     // Handle arguments.
-    char *in_filename   = NULL;
+    lint sel_pid        = 0;
+    lint nentries       = -1;
     char *out_filename  = NULL;
     char *acc_filename  = NULL;
-    char *work_dir      = NULL;
-    int run_no          = -1;
-    lint nentries       = -1;
     bool apply_acc_corr = true;
+    char *work_dir      = NULL;
+    char *in_filename   = NULL;
+    int run_no          = -1;
 
     int err = handle_args(
-            argc, argv, &in_filename, &out_filename, &acc_filename, &work_dir,
-            &run_no, &nentries, &apply_acc_corr
+            argc, argv, &sel_pid, &nentries, &out_filename, &acc_filename,
+            &apply_acc_corr, &work_dir, &in_filename, &run_no
     );
 
     // Run.
     if (rge_errno == RGEERR_UNDEFINED && err == 0) {
         run(
                 in_filename, out_filename, acc_filename, work_dir, run_no,
-                nentries, apply_acc_corr
+                nentries, sel_pid, apply_acc_corr
         );
     }
 

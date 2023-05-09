@@ -70,6 +70,7 @@ int rge_print_usage(const char *msg);
 #define RGEERR_BADEDGES                 15
 #define RGEERR_INVALIDFMTNLAYERS        16
 #define RGEERR_INVALIDACCEPTANCEOPT     17
+#define RGEERR_INVALIDPID               18
 // --+  50 -  99 file errors +--------------------------------------------------
 #define RGEERR_NOINPUTFILE              50
 #define RGEERR_NOSAMPFRACFILE           51
