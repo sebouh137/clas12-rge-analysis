@@ -93,6 +93,7 @@ Usage: make_ntuples [-hDf:n:w:d:] infile
                 Options are 0 (tracked only by DC), 2, and 3. If set to
                 something other than 0 and there is no FMT::Tracks bank in
                 the input file, the program will crash. Default is 0.
+ * -c         : apply FMT geometry cut on data.
  * -n nevents : number of events.
  * -w workdir : location where output root files are to be stored. Default
                 is root_io.

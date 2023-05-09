@@ -34,13 +34,14 @@
 #include "../lib/rge_progress.h"
 
 static const char *USAGE_MESSAGE =
-"Usage: make_ntuples [-hDf:n:w:d:] infile\n"
+"Usage: make_ntuples [-hDf:cn:w:d:] infile\n"
 " * -h         : show this message and exit.\n"
 " * -D         : activate debug mode.\n"
 " * -f fmtlyrs : define how many FMT layers should the track have hit.\n"
 "                Options are 0 (tracked only by DC), 2, and 3. If set to\n"
 "                something other than 0 and there is no FMT::Tracks bank in\n"
 "                the input file, the program will crash. Default is 0.\n"
+" * -c         : apply FMT geometry cut on data.\n"
 " * -n nevents : number of events.\n"
 " * -w workdir : location where output root files are to be stored. Default\n"
 "                is root_io.\n"
@@ -58,6 +59,12 @@ static const uint LTCC_ID = 16;
 static const uint FTOF1A_LYR = 1;
 static const uint FTOF1B_LYR = 2;
 static const uint FTOF2_LYR  = 3;
+
+/** FMT geometry cut constants. */
+static const double FMTCUT_RMIN  =  4.2575;
+static const double FMTCUT_RMAX  = 18.4800;
+static const double FMTCUT_Z0    = 26.1197;
+static const double FMTCUT_ANGLE = 57.29;
 
 /**
  * Find and return the most precise time of flight (TOF). Both the Forward Time
@@ -226,10 +233,48 @@ static int count_photoelectrons(
     return 0;
 }
 
+/**
+ * Apply FMT geometry cut on a particle. This cut is defined by the particle's
+ *     vz and its theta angle. theta_min and theta_max are given by:
+ *     theta_min = 57.29 * atan(FMTCUT_RMIN / (FMTCUT_Z0 - vz)),
+ *     theta_max = 57.29 * atan(FMTCUT_RMAX / (FMTCUT_Z0 - vz)),
+ *     where FMTCUT_RMIN and FMTCUT_RMAX are the radii of the inner and outer
+ *     circles of FMT, and FMTCUT_Z0 is the z position of the first FMT layer.
+ *
+ * @param p : particle for which we're applying the cut.
+ * @return  : 0 if particle passes the cut, 1 otherwise, 2 if there's an angle
+ *            conversion error.
+ */
+static int apply_fmtgeomtry_cut(rge_particle *p) {
+    // Get minimum theta allowed for particle.
+    double theta_min;
+    if (rge_to_rad(
+            FMTCUT_ANGLE * atan(FMTCUT_RMIN / (FMTCUT_Z0 - p->vz)),
+            &theta_min
+    )) return 2;
+
+    // Get maximum theta allowed for particle.
+    double theta_max;
+    if (rge_to_rad(
+            FMTCUT_ANGLE * atan(FMTCUT_RMAX / (FMTCUT_Z0 - p->vz)),
+            &theta_max
+    )) return 2;
+
+    // Get particle's theta.
+    double theta = atan2(sqrt(p->px*p->px + p->py*p->py), p->pz);
+
+    // Return 1 if particle fails.
+    if (theta_min > theta || theta > theta_max) return 1;
+
+    // Return 0 otherwise.
+    return 0;
+}
+
 /** run() function of the program. Check USAGE_MESSAGE for details. */
 static int run(
         char *filename_in, char *work_dir, char *data_dir, bool debug,
-        lint fmt_nlayers, lint n_events, int run_no, double energy_beam
+        lint fmt_nlayers, bool fmt_cut, lint n_events, int run_no,
+        double energy_beam
 ) {
     // Get sampling fraction.
     char sampling_fraction_file[PATH_MAX];
@@ -350,6 +395,13 @@ static int run(
             // Skip particle if it doesn't fit requirements.
             if (!part_trigger.is_valid) continue;
 
+            // Cut triggers outside of FMT's active region.
+            if (fmt_cut) {
+                int result = apply_fmtgeomtry_cut(&part_trigger);
+                if (result == 1) continue;
+                if (result == 2) return 1;
+            }
+
             // Get energy deposited in calorimeters.
             double energy_PCAL, energy_ECIN, energy_ECOU;
             if (get_deposited_energy(
@@ -419,6 +471,13 @@ static int run(
             // Skip particle if it doesn't fit requirements.
             if (!part.is_valid) continue;
 
+            // Cut particles outside of FMT's active region.
+            if (fmt_cut) {
+                int result = apply_fmtgeomtry_cut(&part);
+                if (result == 1) continue;
+                if (result == 2) return 1;
+            }
+
             // Get energy deposited in calorimeters.
             double energy_PCAL, energy_ECIN, energy_ECOU;
             if (get_deposited_energy(
@@ -463,7 +522,7 @@ static int run(
 
     // Print number of particles found to detect errors early.
     printf("Triggers found:  %d\n", trigger_counter);
-    printf("Particles found: %d\n", trigger_counter + particle_counter);
+    printf("Particles found: %d\n\n", trigger_counter + particle_counter);
 
     // Create output file.
     char filename_out[PATH_MAX];
@@ -493,12 +552,12 @@ static int run(
 /** Handle arguments for make_ntuples using optarg. */
 static int handle_args(
         int argc, char **argv, char **filename_in, char **work_dir,
-        char **data_dir, bool *debug, lint *fmt_nlayers, lint *n_events,
-        int *run_no, double *energy_beam
+        char **data_dir, bool *debug, lint *fmt_nlayers, bool *fmt_cut,
+        lint *n_events, int *run_no, double *energy_beam
 ) {
     // Handle arguments.
     int opt;
-    while ((opt = getopt(argc, argv, "-hDf:n:w:d:")) != -1) {
+    while ((opt = getopt(argc, argv, "-hDf:cn:w:d:")) != -1) {
         switch (opt) {
             case 'h':
                 rge_errno = RGEERR_USAGE;
@@ -508,6 +567,9 @@ static int handle_args(
                 break;
             case 'f':
                 if (rge_process_fmtnlayers(fmt_nlayers, optarg)) return 1;
+                break;
+            case 'c':
+                *fmt_cut = true;
                 break;
             case 'n':
                 if (rge_process_nentries(n_events, optarg)) return 1;
@@ -562,20 +624,21 @@ int main(int argc, char **argv) {
     char *data_dir     = NULL;
     bool debug         = false;
     lint fmt_nlayers   = 0;
+    bool fmt_cut       = false;
     lint n_events      = -1;
     int run_no         = -1;
     double energy_beam = -1;
 
     int err = handle_args(
             argc, argv, &filename_in, &work_dir, &data_dir, &debug,
-            &fmt_nlayers, &n_events, &run_no, &energy_beam
+            &fmt_nlayers, &fmt_cut, &n_events, &run_no, &energy_beam
     );
 
     // Run.
     if (rge_errno == RGEERR_UNDEFINED && err == 0) {
         run(
-                filename_in, work_dir, data_dir, debug, fmt_nlayers, n_events,
-                run_no, energy_beam
+                filename_in, work_dir, data_dir, debug, fmt_nlayers, fmt_cut,
+                n_events, run_no, energy_beam
         );
     }
 
