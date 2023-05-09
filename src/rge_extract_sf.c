@@ -100,7 +100,7 @@ int rge_extract_sf(
     // Create histogram and name arrays.
     std::map<const char *, TH1 *> histos;
 
-    char *sf1D_name_arr[NCALS][RGE_NSECTORS][
+    __extension__ char *sf1D_name_arr[NCALS][RGE_NSECTORS][
             static_cast<luint>(((SF_PMAX - SF_PMIN)/SF_PSTEP))
     ];
     char *sf2D_name_arr[NCALS][RGE_NSECTORS];
