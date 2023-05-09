@@ -58,8 +58,17 @@ static const char *USAGE_MESSAGE =
  * SIDIS analysis.
  */
 #define BADPIDS_SIZE 11
-static int badpids[BADPIDS_SIZE] = {
+static int BADPIDS[BADPIDS_SIZE] = {
         2112, -2112, 2212, -2212, -12, 12, -13, 13, 321, -321, 130
+};
+
+/**
+ * List of variable names from thrown file, in case its not the same as the ones
+ *     used in this code.
+ */
+#define DISVARS_SIZE 5
+static const char *THROWN_DISVARS[DISVARS_SIZE] = {
+        "Q2", "#nu", "z_{h}", "Pt2", "#phi_{PQ}"
 };
 
 /**
@@ -111,13 +120,20 @@ static int count_entries(
     Float_t s_pid, s_W, s_W2;
     Float_t s_bin[5] = {0, 0, 0, 0, 0};
     tree->SetBranchAddress(RGE_PID.name,   &s_pid);
-    tree->SetBranchAddress(RGE_Q2.name,    &(s_bin[0]));
-    tree->SetBranchAddress(RGE_NU.name,    &(s_bin[1]));
-    tree->SetBranchAddress(RGE_ZH.name,    &(s_bin[2]));
-    tree->SetBranchAddress(RGE_PT2.name,   &(s_bin[3]));
-    tree->SetBranchAddress(RGE_PHIPQ.name, &(s_bin[4]));
-    if (!simul) tree->SetBranchAddress("W", &s_W);
-    if (simul)  tree->SetBranchAddress(RGE_W2.name, &s_W2);
+    if (simul) {
+        tree->SetBranchAddress(RGE_Q2.name,    &(s_bin[0]));
+        tree->SetBranchAddress(RGE_NU.name,    &(s_bin[1]));
+        tree->SetBranchAddress(RGE_ZH.name,    &(s_bin[2]));
+        tree->SetBranchAddress(RGE_PT2.name,   &(s_bin[3]));
+        tree->SetBranchAddress(RGE_PHIPQ.name, &(s_bin[4]));
+        tree->SetBranchAddress(RGE_W2.name,    &s_W2);
+    }
+    else {
+        for (int var_i = 0; var_i < DISVARS_SIZE; ++var_i) {
+            tree->SetBranchAddress(THROWN_DISVARS[var_i], &(s_bin[var_i]));
+        }
+        tree->SetBranchAddress("W", &s_W);
+    }
 
     for (int evn = 0; evn < tree->GetEntries(); ++evn) {
         tree->GetEntry(evn);
@@ -228,7 +244,7 @@ static int run(
 
         // Check that PID is useful for SIDIS analysis.
         for (int pid_i = 0; pid_i < BADPIDS_SIZE; ++pid_i) {
-            if (badpids[pid_i] - .5 <= s_pid && s_pid <= badpids[pid_i] + .5) {
+            if (BADPIDS[pid_i] - .5 <= s_pid && s_pid <= BADPIDS[pid_i] + .5) {
                 skip = true;
             }
         }
