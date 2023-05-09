@@ -106,6 +106,9 @@ Generate ntuples relevant to SIDIS analysis based on the reconstructed variables
 ```
 Usage: draw_plots [-hn:o:a:w:] infile
  * -h          : show this message and exit.
+ * -p pid      : skip particle selection and draw plots for pid.
+ * -c          : apply all cuts (general, geometry, and DIS) instead of asking
+                 which ones to apply while running.
  * -n nentries : number of entries to process.
  * -o outfile  : output file name. Default is plots_<run_no>.root.
  * -a accfile  : apply acceptance correction using acc_filename.
@@ -115,7 +118,6 @@ Usage: draw_plots [-hn:o:a:w:] infile
                  is root_io.
  * infile      : input file produced by make_ntuples.
 ```
-
 Draw plots from a ROOT file built from `make_ntuples`. File should be named `<text>run_no.root`. This tool is built for those who don't enjoy using root too much, and should be able to get most basic plots needed in SIDIS analysis.
 
 ## Debugging

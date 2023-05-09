@@ -32,9 +32,11 @@
 #include "../lib/rge_math_utils.h"
 
 static const char *USAGE_MESSAGE =
-"Usage: draw_plots [-hp:n:o:a:w:] infile\n"
+"Usage: draw_plots [-hp:cn:o:a:w:] infile\n"
 " * -h          : show this message and exit.\n"
 " * -p pid      : skip particle selection and draw plots for pid.\n"
+" * -c          : apply all cuts (general, geometry, and DIS) instead of\n"
+"                 asking which ones to apply while running.\n"
 " * -n nentries : number of entries to process.\n"
 " * -o outfile  : output file name. Default is plots_<run_no>.root.\n"
 " * -a accfile  : apply acceptance correction using acc_filename.\n"
@@ -345,7 +347,7 @@ static lint find_idx(
 static int run(
         char *in_filename, char *out_filename, char *acc_filename,
         char *work_dir, int run_no, lint nentries, lint sel_pid,
-        bool apply_acc_corr
+        bool apply_all_cuts, bool apply_acc_corr
 ) {
     // Open input file.
     TFile *f_in  = TFile::Open(in_filename, "READ");
@@ -416,16 +418,21 @@ static int run(
     bool general_cuts  = false;
     bool geometry_cuts = false;
     bool dis_cuts      = false;
-    printf("\nApply all default cuts (general, geometry, DIS)? [y/n]\n");
-    if (!rge_catch_yn()) {
-        printf("\nApply general cuts? [y/n]\n");
-        general_cuts = rge_catch_yn();
-        printf("\nApply geometry cuts? [y/n]\n");
-        geometry_cuts = rge_catch_yn();
-        printf("\nApply DIS cuts? [y/n]\n");
-        dis_cuts = rge_catch_yn();
+    if (!apply_all_cuts) {
+        printf("\nApply all default cuts (general, geometry, DIS)? [y/n]\n");
+        if (!rge_catch_yn()) {
+            printf("\nApply general cuts? [y/n]\n");
+            general_cuts = rge_catch_yn();
+            printf("\nApply geometry cuts? [y/n]\n");
+            geometry_cuts = rge_catch_yn();
+            printf("\nApply DIS cuts? [y/n]\n");
+            dis_cuts = rge_catch_yn();
+        }
+        else {
+            apply_all_cuts = true;
+        }
     }
-    else {
+    if (apply_all_cuts) {
         general_cuts  = true;
         geometry_cuts = true;
         dis_cuts      = true;
@@ -904,20 +911,23 @@ static int run(
  *     explained in the handle_err() function.
  */
 static int handle_args(
-        int argc, char **argv, lint *sel_pid, lint *nentries, char **out_filename,
-        char **acc_filename, bool *apply_acc_corr, char **work_dir,
-        char **in_filename, int *run_no
+        int argc, char **argv, lint *sel_pid, bool *apply_all_cuts,
+        lint *nentries, char **out_filename, char **acc_filename,
+        bool *apply_acc_corr, char **work_dir, char **in_filename, int *run_no
 ) {
     // Handle arguments.
     int opt;
     char *tmp_out_filename = NULL;
-    while ((opt = getopt(argc, argv, "-hp:n:o:a:Aw:")) != -1) {
+    while ((opt = getopt(argc, argv, "-hp:cn:o:a:Aw:")) != -1) {
         switch (opt) {
             case 'h':
                 rge_errno = RGEERR_USAGE;
                 return 1;
             case 'p':
                 if (rge_process_pid(sel_pid, optarg)) return 1;
+                break;
+            case 'c':
+                *apply_all_cuts = true;
                 break;
             case 'n':
                 if (rge_process_nentries(nentries, optarg)) return 1;
@@ -987,6 +997,7 @@ static int handle_args(
 int main(int argc, char **argv) {
     // Handle arguments.
     lint sel_pid        = 0;
+    bool apply_all_cuts = false;
     lint nentries       = -1;
     char *out_filename  = NULL;
     char *acc_filename  = NULL;
@@ -996,15 +1007,15 @@ int main(int argc, char **argv) {
     int run_no          = -1;
 
     int err = handle_args(
-            argc, argv, &sel_pid, &nentries, &out_filename, &acc_filename,
-            &apply_acc_corr, &work_dir, &in_filename, &run_no
+            argc, argv, &sel_pid, &apply_all_cuts, &nentries, &out_filename,
+            &acc_filename, &apply_acc_corr, &work_dir, &in_filename, &run_no
     );
 
     // Run.
     if (rge_errno == RGEERR_UNDEFINED && err == 0) {
         run(
                 in_filename, out_filename, acc_filename, work_dir, run_no,
-                nentries, sel_pid, apply_acc_corr
+                nentries, sel_pid, apply_all_cuts, apply_acc_corr
         );
     }
 
