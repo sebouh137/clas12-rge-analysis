@@ -105,8 +105,8 @@ __extension__ const RGE_VAR RGE_W2 = {.addr = 29, .name = "W^{2}"};
 
 /** SIDIS variables. */
 __extension__ const RGE_VAR RGE_ZH      = {.addr = 30, .name = "z_{h}"};
-__extension__ const RGE_VAR RGE_PT2     = {.addr = 31, .name = "P_{T}{2}"};
-__extension__ const RGE_VAR RGE_PL2     = {.addr = 32, .name = "P_{L}{2}"};
+__extension__ const RGE_VAR RGE_PT2     = {.addr = 31, .name = "P_{T}^{2}"};
+__extension__ const RGE_VAR RGE_PL2     = {.addr = 32, .name = "P_{L}^{2}"};
 __extension__ const RGE_VAR RGE_PHIPQ   = {.addr = 33, .name = "#phi_{PQ}"};
 __extension__ const RGE_VAR RGE_THETAPQ = {.addr = 34, .name = "#theta_{PQ}"};
 
