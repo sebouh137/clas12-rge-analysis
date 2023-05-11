@@ -719,12 +719,17 @@ static int run(
         }
 
         // Remove DIS vars = 0.
+        if (vars[RGE_Q2.addr] == 0 || vars[RGE_NU.addr] == 0) {
+            continue;
+        }
+        // Remove SIDIS vars = 0 (for all but electrons!).
         if (
-                vars[RGE_Q2.addr]    == 0 ||
-                vars[RGE_NU.addr]    == 0 ||
-                vars[RGE_ZH.addr]    == 0 ||
-                vars[RGE_PT2.addr]   == 0 ||
-                vars[RGE_PHIPQ.addr] == 0
+                (10.5 > vars[RGE_PID.addr] && vars[RGE_PID.addr] > 11.5) &&
+                (
+                        vars[RGE_ZH.addr]    == 0 ||
+                        vars[RGE_PT2.addr]   == 0 ||
+                        vars[RGE_PHIPQ.addr] == 0
+                )
         ) {
             continue;
         }
