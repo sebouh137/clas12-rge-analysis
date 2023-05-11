@@ -13,22 +13,20 @@
 //
 // You can see a copy of the GNU Lesser Public License under the LICENSE file.
 
-#include <vector>
-#include <map>
-#include <TCanvas.h>
-#include <TFile.h>
-
 // --- Define macro constants here. ----------------------------------------- //
 // FILES.
-const char *INPUT_FILENAME_DC  = "../root_io/plots_dc_vz.root";
-const char *INPUT_FILENAME_FMT = "../root_io/plots_fmt2_vz.root";
-const char *OUTPUT_FILENAME    = "../root_io/dis_plots_vz.root";
+const int NFILES = 2;
+const char *IN_FILENAMES_VZ[NFILES] = {
+    "../root_io/plots_dc_dis_vz.root",
+    "../root_io/plots_fmt2_dis_vz.root"
+};
+const char *OUTPUT_FILENAME = "../root_io/dis_plots_vz.root";
 
 // PLOTS.
 const int NPLOTS = 2;
 const int NVARS = 5;
 const std::map<int, const char *> PLOT_NAMES {
-    {0, "Q2"}, {1, "#nu"}, {2, "z_{h}"}, {3, "Pt2"}, {4, "#phi_{PQ}"}
+    {0, "Q^{2}"}, {1, "#nu"}, {2, "z_{h}"}, {3, "P_{T}^{2}"}, {4, "#phi_{PQ}"}
 };
 const std::map<int, const char *> CANVAS_NAMES {
     {0, "Q2"}, {1, "nu"}, {2, "zh"}, {3, "Pt2"}, {4, "phiPQ"}
@@ -56,14 +54,13 @@ int plot_dis_vz() {
     fflush(stdout);
 
     // Open input files.
-    TFile *file_in_dc  = TFile::Open(INPUT_FILENAME_DC, "READ");
-    TFile *file_in_fmt = TFile::Open(INPUT_FILENAME_FMT, "READ");
-    if (
-            !file_in_dc  || file_in_dc->IsZombie() ||
-            !file_in_fmt || file_in_fmt->IsZombie()
-    ) {
-        fprintf(stderr, "\nInput files are not a valid root files.\n\n");
-        return 1;
+    TFile *in_files[NFILES];
+    for (int file_i = 0; file_i < NFILES; ++file_i) {
+        in_files[file_i] = TFile::Open(IN_FILENAMES_VZ[file_i], "READ");
+        if (!in_files[file_i] || in_files[file_i]->IsZombie()) {
+            fprintf(stderr, "File %s is not valid.\n", IN_FILENAMES_VZ[file_i]);
+            return 1;
+        }
     }
 
     // Create TCanvases.
@@ -86,10 +83,11 @@ int plot_dis_vz() {
         sprintf(bin_name, "%6.2f, %6.2f", bin, bin + BIN_INT);
 
         // Get bin dir.
-        TDirectory *dir_dc =
-                (TDirectory *) file_in_dc->Get(Form("v_{z} (%s)", bin_name));
-        TDirectory *dir_fmt =
-                (TDirectory *) file_in_fmt->Get(Form("v_{z} (%s)", bin_name));
+        TDirectory *dirs[NFILES];
+        for (int file_i = 0; file_i < NFILES; ++file_i) {
+            dirs[file_i] = (TDirectory *)
+                    in_files[file_i]->Get(Form("v_{z} (%s)", bin_name));
+        }
 
         // Draw plot on canvases.
         int canvas_idx = -1;
@@ -99,12 +97,11 @@ int plot_dis_vz() {
 
             // Get TH1s from files.
             TH1 *plots[NPLOTS];
-            plots[0] = (TH1 *) dir_dc->Get(
+            for (int file_i = 0; file_i < NFILES; ++file_i) {
+                plots[file_i] = (TH1 *) dirs[file_i]->Get(
                     Form("%s (v_{z}: %s)", PLOT_NAMES.at(canvas_idx), bin_name)
-            );
-            plots[1] = (TH1 *) dir_fmt->Get(
-                    Form("%s (v_{z}: %s)", PLOT_NAMES.at(canvas_idx), bin_name)
-            );
+                );
+            }
 
             // Create TGraphErrors from TH1s.
             TGraphErrors *graphs[NPLOTS];
@@ -148,14 +145,14 @@ int plot_dis_vz() {
                 else             graphs[plot_i]->Draw("sameP");
 
                 // Get maximum y value.
-                if (graphs[plot_i]->GetMaximum() > y_max) {
-                    y_max = graphs[plot_i]->GetMaximum();
+                if (plots[plot_i]->GetMaximum() > y_max) {
+                    y_max = plots[plot_i]->GetMaximum();
                 }
             }
 
             // Rescale y axis to fit both DC and FMT data.
             for (int plot_i = 0; plot_i < NPLOTS; ++plot_i) {
-                plots[plot_i]->GetYaxis()->SetRangeUser(0, 1.1*y_max);
+                graphs[plot_i]->GetYaxis()->SetRangeUser(0, 1.1*y_max);
             }
 
             // Add legend.
@@ -170,23 +167,6 @@ int plot_dis_vz() {
         }
     }
 
-    // Add title to canvases.
-    // int plot_i = 0;
-    // for (TCanvas *canvas : canvases) {
-    //     canvas->cd();
-    //     TPad *padtitle = new TPad("padtitle", "padtitle",0.3,0.9,0.7,0.99);
-    //     padtitle->Draw();
-    //     padtitle->cd();
-    //     padtitle->SetFillStyle(0);
-    //
-    //     TLatex *tex = new TLatex(0.5, 0.5, PLOT_NAMES.at(plot_i));
-    //     tex->SetTextAlign(22);
-    //     tex->SetTextSize(0.5);
-    //     tex->Draw();
-    //
-    //     ++plot_i;
-    // }
-
     // Write to file.
     TFile *file_out = TFile::Open(OUTPUT_FILENAME, "RECREATE");
     for (TCanvas *canvas : canvases) {
@@ -194,8 +174,9 @@ int plot_dis_vz() {
     }
 
     // Clean up.
-    file_in_dc ->Close();
-    file_in_fmt->Close();
+    for (int file_i = 0; file_i < NFILES; ++file_i) {
+        in_files[file_i]->Close();
+    }
     file_out->Close();
     printf("Done!\n");
 

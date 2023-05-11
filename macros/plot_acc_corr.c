@@ -31,9 +31,9 @@ const std::map<int, const char *> PLOT_NAMES {
 };
 // Colors.
 const int color_thrown = kRed;
-const int color_dc     = kMagenta - 3;
-const int color_fmt2   = kBlue - 6;
-const int color_fmt3   = kGreen - 9;
+const int color_dc     = kMagenta;
+const int color_fmt2   = kBlue;
+const int color_fmt3   = kGreen;
 
 // --- Macro code begins here ----------------------------------------------- //
 /**

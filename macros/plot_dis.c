@@ -13,21 +13,19 @@
 //
 // You can see a copy of the GNU Lesser Public License under the LICENSE file.
 
-#include <TFile.h>
-#include <TCanvas.h>
-#include <TH1F.h>
-
 // --- Define macro constants here ---------------------------------------------
 // FILES.
-const char *DC_FILENAME     = "../root_io/plots_dc.root";
-const char *FMT2_FILENAME   = "../root_io/plots_fmt2.root";
-const char *OUTPUT_FILENAME = "../root_io/dis_plots.root";
+const int NFILES = 2; // Number of input files.
+const char *IN_FILENAMES[NFILES] = {
+        "../root_io/plots_dc_dis.root",
+        "../root_io/plots_fmt2_dis.root"
+};
+const char *OUT_FILENAME = "../root_io/dis_plots.root";
 
 // PLOTS.
-const int NPLOTS = 2;
 const int NVARS = 5;
 const std::map<int, const char *> VAR_NAMES {
-        {0, "Q2"}, {1, "#nu"}, {2, "z_{h}"}, {3, "Pt2"}, {4, "#phi_{PQ}"}
+        {0, "Q^{2}"}, {1, "#nu"}, {2, "z_{h}"}, {3, "P_{T}^{2}"}, {4, "#phi_{PQ}"}
 };
 const std::map<int, const char *> CANVAS_NAMES {
         {0, "Q2"}, {1, "nu"}, {2, "zh"}, {3, "Pt2"}, {4, "phiPQ"}
@@ -40,20 +38,19 @@ int add_tcanvas(std::vector<TCanvas *> *c, const char *n) {
     return 0;
 }
 
-/** Run the program. **/
+/** Obtain DIS plots from IN_FILENAMES. */
 int plot_dis() {
-    printf("Running... ");
+    printf("Plotting unbinned DIS variables... ");
     fflush(stdout);
 
     // Open input files.
-    TFile *file_in_dc   = TFile::Open(DC_FILENAME);
-    TFile *file_in_fmt2 = TFile::Open(FMT2_FILENAME);
-    if (
-            !file_in_dc   || file_in_dc->IsZombie() ||
-            !file_in_fmt2 || file_in_fmt2->IsZombie()
-    ) {
-        fprintf(stderr, "\nInput files are not valid root files.\n\n");
-        return 1;
+    TFile *in_files[NFILES];
+    for (int file_i = 0; file_i < NFILES; ++file_i) {
+        in_files[file_i] = TFile::Open(IN_FILENAMES[file_i]);
+        if (!in_files[file_i] || in_files[file_i]->IsZombie()) {
+            fprintf(stderr, "File %s is not valid.\n", IN_FILENAMES[file_i]);
+            return 1;
+        }
     }
 
     // Create TCanvases.
@@ -68,14 +65,16 @@ int plot_dis() {
         canvas->cd();
 
         // Get TH1Fs from files.
-        TH1F *plots[NPLOTS];
-        plots[0] = (TH1F *) file_in_dc  ->Get(VAR_NAMES.at(canvas_idx));
-        plots[1] = (TH1F *) file_in_fmt2->Get(VAR_NAMES.at(canvas_idx));
+        TH1F *plots[NFILES];
+        for (int file_i = 0; file_i < NFILES; ++file_i) {
+            plots[file_i] =
+                    (TH1F *) in_files[file_i]->Get(VAR_NAMES.at(canvas_idx));
+        }
 
         // Create TGraphErrors from TH1Fs.
-        TGraphErrors *graphs[NPLOTS];
+        TGraphErrors *graphs[NFILES];
         double y_max = 0;
-        for (int plot_i = 0; plot_i < NPLOTS; ++plot_i) {
+        for (int plot_i = 0; plot_i < NFILES; ++plot_i) {
             // Create TGraphErrors with the same number of points as TH1F plots.
             graphs[plot_i] = new TGraphErrors(plots[plot_i]->GetNbinsX());
 
@@ -107,14 +106,14 @@ int plot_dis() {
             else             graphs[plot_i]->Draw("sameP");
 
             // Get maximum y value.
-            if (graphs[plot_i]->GetMaximum() > y_max) {
-                y_max = graphs[plot_i]->GetMaximum();
+            if (plots[plot_i]->GetMaximum() > y_max) {
+                y_max = plots[plot_i]->GetMaximum();
             }
         }
 
         // Rescale y axis to fit both DC and FMT data.
-        for (int plot_i = 0; plot_i < NPLOTS; ++plot_i) {
-            plots[plot_i]->GetYaxis()->SetRangeUser(0, 1.1*y_max);
+        for (int plot_i = 0; plot_i < NFILES; ++plot_i) {
+            graphs[plot_i]->GetYaxis()->SetRangeUser(0, 1.1*y_max);
         }
 
         // Add legend.
@@ -127,14 +126,15 @@ int plot_dis() {
     }
 
     // Write to file.
-    TFile *file_out = TFile::Open(OUTPUT_FILENAME, "RECREATE");
+    TFile *file_out = TFile::Open(OUT_FILENAME, "RECREATE");
     for (TCanvas *canvas : canvases) {
         canvas->Write();
     }
 
     // Clean up.
-    file_in_dc->Close();
-    file_in_fmt2->Close();
+    for (int file_i = 0; file_i < NFILES; ++file_i) {
+        in_files[file_i]->Close();
+    }
     file_out->Close();
     printf("Done!\n");
 
