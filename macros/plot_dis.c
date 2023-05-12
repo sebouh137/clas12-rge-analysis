@@ -117,7 +117,7 @@ int plot_dis() {
         }
 
         // Add legend.
-        TLegend* legend = new TLegend(0.7, 0.7, 0.886, 0.88);
+        TLegend *legend = new TLegend(0.7, 0.7, 0.886, 0.88);
         legend->AddEntry(graphs[0], "DC",   "lp");
         legend->AddEntry(graphs[1], "FMT2", "lp");
         legend->Draw();

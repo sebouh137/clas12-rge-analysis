@@ -1,6 +1,8 @@
 The macros contained herein were solely used to get specific plots for my MSc. thesis. I'm leaving them in here, in case they might be useful to future users of this code.
 
-*Bruno.*
+*-Bruno.*
+
+**TODO. Update.**
 
 #### `draw_acc_corr_bins`
 As its name suggests, this macro draws acceptance correction bins. For simplicity and due to my extreme laziness, it's just a copy of the `draw_plots` program, and works the same.
