@@ -614,7 +614,12 @@ static int run(
             zh_pass     = true;
         }
 
-        if (vars[RGE_PID.addr] != 11 || vars[RGE_STATUS.addr] > 0) continue;
+        if (
+                (10.5 >= vars[RGE_PID.addr] || vars[RGE_PID.addr] > 11.5) ||
+                vars[RGE_STATUS.addr] > 0
+        ) {
+            continue;
+        }
         no_tre_pass = true;
         Q2_pass = vars[RGE_Q2.addr] >= RGE_Q2CUT;
         W2_pass = vars[RGE_W2.addr] >= RGE_W2CUT;
@@ -679,7 +684,15 @@ static int run(
             if (plot_charge ==  0 && !(vars[RGE_CHARGE.addr] == 0)) continue;
             if (plot_charge == -1 && !(vars[RGE_CHARGE.addr] <  0)) continue;
         }
-        if (plot_pid != INT_MAX && vars[RGE_PID.addr] != plot_pid) continue;
+        if (
+                plot_pid != INT_MAX &&
+                (
+                        vars[RGE_PID.addr] - 0.5 >= plot_pid ||
+                        plot_pid > vars[RGE_PID.addr] + 0.5
+                )
+        ) {
+            continue;
+        }
 
         // Apply geometry cuts.
         if (geometry_cuts) {
@@ -700,10 +713,10 @@ static int run(
         // Apply miscellaneous cuts.
         if (general_cuts) {
             // Non-identified particle.
-            if (-0.5 < vars[RGE_PID.addr] && vars[RGE_PID.addr] <  0.5)
+            if (-0.5 <= vars[RGE_PID.addr] && vars[RGE_PID.addr] <  0.5)
                 continue;
             // Non-identified particle.
-            if (44.5 < vars[RGE_PID.addr] && vars[RGE_PID.addr] < 45.5)
+            if (44.5 <= vars[RGE_PID.addr] && vars[RGE_PID.addr] < 45.5)
                 continue;
             // Ignore tracks with high chi2.
             if (vars[RGE_CHI2.addr]/vars[RGE_NDF.addr] >= RGE_CHI2NDFCUT)
@@ -724,7 +737,7 @@ static int run(
         }
         // Remove SIDIS vars = 0 (for all but electrons!).
         if (
-                (10.5 > vars[RGE_PID.addr] && vars[RGE_PID.addr] > 11.5) &&
+                (10.5 >= vars[RGE_PID.addr] || vars[RGE_PID.addr] > 11.5) &&
                 (
                         vars[RGE_ZH.addr]    == 0 ||
                         vars[RGE_PT2.addr]   == 0 ||
