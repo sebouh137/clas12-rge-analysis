@@ -102,6 +102,7 @@ int rge_print_usage(const char *msg);
 #define RGEERR_INVALIDBANKID           153
 #define RGEERR_UNSUPPORTEDTYPE         154
 #define RGEERR_INVALIDENTRY            155
+#define RGEERR_WRONGENTRYTYPE          156
 // --+ 200 - 249 particle errors +----------------------------------------------
 #define RGEERR_PIDNOTFOUND             201
 #define RGEERR_UNSUPPORTEDPID          202

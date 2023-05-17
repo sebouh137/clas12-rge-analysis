@@ -125,6 +125,9 @@ static const std::map<uint, const char *> ERRMAP = {
     {RGEERR_INVALIDENTRY,
             "An invalid entry access was attempted at the get_entry function. "
             "Check the function input in rge_hipo_bank.c."},
+    {RGEERR_WRONGENTRYTYPE,
+            "An invalid entry type was requested to the count_entries function."
+            " Check the function input in acc_corr.c."},
 
     // Particle errors.
     {RGEERR_PIDNOTFOUND,
