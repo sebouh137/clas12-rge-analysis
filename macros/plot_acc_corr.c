@@ -14,21 +14,23 @@
 // You can see a copy of the GNU Lesser Public License under the LICENSE file.
 
 // --- Define macro constants here. ----------------------------------------- //
-// Set this to 1 to get some debug information.
-const int DEBUG = 0;
 // Set to the PID to plot acceptance correction from.
 const int PID = -211;
+
 // acc_corr.txt files produced by acc_corr.
 const char *DC_FILENAME   = "../data/acc_corr_dc.txt";
 const char *FMT2_FILENAME = "../data/acc_corr_fmt2.txt";
 const char *FMT3_FILENAME = "../data/acc_corr_fmt3.txt";
+
 // Root file where we'll write the plots.
 const char *OUTPUT_FILENAME = "../root_io/acc_corr_pid-211.root";
+
 // Map containing the variables we're working with.
 const int NPLOTS = 5;
 const std::map<int, const char *> PLOT_NAMES {
     {0, "Q2"}, {1, "#nu"}, {2, "z_{h}"}, {3, "Pt2"}, {4, "#phi_{PQ}"}
 };
+
 // Colors.
 const int color_thrown = kRed;
 const int color_dc     = kMagenta;
@@ -41,9 +43,9 @@ const int color_fmt3   = kGreen;
  *     array, and an array of PID list sizes. Copied from file_handler because
  *     tracking dependencies with ROOT is a bitch.
  */
-int get_binnings(FILE *f_in, long int *b_sizes, double **binnings,
-        long int *pids_size)
-{
+int get_binnings(
+        FILE *f_in, long int *b_sizes, double **binnings, long int *pids_size
+) {
     // Get binning sizes.
     for (int bi = 0; bi < 5; ++bi) fscanf(f_in, "%ld ", &(b_sizes[bi]));
 
@@ -65,9 +67,10 @@ int get_binnings(FILE *f_in, long int *b_sizes, double **binnings,
  *     accceptance correction array. Copied from file_handler because tracking
  *     dependencies with ROOT is a bitch.
  */
-int get_acc_corr(FILE *f_in, long int pids_size, long int nbins,
-        long int *pids, int **n_thrown, int **n_simul)
-{
+int get_acc_corr(
+        FILE *f_in, long int pids_size, long int nbins, long int *pids,
+        int **n_thrown, int **n_simul
+) {
     // Get PIDs.
     for (int pi = 0; pi < pids_size; ++pi) fscanf(f_in, "%ld ", &(pids[pi]));
 
@@ -92,10 +95,11 @@ int get_acc_corr(FILE *f_in, long int pids_size, long int nbins,
  *     PID. Copied from file_handler because tracking dependencies with ROOT is
  *     a bitch.
  */
-int read_acc_corr_file(char *acc_filename, long int b_sizes[5],
-        double ***binnings, long int *pids_size, long int *nbins,
-        long int **pids, int ***n_thrown, int ***n_simul)
-{
+int read_acc_corr_file(
+        char *acc_filename, long int b_sizes[5], double ***binnings,
+        long int *pids_size, long int *nbins, long int **pids, int ***n_thrown,
+        int ***n_simul
+) {
     // Access file.
     if (access(acc_filename, F_OK) != 0) return 1;
     FILE *acc_file = fopen(acc_filename, "r");
@@ -140,9 +144,6 @@ int copy_filename(char *tgt, const char *src) {
 
 /** Run the macro. */
 int plot_acc_corr() {
-    // printf("Running... ");
-    // fflush(stdout);
-
     // Copy filenames to char *.
     char dc_filename[128];
     char fmt2_filename[128];
@@ -199,24 +200,6 @@ int plot_acc_corr() {
     if (pid_pos == -1) {
         printf("\nPID %d not found in %s! Exiting...\n", PID, dc_filename);
         return 1;
-    }
-
-    if (DEBUG) {
-        // Print read acceptance correction data.
-        printf("\n");
-        for (int bi = 0; bi < NPLOTS; ++bi) {
-            printf("binning[%d] (%02ld): [", bi, bs[bi]);
-            for (int bii = 0; bii < bs[bi]; ++bii)
-            printf("%5.2lf, ", binnings[bi][bii]);
-            printf("\b\b]\n");
-        }
-        printf("pids_size = %ld\n", pids_size);
-        printf("nbins     = %ld\n", nbins);
-        printf("pids[%ld] = [", pids_size);
-        for (int pi = 0; pi < pids_size; ++pi) {
-            printf("%ld ", pids[pi]);
-        }
-        printf("\b\b]\n\n");
     }
 
     // Create TCanvases.
@@ -283,15 +266,6 @@ int plot_acc_corr() {
                     }
                 }
             }
-        }
-
-        if (DEBUG) {
-            // Print counting results.
-            printf("%6s thrown  simul dc simul fmt2\n", PLOT_NAMES.at(var_idx));
-            for (int i = 0; i < bs[var_idx]-1; ++i)
-            printf("       %08d %08d %08d\n",
-                    y_thrown[i], y_simul_dc[i], y_simul_fmt2[i]);
-            printf("\n");
         }
 
         // Create a copy of n_thrown, n_simul_dc, and n_simul_fmt2 as doubles.
@@ -384,10 +358,12 @@ int plot_acc_corr() {
         free(n_thrown[pi]);
         free(n_simul_dc[pi]);
         free(n_simul_fmt2[pi]);
+        free(n_simul_fmt3[pi]);
     }
     free(n_thrown);
     free(n_simul_dc);
     free(n_simul_fmt2);
+    free(n_simul_fmt3);
     file_out->Close();
     printf("Done!\n");
 
