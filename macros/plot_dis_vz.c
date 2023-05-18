@@ -94,6 +94,7 @@ int plot_dis_vz() {
         for (TCanvas *canvas : canvases) {
             ++canvas_idx;
             canvas->cd(bin_idx);
+            canvas->SetGrid();
 
             // Get TH1s from files.
             TH1 *plots[NPLOTS];

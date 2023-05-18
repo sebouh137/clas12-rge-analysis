@@ -78,6 +78,7 @@ int plot_eff() {
     for (TCanvas *canvas : canvases) {
         ++canvas_idx;
         canvas->cd();
+        canvas->SetGrid();
 
         // Get TH1Fs from files.
         TH1F *plots[NVERSIONS][NFILES];

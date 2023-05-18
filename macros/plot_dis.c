@@ -63,6 +63,7 @@ int plot_dis() {
     for (TCanvas *canvas : canvases) {
         ++canvas_idx;
         canvas->cd();
+        canvas->SetGrid();
 
         // Get TH1Fs from files.
         TH1F *plots[NFILES];

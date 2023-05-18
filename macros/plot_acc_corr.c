@@ -334,6 +334,7 @@ int plot_acc_corr() {
 
         // Write results to plots.
         canvases.at(var_idx)->cd();
+        canvases.at(var_idx)->SetGrid();
         gStyle->SetOptTitle(0);
 
         // Write TGraphErrors for thrown events.
