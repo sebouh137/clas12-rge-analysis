@@ -15,7 +15,7 @@
 
 // --- Define macro constants here. ----------------------------------------- //
 // Set to the PID to plot acceptance correction from.
-const int PID = -211;
+const int PID = 11;
 
 // acc_corr.txt files produced by acc_corr.
 const char *DC_FILENAME   = "../data/acc_corr_dc.txt";
@@ -28,14 +28,13 @@ const char *OUTPUT_FILENAME = "../root_io/acc_corr_pid-211.root";
 // Map containing the variables we're working with.
 const int NPLOTS = 5;
 const std::map<int, const char *> PLOT_NAMES {
-    {0, "Q2"}, {1, "#nu"}, {2, "z_{h}"}, {3, "Pt2"}, {4, "#phi_{PQ}"}
+    {0, "Q^{2}"}, {1, "#nu"}, {2, "z_{h}"}, {3, "P_{T}^{2}"}, {4, "#phi_{PQ}"}
 };
 
 // Colors.
-const int color_thrown = kRed;
-const int color_dc     = kMagenta;
-const int color_fmt2   = kBlue;
-const int color_fmt3   = kGreen;
+const int color_dc   = kRed;
+const int color_fmt2 = kBlue;
+const int color_fmt3 = kGreen;
 
 // --- Macro code begins here ----------------------------------------------- //
 /**
@@ -140,6 +139,58 @@ int copy_filename(char *tgt, const char *src) {
     }
 
     return 0;
+}
+
+/** Divide two TGraphErrors assuming a simple error propagation. */
+TGraphErrors *divide_TGraphErrors(TGraphErrors *graph1, TGraphErrors *graph2) {
+    int graph_size = graph1->GetN();
+
+    // Create new arrays to store the divided values.
+    double x_divided[graph_size];
+    double y_divided[graph_size];
+    double ex_divided[graph_size];
+    double ey_divided[graph_size];
+
+    // Divide the values of the corresponding points from graph1 and graph2.
+    for (int gi = 0; gi < graph_size; ++gi) {
+        double x1, y1, x2, y2;
+        graph1->GetPoint(gi, x1, y1);
+        graph2->GetPoint(gi, x2, y2);
+
+        double ex1 = graph1->GetErrorX(gi);
+        double ey1 = graph1->GetErrorY(gi);
+        double ex2 = graph2->GetErrorX(gi);
+        double ey2 = graph2->GetErrorY(gi);
+
+        // Divide the values.
+        x_divided[gi] = x1;
+        y_divided[gi] = y1 / y2;
+        ex_divided[gi] = ex1;
+        ey_divided[gi] = (y1 / y2) *
+                sqrt((ey1 / y1) * (ey1 / y1) + (ey2 / y2) * (ey2 / y2));
+    }
+
+    // Create a new TGraphErrors with the divided values.
+    TGraphErrors *graph_divided = new TGraphErrors(
+            graph_size, x_divided, y_divided, ex_divided, ey_divided
+    );
+
+    return graph_divided;
+}
+
+/** Get the maximum y value from a TGraphErrors. */
+double get_max(TGraphErrors *graph) {
+    double y_max = 1e-20;
+    int graph_size = graph->GetN(); // Get the number of points in the graph.
+
+    // Iterate over each point and find the maximum y value
+    for (int gi = 0; gi < graph_size; ++gi) {
+        double x, y;
+        graph->GetPoint(gi, x, y);
+        if (y > y_max) y_max = y;
+    }
+
+    return y_max;
 }
 
 /** Run the macro. */
@@ -273,6 +324,7 @@ int plot_acc_corr() {
         double y_simul_dc_dbl[bin_size - 1];
         double y_simul_fmt2_dbl[bin_size - 1];
         double y_simul_fmt3_dbl[bin_size - 1];
+        double y_max = 1;
         for (int bii = 0; bii < bin_size - 1; ++bii) {
             y_thrown_dbl[bii]     = (double) y_thrown[bii];
             y_simul_dc_dbl[bii]   = (double) y_simul_dc[bii];
@@ -288,57 +340,61 @@ int plot_acc_corr() {
         TGraphErrors *graph_thrown = new TGraphErrors(
                 bs[var_idx]-1, x_pos, y_thrown_dbl, x_length, y_err
         );
-        graph_thrown->SetTitle(Form("%s (thrown)", PLOT_NAMES.at(var_idx)));
-        graph_thrown->SetMarkerColor(color_thrown);
-        graph_thrown->SetMarkerStyle(21);
-        graph_thrown->SetMinimum(0.);
-        graph_thrown->GetXaxis()->SetTitle(PLOT_NAMES.at(var_idx));
-        graph_thrown->Draw("AP");
 
         // Write TGraphErrors for DC events.
-        TGraphErrors *graph_simul_dc = new TGraphErrors(
+        TGraphErrors *graph_dc = new TGraphErrors(
                 bs[var_idx]-1, x_pos, y_simul_dc_dbl, x_length, y_err
         );
-        graph_simul_dc->SetTitle(
-                Form("%s (simul - DC)", PLOT_NAMES.at(var_idx))
-        );
-        graph_simul_dc->SetMarkerColor(color_dc);
-        graph_simul_dc->SetMarkerStyle(21);
-        graph_simul_dc->Draw("sameP");
+        TGraphErrors *graph_eff_dc =
+                divide_TGraphErrors(graph_dc, graph_thrown);
+        graph_eff_dc->SetMarkerColor(color_dc);
+        graph_eff_dc->SetMarkerStyle(21);
+        double dc_max = get_max(graph_eff_dc);
+        y_max = dc_max > y_max ? dc_max : y_max;
 
         // Write TGraphErrors for FMT2 events.
-        TGraphErrors *graph_simul_fmt2 = new TGraphErrors(
+        TGraphErrors *graph_fmt2 = new TGraphErrors(
                 bs[var_idx]-1, x_pos, y_simul_fmt2_dbl, x_length, y_err
         );
-        graph_simul_fmt2->SetTitle(
-                Form("%s (simul - FMT2)", PLOT_NAMES.at(var_idx))
-        );
-        graph_simul_fmt2->SetMarkerColor(color_fmt2);
-        graph_simul_fmt2->SetMarkerStyle(21);
-        graph_simul_fmt2->Draw("sameP");
+        TGraphErrors *graph_eff_fmt2 =
+                divide_TGraphErrors(graph_fmt2, graph_thrown);
+        graph_eff_fmt2->SetMarkerColor(color_fmt2);
+        graph_eff_fmt2->SetMarkerStyle(21);
+        double fmt2_max = get_max(graph_eff_fmt2);
+        y_max = fmt2_max > y_max ? fmt2_max : y_max;
 
         // Write TGraphErrors for FMT3 events.
-        TGraphErrors *graph_simul_fmt3 = new TGraphErrors(
+        TGraphErrors *graph_fmt3 = new TGraphErrors(
                 bs[var_idx]-1, x_pos, y_simul_fmt3_dbl, x_length, y_err
         );
-        graph_simul_fmt3->SetTitle(
-                Form("%s (simul - FMT3)", PLOT_NAMES.at(var_idx))
-        );
-        graph_simul_fmt3->SetMarkerColor(color_fmt3);
-        graph_simul_fmt3->SetMarkerStyle(21);
-        graph_simul_fmt3->Draw("sameP");
+        TGraphErrors *graph_eff_fmt3 =
+                divide_TGraphErrors(graph_fmt3, graph_thrown);
+        graph_eff_fmt3->SetMarkerColor(color_fmt3);
+        graph_eff_fmt3->SetMarkerStyle(21);
+        double fmt3_max = get_max(graph_eff_fmt3);
+        y_max = fmt3_max > y_max ? fmt3_max : y_max;
+
+        // Set conditions for plot.
+        graph_eff_dc->GetYaxis()->SetRangeUser(0, 1.1*y_max);
+        graph_eff_dc->GetXaxis()->SetTitle(PLOT_NAMES.at(var_idx));
+
+        // Draw.
+        graph_eff_dc->Draw("AP");
+        graph_eff_fmt2->Draw("sameP");
+        graph_eff_fmt3->Draw("sameP");
 
         // Add legend.
         TLegend* legend = new TLegend(0.7, 0.7, 0.886, 0.88);
-        legend->AddEntry(graph_thrown, "thrown", "lp");
-        legend->AddEntry(graph_simul_dc, "simul (DC)", "lp");
-        legend->AddEntry(graph_simul_fmt2, "simul (FMT2)", "lp");
-        legend->AddEntry(graph_simul_fmt3, "simul (FMT3)", "lp");
+        legend->AddEntry(graph_eff_dc,   "DC", "lp");
+        legend->AddEntry(graph_eff_fmt2, "FMT - 2 layers", "lp");
+        legend->AddEntry(graph_eff_fmt3, "FMT - 3 layers", "lp");
         legend->Draw();
 
         // Add title.
         TPaveLabel *pavel_label = new TPaveLabel(
-                0.6, 0.9, 0.3, 1.0, PLOT_NAMES.at(var_idx), "brNDC");
+                0.6, 0.9, 0.3, 1.0,
+                Form("%s efficiency", PLOT_NAMES.at(var_idx)), "brNDC"
+        );
         pavel_label->SetBorderSize(0);
         pavel_label->SetFillColor(gStyle->GetTitleFillColor());
         pavel_label->Draw();
