@@ -15,7 +15,7 @@
 
 // --- Define macro constants here. ----------------------------------------- //
 // Set to the PID to plot acceptance correction from.
-const int PID = 11;
+const int PID = 211;
 
 // acc_corr.txt files produced by acc_corr.
 const char *DC_FILENAME   = "../data/acc_corr_dc.txt";
@@ -23,7 +23,7 @@ const char *FMT2_FILENAME = "../data/acc_corr_fmt2.txt";
 const char *FMT3_FILENAME = "../data/acc_corr_fmt3.txt";
 
 // Root file where we'll write the plots.
-const char *OUTPUT_FILENAME = "../root_io/acc_corr_pid-211.root";
+const char *OUTPUT_FILENAME = "../root_io/simul/acc_corr_pid211.root";
 
 // Map containing the variables we're working with.
 const int NPLOTS = 5;
@@ -163,9 +163,15 @@ TGraphErrors *divide_TGraphErrors(TGraphErrors *graph1, TGraphErrors *graph2) {
         double ey2 = graph2->GetErrorY(gi);
 
         // Divide the values.
-        x_divided[gi] = x1;
-        y_divided[gi] = y1 / y2;
+        x_divided [gi] = x1;
         ex_divided[gi] = ex1;
+        if (y1 < 1e-20 || y2 < 1e-20) {
+            y_divided [gi] = 0;
+            ey_divided[gi] = 0;
+            continue;
+        }
+        y_divided [gi] = y1 / y2;
+        ey_divided[gi] = 0;
         ey_divided[gi] = (y1 / y2) *
                 sqrt((ey1 / y1) * (ey1 / y1) + (ey2 / y2) * (ey2 / y2));
     }
@@ -193,8 +199,29 @@ double get_max(TGraphErrors *graph) {
     return y_max;
 }
 
+void drawtext() {
+    TLatex text;
+
+    text.SetTextSize(0.025);
+    text.SetTextFont(42);
+    text.SetTextAlign(21);
+    // text.SetTextColor(kBlue);
+
+    TGraph *graph = (TGraph *) gPad->GetListOfPrimitives()->FindObject("Graph");
+    int graph_size = graph->GetN();
+
+    for (int gi = 0; gi < graph_size; gi++) {
+        double x, y;
+        graph->GetPoint(gi, x, y);
+        text.PaintText(x, y+0.02, Form("%4.2f", y));
+    }
+}
+
 /** Run the macro. */
 int plot_acc_corr() {
+    // Create an executable for drawtext().
+    TExec *ex = new TExec("ex", "drawtext();");
+
     // Copy filenames to char *.
     char dc_filename[128];
     char fmt2_filename[128];
@@ -324,13 +351,15 @@ int plot_acc_corr() {
         double y_simul_dc_dbl[bin_size - 1];
         double y_simul_fmt2_dbl[bin_size - 1];
         double y_simul_fmt3_dbl[bin_size - 1];
-        double y_max = 1;
         for (int bii = 0; bii < bin_size - 1; ++bii) {
             y_thrown_dbl[bii]     = (double) y_thrown[bii];
             y_simul_dc_dbl[bii]   = (double) y_simul_dc[bii];
             y_simul_fmt2_dbl[bii] = (double) y_simul_fmt2[bii];
             y_simul_fmt3_dbl[bii] = (double) y_simul_fmt3[bii];
         }
+
+        // Store maximum y value.
+        double y_max = 1.;
 
         // Write results to plots.
         canvases.at(var_idx)->cd();
@@ -379,14 +408,17 @@ int plot_acc_corr() {
         graph_eff_dc->GetYaxis()->SetRangeUser(0, 1.1*y_max);
         graph_eff_dc->GetXaxis()->SetTitle(PLOT_NAMES.at(var_idx));
 
+        // Draw labels on top of each bin.
+        // graph_eff_dc->GetListOfFunctions()->Add(ex);
+
         // Draw.
-        graph_eff_dc->Draw("AP");
+        graph_eff_dc  ->Draw("AP");
         graph_eff_fmt2->Draw("sameP");
         graph_eff_fmt3->Draw("sameP");
 
         // Add legend.
         TLegend* legend = new TLegend(0.7, 0.7, 0.886, 0.88);
-        legend->AddEntry(graph_eff_dc,   "DC", "lp");
+        legend->AddEntry(graph_eff_dc,   "DC",             "lp");
         legend->AddEntry(graph_eff_fmt2, "FMT - 2 layers", "lp");
         legend->AddEntry(graph_eff_fmt3, "FMT - 3 layers", "lp");
         legend->Draw();
