@@ -220,7 +220,7 @@ void drawtext() {
 }
 
 /** Run the macro. */
-int plot_acc_corr() {
+int plot_acc_corr_eff() {
     // Create an executable for drawtext().
     TExec *ex = new TExec("ex", "drawtext();");
 
