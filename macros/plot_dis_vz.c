@@ -15,15 +15,19 @@
 
 // --- Define macro constants here. ----------------------------------------- //
 // FILES.
-const int NFILES = 2;
+const int NFILES = 3;
 const char *IN_FILENAMES_VZ[NFILES] = {
-    "../root_io/plots_dc_dis_vz.root",
-    "../root_io/plots_fmt2_dis_vz.root"
+    "../root_io/dis/pid-211/vz_dc.root",
+    "../root_io/dis/pid-211/vz_fmt2.root",
+    "../root_io/dis/pid-211/vz_fmt3.root"
 };
-const char *OUTPUT_FILENAME = "../root_io/dis_plots_vz.root";
+const char *LEGEND_ENTRIES[NFILES] = {
+    "DC", "FMT - 2 layers", "FMT - 3 layers"
+};
+const int COLORS[NFILES] = {kRed, kBlue, kGreen};
+const char *OUTPUT_FILENAME = "../root_io/dis_vz_pid-211.root";
 
 // PLOTS.
-const int NPLOTS = 2;
 const int NVARS = 5;
 const std::map<int, const char *> PLOT_NAMES {
     {0, "Q^{2}"}, {1, "#nu"}, {2, "z_{h}"}, {3, "P_{T}^{2}"}, {4, "#phi_{PQ}"}
@@ -31,6 +35,7 @@ const std::map<int, const char *> PLOT_NAMES {
 const std::map<int, const char *> CANVAS_NAMES {
     {0, "Q2"}, {1, "nu"}, {2, "zh"}, {3, "Pt2"}, {4, "phiPQ"}
 };
+const int CANVAS_YSCALE[NVARS] = {1, 0, 0, 1, 0};
 
 // BINS.
 const double BIN_MIN  = -30.;
@@ -50,7 +55,7 @@ int add_tcanvas(std::vector<TCanvas *> *c, const char *n) {
 
 /** Run the program. */
 int plot_dis_vz() {
-    printf("Running... ");
+    printf("Plotting DIS variables in vz bins... ");
     fflush(stdout);
 
     // Open input files.
@@ -71,7 +76,6 @@ int plot_dis_vz() {
 
     // Divide TCanvases.
     for (TCanvas *canvas : canvases) {
-        canvas->SetTitle("My Canvas Title");
         canvas->Divide(BIN_NX, BIN_NY, BIN_SEPX, BIN_SEPY, 0);
     }
 
@@ -94,10 +98,12 @@ int plot_dis_vz() {
         for (TCanvas *canvas : canvases) {
             ++canvas_idx;
             canvas->cd(bin_idx);
-            canvas->SetGrid();
+            for (int pad_i = 1; pad_i <= BIN_NX*BIN_NY; ++pad_i) {
+                canvas->GetPad(pad_i)->SetGrid();
+            }
 
             // Get TH1s from files.
-            TH1 *plots[NPLOTS];
+            TH1 *plots[NFILES];
             for (int file_i = 0; file_i < NFILES; ++file_i) {
                 plots[file_i] = (TH1 *) dirs[file_i]->Get(
                     Form("%s (v_{z}: %s)", PLOT_NAMES.at(canvas_idx), bin_name)
@@ -105,9 +111,10 @@ int plot_dis_vz() {
             }
 
             // Create TGraphErrors from TH1s.
-            TGraphErrors *graphs[NPLOTS];
-            double y_max = 0;
-            for (int plot_i = 0; plot_i < NPLOTS; ++plot_i) {
+            TGraphErrors *graphs[NFILES];
+            double y_min = 1e20;
+            double y_max = 1e-20;
+            for (int plot_i = 0; plot_i < NFILES; ++plot_i) {
                 // Create TGraphErrors from TH1 plots.
                 graphs[plot_i] = new TGraphErrors(plots[plot_i]->GetNbinsX());
 
@@ -127,7 +134,9 @@ int plot_dis_vz() {
 
                 // Set the title and axis labels of the TGraphErrors object.
                 if (plot_i == 0)
-                    graphs[plot_i]->SetTitle(Form("v_{z} : [%s]", bin_name));
+                    graphs[plot_i]->SetTitle(Form(
+                        "%s (v_{z}: %s)", PLOT_NAMES.at(canvas_idx), bin_name
+                    ));
                 else
                     graphs[plot_i]->SetTitle("");
                 graphs[plot_i]->GetXaxis()->SetTitle(
@@ -136,8 +145,7 @@ int plot_dis_vz() {
                 graphs[plot_i]->GetYaxis()->SetTitle(
                         plots[plot_i]->GetYaxis()->GetTitle()
                 );
-                if (plot_i == 0) graphs[plot_i]->SetMarkerColor(kBlue);
-                else             graphs[plot_i]->SetMarkerColor(kRed);
+                graphs[plot_i]->SetMarkerColor(COLORS[plot_i]);
                 graphs[plot_i]->SetMarkerStyle(21);
                 graphs[plot_i]->SetMarkerSize(0.7);
 
@@ -145,22 +153,47 @@ int plot_dis_vz() {
                 if (plot_i == 0) graphs[plot_i]->Draw("AP");
                 else             graphs[plot_i]->Draw("sameP");
 
-                // Get maximum y value.
+                // Get minimum and maximum y values.
+                if (
+                        plots[plot_i]->GetMinimum() < y_min &&
+                        plots[plot_i]->GetMinimum() > 1e-20
+                ) {
+                    y_min = plots[plot_i]->GetMinimum();
+                }
                 if (plots[plot_i]->GetMaximum() > y_max) {
                     y_max = plots[plot_i]->GetMaximum();
                 }
             }
 
             // Rescale y axis to fit both DC and FMT data.
-            for (int plot_i = 0; plot_i < NPLOTS; ++plot_i) {
-                graphs[plot_i]->GetYaxis()->SetRangeUser(0, 1.1*y_max);
+            for (int plot_i = 0; plot_i < NFILES; ++plot_i) {
+                double min = 0;
+                double max = 1.1 * y_max;
+                if (CANVAS_YSCALE[canvas_idx] == 1) {
+                    min = y_min / sqrt(10);
+                    max = y_max * sqrt(10);
+                }
+                graphs[plot_i]->GetYaxis()->SetRangeUser(min, max);
+            }
+
+            // Change y scale to log if necessary.
+            if (CANVAS_YSCALE[canvas_idx] == 1) {
+                for (int pad_i = 1; pad_i <= BIN_NX*BIN_NY; ++pad_i) {
+                    canvas->GetPad(pad_i)->SetLogy();
+                    // graph[0]->GetYaxis()->SetMoreLogLabels();
+                }
             }
 
             // Add legend.
             if (bin_idx == 5) {
                 TLegend* legend = new TLegend(0.7, 0.7, 0.886, 0.88);
-                legend->AddEntry(graphs[0],  "DC",   "lp");
-                legend->AddEntry(graphs[1], "FMT2", "lp");
+                for (int file_i = 0; file_i < NFILES; ++file_i) {
+                    legend->AddEntry(
+                            graphs[file_i],
+                            LEGEND_ENTRIES[file_i],
+                            "lp"
+                    );
+                }
                 legend->Draw();
             }
 

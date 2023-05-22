@@ -15,21 +15,27 @@
 
 // --- Define macro constants here ---------------------------------------------
 // FILES.
-const int NFILES = 2; // Number of input files.
+const int NFILES = 3; // Number of input files.
 const char *IN_FILENAMES[NFILES] = {
-        "../root_io/plots_dc_dis.root",
-        "../root_io/plots_fmt2_dis.root"
+        "../root_io/dis/pid-211/integrated_dc.root",
+        "../root_io/dis/pid-211/integrated_fmt2.root",
+        "../root_io/dis/pid-211/integrated_fmt3.root"
 };
-const char *OUT_FILENAME = "../root_io/dis_plots.root";
+const char *LEGEND_ENTRIES[NFILES] = {
+        "DC", "FMT - 2 layers", "FMT - 3 layers"
+};
+const int COLORS[NFILES] = {kRed, kBlue, kGreen};
+const char *OUT_FILENAME = "../root_io/dis_integrated_tmp.root";
 
 // PLOTS.
 const int NVARS = 5;
 const std::map<int, const char *> VAR_NAMES {
-        {0, "Q^{2}"}, {1, "#nu"}, {2, "z_{h}"}, {3, "P_{T}^{2}"}, {4, "#phi_{PQ}"}
+    {0, "Q^{2}"}, {1, "#nu"}, {2, "z_{h}"}, {3, "P_{T}^{2}"}, {4, "#phi_{PQ}"}
 };
 const std::map<int, const char *> CANVAS_NAMES {
-        {0, "Q2"}, {1, "nu"}, {2, "zh"}, {3, "Pt2"}, {4, "phiPQ"}
+    {0, "Q2"}, {1, "nu"}, {2, "zh"}, {3, "Pt2"}, {4, "phiPQ"}
 };
+const int CANVAS_YSCALE[NVARS] = {1, 0, 0, 1, 0}; // 0 is linear, 1 is log.
 
 // --- Macro code begins here --------------------------------------------------
 /** Add TCanvas with name n to std::vector<TCanvas *> c. */
@@ -74,7 +80,8 @@ int plot_dis() {
 
         // Create TGraphErrors from TH1Fs.
         TGraphErrors *graphs[NFILES];
-        double y_max = 0;
+        double y_min = 1e20;
+        double y_max = 1e-20;
         for (int plot_i = 0; plot_i < NFILES; ++plot_i) {
             // Create TGraphErrors with the same number of points as TH1F plots.
             graphs[plot_i] = new TGraphErrors(plots[plot_i]->GetNbinsX());
@@ -98,15 +105,17 @@ int plot_dis() {
             graphs[plot_i]->GetYaxis()->SetTitle(
                     plots[plot_i]->GetYaxis()->GetTitle()
             );
-            if (plot_i == 0) graphs[plot_i]->SetMarkerColor(kBlue);
-            else             graphs[plot_i]->SetMarkerColor(kRed);
+            graphs[plot_i]->SetMarkerColor(COLORS[plot_i]);
             graphs[plot_i]->SetMarkerStyle(21);
 
             // Draw graphs.
             if (plot_i == 0) graphs[plot_i]->Draw("AP");
             else             graphs[plot_i]->Draw("sameP");
 
-            // Get maximum y value.
+            // Get minimum and maximum y values.
+            if (plots[plot_i]->GetMinimum() < y_min) {
+                y_min = plots[plot_i]->GetMinimum();
+            }
             if (plots[plot_i]->GetMaximum() > y_max) {
                 y_max = plots[plot_i]->GetMaximum();
             }
@@ -114,13 +123,26 @@ int plot_dis() {
 
         // Rescale y axis to fit both DC and FMT data.
         for (int plot_i = 0; plot_i < NFILES; ++plot_i) {
-            graphs[plot_i]->GetYaxis()->SetRangeUser(0, 1.1*y_max);
+            double min = 0;
+            double max = 1.1 * y_max;
+            if (CANVAS_YSCALE[canvas_idx] == 1) {
+                min = y_min / sqrt(10);
+                max = y_max * sqrt(10);
+            }
+            graphs[plot_i]->GetYaxis()->SetRangeUser(min, max);
+        }
+
+        // Change y scale to log if necessary.
+        if (CANVAS_YSCALE[canvas_idx] == 1) {
+            canvas->SetLogy();
+            // graphs[0]->GetYaxis()->SetMoreLogLabels();
         }
 
         // Add legend.
         TLegend *legend = new TLegend(0.7, 0.7, 0.886, 0.88);
-        legend->AddEntry(graphs[0], "DC",   "lp");
-        legend->AddEntry(graphs[1], "FMT2", "lp");
+        for (int file_i = 0; file_i < NFILES; ++file_i) {
+            legend->AddEntry(graphs[file_i], LEGEND_ENTRIES[file_i], "lp");
+        }
         legend->Draw();
 
         canvas->Update();
