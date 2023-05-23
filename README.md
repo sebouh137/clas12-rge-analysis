@@ -86,7 +86,7 @@ The output will be written to the `acc_corr.txt` file, by default in the `data` 
 
 ### make_ntuples
 ```
-Usage: make_ntuples [-hDf:n:w:d:] infile
+Usage: make_ntuples [-hDf:cn:w:d:] infile
  * -h         : show this message and exit.
  * -D         : activate debug mode.
  * -f fmtlyrs : define how many FMT layers should the track have hit.
@@ -104,11 +104,11 @@ Generate ntuples relevant to SIDIS analysis based on the reconstructed variables
 
 ### draw_plots
 ```
-Usage: draw_plots [-hn:o:a:w:] infile
+Usage: draw_plots [-hp:cn:o:a:w:] infile
  * -h          : show this message and exit.
  * -p pid      : skip particle selection and draw plots for pid.
- * -c          : apply all cuts (general, geometry, and DIS) instead of asking
-                 which ones to apply while running.
+ * -c          : apply all cuts (general, geometry, and DIS) instead of
+                 asking which ones to apply while running.
  * -n nentries : number of entries to process.
  * -o outfile  : output file name. Default is plots_<run_no>.root.
  * -a accfile  : apply acceptance correction using acc_filename.
