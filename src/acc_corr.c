@@ -40,8 +40,6 @@ static const char *USAGE_MESSAGE =
 " * -s simfile : simulated events ROOT file.\n"
 " * -d datadir : location where sampling fraction files are found. Default is\n"
 "                data.\n"
-" * -F         : flag to tell program to use FMT data instead of DC data from\n"
-"                the simulation file.\n"
 " * -D         : flag to tell program that generated events are in degrees\n"
 "                instead of radians.\n\n"
 "    Get the 5-dimensional acceptance correction factors for Q2, nu, z_h,\n"
@@ -73,6 +71,7 @@ static int BADPIDS[BADPIDS_SIZE] = {
 #define THROWN_PT2   "Pt2"
 #define THROWN_PHIPQ "#phi_{PQ}"
 #define THROWN_W     "W"
+#define THROWN_YB    "y"
 
 /** Available entry count types. */
 #define THROWN_ELECTRON -2
@@ -157,6 +156,15 @@ static int count_entries(
         tree->SetBranchAddress(RGE_W2.name, &s_W2);
     }
 
+    // Get Yb.
+    Float_t s_Yb;
+    if (type == THROWN_ELECTRON || type == THROWN_HADRON) {
+        tree->SetBranchAddress(THROWN_YB, &s_Yb);
+    }
+    else {
+        tree->SetBranchAddress(RGE_YB.name, &s_Yb);
+    }
+
     // Get binning variables: Q2, nu, zh, Pt2, phiPQ.
     Float_t s_bin[5] = {0, 0, 0, 0, 0};
     if (type == THROWN_ELECTRON || type == THROWN_HADRON) {
@@ -184,14 +192,17 @@ static int count_entries(
         // Only count the selected PID.
         if (pid - 0.5 >= s_pid || s_pid > pid + 0.5) continue;
 
+        // Apply Q2 cut.
+        if (s_bin[0] < RGE_Q2CUT) continue; // Q2 > 1.
+
         // Apply W2 cut.
         if (type == THROWN_ELECTRON || type == THROWN_HADRON) {
             s_W2 = s_W * s_W;
         }
         if (s_W2 < RGE_W2CUT) continue; // W2 > 4.
 
-        // Apply Q2 cut.
-        if (s_bin[0] < RGE_Q2CUT) continue; // Q2 > 1.
+        // Apply Yb cut.
+        if (s_Yb > RGE_YBCUT) continue; // Yb < 0.85.
 
         // Remove kinematic variables == 0.
         if (s_bin[1] == 0) continue;

@@ -162,6 +162,9 @@ static double nu(rge_particle p, double beam_E);
 /** Compute x_bjorken from beam energy, particle momentum, and theta angle. */
 static double Xb(rge_particle p, double beam_E);
 
+/** Calculate y_bjorken from beam energy and nu. */
+static double Yb(rge_particle p, double beam_E);
+
 /** Compute the invariant mass of the electron-nucleon interaction. */
 static double W(rge_particle p, double beam_E);
 

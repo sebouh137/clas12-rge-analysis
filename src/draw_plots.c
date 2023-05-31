@@ -64,9 +64,9 @@ static const char *DIM_LIST[2] = {"x", "y"};
 static const char *RAN_LIST[2] = {"lower", "upper"};
 
 /** List of DIS variables. */
-#define DIS_LIST_SIZE 4
+#define DIS_LIST_SIZE 5
 static const char *DIS_LIST[DIS_LIST_SIZE] = {
-        RGE_Q2.name, RGE_NU.name, RGE_XB.name, RGE_W2.name
+        RGE_Q2.name, RGE_NU.name, RGE_XB.name, RGE_YB.name, RGE_W2.name
 };
 
 /** "Standard" plots data. */
@@ -588,7 +588,7 @@ static int run(
     if (dis_cuts) printf("Applying cuts...\n");
     bool *valid_event = static_cast<bool *>(malloc(nevents * sizeof(bool)));
     Float_t current_evn = -1;
-    bool no_tre_pass, Q2_pass, W2_pass, zh_pass;
+    bool no_tre_pass, Q2_pass, W2_pass, Yb_pass;
 
     // Fill valid_event array with false bools in case the next for loop doesn't
     //     fill every entry in it.
@@ -611,7 +611,7 @@ static int run(
             no_tre_pass = false;
             Q2_pass     = true;
             W2_pass     = true;
-            zh_pass     = true;
+            Yb_pass     = true;
         }
 
         if (
@@ -623,9 +623,10 @@ static int run(
         no_tre_pass = true;
         Q2_pass = vars[RGE_Q2.addr] >= RGE_Q2CUT;
         W2_pass = vars[RGE_W2.addr] >= RGE_W2CUT;
+        Yb_pass = vars[RGE_YB.addr] <= RGE_YBCUT;
 
         valid_event[static_cast<luint>(vars[RGE_EVENTNO.addr]+0.5)] =
-                no_tre_pass && Q2_pass && W2_pass && zh_pass;
+                no_tre_pass && Q2_pass && W2_pass && Yb_pass;
     }
 
     // === PLOT ================================================================

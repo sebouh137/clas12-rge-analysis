@@ -47,15 +47,16 @@ typedef struct {
 #define RGE_NSFPARAMS    4 /** # of sampling fraction parameters. */
 
 /** Cuts (geometric, fiducial, SIDIS, etc). */
-#define RGE_Q2CUT        1.   /** Q2 of particle must be over this value. */
-#define RGE_W2CUT        4.   /** W2 of particle must be over this value. */
+#define RGE_Q2CUT        1.   /** Q2 of trigger must be over this value. */
+#define RGE_W2CUT        4.   /** W2 of trigger must be over this value. */
+#define RGE_YBCUT        0.85 /** Yb of trigger must be under this value. */
 #define RGE_CHI2NDFCUT  15    /** Chi2/NDF must be below this value. */
 #define RGE_VXVYCUT      4    /** sqrt(vx^2 + vy^2) must be below this value. */
 #define RGE_VZLOWCUT   -40    /** vz must be above this value. */
-#define RGE_VZHIGHCUT   40    /** vz must be below this. */
+#define RGE_VZHIGHCUT   26.1197 /** vz must be below this. */
 
 /** Variable array data. */
-#define RGE_VARS_SIZE 35
+#define RGE_VARS_SIZE 36
 extern const char *RGE_VARS[RGE_VARS_SIZE];
 
 /** Metadata variables. */
@@ -100,13 +101,14 @@ __extension__ const RGE_VAR RGE_NPHEHTCC = {.addr = 25, .name = "Nphe_{HTCC}"};
 __extension__ const RGE_VAR RGE_Q2 = {.addr = 26, .name = "Q^{2}"};
 __extension__ const RGE_VAR RGE_NU = {.addr = 27, .name = "#nu"};
 __extension__ const RGE_VAR RGE_XB = {.addr = 28, .name = "x_{bjorken}"};
-__extension__ const RGE_VAR RGE_W2 = {.addr = 29, .name = "W^{2}"};
+__extension__ const RGE_VAR RGE_YB = {.addr = 29, .name = "y_{bjorken}"};
+__extension__ const RGE_VAR RGE_W2 = {.addr = 30, .name = "W^{2}"};
 
 /** SIDIS variables. */
-__extension__ const RGE_VAR RGE_ZH      = {.addr = 30, .name = "z_{h}"};
-__extension__ const RGE_VAR RGE_PT2     = {.addr = 31, .name = "P_{T}^{2}"};
-__extension__ const RGE_VAR RGE_PL2     = {.addr = 32, .name = "P_{L}^{2}"};
-__extension__ const RGE_VAR RGE_PHIPQ   = {.addr = 33, .name = "#phi_{PQ}"};
-__extension__ const RGE_VAR RGE_THETAPQ = {.addr = 34, .name = "#theta_{PQ}"};
+__extension__ const RGE_VAR RGE_ZH      = {.addr = 31, .name = "z_{h}"};
+__extension__ const RGE_VAR RGE_PT2     = {.addr = 32, .name = "P_{T}^{2}"};
+__extension__ const RGE_VAR RGE_PL2     = {.addr = 33, .name = "P_{L}^{2}"};
+__extension__ const RGE_VAR RGE_PHIPQ   = {.addr = 34, .name = "#phi_{PQ}"};
+__extension__ const RGE_VAR RGE_THETAPQ = {.addr = 35, .name = "#theta_{PQ}"};
 
 #endif

@@ -142,6 +142,11 @@ double Xb(rge_particle p, double bE) {
     return Q2(p, bE) / (2*proton_mass*nu(p, bE));
 }
 
+double Yb(rge_particle p, double beam_E) {
+    if (!p.is_trigger) return 0;
+    return nu(p, beam_E) / beam_E;
+}
+
 double W(rge_particle p, double bE) {
     if (!p.is_trigger) return 0;
     return sqrt(fabs(W2(p, bE)));
@@ -339,6 +344,7 @@ int rge_fill_ntuples_arr(
     arr[RGE_Q2.addr] = Q2(e, beam_E);
     arr[RGE_NU.addr] = nu(e, beam_E);
     arr[RGE_XB.addr] = Xb(e, beam_E);
+    arr[RGE_YB.addr] = Yb(e, beam_E);
     arr[RGE_W2.addr] = W2(e, beam_E);
     if (rge_errno == RGEERR_PIDNOTFOUND) return 1;
 
