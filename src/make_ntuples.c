@@ -359,8 +359,9 @@ static int run(
     rge_pbar_set_nentries(n_events);
 
     // Particle counters.
-    int trigger_counter  = 0;
-    int particle_counter = 0;
+    int trigger_counter = 0;
+    int pionp_counter   = 0;
+    int pionm_counter   = 0;
 
     // Loop through events in input file.
     for (lint event = 0; event < n_events; ++event) {
@@ -516,13 +517,15 @@ static int run(
 
             tree_out->Fill(arr);
 
-            ++particle_counter;
+            if (part.pid ==  211) ++pionp_counter;
+            if (part.pid == -211) ++pionm_counter;
         }
     }
 
     // Print number of particles found to detect errors early.
-    printf("Triggers found:  %d\n", trigger_counter);
-    printf("Particles found: %d\n\n", trigger_counter + particle_counter);
+    printf("e-  found: %d\n",   trigger_counter);
+    printf("pi+ found: %d\n",   pionp_counter);
+    printf("pi- found: %d\n\n", pionm_counter);
 
     // Create output file.
     char filename_out[PATH_MAX];
