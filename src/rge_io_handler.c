@@ -168,3 +168,18 @@ int rge_catch_string(const char *arr[], int size) {
 
     return x;
 }
+
+int rge_catch_var(const char *arr[], int size) {
+    long x;
+    while (true) {
+        char str[32];
+        char *endptr;
+        printf(">>> ");
+        scanf_dump = scanf("%31s", str);
+        x = strtol(str, &endptr, 10);
+
+        if (endptr != str && 0 <= x && x < size) break;
+    }
+
+    return x;
+}

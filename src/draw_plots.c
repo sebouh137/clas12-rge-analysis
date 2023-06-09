@@ -437,14 +437,13 @@ static int run(
     for (luint bin_dim_i = 0; bin_dim_i < dim_bins; ++bin_dim_i) {
         // variable.
         printf(
-                "\nDefine var for bin in dimension %ld. Available vars:\n[",
-                bin_dim_i
+                "\nDefine var for bin in dimension %ld by index. Available "
+                "vars:\n", bin_dim_i
         );
-
-        for (int var_i = 0; var_i < RGE_VARS_SIZE; ++var_i)
-            printf("%s, ", RGE_VARS[var_i]);
-        printf("\b\b]\n");
-        bin_vars[bin_dim_i] = rge_catch_string(RGE_VARS, RGE_VARS_SIZE);
+        for (int var_i = 0; var_i < RGE_VARS_SIZE; ++var_i) {
+            printf("  %2d. %s\n", var_i, RGE_VARS[var_i]);
+        }
+        bin_vars[bin_dim_i] = rge_catch_var(RGE_VARS, RGE_VARS_SIZE);
 
         // range.
         for (int range_i = 0; range_i < 2; ++range_i) {
@@ -502,14 +501,13 @@ static int run(
         for (int dim_i = 0; dim_i < plot_type[plot_i]+1; ++dim_i) {
             // Check variable(s) to be plotted.
             printf(
-                    "\nDefine var to be plotted on the %s axis. Available "
-                    "vars:\n[", DIM_LIST[dim_i]
+                    "\nDefine var to be plotted on the %s axis by index. "
+                    "Available vars:\n", DIM_LIST[dim_i]
             );
-            for (int var_i = 0; var_i < RGE_VARS_SIZE; ++var_i)
-                printf("%s, ", RGE_VARS[var_i]);
-            printf("\b\b]\n");
-            plot_vars[plot_i][dim_i] =
-                    rge_catch_string(RGE_VARS, RGE_VARS_SIZE);
+            for (int var_i = 0; var_i < RGE_VARS_SIZE; ++var_i) {
+                printf("  %2d. %s\n", var_i, RGE_VARS[var_i]);
+            }
+            plot_vars[plot_i][dim_i] = rge_catch_var(RGE_VARS, RGE_VARS_SIZE);
 
             // Define ranges.
             for (int range_i = 0; range_i < 2; ++range_i) {

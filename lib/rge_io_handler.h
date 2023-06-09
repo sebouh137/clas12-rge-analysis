@@ -101,4 +101,14 @@ double rge_catch_double();
  */
 int rge_catch_string(const char *arr[], int size);
 
+/**
+ * Catch an int from stdin and find its location in RGE_VARS array. If int falls
+ *     outside of RGE_VARS length, as the user again.
+ *
+ * @param arr  : RGE_VARS array.
+ * @param size : RGE_VARS array size.
+ * @return     : selected index.
+ */
+int rge_catch_var(const char *arr[], int size);
+
 #endif
