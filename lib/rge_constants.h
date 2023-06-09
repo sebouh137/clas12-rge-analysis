@@ -60,55 +60,55 @@ typedef struct {
 extern const char *RGE_VARS[RGE_VARS_SIZE];
 
 /** Metadata variables. */
-__extension__ const RGE_VAR RGE_RUNNO   = {.addr = 0, .name = "N_{run}"};
-__extension__ const RGE_VAR RGE_EVENTNO = {.addr = 1, .name = "N_{event}"};
-__extension__ const RGE_VAR RGE_BEAME   = {.addr = 2, .name = "E_{beam}"};
+const RGE_VAR RGE_RUNNO   = {.addr = 0, .name = "N_{run}"};
+const RGE_VAR RGE_EVENTNO = {.addr = 1, .name = "N_{event}"};
+const RGE_VAR RGE_BEAME   = {.addr = 2, .name = "E_{beam}"};
 
 /** Particle variables. */
-__extension__ const RGE_VAR RGE_PID    = {.addr =  3, .name = "pid"};
-__extension__ const RGE_VAR RGE_CHARGE = {.addr =  4, .name = "charge"};
-__extension__ const RGE_VAR RGE_STATUS = {.addr =  5, .name = "status"};
-__extension__ const RGE_VAR RGE_MASS   = {.addr =  6, .name = "mass"};
-__extension__ const RGE_VAR RGE_VX     = {.addr =  7, .name = "v_{x}"};
-__extension__ const RGE_VAR RGE_VY     = {.addr =  8, .name = "v_{y}"};
-__extension__ const RGE_VAR RGE_VZ     = {.addr =  9, .name = "v_{z}"};
-__extension__ const RGE_VAR RGE_PX     = {.addr = 10, .name = "p_{x}"};
-__extension__ const RGE_VAR RGE_PY     = {.addr = 11, .name = "p_{y}"};
-__extension__ const RGE_VAR RGE_PZ     = {.addr = 12, .name = "p_{z}"};
-__extension__ const RGE_VAR RGE_P      = {.addr = 13, .name = "p"};
-__extension__ const RGE_VAR RGE_THETA  = {.addr = 14, .name = "#theta"};
-__extension__ const RGE_VAR RGE_PHI    = {.addr = 15, .name = "#phi"};
-__extension__ const RGE_VAR RGE_BETA   = {.addr = 16, .name = "#beta"};
+const RGE_VAR RGE_PID    = {.addr =  3, .name = "pid"};
+const RGE_VAR RGE_CHARGE = {.addr =  4, .name = "charge"};
+const RGE_VAR RGE_STATUS = {.addr =  5, .name = "status"};
+const RGE_VAR RGE_MASS   = {.addr =  6, .name = "mass"};
+const RGE_VAR RGE_VX     = {.addr =  7, .name = "v_{x}"};
+const RGE_VAR RGE_VY     = {.addr =  8, .name = "v_{y}"};
+const RGE_VAR RGE_VZ     = {.addr =  9, .name = "v_{z}"};
+const RGE_VAR RGE_PX     = {.addr = 10, .name = "p_{x}"};
+const RGE_VAR RGE_PY     = {.addr = 11, .name = "p_{y}"};
+const RGE_VAR RGE_PZ     = {.addr = 12, .name = "p_{z}"};
+const RGE_VAR RGE_P      = {.addr = 13, .name = "p"};
+const RGE_VAR RGE_THETA  = {.addr = 14, .name = "#theta"};
+const RGE_VAR RGE_PHI    = {.addr = 15, .name = "#phi"};
+const RGE_VAR RGE_BETA   = {.addr = 16, .name = "#beta"};
 
 /** Tracking variables. */
-__extension__ const RGE_VAR RGE_CHI2 = {.addr = 17, .name = "#chi^{2}"};
-__extension__ const RGE_VAR RGE_NDF  = {.addr = 18, .name = "NDF"};
+const RGE_VAR RGE_CHI2 = {.addr = 17, .name = "#chi^{2}"};
+const RGE_VAR RGE_NDF  = {.addr = 18, .name = "NDF"};
 
 /** Calorimeter variables. */
-__extension__ const RGE_VAR RGE_PCALE = {.addr = 19, .name = "E_{PCAL}"};
-__extension__ const RGE_VAR RGE_ECINE = {.addr = 20, .name = "E_{ECIN}"};
-__extension__ const RGE_VAR RGE_ECOUE = {.addr = 21, .name = "E_{ECOU}"};
-__extension__ const RGE_VAR RGE_TOTE  = {.addr = 22, .name = "E_{total}"};
+const RGE_VAR RGE_PCALE = {.addr = 19, .name = "E_{PCAL}"};
+const RGE_VAR RGE_ECINE = {.addr = 20, .name = "E_{ECIN}"};
+const RGE_VAR RGE_ECOUE = {.addr = 21, .name = "E_{ECOU}"};
+const RGE_VAR RGE_TOTE  = {.addr = 22, .name = "E_{total}"};
 
 /** Scintillator variables. */
-__extension__ const RGE_VAR RGE_DTOF = {.addr = 23, .name = "#Delta_{TOF}"};
+const RGE_VAR RGE_DTOF = {.addr = 23, .name = "#Delta_{TOF}"};
 
 /** Cherenkov counters variables. */
-__extension__ const RGE_VAR RGE_NPHELTCC = {.addr = 24, .name = "Nphe_{LTCC}"};
-__extension__ const RGE_VAR RGE_NPHEHTCC = {.addr = 25, .name = "Nphe_{HTCC}"};
+const RGE_VAR RGE_NPHELTCC = {.addr = 24, .name = "Nphe_{LTCC}"};
+const RGE_VAR RGE_NPHEHTCC = {.addr = 25, .name = "Nphe_{HTCC}"};
 
 /** DIS variables. */
-__extension__ const RGE_VAR RGE_Q2 = {.addr = 26, .name = "Q^{2}"};
-__extension__ const RGE_VAR RGE_NU = {.addr = 27, .name = "#nu"};
-__extension__ const RGE_VAR RGE_XB = {.addr = 28, .name = "x_{bjorken}"};
-__extension__ const RGE_VAR RGE_YB = {.addr = 29, .name = "y_{bjorken}"};
-__extension__ const RGE_VAR RGE_W2 = {.addr = 30, .name = "W^{2}"};
+const RGE_VAR RGE_Q2 = {.addr = 26, .name = "Q^{2}"};
+const RGE_VAR RGE_NU = {.addr = 27, .name = "#nu"};
+const RGE_VAR RGE_XB = {.addr = 28, .name = "x_{bjorken}"};
+const RGE_VAR RGE_YB = {.addr = 29, .name = "y_{bjorken}"};
+const RGE_VAR RGE_W2 = {.addr = 30, .name = "W^{2}"};
 
 /** SIDIS variables. */
-__extension__ const RGE_VAR RGE_ZH      = {.addr = 31, .name = "z_{h}"};
-__extension__ const RGE_VAR RGE_PT2     = {.addr = 32, .name = "P_{T}^{2}"};
-__extension__ const RGE_VAR RGE_PL2     = {.addr = 33, .name = "P_{L}^{2}"};
-__extension__ const RGE_VAR RGE_PHIPQ   = {.addr = 34, .name = "#phi_{PQ}"};
-__extension__ const RGE_VAR RGE_THETAPQ = {.addr = 35, .name = "#theta_{PQ}"};
+const RGE_VAR RGE_ZH      = {.addr = 31, .name = "z_{h}"};
+const RGE_VAR RGE_PT2     = {.addr = 32, .name = "P_{T}^{2}"};
+const RGE_VAR RGE_PL2     = {.addr = 33, .name = "P_{L}^{2}"};
+const RGE_VAR RGE_PHIPQ   = {.addr = 34, .name = "#phi_{PQ}"};
+const RGE_VAR RGE_THETAPQ = {.addr = 35, .name = "#theta_{PQ}"};
 
 #endif

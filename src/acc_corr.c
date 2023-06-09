@@ -129,7 +129,7 @@ static int count_entries(
     //       keeping a 5D array of non-contiguous pointers or -- even worse --
     //       C++ vectors.
     //          -Bruno
-    __extension__ int evn_cnt[nbins[0]][nbins[1]][nbins[2]][nbins[3]][nbins[4]];
+    int evn_cnt[nbins[0]][nbins[1]][nbins[2]][nbins[3]][nbins[4]];
     int *iterator = &evn_cnt[0][0][0][0][0]; // Auxiliary iterator for evn_cnt.
 
     // Set everything in evn_cnt to 0.

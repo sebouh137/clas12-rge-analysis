@@ -24,7 +24,11 @@ LIB := ./lib
 
 # C++ compiler + flags.
 CXX         := g++
-CFLAGS_DBG  := -g -pedantic -Wall -Wextra -Wcast-align -Wcast-qual \
+# NOTE. I'm leaving -pedantic and -Wextra out because they include mostly
+#		C++ I don't really care about :). If you want to add them back, you'll
+#       need to add `__extension__` behind every variable-length array.
+#          -Bruno.
+CFLAGS_DBG  := -g -Wall -Wcast-align -Wcast-qual \
 			   -Wctor-dtor-privacy -Wdisabled-optimization -Wformat=2 \
 			   -Winit-self -Wlogical-op -Wmissing-declarations \
 			   -Wmissing-include-dirs -Wnoexcept -Wold-style-cast \
@@ -32,7 +36,7 @@ CFLAGS_DBG  := -g -pedantic -Wall -Wextra -Wcast-align -Wcast-qual \
 			   -Wsign-conversion -Wsign-promo -Wstrict-null-sentinel \
 			   -Wstrict-overflow=4 -Wswitch-default -Wundef -Werror -Wno-unused
 CFLAGS_PROD := -O3
-CXX         := $(CXX) $(CFLAGS_PROD)
+CXX         := $(CXX) $(CFLAGS_DBG)
 
 # ROOT.
 ROOTCFLAGS  := -pthread $(CXX_STD) -m64 -isystem$(ROOT)/include

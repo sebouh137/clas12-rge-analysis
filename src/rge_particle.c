@@ -265,7 +265,7 @@ int rge_set_pid(
     uint hypotheses_size = 0;
     rge_get_pidlist_size_by_charge(particle->charge, &hypotheses_size);
 
-    __extension__ int hypotheses[hypotheses_size];
+    int hypotheses[hypotheses_size];
     rge_get_pidlist_by_charge(particle->charge, hypotheses);
 
     // Perform checks.

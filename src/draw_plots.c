@@ -70,31 +70,20 @@ static const char *DIS_LIST[DIS_LIST_SIZE] = {
 };
 
 /** "Standard" plots data. */
-#define STDPLT_LIST_SIZE 11
+#define STDPLT_LIST_SIZE 4
 static const int STD_PX[STDPLT_LIST_SIZE] = {
-        1, 1, 1, 0,
-        0, 0, 0, 0,
-        0, 0, 1
+        0, 0, 0, 0
 };
 static const int STD_VX[STDPLT_LIST_SIZE][2] = {
-        {RGE_P.addr,   RGE_BETA.addr}, {RGE_P.addr,     RGE_DTOF.addr},
-        {RGE_P.addr,   RGE_TOTE.addr}, {RGE_Q2.addr,    -1},
-        {RGE_NU.addr,  -1},            {RGE_ZH.addr,    -1},
-        {RGE_PT2.addr, -1},            {RGE_PHIPQ.addr, -1},
-        {RGE_XB.addr,  -1},            {RGE_W2.addr,    -1},
-        {RGE_Q2.addr,  RGE_NU.addr}
+        {RGE_VZ.addr,  -1}, {RGE_THETA.addr, -1},
+        {RGE_PHI.addr, -1}, {RGE_P.addr,     -1}
 };
 static const double STD_RX[STDPLT_LIST_SIZE][2][2] = {
-        {{ 0,10},{ 0, 1}}, {{ 0,10},{ 0,20}}, {{ 0,10},{ 0, 3}},
-        {{ 0,12},{-1,-1}}, {{ 0,12},{-1,-1}}, {{ 0, 1},{-1,-1}},
-        {{ 0, 2},{-1,-1}}, {{-M_PI,M_PI},{-1,-1}},
-        {{ 0, 1},{-1,-1}}, {{ 0,20},{-1,-1}}, {{ 0,12},{ 0,12}}
+        {{-30.,   20.},   {-1,-1}}, {{0.05, 0.9}, {-1,-1}},
+        {{ -3.1415926535,  3.1415926535}, {-1,-1}}, {{0.,    9.}, {-1,-1}}
 };
 static const long STD_BX[STDPLT_LIST_SIZE][2] = {
-        {200,200}, {200,100}, {200,200},
-        {400, -1}, {400, -1}, {400, -1},
-        {400, -1}, {400, -1},
-        {400, -1}, {400, -1}, {200,200}
+        {50, -1}, {42, -1}, {72, -1}, {45, -1}
 };
 
 /** Acceptance correction plot data. */
@@ -441,10 +430,10 @@ static int run(
     // === SETUP BINNING =======================================================
     printf("\nNumber of dimensions for binning?\n");
     luint dim_bins = static_cast<luint>(rge_catch_long());
-    __extension__ int    bin_vars[dim_bins];
-    __extension__ double bin_range[dim_bins][2];
-    __extension__ double bin_binsize[dim_bins];
-    __extension__ luint bin_nbins[dim_bins];
+    int    bin_vars[dim_bins];
+    double bin_range[dim_bins][2];
+    double bin_binsize[dim_bins];
+    luint bin_nbins[dim_bins];
     for (luint bin_dim_i = 0; bin_dim_i < dim_bins; ++bin_dim_i) {
         // variable.
         printf(
@@ -494,10 +483,10 @@ static int run(
         plot_arr_size = STDPLT_LIST_SIZE;
     }
 
-    __extension__ int plot_type[plot_arr_size];
-    __extension__ int plot_vars[plot_arr_size][2];
-    __extension__ double plot_range[plot_arr_size][2][2];
-    __extension__ luint plot_nbins[plot_arr_size][2];
+    int plot_type[plot_arr_size];
+    int plot_vars[plot_arr_size][2];
+    double plot_range[plot_arr_size][2][2];
+    luint plot_nbins[plot_arr_size][2];
     for (
             luint plot_i = 0;
             plot_i < plot_arr_size && !std_plot && !acc_plot;
@@ -636,7 +625,7 @@ static int run(
         bin_arr_size *= bin_nbins[bin_dim_i];
     }
 
-    __extension__ TH1 *plot_arr[plot_arr_size][bin_arr_size];
+    TH1 *plot_arr[plot_arr_size][bin_arr_size];
     for (luint plot_i = 0; plot_i < plot_arr_size; ++plot_i) {
         TString plot_title;
         int idx = 0;
@@ -749,7 +738,7 @@ static int run(
         }
 
         // Prepare binning vars.
-        __extension__ Float_t bin_vars_idx[dim_bins];
+        Float_t bin_vars_idx[dim_bins];
         for (luint bin_dim_i = 0; bin_dim_i < dim_bins; ++bin_dim_i) {
             bin_vars_idx[bin_dim_i] = vars[bin_vars[bin_dim_i]];
         }
@@ -804,8 +793,8 @@ static int run(
     ) {
         for (luint bin_i = 0; bin_i < bin_arr_size; ++bin_i) {
             // Integrate through other variables.
-            __extension__ int y_thrown[bn[plot_i]];
-            __extension__ int y_simul [bn[plot_i]];
+            int y_thrown[bn[plot_i]];
+            int y_simul [bn[plot_i]];
             for (
                     luint acc_bin_i = 0;
                     acc_bin_i < bn[plot_i];
@@ -858,7 +847,7 @@ static int run(
             }
 
             // Compute acceptance correction factor.
-            __extension__ double acc_corr_factor[bn[plot_i]];
+            double acc_corr_factor[bn[plot_i]];
             for (luint acc_bin_i = 0; acc_bin_i < bn[plot_i]; ++acc_bin_i) {
                 acc_corr_factor[acc_bin_i] =
                         static_cast<double>(y_thrown[acc_bin_i]) /
@@ -1023,7 +1012,7 @@ int main(int argc, char **argv) {
     bool apply_acc_corr = true;
     char *work_dir      = NULL;
     char *in_filename   = NULL;
-    int run_no          = -1;
+    int  run_no         = -1;
 
     int err = handle_args(
             argc, argv, &sel_pid, &apply_all_cuts, &nentries, &out_filename,

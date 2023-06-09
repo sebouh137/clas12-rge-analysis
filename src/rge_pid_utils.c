@@ -42,7 +42,7 @@ rge_pidconstants pid_constants_init(int q, double m, const char *n) {
     if (q  > 0) ++positive_size;
 
     // Return instance.
-    return __extension__ (rge_pidconstants) {.charge = q, .mass = m, .name = n};
+    return (rge_pidconstants) {.charge = q, .mass = m, .name = n};
 }
 
 // --+ library +----------------------------------------------------------------

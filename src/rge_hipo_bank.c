@@ -17,7 +17,7 @@
 
 // --+ internal +---------------------------------------------------------------
 rge_hipoentry entry_init(const char *in_addr, uint in_type) {
-    return __extension__ (rge_hipoentry) {
+    return (rge_hipoentry) {
             .addr = in_addr, .data = {}, .branch = nullptr, .type = in_type
     };
 }
