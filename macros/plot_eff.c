@@ -15,28 +15,18 @@
 
 // --- Define macro constants here ---------------------------------------------
 // FILES.
+const int NPIDS      = 3; // Number of PIDs.
+const int PIDLIST[NPIDS] = {11, 211, -211};
+const int NDETECTORS = 2; // Number of detectors.
+const char *DETECTORLIST[NDETECTORS] = {"dc", "fmt2"};
 const int NVERSIONS = 2; // Number of versions - i.e: not-corrected & corrected.
-const int NFILES    = 2; // Number of input files.
-const char *IN_FILENAMES[NVERSIONS][NFILES] = {
-        {
-                "../root_io/data_nc/pid11/dc_effstudy.root",
-                "../root_io/data_nc/pid11/fmt2_effstudy.root"
-        },
-        {
-                "../root_io/data_c/pid11/dc_effstudy.root",
-                "../root_io/data_c/pid11/fmt2_effstudy.root"
-        }
-};
-const char *OUT_FILENAME = "../root_io/effstudy_pid11.root";
+const char *VERSIONLIST[NVERSIONS] = {"raw", "gcut"};
+const char *OUT_FILENAME = "../root_io/eff/study_012016.root";
 
 // PLOTS.
 const int NPLOTS = 4;
-const std::map<int, const char *> PLOT_NAMES {
-        {0, "v_{z}"}, {1, "#phi"}, {2, "#theta"}, {3, "p"}
-};
-const std::map<int, const char *> CANVAS_NAMES {
-        {0, "vz"}, {1, "phi"}, {2, "theta"}, {3, "p"}
-};
+const char *PLOT_NAMES[NPLOTS]   = {"v_{z}", "#phi", "#theta", "p"};
+const char *CANVAS_NAMES[NPLOTS] = {"vz",    "phi",  "theta",  "p"};
 
 // --- Macro code begins here --------------------------------------------------
 /** Add TCanvas with name n to std::vector<TCanvas *> c. */
@@ -46,7 +36,7 @@ int add_tcanvas(std::vector<TCanvas *> *c, const char *n) {
 }
 
 /**
- * Obtain FMT efficiencies from IN_FILENAMES. Here, we're defining FMT
+ * Obtain FMT efficiencies from in_filenames. Here, we're defining FMT
  *     efficiency as % of DC tracks accepted by FMT.
  */
 int plot_eff() {
@@ -54,70 +44,97 @@ int plot_eff() {
     fflush(stdout);
 
     // Open input files.
-    TFile *in_files[NVERSIONS][NFILES];
-    for (int vi = 0; vi < NVERSIONS; ++vi) {
-        for (int fi = 0; fi < NFILES; ++fi) {
-            in_files[vi][fi] = TFile::Open(IN_FILENAMES[vi][fi]);
-            if (!in_files[vi][fi] || in_files[vi][fi]->IsZombie()) {
-                fprintf(
-                        stderr,
-                        "File %s is not valid.\n", IN_FILENAMES[vi][fi]
-                );
-                return 1;
+    TFile *in_files[NPIDS][NDETECTORS][NVERSIONS];
+
+    for (int pid_i = 0; pid_i < NPIDS; ++pid_i) {
+        for (int det_i = 0; det_i < NDETECTORS; ++det_i) {
+            for (int ver_i = 0; ver_i < NVERSIONS; ++ver_i) {
+                in_files[pid_i][det_i][ver_i] = TFile::Open(Form(
+                    "../root_io/eff/study/pid%d_%s_%s.root",
+                    PIDLIST[pid_i], DETECTORLIST[det_i], VERSIONLIST[ver_i]
+                ));
+                if (
+                    !in_files[pid_i][det_i][ver_i] ||
+                    in_files[pid_i][det_i][ver_i]->IsZombie()
+                ) {
+                    fprintf(stderr, "File %s is not valid.\n", Form(
+                        "../root_io/eff/study/pid%d_%s_%s.root",
+                        PIDLIST[pid_i], DETECTORLIST[det_i], VERSIONLIST[ver_i]
+                    ));
+                    return 1;
+                }
             }
         }
     }
 
     // Create TCanvases.
     std::vector<TCanvas *> canvases;
-    for (int pi = 0; pi < NPLOTS; ++pi) {
-        add_tcanvas(&canvases, CANVAS_NAMES.at(pi));
+    for (int pid_i = 0; pid_i < NPLOTS; ++pid_i) {
+        add_tcanvas(&canvases, CANVAS_NAMES[pid_i]);
+    }
+
+    // Divide TCanvases.
+    for (TCanvas *canvas : canvases) {
+        canvas->Divide(NPIDS, 1);
     }
 
     int canvas_idx = -1;
     for (TCanvas *canvas : canvases) {
         ++canvas_idx;
-        canvas->cd();
-        canvas->SetGrid();
 
-        // Get TH1Fs from files.
-        TH1F *plots[NVERSIONS][NFILES];
-        for (int vi = 0; vi < NVERSIONS; ++vi) {
-            for (int fi = 0; fi < NFILES; ++fi) {
-                plots[vi][fi] = (TH1F *)
-                        in_files[vi][fi]->Get(PLOT_NAMES.at(canvas_idx));
+        // Draw each plot.
+        for (int pid_i = 0; pid_i < NPIDS; ++pid_i) {
+            TPad *pad = (TPad *) canvas->cd(pid_i + 1);
+            canvas->SetGrid();
+
+            // Adjust the pad margins.
+            if (pid_i == 0) pad->SetMargin(0.05,   0.0025, 0.08, 0.0);
+            else            pad->SetMargin(0.0025, 0.0025, 0.08, 0.0);
+
+            // Get TH1Fs from files.
+            TH1F *plots[NDETECTORS][NVERSIONS];
+            for (int det_i = 0; det_i < NDETECTORS; ++det_i) {
+                for (int ver_i = 0; ver_i < NVERSIONS; ++ver_i) {
+                    plots[det_i][ver_i] = (TH1F *)
+                        in_files[pid_i][det_i][ver_i]->Get(
+                            PLOT_NAMES[canvas_idx]
+                        );
+                }
             }
+
+            // Divide FMT plots by DC plots.
+            for (int ver_i = 0; ver_i < NVERSIONS; ++ver_i) {
+                plots[1][ver_i]->Divide(plots[0][ver_i]);
+                plots[1][ver_i]->GetYaxis()->SetRangeUser(0, 1.05);
+            }
+
+            plots[1][0]->SetTitle(Form(
+                "%s FMT efficiency (pid %d)",
+                PLOT_NAMES[canvas_idx], PIDLIST[pid_i]
+            ));
+
+            // Set plots color.
+            plots[1][0]->SetLineColor(kRed);
+            plots[1][1]->SetLineColor(kBlue);
+
+            // Remove stats.
+            plots[1][0]->SetStats(0);
+            plots[1][1]->SetStats(0);
+
+            // Draw.
+            plots[1][0]->Draw();
+            plots[1][1]->Draw("SAME");
+
+            // Add legend.
+            if (pid_i == NPIDS - 1) {
+                TLegend *legend = new TLegend(0.7, 0.7, 0.886, 0.88);
+                legend->AddEntry(plots[1][0], "Raw", "l");
+                legend->AddEntry(plots[1][1], "Geometry-corrected", "l");
+                legend->Draw();
+            }
+
+            canvas->Update();
         }
-
-        // Divide FMT plots by DC plots.
-        for (int vi = 0; vi < NVERSIONS; ++vi) {
-            plots[vi][1]->Divide(plots[vi][0]);
-            plots[vi][1]->GetYaxis()->SetRangeUser(0, 1);
-        }
-
-        plots[0][1]->SetTitle(Form(
-                "%s  FMT (2 layers) efficiency", PLOT_NAMES.at(canvas_idx)
-        ));
-
-        // Set plots color.
-        plots[0][1]->SetLineColor(kRed);
-        plots[1][1]->SetLineColor(kBlue);
-
-        // Remove stats.
-        plots[0][1]->SetStats(0);
-        plots[1][1]->SetStats(0);
-
-        // Draw.
-        plots[0][1]->Draw();
-        plots[1][1]->Draw("SAME");
-
-        // Add legend.
-        TLegend *legend = new TLegend(0.7, 0.7, 0.886, 0.88);
-        legend->AddEntry(plots[0][1], "Raw", "l");
-        legend->AddEntry(plots[1][1], "Geometry-corrected", "l");
-        legend->Draw();
-
-        canvas->Update();
     }
 
     // Write to file.
@@ -127,9 +144,11 @@ int plot_eff() {
     }
 
     // Clean up.
-    for (int vi = 0; vi < NVERSIONS; ++vi) {
-        for (int fi = 0; fi < NFILES; ++fi) {
-            in_files[vi][fi]->Close();
+    for (int pid_i = 0; pid_i < NPIDS; ++pid_i) {
+        for (int det_i = 0; det_i < NDETECTORS; ++det_i) {
+            for (int ver_i = 0; ver_i < NVERSIONS; ++ver_i) {
+                in_files[pid_i][det_i][ver_i]->Close();
+            }
         }
     }
     file_out->Close();

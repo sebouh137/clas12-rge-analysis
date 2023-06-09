@@ -1,5 +1,5 @@
 // CLAS12 RG-E Analyser.
-// Copyright (C) 2022 Bruno Benkel
+// Copyright (C) 2022-2023 Bruno Benkel
 //
 // This program is free software: you can redistribute it and/or modify it under
 // the terms of the GNU Lesser General Public License as published by the Free
@@ -18,12 +18,14 @@
 const int PID = -211;
 
 // acc_corr.txt files produced by acc_corr.
-const char *DC_FILENAME   = "../data/acc_corr_dc.txt";
-const char *FMT2_FILENAME = "../data/acc_corr_fmt2.txt";
-const char *FMT3_FILENAME = "../data/acc_corr_fmt3.txt";
+const char *DC_FILENAME   = "../data/acc_corr_dc_gcut.txt";
+const char *FMT2_FILENAME = "../data/acc_corr_fmt2_gcut.txt";
+const char *FMT3_FILENAME = "../data/acc_corr_fmt3_gcut.txt";
 
 // Root file where we'll write the plots.
-const char *OUTPUT_FILENAME = "../root_io/simul/acc_corr_pid-211.root";
+const char *OUTPUT_FILENAME = Form(
+    "../root_io/simul/geomcut/acc_corr/pid%d.root", PID
+);
 
 // Map containing the variables we're working with.
 const int NPLOTS = 5;

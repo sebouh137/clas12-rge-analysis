@@ -14,18 +14,21 @@
 // You can see a copy of the GNU Lesser Public License under the LICENSE file.
 
 // --- Define macro constants here ---------------------------------------------
+// PID to process.
+const int pid = 11;
+
 // FILES.
 const int NFILES = 3; // Number of input files.
 const char *IN_FILENAMES[NFILES] = {
-        "../root_io/dis/pid-211/integrated_dc.root",
-        "../root_io/dis/pid-211/integrated_fmt2.root",
-        "../root_io/dis/pid-211/integrated_fmt3.root"
+        Form("../root_io/dis/pid%d/integrated_dc.root",   pid),
+        Form("../root_io/dis/pid%d/integrated_fmt2.root", pid),
+        Form("../root_io/dis/pid%d/integrated_fmt3.root", pid)
 };
 const char *LEGEND_ENTRIES[NFILES] = {
         "DC", "FMT - 2 layers", "FMT - 3 layers"
 };
 const int COLORS[NFILES] = {kRed, kBlue, kGreen};
-const char *OUT_FILENAME = "../root_io/dis_integrated_tmp.root";
+const char *OUT_FILENAME = Form("../root_io/dis/integrated_pid%d.root", pid);
 
 // PLOTS.
 const int NVARS = 5;
@@ -91,7 +94,7 @@ int plot_dis() {
                 double x = plots[plot_i]->GetBinCenter(bin_i);
                 double y = plots[plot_i]->GetBinContent(bin_i);
                 double xerr = plots[plot_i]->GetBinWidth(bin_i) / 2;
-                double yerr = 0.0;
+                double yerr = plots[plot_i]->GetBinError(bin_i);
                 graphs[plot_i]->SetPoint(bin_i - 1, x, y);
                 graphs[plot_i]->SetPointError(bin_i - 1, xerr, yerr);
             }

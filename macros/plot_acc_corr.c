@@ -1,5 +1,5 @@
 // CLAS12 RG-E Analyser.
-// Copyright (C) 2022 Bruno Benkel
+// Copyright (C) 2022-2023 Bruno Benkel
 //
 // This program is free software: you can redistribute it and/or modify it under
 // the terms of the GNU Lesser General Public License as published by the Free
@@ -14,26 +14,30 @@
 // You can see a copy of the GNU Lesser Public License under the LICENSE file.
 
 // --- Define macro constants here. ----------------------------------------- //
-// Set this to 1 to get some debug information.
-const int DEBUG = 0;
 // Set to the PID to plot acceptance correction from.
 const int PID = 211;
+
 // acc_corr.txt files produced by acc_corr.
-const char *DC_FILENAME   = "../data/acc_corr_dc.txt";
-const char *FMT2_FILENAME = "../data/acc_corr_fmt2.txt";
-const char *FMT3_FILENAME = "../data/acc_corr_fmt3.txt";
+const char *DC_FILENAME   = "../data/acc_corr_dc_raw.txt";
+const char *FMT2_FILENAME = "../data/acc_corr_fmt2_raw.txt";
+const char *FMT3_FILENAME = "../data/acc_corr_fmt3_raw.txt";
+
 // Root file where we'll write the plots.
-const char *OUTPUT_FILENAME = "../root_io/acc_corr_pid-211.root";
+const char *OUTPUT_FILENAME = Form(
+        "../root_io/simul/raw/acc_corr/pid%d.root", PID
+);
+
 // Map containing the variables we're working with.
 const int NPLOTS = 5;
 const std::map<int, const char *> PLOT_NAMES {
     {0, "Q2"}, {1, "#nu"}, {2, "z_{h}"}, {3, "Pt2"}, {4, "#phi_{PQ}"}
 };
+const int CANVAS_YSCALE[NPLOTS] = {1, 1, 1, 1, 1}; // 0 is linear, 1 is log.
 // Colors.
-const int color_thrown = kRed;
-const int color_dc     = kMagenta - 3;
-const int color_fmt2   = kBlue - 6;
-const int color_fmt3   = kGreen - 9;
+const int color_thrown = kMagenta;
+const int color_dc     = kRed;
+const int color_fmt2   = kBlue;
+const int color_fmt3   = kGreen;
 
 // --- Macro code begins here ----------------------------------------------- //
 /**
@@ -139,7 +143,7 @@ int copy_filename(char *tgt, const char *src) {
 }
 
 /** Run the macro. */
-int plot_acc_corr_tmp() {
+int plot_acc_corr() {
     // printf("Running... ");
     // fflush(stdout);
 
@@ -199,24 +203,6 @@ int plot_acc_corr_tmp() {
     if (pid_pos == -1) {
         printf("\nPID %d not found in %s! Exiting...\n", PID, dc_filename);
         return 1;
-    }
-
-    if (DEBUG) {
-        // Print read acceptance correction data.
-        printf("\n");
-        for (int bi = 0; bi < NPLOTS; ++bi) {
-            printf("binning[%d] (%02ld): [", bi, bs[bi]);
-            for (int bii = 0; bii < bs[bi]; ++bii)
-            printf("%5.2lf, ", binnings[bi][bii]);
-            printf("\b\b]\n");
-        }
-        printf("pids_size = %ld\n", pids_size);
-        printf("nbins     = %ld\n", nbins);
-        printf("pids[%ld] = [", pids_size);
-        for (int pi = 0; pi < pids_size; ++pi) {
-            printf("%ld ", pids[pi]);
-        }
-        printf("\b\b]\n\n");
     }
 
     // Create TCanvases.
@@ -285,30 +271,53 @@ int plot_acc_corr_tmp() {
             }
         }
 
-        if (DEBUG) {
-            // Print counting results.
-            printf("%6s thrown  simul dc simul fmt2\n", PLOT_NAMES.at(var_idx));
-            for (int i = 0; i < bs[var_idx]-1; ++i)
-            printf("       %08d %08d %08d\n",
-                    y_thrown[i], y_simul_dc[i], y_simul_fmt2[i]);
-            printf("\n");
-        }
-
         // Create a copy of n_thrown, n_simul_dc, and n_simul_fmt2 as doubles.
         double y_thrown_dbl[bin_size - 1];
         double y_simul_dc_dbl[bin_size - 1];
         double y_simul_fmt2_dbl[bin_size - 1];
         double y_simul_fmt3_dbl[bin_size - 1];
+        double y_min = 1e20;
+        double y_max = 1e-20;
         for (int bii = 0; bii < bin_size - 1; ++bii) {
             y_thrown_dbl[bii]     = (double) y_thrown[bii];
             y_simul_dc_dbl[bii]   = (double) y_simul_dc[bii];
             y_simul_fmt2_dbl[bii] = (double) y_simul_fmt2[bii];
             y_simul_fmt3_dbl[bii] = (double) y_simul_fmt3[bii];
+
+            // Check for new minimum.
+            if (y_thrown_dbl[bii]     < y_min && y_thrown_dbl[bii]     > 1e-20)
+                y_min = y_thrown_dbl[bii];
+            if (y_simul_dc_dbl[bii]   < y_min && y_simul_dc_dbl[bii]   > 1e-20)
+                y_min = y_simul_dc_dbl[bii];
+            if (y_simul_fmt2_dbl[bii] < y_min && y_simul_fmt2_dbl[bii] > 1e-20)
+                y_min = y_simul_fmt2_dbl[bii];
+            if (y_simul_fmt3_dbl[bii] < y_min && y_simul_fmt3_dbl[bii] > 1e-20)
+                y_min = y_simul_fmt3_dbl[bii];
+
+            // Check for new maximum.
+            if (y_thrown_dbl[bii]     > y_max) y_max = y_thrown_dbl[bii];
+            if (y_simul_dc_dbl[bii]   > y_max) y_max = y_simul_dc_dbl[bii];
+            if (y_simul_fmt2_dbl[bii] > y_max) y_max = y_simul_fmt2_dbl[bii];
+            if (y_simul_fmt3_dbl[bii] > y_max) y_max = y_simul_fmt3_dbl[bii];
         }
 
         // Write results to plots.
         canvases.at(var_idx)->cd();
+        canvases.at(var_idx)->SetGrid();
         gStyle->SetOptTitle(0);
+
+        // Rescale y axis to fit both DC and FMT data.
+        double min = 0;
+        double max = 1.1 * y_max;
+        if (CANVAS_YSCALE[var_idx] == 1) {
+            min = y_min / sqrt(10);
+            max = y_max * sqrt(10);
+        }
+
+        // Set y scale to log when needed.
+        if (CANVAS_YSCALE[var_idx] == 1) {
+            canvases.at(var_idx)->SetLogy();
+        }
 
         // Write TGraphErrors for thrown events.
         TGraphErrors *graph_thrown = new TGraphErrors(
@@ -317,7 +326,7 @@ int plot_acc_corr_tmp() {
         graph_thrown->SetTitle(Form("%s (thrown)", PLOT_NAMES.at(var_idx)));
         graph_thrown->SetMarkerColor(color_thrown);
         graph_thrown->SetMarkerStyle(21);
-        graph_thrown->SetMinimum(0.);
+        graph_thrown->GetYaxis()->SetRangeUser(min, max);
         graph_thrown->GetXaxis()->SetTitle(PLOT_NAMES.at(var_idx));
         graph_thrown->Draw("AP");
 
@@ -330,6 +339,7 @@ int plot_acc_corr_tmp() {
         );
         graph_simul_dc->SetMarkerColor(color_dc);
         graph_simul_dc->SetMarkerStyle(21);
+        graph_simul_dc->GetYaxis()->SetRangeUser(min, max);
         graph_simul_dc->Draw("sameP");
 
         // Write TGraphErrors for FMT2 events.
@@ -341,6 +351,7 @@ int plot_acc_corr_tmp() {
         );
         graph_simul_fmt2->SetMarkerColor(color_fmt2);
         graph_simul_fmt2->SetMarkerStyle(21);
+        graph_simul_fmt2->GetYaxis()->SetRangeUser(min, max);
         graph_simul_fmt2->Draw("sameP");
 
         // Write TGraphErrors for FMT3 events.
@@ -352,6 +363,7 @@ int plot_acc_corr_tmp() {
         );
         graph_simul_fmt3->SetMarkerColor(color_fmt3);
         graph_simul_fmt3->SetMarkerStyle(21);
+        graph_simul_fmt3->GetYaxis()->SetRangeUser(min, max);
         graph_simul_fmt3->Draw("sameP");
 
         // Add legend.
