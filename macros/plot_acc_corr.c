@@ -15,22 +15,26 @@
 
 // --- Define macro constants here. ----------------------------------------- //
 // Set to the PID to plot acceptance correction from.
-const int PID = 211;
+const int PID = -211;
 
 // acc_corr.txt files produced by acc_corr.
-const char *DC_FILENAME   = "../data/acc_corr_dc_raw.txt";
-const char *FMT2_FILENAME = "../data/acc_corr_fmt2_raw.txt";
-const char *FMT3_FILENAME = "../data/acc_corr_fmt3_raw.txt";
+const char *DC_FILENAME   = "../data/acc_corr_dc.txt";
+const char *FMT2_FILENAME = "../data/acc_corr_fmt2.txt";
+const char *FMT3_FILENAME = "../data/acc_corr_fmt3.txt";
 
 // Root file where we'll write the plots.
 const char *OUTPUT_FILENAME = Form(
-        "../root_io/simul/raw/acc_corr/pid%d.root", PID
+    "../root_io/simul/geomcut/acc_corr/pid%d.root", PID
 );
 
 // Map containing the variables we're working with.
 const int NPLOTS = 5;
 const std::map<int, const char *> PLOT_NAMES {
-    {0, "Q2"}, {1, "#nu"}, {2, "z_{h}"}, {3, "Pt2"}, {4, "#phi_{PQ}"}
+    {0, "Q^{2} (GeV^{2})"},
+    {1, "#nu"},
+    {2, "z_{h}"},
+    {3, "P_{T}^{2} (GeV^{2})"},
+    {4, "#phi_{PQ} (rad)"}
 };
 const int CANVAS_YSCALE[NPLOTS] = {1, 1, 1, 1, 1}; // 0 is linear, 1 is log.
 // Colors.
@@ -219,18 +223,17 @@ int plot_acc_corr() {
         double x_pos[bin_size - 1];
         double x_length[bin_size - 1];
         int y_thrown[bin_size - 1];
-        int y_simul_dc[bin_size - 1];
-        int y_simul_fmt2[bin_size - 1];
-        int y_simul_fmt3[bin_size - 1];
-        double y_err[bin_size - 1];
+        int y_dc[bin_size - 1];
+        int y_fmt2[bin_size - 1];
+        int y_fmt3[bin_size - 1];
+
         for (int bii = 0; bii < bin_size - 1; ++bii) {
             x_pos[bii]    = (binnings[var_idx][bii+1]+binnings[var_idx][bii])/2;
             x_length[bii] = (binnings[var_idx][bii+1]-binnings[var_idx][bii])/2;
             y_thrown[bii] = 0;
-            y_simul_dc[bii]   = 0;
-            y_simul_fmt2[bii] = 0;
-            y_simul_fmt3[bii] = 0;
-            y_err[bii]        = 0.; // Dummy variable.
+            y_dc[bii]     = 0;
+            y_fmt2[bii]   = 0;
+            y_fmt3[bii]   = 0;
         }
 
         // Fill y.
@@ -259,11 +262,11 @@ int plot_acc_corr() {
 
                             // Increment appropriate counters.
                             y_thrown[sel_idx] += n_thrown[pid_pos][bin_pos];
-                            y_simul_dc[sel_idx] +=
+                            y_dc[sel_idx] +=
                                     n_simul_dc[pid_pos][bin_pos];
-                            y_simul_fmt2[sel_idx] +=
+                            y_fmt2[sel_idx] +=
                                     n_simul_fmt2[pid_pos][bin_pos];
-                            y_simul_fmt3[sel_idx] +=
+                            y_fmt3[sel_idx] +=
                                     n_simul_fmt3[pid_pos][bin_pos];
                         }
                     }
@@ -271,34 +274,48 @@ int plot_acc_corr() {
             }
         }
 
-        // Create a copy of n_thrown, n_simul_dc, and n_simul_fmt2 as doubles.
+        // Create a copy of data as doubles.
         double y_thrown_dbl[bin_size - 1];
-        double y_simul_dc_dbl[bin_size - 1];
-        double y_simul_fmt2_dbl[bin_size - 1];
-        double y_simul_fmt3_dbl[bin_size - 1];
+        double y_dc_dbl[bin_size - 1];
+        double y_fmt2_dbl[bin_size - 1];
+        double y_fmt3_dbl[bin_size - 1];
+
+        // Store the errors of each.
+        double y_thrown_err[bin_size - 1];
+        double y_dc_err[bin_size - 1];
+        double y_fmt2_err[bin_size - 1];
+        double y_fmt3_err[bin_size - 1];
+
+        // Store the minima and maxima.
         double y_min = 1e20;
         double y_max = 1e-20;
+
         for (int bii = 0; bii < bin_size - 1; ++bii) {
-            y_thrown_dbl[bii]     = (double) y_thrown[bii];
-            y_simul_dc_dbl[bii]   = (double) y_simul_dc[bii];
-            y_simul_fmt2_dbl[bii] = (double) y_simul_fmt2[bii];
-            y_simul_fmt3_dbl[bii] = (double) y_simul_fmt3[bii];
+            y_thrown_dbl[bii] = (double) y_thrown[bii];
+            y_dc_dbl[bii]     = (double) y_dc[bii];
+            y_fmt2_dbl[bii]   = (double) y_fmt2[bii];
+            y_fmt3_dbl[bii]   = (double) y_fmt3[bii];
+
+            y_thrown_err[bii] = sqrt(y_thrown_dbl[bii]);
+            y_dc_err[bii]     = sqrt(y_dc_dbl[bii]);
+            y_fmt2_err[bii]   = sqrt(y_fmt2_dbl[bii]);
+            y_fmt3_err[bii]   = sqrt(y_fmt3_dbl[bii]);
 
             // Check for new minimum.
-            if (y_thrown_dbl[bii]     < y_min && y_thrown_dbl[bii]     > 1e-20)
+            if (y_thrown_dbl[bii] < y_min && y_thrown_dbl[bii] > 1e-20)
                 y_min = y_thrown_dbl[bii];
-            if (y_simul_dc_dbl[bii]   < y_min && y_simul_dc_dbl[bii]   > 1e-20)
-                y_min = y_simul_dc_dbl[bii];
-            if (y_simul_fmt2_dbl[bii] < y_min && y_simul_fmt2_dbl[bii] > 1e-20)
-                y_min = y_simul_fmt2_dbl[bii];
-            if (y_simul_fmt3_dbl[bii] < y_min && y_simul_fmt3_dbl[bii] > 1e-20)
-                y_min = y_simul_fmt3_dbl[bii];
+            if (y_dc_dbl[bii]     < y_min && y_dc_dbl[bii]     > 1e-20)
+                y_min = y_dc_dbl[bii];
+            if (y_fmt2_dbl[bii]   < y_min && y_fmt2_dbl[bii]   > 1e-20)
+                y_min = y_fmt2_dbl[bii];
+            if (y_fmt3_dbl[bii]   < y_min && y_fmt3_dbl[bii]   > 1e-20)
+                y_min = y_fmt3_dbl[bii];
 
             // Check for new maximum.
-            if (y_thrown_dbl[bii]     > y_max) y_max = y_thrown_dbl[bii];
-            if (y_simul_dc_dbl[bii]   > y_max) y_max = y_simul_dc_dbl[bii];
-            if (y_simul_fmt2_dbl[bii] > y_max) y_max = y_simul_fmt2_dbl[bii];
-            if (y_simul_fmt3_dbl[bii] > y_max) y_max = y_simul_fmt3_dbl[bii];
+            if (y_thrown_dbl[bii] > y_max) y_max = y_thrown_dbl[bii];
+            if (y_dc_dbl[bii]     > y_max) y_max = y_dc_dbl[bii];
+            if (y_fmt2_dbl[bii]   > y_max) y_max = y_fmt2_dbl[bii];
+            if (y_fmt3_dbl[bii]   > y_max) y_max = y_fmt3_dbl[bii];
         }
 
         // Write results to plots.
@@ -321,7 +338,7 @@ int plot_acc_corr() {
 
         // Write TGraphErrors for thrown events.
         TGraphErrors *graph_thrown = new TGraphErrors(
-                bs[var_idx]-1, x_pos, y_thrown_dbl, x_length, y_err
+                bs[var_idx]-1, x_pos, y_thrown_dbl, x_length, y_thrown_err
         );
         graph_thrown->SetTitle(Form("%s (thrown)", PLOT_NAMES.at(var_idx)));
         graph_thrown->SetMarkerColor(color_thrown);
@@ -332,7 +349,7 @@ int plot_acc_corr() {
 
         // Write TGraphErrors for DC events.
         TGraphErrors *graph_simul_dc = new TGraphErrors(
-                bs[var_idx]-1, x_pos, y_simul_dc_dbl, x_length, y_err
+                bs[var_idx]-1, x_pos, y_dc_dbl, x_length, y_dc_err
         );
         graph_simul_dc->SetTitle(
                 Form("%s (simul - DC)", PLOT_NAMES.at(var_idx))
@@ -344,7 +361,7 @@ int plot_acc_corr() {
 
         // Write TGraphErrors for FMT2 events.
         TGraphErrors *graph_simul_fmt2 = new TGraphErrors(
-                bs[var_idx]-1, x_pos, y_simul_fmt2_dbl, x_length, y_err
+                bs[var_idx]-1, x_pos, y_fmt2_dbl, x_length, y_fmt2_err
         );
         graph_simul_fmt2->SetTitle(
                 Form("%s (simul - FMT2)", PLOT_NAMES.at(var_idx))
@@ -356,7 +373,7 @@ int plot_acc_corr() {
 
         // Write TGraphErrors for FMT3 events.
         TGraphErrors *graph_simul_fmt3 = new TGraphErrors(
-                bs[var_idx]-1, x_pos, y_simul_fmt3_dbl, x_length, y_err
+                bs[var_idx]-1, x_pos, y_fmt3_dbl, x_length, y_fmt3_err
         );
         graph_simul_fmt3->SetTitle(
                 Form("%s (simul - FMT3)", PLOT_NAMES.at(var_idx))

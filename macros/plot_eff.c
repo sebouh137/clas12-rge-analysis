@@ -25,8 +25,10 @@ const char *OUT_FILENAME = "../root_io/eff/study_012016.root";
 
 // PLOTS.
 const int NPLOTS = 4;
-const char *PLOT_NAMES[NPLOTS]   = {"v_{z}", "#phi", "#theta", "p"};
-const char *CANVAS_NAMES[NPLOTS] = {"vz",    "phi",  "theta",  "p"};
+const char *PLOT_NAMES[NPLOTS]   = {
+        "v_{z} (cm)", "#phi (rad)", "#theta (rad)", "p (GeV)"
+};
+const char *CANVAS_NAMES[NPLOTS] = {"vz", "phi", "theta", "p"};
 
 // --- Macro code begins here --------------------------------------------------
 /** Add TCanvas with name n to std::vector<TCanvas *> c. */

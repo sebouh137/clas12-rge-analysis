@@ -18,9 +18,9 @@
 const int PID = -211;
 
 // acc_corr.txt files produced by acc_corr.
-const char *DC_FILENAME   = "../data/acc_corr_dc_gcut.txt";
-const char *FMT2_FILENAME = "../data/acc_corr_fmt2_gcut.txt";
-const char *FMT3_FILENAME = "../data/acc_corr_fmt3_gcut.txt";
+const char *DC_FILENAME   = "../data/acc_corr_dc.txt";
+const char *FMT2_FILENAME = "../data/acc_corr_fmt2.txt";
+const char *FMT3_FILENAME = "../data/acc_corr_fmt3.txt";
 
 // Root file where we'll write the plots.
 const char *OUTPUT_FILENAME = Form(
@@ -30,7 +30,11 @@ const char *OUTPUT_FILENAME = Form(
 // Map containing the variables we're working with.
 const int NPLOTS = 5;
 const std::map<int, const char *> PLOT_NAMES {
-    {0, "Q^{2}"}, {1, "#nu"}, {2, "z_{h}"}, {3, "P_{T}^{2}"}, {4, "#phi_{PQ}"}
+    {0, "Q^{2} (GeV^{2})"},
+    {1, "#nu"},
+    {2, "z_{h}"},
+    {3, "P_{T}^{2} (GeV^{2})"},
+    {4, "#phi_{PQ} (rad)"}
 };
 
 // Colors.
@@ -144,7 +148,9 @@ int copy_filename(char *tgt, const char *src) {
 }
 
 /** Divide two TGraphErrors assuming a simple error propagation. */
-TGraphErrors *divide_TGraphErrors(TGraphErrors *graph1, TGraphErrors *graph2) {
+TGraphAsymmErrors *divide_TGraphErrors(
+        TGraphErrors *graph1, TGraphErrors *graph2, double offset
+) {
     int graph_size = graph1->GetN();
 
     // Create new arrays to store the divided values.
@@ -167,37 +173,51 @@ TGraphErrors *divide_TGraphErrors(TGraphErrors *graph1, TGraphErrors *graph2) {
         // Divide the values.
         x_divided [gi] = x1;
         ex_divided[gi] = ex1;
-        if (y1 < 1e-20) {
-            y_divided[gi] = 0;
-        }
+
+        // If y1 or y2 == 0, its better to set everything to 0.
         if (y1 < 1e-20 || y2 < 1e-20) {
+            y_divided[gi]  = 0;
             ey_divided[gi] = 0;
             continue;
         }
-        y_divided [gi] = y1 / y2;
-        ey_divided[gi] = 0;
+
+        y_divided[gi] = y1 / y2;
         ey_divided[gi] = (y1 / y2) *
                 sqrt((ey1 / y1) * (ey1 / y1) + (ey2 / y2) * (ey2 / y2));
     }
 
     // Create a new TGraphErrors with the divided values.
-    TGraphErrors *graph_divided = new TGraphErrors(
-            graph_size, x_divided, y_divided, ex_divided, ey_divided
+    TGraphAsymmErrors *graph_divided = new TGraphAsymmErrors(
+            graph_size, x_divided, y_divided,
+            ex_divided, ex_divided,
+            ey_divided, ey_divided
     );
+
+    // Adjust the x error value to move the marker within the bin
+    for (int i = 0; i < graph_size; ++i) {
+        graph_divided->SetPoint(i, x_divided[i] + offset, y_divided[i]);
+
+        // Adjust the x error by an offset within the bin
+        graph_divided->SetPointError(
+                i, ex_divided[i] + offset, ex_divided[i] - offset,
+                ey_divided[i], ey_divided[i]
+        );
+    }
 
     return graph_divided;
 }
 
 /** Get the maximum y value from a TGraphErrors. */
-double get_max(TGraphErrors *graph) {
+double get_max(TGraphAsymmErrors *graph) {
     double y_max = 1e-20;
     int graph_size = graph->GetN(); // Get the number of points in the graph.
 
     // Iterate over each point and find the maximum y value
     for (int gi = 0; gi < graph_size; ++gi) {
-        double x, y;
+        double x, y, ey;
         graph->GetPoint(gi, x, y);
-        if (y > y_max) y_max = y;
+        ey = graph->GetErrorY(gi);
+        if (y + ey > y_max) y_max = y + ey;
     }
 
     return y_max;
@@ -224,7 +244,7 @@ void drawtext() {
 /** Run the macro. */
 int plot_acc_corr_eff() {
     // Create an executable for drawtext().
-    TExec *ex = new TExec("ex", "drawtext();");
+    // TExec *ex = new TExec("ex", "drawtext();");
 
     // Copy filenames to char *.
     char dc_filename[128];
@@ -240,17 +260,17 @@ int plot_acc_corr_eff() {
     long int nbins;
     long int *pids;
     int **n_thrown;
-    int **n_simul_dc;
-    int **n_simul_fmt2;
-    int **n_simul_fmt3;
+    int **n_dc;
+    int **n_fmt2;
+    int **n_fmt3;
 
     // Read DC acceptance correction.
     read_acc_corr_file(
             dc_filename, bs, &binnings, &pids_size, &nbins, &pids, &n_thrown,
-            &n_simul_dc
+            &n_dc
     );
 
-    // Free everything but n_simul_dc.
+    // Free everything but n_dc.
     for (int bi = 0; bi < 5; ++bi) free(binnings[bi]);
     free(binnings);
     free(pids);
@@ -260,10 +280,10 @@ int plot_acc_corr_eff() {
     // Read FMT 2 acceptance correction.
     read_acc_corr_file(
             fmt2_filename, bs, &binnings, &pids_size, &nbins, &pids, &n_thrown,
-            &n_simul_fmt2
+            &n_fmt2
     );
 
-    // Free everything but n_simul_fmt2.
+    // Free everything but n_fmt2.
     for (int bi = 0; bi < 5; ++bi) free(binnings[bi]);
     free(binnings);
     free(pids);
@@ -273,7 +293,7 @@ int plot_acc_corr_eff() {
     // Read FMT 3 acceptance correction.
     read_acc_corr_file(
             fmt3_filename, bs, &binnings, &pids_size, &nbins, &pids, &n_thrown,
-            &n_simul_fmt3
+            &n_fmt3
     );
 
     // Get place of PID in *pids.
@@ -298,18 +318,17 @@ int plot_acc_corr_eff() {
         double x_pos[bin_size - 1];
         double x_length[bin_size - 1];
         int y_thrown[bin_size - 1];
-        int y_simul_dc[bin_size - 1];
-        int y_simul_fmt2[bin_size - 1];
-        int y_simul_fmt3[bin_size - 1];
+        int y_dc[bin_size - 1];
+        int y_fmt2[bin_size - 1];
+        int y_fmt3[bin_size - 1];
         double y_err[bin_size - 1];
         for (int bii = 0; bii < bin_size - 1; ++bii) {
             x_pos[bii]    = (binnings[var_idx][bii+1]+binnings[var_idx][bii])/2;
             x_length[bii] = (binnings[var_idx][bii+1]-binnings[var_idx][bii])/2;
             y_thrown[bii] = 0;
-            y_simul_dc[bii]   = 0;
-            y_simul_fmt2[bii] = 0;
-            y_simul_fmt3[bii] = 0;
-            y_err[bii]        = 0.; // Dummy variable.
+            y_dc[bii]   = 0;
+            y_fmt2[bii] = 0;
+            y_fmt3[bii] = 0;
         }
 
         // Fill y.
@@ -338,32 +357,47 @@ int plot_acc_corr_eff() {
 
                             // Increment appropriate counters.
                             y_thrown[sel_idx] += n_thrown[pid_pos][bin_pos];
-                            y_simul_dc[sel_idx] +=
-                                    n_simul_dc[pid_pos][bin_pos];
-                            y_simul_fmt2[sel_idx] +=
-                                    n_simul_fmt2[pid_pos][bin_pos];
-                            y_simul_fmt3[sel_idx] +=
-                                    n_simul_fmt3[pid_pos][bin_pos];
+                            y_dc[sel_idx] +=
+                                    n_dc[pid_pos][bin_pos];
+                            y_fmt2[sel_idx] +=
+                                    n_fmt2[pid_pos][bin_pos];
+                            y_fmt3[sel_idx] +=
+                                    n_fmt3[pid_pos][bin_pos];
                         }
                     }
                 }
             }
         }
 
-        // Create a copy of n_thrown, n_simul_dc, and n_simul_fmt2 as doubles.
+        // Create a copy of data as doubles.
         double y_thrown_dbl[bin_size - 1];
-        double y_simul_dc_dbl[bin_size - 1];
-        double y_simul_fmt2_dbl[bin_size - 1];
-        double y_simul_fmt3_dbl[bin_size - 1];
+        double y_dc_dbl[bin_size - 1];
+        double y_fmt2_dbl[bin_size - 1];
+        double y_fmt3_dbl[bin_size - 1];
+
+        // Store the errors of each.
+        double y_thrown_err[bin_size - 1];
+        double y_dc_err[bin_size - 1];
+        double y_fmt2_err[bin_size - 1];
+        double y_fmt3_err[bin_size - 1];
+
         for (int bii = 0; bii < bin_size - 1; ++bii) {
-            y_thrown_dbl[bii]     = (double) y_thrown[bii];
-            y_simul_dc_dbl[bii]   = (double) y_simul_dc[bii];
-            y_simul_fmt2_dbl[bii] = (double) y_simul_fmt2[bii];
-            y_simul_fmt3_dbl[bii] = (double) y_simul_fmt3[bii];
+            y_thrown_dbl[bii] = (double) y_thrown[bii];
+            y_dc_dbl[bii]     = (double) y_dc[bii];
+            y_fmt2_dbl[bii]   = (double) y_fmt2[bii];
+            y_fmt3_dbl[bii]   = (double) y_fmt3[bii];
+
+            y_thrown_err[bii] = sqrt(y_thrown_dbl[bii]);
+            y_dc_err[bii]     = sqrt(y_dc_dbl[bii]);
+            y_fmt2_err[bii]   = sqrt(y_fmt2_dbl[bii]);
+            y_fmt3_err[bii]   = sqrt(y_fmt3_dbl[bii]);
         }
 
         // Store maximum y value.
         double y_max = 1e-20;
+
+        // Store x offset for assymetric error graph.
+        double offset = x_length[0]/4;
 
         // Setup plot.
         canvases.at(var_idx)->cd();
@@ -372,15 +406,15 @@ int plot_acc_corr_eff() {
 
         // Write TGraphErrors for thrown events.
         TGraphErrors *graph_thrown = new TGraphErrors(
-                bs[var_idx]-1, x_pos, y_thrown_dbl, x_length, y_err
+                bs[var_idx]-1, x_pos, y_thrown_dbl, x_length, y_thrown_err
         );
 
         // Write TGraphErrors for DC events.
         TGraphErrors *graph_dc = new TGraphErrors(
-                bs[var_idx]-1, x_pos, y_simul_dc_dbl, x_length, y_err
+                bs[var_idx]-1, x_pos, y_dc_dbl, x_length, y_dc_err
         );
-        TGraphErrors *graph_eff_dc =
-                divide_TGraphErrors(graph_dc, graph_thrown);
+        TGraphAsymmErrors *graph_eff_dc =
+                divide_TGraphErrors(graph_dc, graph_thrown, -offset);
         graph_eff_dc->SetMarkerColor(color_dc);
         graph_eff_dc->SetMarkerStyle(21);
         double dc_max = get_max(graph_eff_dc);
@@ -388,10 +422,10 @@ int plot_acc_corr_eff() {
 
         // Write TGraphErrors for FMT2 events.
         TGraphErrors *graph_fmt2 = new TGraphErrors(
-                bs[var_idx]-1, x_pos, y_simul_fmt2_dbl, x_length, y_err
+                bs[var_idx]-1, x_pos, y_fmt2_dbl, x_length, y_fmt2_err
         );
-        TGraphErrors *graph_eff_fmt2 =
-                divide_TGraphErrors(graph_fmt2, graph_thrown);
+        TGraphAsymmErrors *graph_eff_fmt2 =
+                divide_TGraphErrors(graph_fmt2, graph_thrown, 0);
         graph_eff_fmt2->SetMarkerColor(color_fmt2);
         graph_eff_fmt2->SetMarkerStyle(21);
         double fmt2_max = get_max(graph_eff_fmt2);
@@ -399,10 +433,10 @@ int plot_acc_corr_eff() {
 
         // Write TGraphErrors for FMT3 events.
         TGraphErrors *graph_fmt3 = new TGraphErrors(
-                bs[var_idx]-1, x_pos, y_simul_fmt3_dbl, x_length, y_err
+                bs[var_idx]-1, x_pos, y_fmt3_dbl, x_length, y_fmt3_err
         );
-        TGraphErrors *graph_eff_fmt3 =
-                divide_TGraphErrors(graph_fmt3, graph_thrown);
+        TGraphAsymmErrors *graph_eff_fmt3 =
+                divide_TGraphErrors(graph_fmt3, graph_thrown, offset);
         graph_eff_fmt3->SetMarkerColor(color_fmt3);
         graph_eff_fmt3->SetMarkerStyle(21);
         double fmt3_max = get_max(graph_eff_fmt3);
@@ -449,14 +483,14 @@ int plot_acc_corr_eff() {
     free(pids);
     for (int pi = 0; pi < pids_size; ++pi) {
         free(n_thrown[pi]);
-        free(n_simul_dc[pi]);
-        free(n_simul_fmt2[pi]);
-        free(n_simul_fmt3[pi]);
+        free(n_dc[pi]);
+        free(n_fmt2[pi]);
+        free(n_fmt3[pi]);
     }
     free(n_thrown);
-    free(n_simul_dc);
-    free(n_simul_fmt2);
-    free(n_simul_fmt3);
+    free(n_dc);
+    free(n_fmt2);
+    free(n_fmt3);
     file_out->Close();
     printf("Done!\n");
 

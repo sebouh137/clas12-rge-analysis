@@ -23,7 +23,7 @@ int theta_gcut_effect() {
         // Get TH1Fs from files.
         TH1F *plots[2];
         for (int ver_i = 0; ver_i < 2; ++ver_i) {
-            plots[ver_i] = (TH1F *) files[det_i][ver_i]->Get("#phi");
+            plots[ver_i] = (TH1F *) files[det_i][ver_i]->Get("#phi (rad)");
             plots[ver_i]->SetStats(0);
         }
         plots[0]->SetLineColor(kRed);
