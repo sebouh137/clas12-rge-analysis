@@ -60,7 +60,17 @@ static int run_strtol(lint *n, char *t);
 int rge_grab_string(char *arg, char **str);
 
 /**
- * Grab multiple arguments and fill an array with their values.
+ * Grab multiple integers and fill an array with their values.
+ *
+ * @param argc    : size of list of arguments given to program.
+ * @param argv    : list of arguments given to program.
+ * @param opt_idx : optind variable from getopt.
+ * @param arr     : array that will be filled.
+ */
+int rge_grab_multiarg(int argc, char **argv, int *opt_idx, lint **arr);
+
+/**
+ * Grab multiple doubles and fill an array with their values.
  *
  * @param argc    : size of list of arguments given to program.
  * @param argv    : list of arguments given to program.

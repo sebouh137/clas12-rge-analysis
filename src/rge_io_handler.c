@@ -42,6 +42,41 @@ int rge_grab_string(char *arg, char **str) {
     return 0;
 }
 
+int rge_grab_multiarg(int argc, char **argv, int *opt_idx, lint **arr) {
+    int idx   = *opt_idx - 1;
+    int start = idx;
+    int size = 0;
+    char *next;
+
+    // Get size.
+    while (idx < argc) {
+        next = strdup(argv[idx++]);
+        if (is_number(next)) ++size;
+        else break;
+    }
+
+    // Raise error if size != 4.
+    if (size != 4) {
+        rge_errno = RGEERR_TOOMANYNUMBERS;
+        return 1;
+    }
+
+    // Restart counter.
+    idx = start;
+
+    // Fill array.
+    int i = 0;
+    while (idx < argc) {
+        next = strdup(argv[idx++]);
+        if (is_number(next)) (*arr)[i++] = atof(next);
+        else break;
+    }
+
+    // Continue with getopts.
+    *opt_idx = idx - 1;
+    return 0;
+}
+
 int rge_grab_multiarg(
         int argc, char **argv, int *opt_idx, luint *size, double **arr
 ) {

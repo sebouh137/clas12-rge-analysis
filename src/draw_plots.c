@@ -32,11 +32,15 @@
 #include "../lib/rge_math_utils.h"
 
 static const char *USAGE_MESSAGE =
-"Usage: draw_plots [-hp:cn:o:a:w:] infile\n"
+"Usage: draw_plots [-hp:cb:n:o:a:w:] infile\n"
 " * -h          : show this message and exit.\n"
 " * -p pid      : skip particle selection and draw plots for pid.\n"
 " * -c          : apply all cuts (general, geometry, and DIS) instead of\n"
 "                 asking which ones to apply while running.\n"
+" * -b # # # #  : apply 1D binning. Four integers are required: index of the\n"
+"                 binning variable (following program convention), lower\n"
+"                 limit, upper limit, and number of bins. Set all variables\n"
+"                 to 0 to not do binning.\n"
 " * -n nentries : number of entries to process.\n"
 " * -o outfile  : output file name. Default is plots_<run_no>.root.\n"
 " * -a accfile  : apply acceptance correction using acc_filename.\n"
@@ -336,7 +340,7 @@ static lint find_idx(
 static int run(
         char *in_filename, char *out_filename, char *acc_filename,
         char *work_dir, int run_no, lint nentries, lint sel_pid,
-        bool apply_all_cuts, bool apply_acc_corr
+        bool apply_all_cuts, bool apply_acc_corr, lint *binning_setup
 ) {
     // Open input file.
     TFile *f_in  = TFile::Open(in_filename, "READ");
@@ -428,37 +432,60 @@ static int run(
     }
 
     // === SETUP BINNING =======================================================
-    printf("\nNumber of dimensions for binning?\n");
-    luint dim_bins = static_cast<luint>(rge_catch_long());
+    luint dim_bins;
+    if (binning_setup[0] == -1) {
+        printf("\nNumber of dimensions for binning?\n");
+        dim_bins = static_cast<luint>(rge_catch_long());
+    }
+    else if (
+            binning_setup[0] == 0 && binning_setup[1] == 0 &&
+            binning_setup[2] == 0 && binning_setup[3] == 0
+    ) {
+        dim_bins = 0;
+    }
+    else {
+        dim_bins = 1;
+    }
     int    bin_vars[dim_bins];
     double bin_range[dim_bins][2];
+    luint  bin_nbins[dim_bins];
+    if (binning_setup[0] != -1) {
+        bin_vars[0]     = binning_setup[0];
+        bin_range[0][0] = binning_setup[1];
+        bin_range[0][1] = binning_setup[2];
+        bin_nbins[0]    = binning_setup[3];
+    }
+    else {
+        for (luint bin_dim_i = 0; bin_dim_i < dim_bins; ++bin_dim_i) {
+            // variable.
+            printf(
+                    "\nDefine var for bin in dimension %ld by index. Available "
+                    "vars:\n", bin_dim_i
+            );
+            for (int var_i = 0; var_i < RGE_VARS_SIZE; ++var_i) {
+                printf("  %2d. %s\n", var_i, RGE_VARS[var_i]);
+            }
+            bin_vars[bin_dim_i] = rge_catch_var(RGE_VARS, RGE_VARS_SIZE);
+
+            // range.
+            for (int range_i = 0; range_i < 2; ++range_i) {
+                printf("\nDefine %s limit for bin in dimension %ld:\n",
+                        RAN_LIST[range_i], bin_dim_i);
+                bin_range[bin_dim_i][range_i] = rge_catch_double();
+            }
+
+            // nbins.
+            printf(
+                    "\nDefine number of bins for bin in dimension %ld:\n",
+                    bin_dim_i
+            );
+            bin_nbins[bin_dim_i] = static_cast<luint>(rge_catch_long());
+        }
+    }
+
+    // binning bin size.
     double bin_binsize[dim_bins];
-    luint bin_nbins[dim_bins];
     for (luint bin_dim_i = 0; bin_dim_i < dim_bins; ++bin_dim_i) {
-        // variable.
-        printf(
-                "\nDefine var for bin in dimension %ld by index. Available "
-                "vars:\n", bin_dim_i
-        );
-        for (int var_i = 0; var_i < RGE_VARS_SIZE; ++var_i) {
-            printf("  %2d. %s\n", var_i, RGE_VARS[var_i]);
-        }
-        bin_vars[bin_dim_i] = rge_catch_var(RGE_VARS, RGE_VARS_SIZE);
-
-        // range.
-        for (int range_i = 0; range_i < 2; ++range_i) {
-            printf("\nDefine %s limit for bin in dimension %ld:\n",
-                    RAN_LIST[range_i], bin_dim_i);
-            bin_range[bin_dim_i][range_i] = rge_catch_double();
-        }
-
-        // nbins.
-        printf(
-                "\nDefine number of bins for bin in dimension %ld:\n", bin_dim_i
-        );
-        bin_nbins[bin_dim_i] = static_cast<luint>(rge_catch_long());
-
-        // binning bin size.
         bin_binsize[bin_dim_i] =
                 (bin_range[bin_dim_i][1] - bin_range[bin_dim_i][0]) /
                 bin_nbins[bin_dim_i];
@@ -918,13 +945,14 @@ static int run(
  */
 static int handle_args(
         int argc, char **argv, lint *sel_pid, bool *apply_all_cuts,
-        lint *nentries, char **out_filename, char **acc_filename,
-        bool *apply_acc_corr, char **work_dir, char **in_filename, int *run_no
+        lint *binning_setup, lint *nentries, char **out_filename,
+        char **acc_filename, bool *apply_acc_corr, char **work_dir,
+        char **in_filename, int *run_no
 ) {
     // Handle arguments.
     int opt;
     char *tmp_out_filename = NULL;
-    while ((opt = getopt(argc, argv, "-hp:cn:o:a:Aw:")) != -1) {
+    while ((opt = getopt(argc, argv, "-hp:cb:n:o:a:Aw:")) != -1) {
         switch (opt) {
             case 'h':
                 rge_errno = RGEERR_USAGE;
@@ -934,6 +962,10 @@ static int handle_args(
                 break;
             case 'c':
                 *apply_all_cuts = true;
+                break;
+            case 'b':
+                if (rge_grab_multiarg(argc, argv, &optind, &binning_setup))
+                    return 1;
                 break;
             case 'n':
                 if (rge_process_nentries(nentries, optarg)) return 1;
@@ -976,6 +1008,17 @@ static int handle_args(
         return 1;
     }
 
+    // Check that -b makes sense.
+    if (
+            binning_setup[0] < 0 ||
+            binning_setup[0] > RGE_VARS_SIZE ||
+            binning_setup[1] > binning_setup[2] ||
+            binning_setup[3] < 0
+    ) {
+        rge_errno = RGEERR_BADBINNING;
+        return 1;
+    }
+
     // Check positional argument.
     if (*in_filename == NULL) {
         rge_errno = RGEERR_NOINPUTFILE;
@@ -1002,26 +1045,28 @@ static int handle_args(
 /** Entry point of the program. */
 int main(int argc, char **argv) {
     // Handle arguments.
-    lint sel_pid        = 0;
-    bool apply_all_cuts = false;
-    lint nentries       = -1;
-    char *out_filename  = NULL;
-    char *acc_filename  = NULL;
-    bool apply_acc_corr = true;
-    char *work_dir      = NULL;
-    char *in_filename   = NULL;
-    int  run_no         = -1;
+    lint sel_pid          = 0;
+    bool apply_all_cuts   = false;
+    lint binning_setup[4] = {-1, -1, -1, -1};
+    lint nentries         = -1;
+    char *out_filename    = NULL;
+    char *acc_filename    = NULL;
+    bool apply_acc_corr   = true;
+    char *work_dir        = NULL;
+    char *in_filename     = NULL;
+    int  run_no           = -1;
 
     int err = handle_args(
-            argc, argv, &sel_pid, &apply_all_cuts, &nentries, &out_filename,
-            &acc_filename, &apply_acc_corr, &work_dir, &in_filename, &run_no
+            argc, argv, &sel_pid, &apply_all_cuts, binning_setup, &nentries,
+            &out_filename, &acc_filename, &apply_acc_corr, &work_dir,
+            &in_filename, &run_no
     );
 
     // Run.
     if (rge_errno == RGEERR_UNDEFINED && err == 0) {
         run(
                 in_filename, out_filename, acc_filename, work_dir, run_no,
-                nentries, sel_pid, apply_all_cuts, apply_acc_corr
+                nentries, sel_pid, apply_all_cuts, apply_acc_corr, binning_setup
         );
     }
 
