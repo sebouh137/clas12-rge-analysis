@@ -99,15 +99,15 @@ const RGE_VAR RGE_NPHEHTCC = {.addr = 25, .name = "Nphe_{HTCC}"};
 
 /** DIS variables. */
 const RGE_VAR RGE_Q2 = {.addr = 26, .name = "Q^{2} (GeV^{2})"};
-const RGE_VAR RGE_NU = {.addr = 27, .name = "#nu"};
+const RGE_VAR RGE_NU = {.addr = 27, .name = "#nu (GeV)"};
 const RGE_VAR RGE_XB = {.addr = 28, .name = "x_{bjorken}"};
 const RGE_VAR RGE_YB = {.addr = 29, .name = "y_{bjorken}"};
 const RGE_VAR RGE_W2 = {.addr = 30, .name = "W^{2} (GeV^{2})"};
 
 /** SIDIS variables. */
-const RGE_VAR RGE_ZH  = {.addr = 31, .name = "z_{h}"};
-const RGE_VAR RGE_PT2 = {.addr = 32, .name = "P_{T}^{2} (GeV^{2})"};
-const RGE_VAR RGE_PL2 = {.addr = 33, .name = "P_{L}^{2} (GeV^{2})"};
+const RGE_VAR RGE_ZH      = {.addr = 31, .name = "z_{h}"};
+const RGE_VAR RGE_PT2     = {.addr = 32, .name = "p_{T}^{2} (GeV^{2})"};
+const RGE_VAR RGE_PL2     = {.addr = 33, .name = "p_{L}^{2} (GeV^{2})"};
 const RGE_VAR RGE_PHIPQ   = {.addr = 34, .name = "#phi_{PQ} (rad)"};
 const RGE_VAR RGE_THETAPQ = {.addr = 35, .name = "#theta_{PQ} (rad)"};
 

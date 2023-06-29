@@ -36,7 +36,7 @@ CFLAGS_DBG  := -g -Wall -Wcast-align -Wcast-qual \
 			   -Wsign-conversion -Wsign-promo -Wstrict-null-sentinel \
 			   -Wstrict-overflow=4 -Wswitch-default -Wundef -Werror -Wno-unused
 CFLAGS_PROD := -O3
-CXX         := $(CXX) $(CFLAGS_DBG)
+CXX         := $(CXX) $(CFLAGS_PROD)
 
 # ROOT.
 ROOTCFLAGS  := -pthread $(CXX_STD) -m64 -isystem$(ROOT)/include
