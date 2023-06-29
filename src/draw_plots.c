@@ -1010,10 +1010,10 @@ static int handle_args(
 
     // Check that -b makes sense.
     if (
-            binning_setup[0] < 0 ||
+            binning_setup[0] < -1 ||
             binning_setup[0] > RGE_VARS_SIZE ||
             binning_setup[1] > binning_setup[2] ||
-            binning_setup[3] < 0
+            binning_setup[3] < -1
     ) {
         rge_errno = RGEERR_BADBINNING;
         return 1;
