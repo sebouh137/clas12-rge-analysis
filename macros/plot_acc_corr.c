@@ -15,7 +15,7 @@
 
 // --- Define macro constants here. ----------------------------------------- //
 // Set to the PID to plot acceptance correction from.
-const int PID = -211;
+const int PID = 11;
 
 // acc_corr.txt files produced by acc_corr.
 const char *DC_FILENAME   = "../data/acc_corr_dc.txt";
@@ -31,9 +31,9 @@ const char *OUTPUT_FILENAME = Form(
 const int NPLOTS = 5;
 const std::map<int, const char *> PLOT_NAMES {
     {0, "Q^{2} (GeV^{2})"},
-    {1, "#nu"},
+    {1, "#nu (GeV)"},
     {2, "z_{h}"},
-    {3, "P_{T}^{2} (GeV^{2})"},
+    {3, "p_{T}^{2} (GeV^{2})"},
     {4, "#phi_{PQ} (rad)"}
 };
 const int CANVAS_YSCALE[NPLOTS] = {1, 1, 1, 1, 1}; // 0 is linear, 1 is log.

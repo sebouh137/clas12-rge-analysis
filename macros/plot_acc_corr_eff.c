@@ -15,7 +15,7 @@
 
 // --- Define macro constants here. ----------------------------------------- //
 // Set to the PID to plot acceptance correction from.
-const int PID = -211;
+const int PID = 211;
 
 // acc_corr.txt files produced by acc_corr.
 const char *DC_FILENAME   = "../data/acc_corr_dc.txt";
@@ -31,9 +31,9 @@ const char *OUTPUT_FILENAME = Form(
 const int NPLOTS = 5;
 const std::map<int, const char *> PLOT_NAMES {
     {0, "Q^{2} (GeV^{2})"},
-    {1, "#nu"},
+    {1, "#nu (GeV)"},
     {2, "z_{h}"},
-    {3, "P_{T}^{2} (GeV^{2})"},
+    {3, "p_{T}^{2} (GeV^{2})"},
     {4, "#phi_{PQ} (rad)"}
 };
 
@@ -442,9 +442,9 @@ int plot_acc_corr_eff() {
         double fmt3_max = get_max(graph_eff_fmt3);
         y_max = fmt3_max > y_max ? fmt3_max : y_max;
 
-        // Set conditions for plot.
-        graph_eff_dc->GetYaxis()->SetRangeUser(0, 1.1*y_max);
+        // Setup plot axes.
         graph_eff_dc->GetXaxis()->SetTitle(PLOT_NAMES.at(var_idx));
+        graph_eff_dc->GetYaxis()->SetRangeUser(0, 1.1*y_max);
 
         // Draw labels on top of each bin.
         // graph_eff_dc->GetListOfFunctions()->Add(ex);
@@ -464,7 +464,7 @@ int plot_acc_corr_eff() {
         // Add title.
         TPaveLabel *pavel_label = new TPaveLabel(
                 0.6, 0.9, 0.3, 1.0,
-                Form("%s efficiency", PLOT_NAMES.at(var_idx)), "brNDC"
+                Form("%s acceptance", PLOT_NAMES.at(var_idx)), "brNDC"
         );
         pavel_label->SetBorderSize(0);
         pavel_label->SetFillColor(gStyle->GetTitleFillColor());

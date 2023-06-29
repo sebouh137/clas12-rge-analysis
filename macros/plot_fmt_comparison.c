@@ -21,18 +21,16 @@ const int run = 12016;
 // FILES.
 const int NFILES = 4; // Number of input files.
 const char *IN_FILENAMES[NFILES] = {
-        Form("../root_io/eff/vz_comparison/0%d/dc_raw.root",   run),
-        Form("../root_io/eff/vz_comparison/0%d/fmt2_raw.root", run),
-        Form("../root_io/eff/vz_comparison/0%d/dc_geomcut.root",   run),
-        Form("../root_io/eff/vz_comparison/0%d/fmt2_geomcut.root", run),
+        Form("../root_io/eff/vz_comparison/0%d/dc_raw.root",       12933),
+        Form("../root_io/eff/vz_comparison/0%d/fmt2_raw.root",     12933),
+        Form("../root_io/eff/vz_comparison/0%d/dc_raw.root",   12016),
+        Form("../root_io/eff/vz_comparison/0%d/fmt2_raw.root", 12016),
 };
 const char *LEGEND_ENTRIES[NFILES] = {
-        "DC (raw)", "FMT (raw)", "DC (w/ cut)", "FMT (w/ cut)"
+        "DC (run 12933)", "FMT (run 12933)", "DC (run 12016)", "FMT (run 12016)"
 };
 const int COLORS[NFILES] = {kRed, kBlue, kRed+2, kBlue+2};
-const char *OUT_FILENAME = Form(
-        "../root_io/eff/vz_comparison/dc_vs_fmt_geomcut_0%d.root", run
-);
+const char *OUT_FILENAME = "../root_io/eff/vz_comparison/run_comparison.root";
 
 // PLOTS.
 const char *VAR = "v_{z}";
@@ -69,12 +67,13 @@ int plot_fmt_comparison() {
     // Create TGraphErrors from TH1Fs.
     double y_min = 1e20;
     double y_max = 1e-20;
+
     for (int plot_i = 0; plot_i < NFILES; ++plot_i) {
         // Set the title and axis labels of the TGraphErrors object.
         if (plot_i == 0) plots[plot_i]->SetTitle(VAR);
         else             plots[plot_i]->SetTitle("");
         plots[plot_i]->GetXaxis()->SetTitle(
-            Form("%s [cm]", plots[plot_i]->GetXaxis()->GetTitle())
+            Form("%s (cm)", plots[plot_i]->GetXaxis()->GetTitle())
         );
         plots[plot_i]->GetYaxis()->SetTitle(
             plots[plot_i]->GetYaxis()->GetTitle()
@@ -94,6 +93,27 @@ int plot_fmt_comparison() {
         }
     }
 
+    // Get maxima.
+    double max12993 = 0.;
+    double max12016 = 0.;
+    for (int plot_i = 0; plot_i < NFILES; ++plot_i) {
+        if (plot_i < 2 && max12993 < plots[plot_i]->GetMaximum()) {
+            max12993 = plots[plot_i]->GetMaximum();
+        }
+        if (plot_i > 1 && max12016 < plots[plot_i]->GetMaximum()) {
+            max12016 = plots[plot_i]->GetMaximum();
+        }
+    }
+
+    // Loop over all bins and divide the bin content by the maximum.
+    for (int plot_i = 0; plot_i < NFILES; ++plot_i) {
+        double max = plot_i < 2 ? max12993 : max12016;
+        for (int bin_i = 1; bin_i <= plots[plot_i]->GetNbinsX(); ++bin_i) {
+            double bin_content = plots[plot_i]->GetBinContent(bin_i);
+            plots[plot_i]->SetBinContent(bin_i, bin_content / max);
+        }
+    }
+
     // Remove stats.
     for (int plot_i = 0; plot_i < NFILES; ++plot_i) {
         plots[plot_i]->SetStats(0);
@@ -102,7 +122,8 @@ int plot_fmt_comparison() {
     // Rescale y axis to fit both DC and FMT data.
     for (int plot_i = 0; plot_i < NFILES; ++plot_i) {
         double min = 0;
-        double max = 1.1 * y_max;
+        // double max = 1.1 * y_max;
+        double max = 1.02;
         if (YSCALE == 1) {
             min = y_min / sqrt(10);
             max = y_max * sqrt(10);

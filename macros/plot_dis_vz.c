@@ -32,13 +32,17 @@ const char *OUTPUT_FILENAME = Form("../root_io/dis_vz_pid%d.root", pid);
 
 // PLOTS.
 const int NVARS = 5;
-const std::map<int, const char *> PLOT_NAMES {
-    {0, "Q^{2}"}, {1, "#nu"}, {2, "z_{h}"}, {3, "P_{T}^{2}"}, {4, "#phi_{PQ}"}
+const std::map<int, const char *> VAR_NAMES {
+    {0, "Q^{2} (GeV^{2})"},
+    {1, "#nu (GeV)"},
+    {2, "z_{h}"},
+    {3, "p_{T}^{2} (GeV^{2})"},
+    {4, "#phi_{PQ} (rad)"}
 };
 const std::map<int, const char *> CANVAS_NAMES {
     {0, "Q2"}, {1, "nu"}, {2, "zh"}, {3, "Pt2"}, {4, "phiPQ"}
 };
-const int CANVAS_YSCALE[NVARS] = {1, 0, 0, 1, 0};
+const int CANVAS_YSCALE[NVARS] = {1, 0, 1, 1, 1};
 
 // BINS.
 const double BIN_MIN  = -30.;
@@ -93,7 +97,7 @@ int plot_dis_vz() {
         TDirectory *dirs[NFILES];
         for (int file_i = 0; file_i < NFILES; ++file_i) {
             dirs[file_i] = (TDirectory *)
-                    in_files[file_i]->Get(Form("v_{z} (%s)", bin_name));
+                in_files[file_i]->Get(Form("v_{z} (cm) (%s)", bin_name));
         }
 
         // Draw plot on canvases.
@@ -109,7 +113,8 @@ int plot_dis_vz() {
             TH1 *plots[NFILES];
             for (int file_i = 0; file_i < NFILES; ++file_i) {
                 plots[file_i] = (TH1 *) dirs[file_i]->Get(
-                    Form("%s (v_{z}: %s)", PLOT_NAMES.at(canvas_idx), bin_name)
+                    Form("%s (v_{z} (cm): %s)",
+                    VAR_NAMES.at(canvas_idx), bin_name)
                 );
             }
 
@@ -138,7 +143,7 @@ int plot_dis_vz() {
                 // Set the title and axis labels of the TGraphErrors object.
                 if (plot_i == 0)
                     graphs[plot_i]->SetTitle(Form(
-                        "%s (v_{z}: %s)", PLOT_NAMES.at(canvas_idx), bin_name
+                        "%s (v_{z}: %s)", VAR_NAMES.at(canvas_idx), bin_name
                     ));
                 else
                     graphs[plot_i]->SetTitle("");
@@ -173,8 +178,8 @@ int plot_dis_vz() {
                 double min = 0;
                 double max = 1.1 * y_max;
                 if (CANVAS_YSCALE[canvas_idx] == 1) {
-                    min = y_min / sqrt(10);
-                    max = y_max * sqrt(10);
+                    min = y_min / sqrt(2);
+                    max = y_max * sqrt(2);
                 }
                 graphs[plot_i]->GetYaxis()->SetRangeUser(min, max);
             }

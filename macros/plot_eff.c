@@ -13,12 +13,14 @@
 //
 // You can see a copy of the GNU Lesser Public License under the LICENSE file.
 
+// TODO. Include FMT3.
+
 // --- Define macro constants here ---------------------------------------------
 // FILES.
 const int NPIDS      = 3; // Number of PIDs.
 const int PIDLIST[NPIDS] = {11, 211, -211};
-const int NDETECTORS = 2; // Number of detectors.
-const char *DETECTORLIST[NDETECTORS] = {"dc", "fmt2"};
+const int NDETECTORS = 3; // Number of detectors.
+const char *DETECTORLIST[NDETECTORS] = {"dc", "fmt2", "fmt3"};
 const int NVERSIONS = 2; // Number of versions - i.e: not-corrected & corrected.
 const char *VERSIONLIST[NVERSIONS] = {"raw", "gcut"};
 const char *OUT_FILENAME = "../root_io/eff/study_012016.root";
@@ -87,7 +89,8 @@ int plot_eff() {
         // Draw each plot.
         for (int pid_i = 0; pid_i < NPIDS; ++pid_i) {
             TPad *pad = (TPad *) canvas->cd(pid_i + 1);
-            canvas->SetGrid();
+            // canvas->SetGrid();
+            pad->SetGrid();
 
             // Adjust the pad margins.
             if (pid_i == 0) pad->SetMargin(0.05,   0.0025, 0.08, 0.0);
@@ -105,9 +108,11 @@ int plot_eff() {
             }
 
             // Divide FMT plots by DC plots.
-            for (int ver_i = 0; ver_i < NVERSIONS; ++ver_i) {
-                plots[1][ver_i]->Divide(plots[0][ver_i]);
-                plots[1][ver_i]->GetYaxis()->SetRangeUser(0, 1.05);
+            for (int det_i = 1; det_i < NDETECTORS; ++det_i) {
+                for (int ver_i = 0; ver_i < NVERSIONS; ++ver_i) {
+                    plots[det_i][ver_i]->Divide(plots[0][ver_i]);
+                    plots[det_i][ver_i]->GetYaxis()->SetRangeUser(0, 1.05);
+                }
             }
 
             plots[1][0]->SetTitle(Form(
@@ -117,7 +122,9 @@ int plot_eff() {
 
             // Set plots color.
             plots[1][0]->SetLineColor(kRed);
-            plots[1][1]->SetLineColor(kBlue);
+            plots[1][1]->SetLineColor(kRed + 2);
+            plots[2][0]->SetLineColor(kBlue);
+            plots[2][1]->SetLineColor(kBlue + 2);
 
             // Remove stats.
             plots[1][0]->SetStats(0);
@@ -126,12 +133,16 @@ int plot_eff() {
             // Draw.
             plots[1][0]->Draw();
             plots[1][1]->Draw("SAME");
+            plots[2][0]->Draw("SAME");
+            plots[2][1]->Draw("SAME");
 
             // Add legend.
             if (pid_i == NPIDS - 1) {
                 TLegend *legend = new TLegend(0.7, 0.7, 0.886, 0.88);
-                legend->AddEntry(plots[1][0], "Raw", "l");
-                legend->AddEntry(plots[1][1], "Geometry-corrected", "l");
+                legend->AddEntry(plots[1][0], "2 layers, raw", "l");
+                legend->AddEntry(plots[1][1], "2 layers, w/cut", "l");
+                legend->AddEntry(plots[2][0], "3 layers, raw", "l");
+                legend->AddEntry(plots[2][1], "3 layers, w/cut", "l");
                 legend->Draw();
             }
 

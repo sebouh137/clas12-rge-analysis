@@ -43,7 +43,9 @@ int theta_gcut_effect() {
     }
 
     // Write to file.
-    TFile *file_out = TFile::Open("../root_io/eff/theta_gcut_effect.root", "RECREATE");
+    TFile *file_out = TFile::Open(
+        "../root_io/eff/theta_gcut_effect.root", "RECREATE"
+    );
     canvas->Write();
 
     for (int det_i = 0; det_i < 2; ++det_i) {

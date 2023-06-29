@@ -33,12 +33,16 @@ const char *OUT_FILENAME = Form("../root_io/dis/integrated_pid%d.root", pid);
 // PLOTS.
 const int NVARS = 5;
 const std::map<int, const char *> VAR_NAMES {
-    {0, "Q^{2}"}, {1, "#nu"}, {2, "z_{h}"}, {3, "P_{T}^{2}"}, {4, "#phi_{PQ}"}
+    {0, "Q^{2} (GeV^{2})"},
+    {1, "#nu (GeV)"},
+    {2, "z_{h}"},
+    {3, "p_{T}^{2} (GeV^{2})"},
+    {4, "#phi_{PQ} (rad)"}
 };
 const std::map<int, const char *> CANVAS_NAMES {
     {0, "Q2"}, {1, "nu"}, {2, "zh"}, {3, "Pt2"}, {4, "phiPQ"}
 };
-const int CANVAS_YSCALE[NVARS] = {1, 0, 0, 1, 0}; // 0 is linear, 1 is log.
+const int CANVAS_YSCALE[NVARS] = {1, 0, 1, 1, 1}; // 0 is linear, 1 is log.
 
 // --- Macro code begins here --------------------------------------------------
 /** Add TCanvas with name n to std::vector<TCanvas *> c. */
@@ -116,7 +120,10 @@ int plot_dis() {
             else             graphs[plot_i]->Draw("sameP");
 
             // Get minimum and maximum y values.
-            if (plots[plot_i]->GetMinimum() < y_min) {
+            if (
+                    plots[plot_i]->GetMinimum() < y_min &&
+                    plots[plot_i]->GetMinimum() > 1.1
+            ) {
                 y_min = plots[plot_i]->GetMinimum();
             }
             if (plots[plot_i]->GetMaximum() > y_max) {
@@ -129,8 +136,8 @@ int plot_dis() {
             double min = 0;
             double max = 1.1 * y_max;
             if (CANVAS_YSCALE[canvas_idx] == 1) {
-                min = y_min / sqrt(10);
-                max = y_max * sqrt(10);
+                min = y_min / sqrt(2);
+                max = y_max * sqrt(2);
             }
             graphs[plot_i]->GetYaxis()->SetRangeUser(min, max);
         }
