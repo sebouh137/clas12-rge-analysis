@@ -1,6 +1,6 @@
 int theta_gcut_effect() {
     // Open input files.
-    TFile *files[2][2];
+    TFile *files[3][2];
     files[0][0] = TFile::Open("../root_io/eff/study/pid11_dc_raw.root");
     files[0][1] = TFile::Open("../root_io/eff/study/pid11_dc_gcut.root");
     files[1][0] = TFile::Open("../root_io/eff/study/pid11_fmt2_raw.root");
@@ -14,7 +14,7 @@ int theta_gcut_effect() {
     // Get DC and FMT2 plots.
     for (int det_i = 0; det_i < 2; ++det_i) {
         TPad *pad = (TPad *) canvas->cd(det_i + 1);
-        canvas->SetGrid();
+        pad->SetGrid();
 
         // Adjust the pad margins.
         if (det_i == 0) pad->SetMargin(0.05,   0.0025, 0.08, 0.0);
@@ -29,15 +29,19 @@ int theta_gcut_effect() {
         plots[0]->SetLineColor(kRed);
         plots[1]->SetLineColor(kBlue);
 
-        plots[0]->SetTitle(Form("e- detected by %s", det_i == 0 ? "DC" : "FMT"));
+        plots[0]->SetTitle(Form(
+            "e- detected by %s", det_i == 0 ? "DC" : "FMT (2 layers)")
+        );
 
         plots[0]->Draw();
         plots[1]->Draw("SAME");
 
-        TLegend *legend = new TLegend(0.7, 0.7, 0.886, 0.88);
-        legend->AddEntry(plots[0], "Raw", "l");
-        legend->AddEntry(plots[1], "Geometry-corrected", "l");
-        legend->Draw();
+        if (det_i == 0) {
+            TLegend *legend = new TLegend(0.7, 0.7, 0.886, 0.88);
+            legend->AddEntry(plots[0], "w/out cut", "l");
+            legend->AddEntry(plots[1], "w/ cut", "l");
+            legend->Draw();
+        }
 
         canvas->Update();
     }

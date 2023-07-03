@@ -18,16 +18,18 @@
 const int pid = 11;
 
 // FILES.
-const int NFILES = 3;
+const int NFILES = 2;
 const char *IN_FILENAMES_VZ[NFILES] = {
-    Form("../root_io/dis/pid%d/vz_dc.root",   pid),
-    Form("../root_io/dis/pid%d/vz_fmt2.root", pid),
-    Form("../root_io/dis/pid%d/vz_fmt3.root", pid)
+    Form("../root_io/dis/acc_corr/pid%d/vz_dc.root",   pid),
+    Form("../root_io/dis/acc_corr/pid%d/vz_fmt2.root", pid) // ,
+    // Form("../root_io/dis/pid%d/vz_fmt3.root", pid)
 };
 const char *LEGEND_ENTRIES[NFILES] = {
-    "DC", "FMT - 2 layers", "FMT - 3 layers"
+    "DC", "FMT" // , "FMT - 3 layers"
 };
-const int COLORS[NFILES] = {kRed, kBlue, kGreen};
+const int COLORS[NFILES] = {
+    kRed, kBlue // , kGreen
+};
 const char *OUTPUT_FILENAME = Form("../root_io/dis_vz_pid%d.root", pid);
 
 // PLOTS.
