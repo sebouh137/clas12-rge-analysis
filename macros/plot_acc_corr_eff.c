@@ -310,6 +310,7 @@ int plot_acc_corr_eff() {
 
     // Count variables and add them to the corresponding TGraphErrors.
     for (int var_idx = 0; var_idx < NPLOTS; ++var_idx) {
+        printf("%s:\n", PLOT_NAMES.at(var_idx));
         // var_idx represents the variable we're processing, in the order
         //     defined in PLOT_NAMES[].
         long int bin_size = bs[var_idx];
@@ -432,6 +433,18 @@ int plot_acc_corr_eff() {
         // Draw.
         graph_eff_dc  ->Draw("AP");
         graph_eff_fmt2->Draw("sameP");
+
+        // Write errors to stdout.
+        printf("  DC:  [");
+        for (int gi = 0; gi < graph_eff_dc->GetN(); ++gi) {
+            printf("%10.8f, ", graph_eff_dc->GetErrorY(gi));
+        }
+        printf("]\n");
+        printf("  FMT: [");
+        for (int gi = 0; gi < graph_eff_fmt2->GetN(); ++gi) {
+            printf("%10.8f, ", graph_eff_fmt2->GetErrorY(gi));
+        }
+        printf("]\n");
 
         // Add legend.
         TLegend* legend = new TLegend(0.7, 0.7, 0.886, 0.88);
