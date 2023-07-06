@@ -30,7 +30,9 @@ const char *LEGEND_ENTRIES[NFILES] = {
 const int COLORS[NFILES] = {
     kRed, kBlue // , kGreen
 };
-const char *OUTPUT_FILENAME = Form("../root_io/dis_vz_pid%d.root", pid);
+const char *OUTPUT_FILENAME = Form(
+    "../root_io/dis/acc_corr/pid%d/vz.root", pid
+);
 
 // --+ PLOTS +------------------------------------------------------------------
 const int NVARS = 5;
@@ -44,7 +46,7 @@ const std::map<int, const char *> VAR_NAMES {
 const std::map<int, const char *> CANVAS_NAMES {
     {0, "Q2"}, {1, "nu"}, {2, "zh"}, {3, "Pt2"}, {4, "phiPQ"}
 };
-const int CANVAS_YSCALE[NVARS] = {1, 0, 1, 1, 1};
+const int CANVAS_YSCALE[NVARS] = {1, 1, 1, 1, 1};
 
 // --+ BINS +-------------------------------------------------------------------
 const double BIN_MIN  = -30.;
@@ -300,7 +302,7 @@ int plot_dis_vz() {
                 // Set the title and axis labels of the TGraphErrors object.
                 if (plot_i == 0)
                     graphs[plot_i]->SetTitle(Form(
-                        "%s (v_{z}: %s)", VAR_NAMES.at(canvas_idx), bin_name
+                        "v_{z}: %s", bin_name
                     ));
                 else
                     graphs[plot_i]->SetTitle("");
@@ -366,17 +368,17 @@ int plot_dis_vz() {
         }
     }
 
-    // Write to file.
-    TFile *file_out = TFile::Open(OUTPUT_FILENAME, "RECREATE");
-    for (TCanvas *canvas : canvases) {
-        canvas->Write();
-    }
+    // // Write to file.
+    // TFile *file_out = TFile::Open(OUTPUT_FILENAME, "RECREATE");
+    // for (TCanvas *canvas : canvases) {
+    //     canvas->Write();
+    // }
 
     // Clean up.
     for (int file_i = 0; file_i < NFILES; ++file_i) {
         in_files[file_i]->Close();
     }
-    file_out->Close();
+    // file_out->Close();
     printf("Done!\n");
 
     return 0;

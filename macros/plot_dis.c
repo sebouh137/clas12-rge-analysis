@@ -15,7 +15,7 @@
 
 // --- Define macro constants here ---------------------------------------------
 // --+ PID to process +---------------------------------------------------------
-const int pid = 211;
+const int pid = 11;
 
 // --+ FILES +------------------------------------------------------------------
 const int NFILES = 2; // 3; // Number of input files.
@@ -30,7 +30,9 @@ const char *LEGEND_ENTRIES[NFILES] = {
 const int COLORS[NFILES] = {
         kRed, kBlue // , kGreen
 };
-const char *OUT_FILENAME = Form("../root_io/dis/integrated_pid%d.root", pid);
+const char *OUT_FILENAME = Form(
+    "../root_io/dis/acc_corr/pid%d/integrated.root", pid
+);
 
 // --+ PLOTS +------------------------------------------------------------------
 const int NVARS = 5;
@@ -44,7 +46,7 @@ const std::map<int, const char *> VAR_NAMES {
 const std::map<int, const char *> CANVAS_NAMES {
     {0, "Q2"}, {1, "nu"}, {2, "zh"}, {3, "Pt2"}, {4, "phiPQ"}
 };
-const int CANVAS_YSCALE[NVARS] = {1, 0, 1, 1, 1}; // 0 is linear, 1 is log.
+const int CANVAS_YSCALE[NVARS] = {1, 1, 1, 1, 1}; // 0 is linear, 1 is log.
 
 // --+ ACC CORR ERRORS +--------------------------------------------------------
 //                       VAR PARTICLE DETECTOR IDX
