@@ -453,7 +453,7 @@ static int run(
         bin_vars[0]     = binning_setup[0];
         bin_range[0][0] = binning_setup[1];
         bin_range[0][1] = binning_setup[2];
-        bin_nbins[0]    = binning_setup[3];
+        bin_nbins[0]    = static_cast<luint>(binning_setup[3]);
     }
     else {
         for (luint bin_dim_i = 0; bin_dim_i < dim_bins; ++bin_dim_i) {
