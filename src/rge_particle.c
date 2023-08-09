@@ -112,7 +112,7 @@ int match_pid(
 }
 
 double theta_lab(rge_particle p) {
-    if (p.px + p.py + p.pz < 1e-9) return 0;
+    if (abs(p.px) + abs(p.py) + abs(p.pz) < 1e-9) return 0;
     return atan2(sqrt(p.px*p.px + p.py*p.py), p.pz);
 }
 
