@@ -18,13 +18,13 @@
 const int PID = 11;
 
 // acc_corr.txt files produced by acc_corr.
-const char *DC_FILENAME   = "../data/acc_corr_dc.txt";
-const char *FMT2_FILENAME = "../data/acc_corr_fmt2.txt";
-const char *FMT3_FILENAME = "../data/acc_corr_fmt3.txt";
+const char *DC_FILENAME   = "../data/acc_rge_dc.txt";
+const char *FMT2_FILENAME = "../data/acc_rge_fmt2.txt";
+const char *FMT3_FILENAME = "../data/acc_rge_fmt3.txt";
 
 // Root file where we'll write the plots.
 const char *OUTPUT_FILENAME = Form(
-    "../root_io/simul/geomcut/acc_corr/pid%d.root", PID
+    "../root_io/simul/geomcut/acc_corr/rge_pid%d.root", PID
 );
 
 // Map containing the variables we're working with.

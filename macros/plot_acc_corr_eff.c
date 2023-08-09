@@ -15,15 +15,15 @@
 
 // --- Define macro constants here. ----------------------------------------- //
 // Set to the PID to plot acceptance correction from.
-const int PID = -211;
+const int PID = 11;
 
 // acc_corr.txt files produced by acc_corr.
-const char *DC_FILENAME   = "../data/acc_corr_dc.txt";
-const char *FMT2_FILENAME = "../data/acc_corr_fmt2.txt";
+const char *DC_FILENAME   = "../data/acc_rge_dc.txt";
+const char *FMT2_FILENAME = "../data/acc_rge_fmt2.txt";
 
 // Root file where we'll write the plots.
 const char *OUTPUT_FILENAME = Form(
-    "../root_io/simul/geomcut/acc_corr/pid%d.root", PID
+    "../root_io/simul/geomcut/acc_corr/rge_pid%d.root", PID
 );
 
 // Map containing the variables we're working with.
@@ -39,7 +39,6 @@ const std::map<int, const char *> PLOT_NAMES {
 // Colors.
 const int color_dc   = kRed;
 const int color_fmt2 = kBlue;
-const int color_fmt3 = kGreen;
 
 // --- Macro code begins here ----------------------------------------------- //
 /**

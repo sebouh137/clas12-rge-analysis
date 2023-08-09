@@ -20,18 +20,17 @@ const int pid = -211;
 // --+ FILES +------------------------------------------------------------------
 const int NFILES = 2;
 const char *IN_FILENAMES_VZ[NFILES] = {
-    Form("../root_io/dis/acc_corr/pid%d/vz_dc.root",   pid),
-    Form("../root_io/dis/acc_corr/pid%d/vz_fmt2.root", pid) // ,
-    // Form("../root_io/dis/pid%d/vz_fmt3.root", pid)
+    Form("../root_io/dis/no_acc_corr/pid%d/vz_dc.root",   pid),
+    Form("../root_io/dis/no_acc_corr/pid%d/vz_fmt2.root", pid)
 };
 const char *LEGEND_ENTRIES[NFILES] = {
-    "DC", "FMT" // , "FMT - 3 layers"
+    "DC", "FMT"
 };
 const int COLORS[NFILES] = {
-    kRed, kBlue // , kGreen
+    kRed, kBlue
 };
 const char *OUTPUT_FILENAME = Form(
-    "../root_io/dis/acc_corr/pid%d/vz.root", pid
+    "../root_io/dis/no_acc_corr/pid%d/vz.root", pid
 );
 
 // --+ PLOTS +------------------------------------------------------------------
@@ -199,7 +198,7 @@ const double acccorr_err[  5][      3][      2][13] = {
 // --- Macro code begins here ----------------------------------------------- //
 /** Add TCanvas with name n to std::vector<TCanvas *> c. */
 int add_tcanvas(std::vector<TCanvas *> *c, const char *n) {
-    c->push_back(new TCanvas(n, n, 1600, 900));
+    c->push_back(new TCanvas(n, n, 1522, 1051));
     return 0;
 }
 
@@ -291,7 +290,9 @@ int plot_dis_vz() {
                     double yerr_meas = plots[plot_i]->GetBinError(bin_i);
                     double yerr_acc =
                         y * acccorr_err[canvas_idx][part_i][plot_i][bin_i-1];
-                    double yerr = sqrt(yerr_meas*yerr_meas + yerr_acc*yerr_acc);
+                    // TODO. acccorr error is temporarily disabled.
+                    // double yerr = sqrt(yerr_meas*yerr_meas + yerr_acc*yerr_acc);
+                    double yerr = yerr_meas;
 
                     graphs[plot_i]->SetPoint(bin_i - 1, x + offset, y);
                     graphs[plot_i]->SetPointError(

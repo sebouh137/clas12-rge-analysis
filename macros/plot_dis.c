@@ -20,8 +20,8 @@ const int pid = 11;
 // --+ FILES +------------------------------------------------------------------
 const int NFILES = 2; // 3; // Number of input files.
 const char *IN_FILENAMES[NFILES] = {
-        Form("../root_io/dis/acc_corr/pid%d/integrated_dc.root",   pid),
-        Form("../root_io/dis/acc_corr/pid%d/integrated_fmt2.root", pid) // ,
+        Form("../root_io/dis/no_acc_corr/pid%d/integrated_dc.root",   pid),
+        Form("../root_io/dis/no_acc_corr/pid%d/integrated_fmt2.root", pid) // ,
         // Form("../root_io/dis/pid%d/integrated_fmt3.root", pid)
 };
 const char *LEGEND_ENTRIES[NFILES] = {
@@ -31,7 +31,7 @@ const int COLORS[NFILES] = {
         kRed, kBlue // , kGreen
 };
 const char *OUT_FILENAME = Form(
-    "../root_io/dis/acc_corr/pid%d/integrated.root", pid
+    "../root_io/dis/no_acc_corr/pid%d/integrated.root", pid
 );
 
 // --+ PLOTS +------------------------------------------------------------------
@@ -253,7 +253,9 @@ int plot_dis() {
                 double yerr_meas = plots[plot_i]->GetBinError(bin_i);
                 double yerr_acc  =
                     y * acccorr_err[canvas_idx][part_i][plot_i][bin_i-1];
-                double yerr = sqrt(yerr_meas*yerr_meas + yerr_acc*yerr_acc);
+                // TODO. acccorr error is disabled temporarily.
+                // double yerr = sqrt(yerr_meas*yerr_meas + yerr_acc*yerr_acc);
+                double yerr = yerr_meas;
 
 
                 graphs[plot_i]->SetPoint(bin_i - 1, x + offset, y);
