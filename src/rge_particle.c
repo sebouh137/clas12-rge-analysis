@@ -18,8 +18,8 @@
 // --+ internal +---------------------------------------------------------------
 rge_particle particle_init() {
     rge_particle p;
-    p.is_valid            = false;
-    p.is_hadron           = false;
+    p.is_valid   = false;
+    p.is_hadron  = false;
     p.is_trigger = false;
 
     return p;
@@ -101,7 +101,7 @@ int match_pid(
                 *pid = hypothesis;
             }
             break;
-        case 321: case 2212: case 45: case 2112: case 22:
+        case 321: case 2212: case 45: case 2112: case 22: case 13: case -13:
             if (recon_match) *pid = hypothesis;
             break;
         default:
@@ -112,7 +112,7 @@ int match_pid(
 }
 
 double theta_lab(rge_particle p) {
-    if (p.px + p.py + p.pz < 1e-9) return 0;
+    if (abs(p.px) + abs(p.py) + abs(p.pz) < 1e-9) return 0;
     return atan2(sqrt(p.px*p.px + p.py*p.py), p.pz);
 }
 
@@ -140,6 +140,11 @@ double Xb(rge_particle p, double bE) {
     if (rge_get_mass(2212, &proton_mass)) return 0;
 
     return Q2(p, bE) / (2*proton_mass*nu(p, bE));
+}
+
+double Yb(rge_particle p, double beam_E) {
+    if (!p.is_trigger) return 0;
+    return nu(p, beam_E) / beam_E;
 }
 
 double W(rge_particle p, double bE) {
@@ -260,7 +265,7 @@ int rge_set_pid(
     uint hypotheses_size = 0;
     rge_get_pidlist_size_by_charge(particle->charge, &hypotheses_size);
 
-    __extension__ int hypotheses[hypotheses_size];
+    int hypotheses[hypotheses_size];
     rge_get_pidlist_by_charge(particle->charge, hypotheses);
 
     // Perform checks.
@@ -339,6 +344,7 @@ int rge_fill_ntuples_arr(
     arr[RGE_Q2.addr] = Q2(e, beam_E);
     arr[RGE_NU.addr] = nu(e, beam_E);
     arr[RGE_XB.addr] = Xb(e, beam_E);
+    arr[RGE_YB.addr] = Yb(e, beam_E);
     arr[RGE_W2.addr] = W2(e, beam_E);
     if (rge_errno == RGEERR_PIDNOTFOUND) return 1;
 

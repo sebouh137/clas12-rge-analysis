@@ -1,3 +1,2 @@
-*
+*.txt
 !sf_params_mc.txt
-!.gitignore

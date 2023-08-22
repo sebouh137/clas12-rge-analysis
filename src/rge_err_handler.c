@@ -52,6 +52,12 @@ static const std::map<uint, const char *> ERRMAP = {
     {RGEERR_INVALIDACCEPTANCEOPT,
             "Option -A is only valid if an acceptance correction file is "
             "specified using -a."},
+    {RGEERR_INVALIDPID,
+            "Selected PID is invalid. Input a valid PID after -p."},
+    {RGEERR_TOOMANYNUMBERS,
+            "Too many numbers passed to -b, input only four."},
+    {RGEERR_BADBINNING,
+            "Numbers passed to -b are invalid, check argument format."},
 
     // File errors.
     {RGEERR_NOINPUTFILE,
@@ -123,6 +129,9 @@ static const std::map<uint, const char *> ERRMAP = {
     {RGEERR_INVALIDENTRY,
             "An invalid entry access was attempted at the get_entry function. "
             "Check the function input in rge_hipo_bank.c."},
+    {RGEERR_WRONGENTRYTYPE,
+            "An invalid entry type was requested to the count_entries function."
+            " Check the function input in acc_corr.c."},
 
     // Particle errors.
     {RGEERR_PIDNOTFOUND,

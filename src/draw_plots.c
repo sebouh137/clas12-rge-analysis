@@ -32,8 +32,15 @@
 #include "../lib/rge_math_utils.h"
 
 static const char *USAGE_MESSAGE =
-"Usage: draw_plots [-hn:o:a:w:] infile\n"
+"Usage: draw_plots [-hp:cb:n:o:a:w:] infile\n"
 " * -h          : show this message and exit.\n"
+" * -p pid      : skip particle selection and draw plots for pid.\n"
+" * -c          : apply all cuts (general, geometry, and DIS) instead of\n"
+"                 asking which ones to apply while running.\n"
+" * -b # # # #  : apply 1D binning. Four integers are required: index of the\n"
+"                 binning variable (following program convention), lower\n"
+"                 limit, upper limit, and number of bins. Set all variables\n"
+"                 to 0 to not do binning.\n"
 " * -n nentries : number of entries to process.\n"
 " * -o outfile  : output file name. Default is plots_<run_no>.root.\n"
 " * -a accfile  : apply acceptance correction using acc_filename.\n"
@@ -61,37 +68,26 @@ static const char *DIM_LIST[2] = {"x", "y"};
 static const char *RAN_LIST[2] = {"lower", "upper"};
 
 /** List of DIS variables. */
-#define DIS_LIST_SIZE 4
+#define DIS_LIST_SIZE 5
 static const char *DIS_LIST[DIS_LIST_SIZE] = {
-        RGE_Q2.name, RGE_NU.name, RGE_XB.name, RGE_W2.name
+        RGE_Q2.name, RGE_NU.name, RGE_XB.name, RGE_YB.name, RGE_W2.name
 };
 
 /** "Standard" plots data. */
-#define STDPLT_LIST_SIZE 11
+#define STDPLT_LIST_SIZE 4
 static const int STD_PX[STDPLT_LIST_SIZE] = {
-        1, 1, 1, 0,
-        0, 0, 0, 0,
-        0, 0, 1
+        0, 0, 0, 0
 };
 static const int STD_VX[STDPLT_LIST_SIZE][2] = {
-        {RGE_P.addr,   RGE_BETA.addr}, {RGE_P.addr,     RGE_DTOF.addr},
-        {RGE_P.addr,   RGE_TOTE.addr}, {RGE_Q2.addr,    -1},
-        {RGE_NU.addr,  -1},            {RGE_ZH.addr,    -1},
-        {RGE_PT2.addr, -1},            {RGE_PHIPQ.addr, -1},
-        {RGE_XB.addr,  -1},            {RGE_W2.addr,    -1},
-        {RGE_Q2.addr,  RGE_NU.addr}
+        {RGE_VZ.addr,  -1}, {RGE_THETA.addr, -1},
+        {RGE_PHI.addr, -1}, {RGE_P.addr,     -1}
 };
 static const double STD_RX[STDPLT_LIST_SIZE][2][2] = {
-        {{ 0,10},{ 0, 1}}, {{ 0,10},{ 0,20}}, {{ 0,10},{ 0, 3}},
-        {{ 0,12},{-1,-1}}, {{ 0,12},{-1,-1}}, {{ 0, 1},{-1,-1}},
-        {{ 0, 2},{-1,-1}}, {{-M_PI,M_PI},{-1,-1}},
-        {{ 0, 1},{-1,-1}}, {{ 0,20},{-1,-1}}, {{ 0,12},{ 0,12}}
+        {{-30.,   20.},   {-1,-1}}, {{0.05, 0.9}, {-1,-1}},
+        {{ -3.1415926535,  3.1415926535}, {-1,-1}}, {{0.,    9.}, {-1,-1}}
 };
 static const long STD_BX[STDPLT_LIST_SIZE][2] = {
-        {200,200}, {200,100}, {200,200},
-        {400, -1}, {400, -1}, {400, -1},
-        {400, -1}, {400, -1},
-        {400, -1}, {400, -1}, {200,200}
+        {50, -1}, {42, -1}, {72, -1}, {45, -1}
 };
 
 /** Acceptance correction plot data. */
@@ -343,7 +339,8 @@ static lint find_idx(
 /** run() function of the program. Check USAGE_MESSAGE for details. */
 static int run(
         char *in_filename, char *out_filename, char *acc_filename,
-        char *work_dir, int run_no, lint nentries, bool apply_acc_corr
+        char *work_dir, int run_no, lint nentries, lint sel_pid,
+        bool apply_all_cuts, bool apply_acc_corr, lint *binning_setup
 ) {
     // Open input file.
     TFile *f_in  = TFile::Open(in_filename, "READ");
@@ -370,21 +367,31 @@ static int run(
     }
 
     // === PARTICLE SELECTION ==================================================
-    printf("\nWhat particle should be plotted? Available cuts:\n[");
-    for (int part_i = 0; part_i < PART_LIST_SIZE; ++part_i)
-        printf("%s, ", PART_LIST[part_i]);
-    printf("\b\b]\n");
-    int plot_particle = rge_catch_string(PART_LIST, PART_LIST_SIZE);
-    int plot_charge = INT_MAX;
-    int plot_pid    = INT_MAX;
-    if      (plot_particle == A_PPOS) plot_charge =  1;
-    else if (plot_particle == A_PNEU) plot_charge =  0;
-    else if (plot_particle == A_PNEG) plot_charge = -1;
-    else if (plot_particle == A_PPID) {
-        printf("\nSelect PID from:\n");
-        rge_print_pid_names();
-        plot_pid = rge_catch_long();
+    int plot_particle = INT_MAX;
+    int plot_charge   = INT_MAX;
+    int plot_pid      = INT_MAX;
+    if (sel_pid == 0) {
+        printf("\nWhat particle should be plotted? Available cuts:\n[");
+        for (int part_i = 0; part_i < PART_LIST_SIZE; ++part_i) {
+            printf("%s, ", PART_LIST[part_i]);
+        }
+        printf("\b\b]\n");
+        plot_particle = rge_catch_string(PART_LIST, PART_LIST_SIZE);
+        if      (plot_particle == A_PPOS) plot_charge =  1;
+        else if (plot_particle == A_PNEU) plot_charge =  0;
+        else if (plot_particle == A_PNEG) plot_charge = -1;
+        else if (plot_particle == A_PPID) {
+            printf("\nSelect PID from:\n");
+            rge_print_pid_names();
+            plot_pid = rge_catch_long();
+        }
     }
+    else {
+        plot_pid = sel_pid;
+    }
+
+    // If a PID was selected, check that it's valid.
+    if (plot_pid != INT_MAX && rge_pid_invalid(plot_pid)) return 1;
 
     // Find selected particle PID in acceptance correction data. If not found,
     //     return an error.
@@ -404,54 +411,81 @@ static int run(
     bool general_cuts  = false;
     bool geometry_cuts = false;
     bool dis_cuts      = false;
-    printf("\nApply all default cuts (general, geometry, DIS)? [y/n]\n");
-    if (!rge_catch_yn()) {
-        printf("\nApply general cuts? [y/n]\n");
-        general_cuts = rge_catch_yn();
-        printf("\nApply geometry cuts? [y/n]\n");
-        geometry_cuts = rge_catch_yn();
-        printf("\nApply DIS cuts? [y/n]\n");
-        dis_cuts = rge_catch_yn();
+    if (!apply_all_cuts) {
+        printf("\nApply all default cuts (general, geometry, DIS)? [y/n]\n");
+        if (!rge_catch_yn()) {
+            printf("\nApply general cuts? [y/n]\n");
+            general_cuts = rge_catch_yn();
+            printf("\nApply geometry cuts? [y/n]\n");
+            geometry_cuts = rge_catch_yn();
+            printf("\nApply DIS cuts? [y/n]\n");
+            dis_cuts = rge_catch_yn();
+        }
+        else {
+            apply_all_cuts = true;
+        }
     }
-    else {
+    if (apply_all_cuts) {
         general_cuts  = true;
         geometry_cuts = true;
         dis_cuts      = true;
     }
 
     // === SETUP BINNING =======================================================
-    printf("\nNumber of dimensions for binning?\n");
-    luint dim_bins = static_cast<luint>(rge_catch_long());
-    __extension__ int    bin_vars[dim_bins];
-    __extension__ double bin_range[dim_bins][2];
-    __extension__ double bin_binsize[dim_bins];
-    __extension__ luint bin_nbins[dim_bins];
-    for (luint bin_dim_i = 0; bin_dim_i < dim_bins; ++bin_dim_i) {
-        // variable.
-        printf(
-                "\nDefine var for bin in dimension %ld. Available vars:\n[",
-                bin_dim_i
-        );
+    luint dim_bins;
+    if (binning_setup[0] == -1) {
+        printf("\nNumber of dimensions for binning?\n");
+        dim_bins = static_cast<luint>(rge_catch_long());
+    }
+    else if (
+            binning_setup[0] == 0 && binning_setup[1] == 0 &&
+            binning_setup[2] == 0 && binning_setup[3] == 0
+    ) {
+        dim_bins = 0;
+    }
+    else {
+        dim_bins = 1;
+    }
+    int    bin_vars[dim_bins];
+    double bin_range[dim_bins][2];
+    luint  bin_nbins[dim_bins];
+    if (binning_setup[0] != -1) {
+        bin_vars[0]     = binning_setup[0];
+        bin_range[0][0] = binning_setup[1];
+        bin_range[0][1] = binning_setup[2];
+        bin_nbins[0]    = static_cast<luint>(binning_setup[3]);
+    }
+    else {
+        for (luint bin_dim_i = 0; bin_dim_i < dim_bins; ++bin_dim_i) {
+            // variable.
+            printf(
+                    "\nDefine var for bin in dimension %ld by index. Available "
+                    "vars:\n", bin_dim_i
+            );
+            for (int var_i = 0; var_i < RGE_VARS_SIZE; ++var_i) {
+                printf("  %2d. %s\n", var_i, RGE_VARS[var_i]);
+            }
+            bin_vars[bin_dim_i] = rge_catch_var(RGE_VARS, RGE_VARS_SIZE);
 
-        for (int var_i = 0; var_i < RGE_VARS_SIZE; ++var_i)
-            printf("%s, ", RGE_VARS[var_i]);
-        printf("\b\b]\n");
-        bin_vars[bin_dim_i] = rge_catch_string(RGE_VARS, RGE_VARS_SIZE);
+            // range.
+            for (int range_i = 0; range_i < 2; ++range_i) {
+                printf("\nDefine %s limit for bin in dimension %ld:\n",
+                        RAN_LIST[range_i], bin_dim_i);
+                bin_range[bin_dim_i][range_i] = rge_catch_double();
+            }
 
-        // range.
-        for (int range_i = 0; range_i < 2; ++range_i) {
-            printf("\nDefine %s limit for bin in dimension %ld:\n",
-                    RAN_LIST[range_i], bin_dim_i);
-            bin_range[bin_dim_i][range_i] = rge_catch_double();
+            // nbins.
+            printf(
+                    "\nDefine number of bins for bin in dimension %ld:\n",
+                    bin_dim_i
+            );
+            bin_nbins[bin_dim_i] = static_cast<luint>(rge_catch_long());
         }
+    }
 
-        // nbins.
-        printf(
-                "\nDefine number of bins for bin in dimension %ld:\n", bin_dim_i
-        );
-        bin_nbins[bin_dim_i] = static_cast<luint>(rge_catch_long());
-
-        // binning bin size.
+    // binning bin size.
+    double bin_binsize[dim_bins];
+    for (luint bin_dim_i = 0; bin_dim_i < dim_bins; ++bin_dim_i) {
         bin_binsize[bin_dim_i] =
                 (bin_range[bin_dim_i][1] - bin_range[bin_dim_i][0]) /
                 bin_nbins[bin_dim_i];
@@ -475,10 +509,10 @@ static int run(
         plot_arr_size = STDPLT_LIST_SIZE;
     }
 
-    __extension__ int plot_type[plot_arr_size];
-    __extension__ int plot_vars[plot_arr_size][2];
-    __extension__ double plot_range[plot_arr_size][2][2];
-    __extension__ luint plot_nbins[plot_arr_size][2];
+    int plot_type[plot_arr_size];
+    int plot_vars[plot_arr_size][2];
+    double plot_range[plot_arr_size][2][2];
+    luint plot_nbins[plot_arr_size][2];
     for (
             luint plot_i = 0;
             plot_i < plot_arr_size && !std_plot && !acc_plot;
@@ -494,14 +528,13 @@ static int run(
         for (int dim_i = 0; dim_i < plot_type[plot_i]+1; ++dim_i) {
             // Check variable(s) to be plotted.
             printf(
-                    "\nDefine var to be plotted on the %s axis. Available "
-                    "vars:\n[", DIM_LIST[dim_i]
+                    "\nDefine var to be plotted on the %s axis by index. "
+                    "Available vars:\n", DIM_LIST[dim_i]
             );
-            for (int var_i = 0; var_i < RGE_VARS_SIZE; ++var_i)
-                printf("%s, ", RGE_VARS[var_i]);
-            printf("\b\b]\n");
-            plot_vars[plot_i][dim_i] =
-                    rge_catch_string(RGE_VARS, RGE_VARS_SIZE);
+            for (int var_i = 0; var_i < RGE_VARS_SIZE; ++var_i) {
+                printf("  %2d. %s\n", var_i, RGE_VARS[var_i]);
+            }
+            plot_vars[plot_i][dim_i] = rge_catch_var(RGE_VARS, RGE_VARS_SIZE);
 
             // Define ranges.
             for (int range_i = 0; range_i < 2; ++range_i) {
@@ -569,7 +602,7 @@ static int run(
     if (dis_cuts) printf("Applying cuts...\n");
     bool *valid_event = static_cast<bool *>(malloc(nevents * sizeof(bool)));
     Float_t current_evn = -1;
-    bool no_tre_pass, Q2_pass, W2_pass, zh_pass;
+    bool no_tre_pass, Q2_pass, W2_pass, Yb_pass;
 
     // Fill valid_event array with false bools in case the next for loop doesn't
     //     fill every entry in it.
@@ -592,16 +625,22 @@ static int run(
             no_tre_pass = false;
             Q2_pass     = true;
             W2_pass     = true;
-            zh_pass     = true;
+            Yb_pass     = true;
         }
 
-        if (vars[RGE_PID.addr] != 11 || vars[RGE_STATUS.addr] > 0) continue;
+        if (
+                (10.5 >= vars[RGE_PID.addr] || vars[RGE_PID.addr] > 11.5) ||
+                vars[RGE_STATUS.addr] > 0
+        ) {
+            continue;
+        }
         no_tre_pass = true;
         Q2_pass = vars[RGE_Q2.addr] >= RGE_Q2CUT;
         W2_pass = vars[RGE_W2.addr] >= RGE_W2CUT;
+        Yb_pass = vars[RGE_YB.addr] <= RGE_YBCUT;
 
         valid_event[static_cast<luint>(vars[RGE_EVENTNO.addr]+0.5)] =
-                no_tre_pass && Q2_pass && W2_pass && zh_pass;
+                no_tre_pass && Q2_pass && W2_pass && Yb_pass;
     }
 
     // === PLOT ================================================================
@@ -611,7 +650,7 @@ static int run(
         bin_arr_size *= bin_nbins[bin_dim_i];
     }
 
-    __extension__ TH1 *plot_arr[plot_arr_size][bin_arr_size];
+    TH1 *plot_arr[plot_arr_size][bin_arr_size];
     for (luint plot_i = 0; plot_i < plot_arr_size; ++plot_i) {
         TString plot_title;
         int idx = 0;
@@ -660,7 +699,15 @@ static int run(
             if (plot_charge ==  0 && !(vars[RGE_CHARGE.addr] == 0)) continue;
             if (plot_charge == -1 && !(vars[RGE_CHARGE.addr] <  0)) continue;
         }
-        if (plot_pid != INT_MAX && vars[RGE_PID.addr] != plot_pid) continue;
+        if (
+                plot_pid != INT_MAX &&
+                (
+                        vars[RGE_PID.addr] - 0.5 >= plot_pid ||
+                        plot_pid > vars[RGE_PID.addr] + 0.5
+                )
+        ) {
+            continue;
+        }
 
         // Apply geometry cuts.
         if (geometry_cuts) {
@@ -681,10 +728,10 @@ static int run(
         // Apply miscellaneous cuts.
         if (general_cuts) {
             // Non-identified particle.
-            if (-0.5 < vars[RGE_PID.addr] && vars[RGE_PID.addr] <  0.5)
+            if (-0.5 <= vars[RGE_PID.addr] && vars[RGE_PID.addr] <  0.5)
                 continue;
             // Non-identified particle.
-            if (44.5 < vars[RGE_PID.addr] && vars[RGE_PID.addr] < 45.5)
+            if (44.5 <= vars[RGE_PID.addr] && vars[RGE_PID.addr] < 45.5)
                 continue;
             // Ignore tracks with high chi2.
             if (vars[RGE_CHI2.addr]/vars[RGE_NDF.addr] >= RGE_CHI2NDFCUT)
@@ -700,18 +747,23 @@ static int run(
         }
 
         // Remove DIS vars = 0.
+        if (vars[RGE_Q2.addr] == 0 || vars[RGE_NU.addr] == 0) {
+            continue;
+        }
+        // Remove SIDIS vars = 0 (for all but electrons!).
         if (
-                vars[RGE_Q2.addr]    == 0 ||
-                vars[RGE_NU.addr]    == 0 ||
-                vars[RGE_ZH.addr]    == 0 ||
-                vars[RGE_PT2.addr]   == 0 ||
-                vars[RGE_PHIPQ.addr] == 0
+                (10.5 >= vars[RGE_PID.addr] || vars[RGE_PID.addr] > 11.5) &&
+                (
+                        vars[RGE_ZH.addr]    == 0 ||
+                        vars[RGE_PT2.addr]   == 0 ||
+                        vars[RGE_PHIPQ.addr] == 0
+                )
         ) {
             continue;
         }
 
         // Prepare binning vars.
-        __extension__ Float_t bin_vars_idx[dim_bins];
+        Float_t bin_vars_idx[dim_bins];
         for (luint bin_dim_i = 0; bin_dim_i < dim_bins; ++bin_dim_i) {
             bin_vars_idx[bin_dim_i] = vars[bin_vars[bin_dim_i]];
         }
@@ -766,8 +818,8 @@ static int run(
     ) {
         for (luint bin_i = 0; bin_i < bin_arr_size; ++bin_i) {
             // Integrate through other variables.
-            __extension__ int y_thrown[bn[plot_i]];
-            __extension__ int y_simul [bn[plot_i]];
+            int y_thrown[bn[plot_i]];
+            int y_simul [bn[plot_i]];
             for (
                     luint acc_bin_i = 0;
                     acc_bin_i < bn[plot_i];
@@ -820,7 +872,7 @@ static int run(
             }
 
             // Compute acceptance correction factor.
-            __extension__ double acc_corr_factor[bn[plot_i]];
+            double acc_corr_factor[bn[plot_i]];
             for (luint acc_bin_i = 0; acc_bin_i < bn[plot_i]; ++acc_bin_i) {
                 acc_corr_factor[acc_bin_i] =
                         static_cast<double>(y_thrown[acc_bin_i]) /
@@ -892,18 +944,29 @@ static int run(
  *     explained in the handle_err() function.
  */
 static int handle_args(
-        int argc, char **argv, char **in_filename, char **out_filename,
-        char **acc_filename, char **work_dir, int *run_no, lint *nentries,
-        bool *apply_acc_corr)
-{
+        int argc, char **argv, lint *sel_pid, bool *apply_all_cuts,
+        lint *binning_setup, lint *nentries, char **out_filename,
+        char **acc_filename, bool *apply_acc_corr, char **work_dir,
+        char **in_filename, int *run_no
+) {
     // Handle arguments.
     int opt;
     char *tmp_out_filename = NULL;
-    while ((opt = getopt(argc, argv, "-hn:o:a:Aw:")) != -1) {
+    while ((opt = getopt(argc, argv, "-hp:cb:n:o:a:Aw:")) != -1) {
         switch (opt) {
             case 'h':
                 rge_errno = RGEERR_USAGE;
                 return 1;
+            case 'p':
+                if (rge_process_pid(sel_pid, optarg)) return 1;
+                break;
+            case 'c':
+                *apply_all_cuts = true;
+                break;
+            case 'b':
+                if (rge_grab_multiarg(argc, argv, &optind, &binning_setup))
+                    return 1;
+                break;
             case 'n':
                 if (rge_process_nentries(nentries, optarg)) return 1;
                 break;
@@ -945,6 +1008,17 @@ static int handle_args(
         return 1;
     }
 
+    // Check that -b makes sense.
+    if (
+            binning_setup[0] < -1 ||
+            binning_setup[0] > RGE_VARS_SIZE ||
+            binning_setup[1] > binning_setup[2] ||
+            binning_setup[3] < -1
+    ) {
+        rge_errno = RGEERR_BADBINNING;
+        return 1;
+    }
+
     // Check positional argument.
     if (*in_filename == NULL) {
         rge_errno = RGEERR_NOINPUTFILE;
@@ -971,24 +1045,28 @@ static int handle_args(
 /** Entry point of the program. */
 int main(int argc, char **argv) {
     // Handle arguments.
-    char *in_filename   = NULL;
-    char *out_filename  = NULL;
-    char *acc_filename  = NULL;
-    char *work_dir      = NULL;
-    int run_no          = -1;
-    lint nentries       = -1;
-    bool apply_acc_corr = true;
+    lint sel_pid          = 0;
+    bool apply_all_cuts   = false;
+    lint binning_setup[4] = {-1, -1, -1, -1};
+    lint nentries         = -1;
+    char *out_filename    = NULL;
+    char *acc_filename    = NULL;
+    bool apply_acc_corr   = true;
+    char *work_dir        = NULL;
+    char *in_filename     = NULL;
+    int  run_no           = -1;
 
     int err = handle_args(
-            argc, argv, &in_filename, &out_filename, &acc_filename, &work_dir,
-            &run_no, &nentries, &apply_acc_corr
+            argc, argv, &sel_pid, &apply_all_cuts, binning_setup, &nentries,
+            &out_filename, &acc_filename, &apply_acc_corr, &work_dir,
+            &in_filename, &run_no
     );
 
     // Run.
     if (rge_errno == RGEERR_UNDEFINED && err == 0) {
         run(
                 in_filename, out_filename, acc_filename, work_dir, run_no,
-                nentries, apply_acc_corr
+                nentries, sel_pid, apply_all_cuts, apply_acc_corr, binning_setup
         );
     }
 

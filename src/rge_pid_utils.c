@@ -21,11 +21,14 @@ static const std::map<int, rge_pidconstants> PID_MAP = {
     {     -2212, pid_constants_init( 1, 0.938272, "antiproton"           )},
     {      -321, pid_constants_init(-1, 0.493677, "negative kaon"        )},
     {      -211, pid_constants_init(-1, 0.139570, "negative pion"        )},
+    {       -13, pid_constants_init( 1, 0.10566,  "positive muon"        )},
     {       -11, pid_constants_init( 1, 0.000051, "positron"             )},
     {         0, pid_constants_init( 0, DBL_MAX,  "unidentified particle")},
     {        11, pid_constants_init(-1, 0.000051, "electron"             )},
+    {        13, pid_constants_init(-1, 0.10566,  "negative muon"        )},
     {        22, pid_constants_init( 0, 0.,       "photon"               )},
     {        45, pid_constants_init( 0, DBL_MAX,  "unidentified particle")},
+    {       130, pid_constants_init( 0, 0.497611, "neutral kaon"         )},
     {       211, pid_constants_init( 1, 0.139570, "positive pion"        )},
     {       321, pid_constants_init( 1, 0.493677, "positive kaon"        )},
     {      2112, pid_constants_init( 0, 0.939565, "neutron"              )},
@@ -39,35 +42,30 @@ rge_pidconstants pid_constants_init(int q, double m, const char *n) {
     if (q  > 0) ++positive_size;
 
     // Return instance.
-    return __extension__ (rge_pidconstants) {.charge = q, .mass = m, .name = n};
+    return (rge_pidconstants) {.charge = q, .mass = m, .name = n};
 }
 
-int pid_invalid(int pid) {
+// --+ library +----------------------------------------------------------------
+int rge_pid_invalid(int pid) {
     try {
         PID_MAP.at(pid);
         return 0;
     }
     catch (...) {}
 
+    rge_errno = RGEERR_PIDNOTFOUND;
     return 1;
 }
 
-// --+ library +----------------------------------------------------------------
 int rge_get_charge(int pid, int *charge) {
-    if (pid_invalid(pid)) {
-        rge_errno = RGEERR_PIDNOTFOUND;
-        return 1;
-    }
+    if (rge_pid_invalid(pid)) return 1;
 
     *charge = PID_MAP.at(pid).charge;
     return 0;
 }
 
 int rge_get_mass(int pid, double *mass) {
-    if (pid_invalid(pid)) {
-        rge_errno = RGEERR_PIDNOTFOUND;
-        return 1;
-    }
+    if (rge_pid_invalid(pid)) return 1;
 
     *mass = PID_MAP.at(pid).mass;
     return 0;

@@ -31,6 +31,9 @@ typedef long unsigned int luint;
 typedef long int lint;
 
 // --+ internal +---------------------------------------------------------------
+/** Integer where to dump the unused return value of fscanf. */
+static int fscanf_dump;
+
 /**
  * Read binning data from text file and fill binning sizes array, bin_edges
  *     array, and an array of PID list sizes.

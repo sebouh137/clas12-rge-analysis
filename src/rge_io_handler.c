@@ -42,6 +42,41 @@ int rge_grab_string(char *arg, char **str) {
     return 0;
 }
 
+int rge_grab_multiarg(int argc, char **argv, int *opt_idx, lint **arr) {
+    int idx   = *opt_idx - 1;
+    int start = idx;
+    int size = 0;
+    char *next;
+
+    // Get size.
+    while (idx < argc) {
+        next = strdup(argv[idx++]);
+        if (is_number(next)) ++size;
+        else break;
+    }
+
+    // Raise error if size != 4.
+    if (size != 4) {
+        rge_errno = RGEERR_TOOMANYNUMBERS;
+        return 1;
+    }
+
+    // Restart counter.
+    idx = start;
+
+    // Fill array.
+    int i = 0;
+    while (idx < argc) {
+        next = strdup(argv[idx++]);
+        if (is_number(next)) (*arr)[i++] = atof(next);
+        else break;
+    }
+
+    // Continue with getopts.
+    *opt_idx = idx - 1;
+    return 0;
+}
+
 int rge_grab_multiarg(
         int argc, char **argv, int *opt_idx, luint *size, double **arr
 ) {
@@ -92,6 +127,16 @@ int rge_process_nentries(lint *nentries, char *arg) {
     return 0;
 }
 
+int rge_process_pid(lint *pid, char *arg) {
+    int err = run_strtol(pid, arg);
+    if (err == 1 || err == 2) {
+        rge_errno = RGEERR_INVALIDPID;
+        return 1;
+    }
+
+    return 0;
+}
+
 int rge_process_fmtnlayers(lint *nlayers, char *arg) {
     int err = run_strtol(nlayers, arg);
     if (err == 1 || (
@@ -108,7 +153,7 @@ bool rge_catch_yn() {
     while (true) {
         char str[32];
         printf(">>> ");
-        scanf("%31s", str);
+        scanf_dump = scanf("%31s", str);
 
         if (!strcmp(str, "y") || !strcmp(str, "Y")) return true;
         if (!strcmp(str, "n") || !strcmp(str, "N")) return false;
@@ -121,7 +166,7 @@ long rge_catch_long() {
         char str[32];
         char *endptr;
         printf(">>> ");
-        scanf("%31s", str);
+        scanf_dump = scanf("%31s", str);
         r = strtol(str, &endptr, 10);
 
         if (endptr != str) break;
@@ -136,7 +181,7 @@ double rge_catch_double() {
         char str[32];
         char *endptr;
         printf(">>> ");
-        scanf("%31s", str);
+        scanf_dump = scanf("%31s", str);
         r = strtod(str, &endptr);
 
         if (endptr != str) break;
@@ -150,10 +195,25 @@ int rge_catch_string(const char *arr[], int size) {
     while (true) {
         char str[32];
         printf(">>> ");
-        scanf("%31s", str);
+        scanf_dump = scanf("%31s", str);
 
         for (int i = 0; i < size; ++i) if (!strcmp(str, arr[i])) x = i;
         if (x != -1) break;
+    }
+
+    return x;
+}
+
+int rge_catch_var(const char *arr[], int size) {
+    long x;
+    while (true) {
+        char str[32];
+        char *endptr;
+        printf(">>> ");
+        scanf_dump = scanf("%31s", str);
+        x = strtol(str, &endptr, 10);
+
+        if (endptr != str && 0 <= x && x < size) break;
     }
 
     return x;

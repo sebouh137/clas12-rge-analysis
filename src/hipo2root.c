@@ -82,8 +82,8 @@ static int run(
     TFile *out_file = TFile::Open(out_filename, "RECREATE");
 
     // Open input file and get hipo schemas.
-    __extension__ hipo::bank   hbanks[nbanks];
-    __extension__ rge_hipobank rbanks[nbanks];
+    hipo::bank   hbanks[nbanks];
+    rge_hipobank rbanks[nbanks];
 
     for (uint i = 0; i < nbanks; ++i) {
         // Initialize hipo banks.

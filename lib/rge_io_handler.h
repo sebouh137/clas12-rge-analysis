@@ -32,6 +32,9 @@ typedef long unsigned int luint;
 typedef long int lint;
 
 // --+ internal +---------------------------------------------------------------
+/** Integer where to dump the unused return value of scanf. */
+static int scanf_dump;
+
 /** Minimum number of FMT layers to accept a track. */
 static uint FMTMINLAYERS = 2;
 /** Total number of FMT layers. */
@@ -43,7 +46,7 @@ static int is_number(char c);
 /** Check if string s is a number. Returns 1 if it is, 0 if it isn't. */
 static int is_number(char *s);
 
-/* Run strtol from n to t, returning appropriate error codes. */
+/** Run strtol from n to t, returning appropriate error codes. */
 static int run_strtol(lint *n, char *t);
 
 // --+ library +----------------------------------------------------------------
@@ -57,7 +60,17 @@ static int run_strtol(lint *n, char *t);
 int rge_grab_string(char *arg, char **str);
 
 /**
- * Grab multiple arguments and fill an array with their values.
+ * Grab multiple integers and fill an array with their values.
+ *
+ * @param argc    : size of list of arguments given to program.
+ * @param argv    : list of arguments given to program.
+ * @param opt_idx : optind variable from getopt.
+ * @param arr     : array that will be filled.
+ */
+int rge_grab_multiarg(int argc, char **argv, int *opt_idx, lint **arr);
+
+/**
+ * Grab multiple doubles and fill an array with their values.
  *
  * @param argc    : size of list of arguments given to program.
  * @param argv    : list of arguments given to program.
@@ -70,10 +83,13 @@ int rge_grab_multiarg(
         int argc, char **argv, int *opt_idx, luint *size, double **arr
 );
 
-/* Run strtol on arg to get number of entries. */
+/** Run strtol on arg to get number of entries. */
 int rge_process_nentries(lint *nentries, char *arg);
 
-/* Run strtol on arg to get number of FMT layers required. */
+/** Run strtol on arg to get PID. */
+int rge_process_pid(lint *pid, char *arg);
+
+/** Run strtol on arg to get number of FMT layers required. */
 int rge_process_fmtnlayers(lint *nlayers, char *arg);
 
 /** Catch a y (yes) or a n (no) from stdin. */
@@ -94,5 +110,15 @@ double rge_catch_double();
  * @return     : location of string in stdin inside arr.
  */
 int rge_catch_string(const char *arr[], int size);
+
+/**
+ * Catch an int from stdin and find its location in RGE_VARS array. If int falls
+ *     outside of RGE_VARS length, as the user again.
+ *
+ * @param arr  : RGE_VARS array.
+ * @param size : RGE_VARS array size.
+ * @return     : selected index.
+ */
+int rge_catch_var(const char *arr[], int size);
 
 #endif

@@ -86,13 +86,14 @@ The output will be written to the `acc_corr.txt` file, by default in the `data` 
 
 ### make_ntuples
 ```
-Usage: make_ntuples [-hDf:n:w:d:] infile
+Usage: make_ntuples [-hDf:cn:w:d:] infile
  * -h         : show this message and exit.
  * -D         : activate debug mode.
  * -f fmtlyrs : define how many FMT layers should the track have hit.
                 Options are 0 (tracked only by DC), 2, and 3. If set to
                 something other than 0 and there is no FMT::Tracks bank in
                 the input file, the program will crash. Default is 0.
+ * -c         : apply FMT geometry cut on data.
  * -n nevents : number of events.
  * -w workdir : location where output root files are to be stored. Default
                 is root_io.
@@ -103,8 +104,11 @@ Generate ntuples relevant to SIDIS analysis based on the reconstructed variables
 
 ### draw_plots
 ```
-Usage: draw_plots [-hn:o:a:w:] infile
+Usage: draw_plots [-hp:cn:o:a:w:] infile
  * -h          : show this message and exit.
+ * -p pid      : skip particle selection and draw plots for pid.
+ * -c          : apply all cuts (general, geometry, and DIS) instead of
+                 asking which ones to apply while running.
  * -n nentries : number of entries to process.
  * -o outfile  : output file name. Default is plots_<run_no>.root.
  * -a accfile  : apply acceptance correction using acc_filename.
@@ -114,7 +118,6 @@ Usage: draw_plots [-hn:o:a:w:] infile
                  is root_io.
  * infile      : input file produced by make_ntuples.
 ```
-
 Draw plots from a ROOT file built from `make_ntuples`. File should be named `<text>run_no.root`. This tool is built for those who don't enjoy using root too much, and should be able to get most basic plots needed in SIDIS analysis.
 
 ## Debugging
@@ -134,7 +137,6 @@ Pull requests are welcome. For major changes, open an issue first to discuss the
 - [ ] Include GitHub tests -- I've no clue on how to do this with ROOT + HIPO.
 - [ ] Apply radiative correction.
 - [ ] Apply Feynman cuts.
-- [ ] Improve sampling fraction handling.
 - [ ] Get beam energy from `RCDB` instead of hardcoding it -- check `get_beam_energy()` function from `file_handler.c`.
 
 ## License

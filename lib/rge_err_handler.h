@@ -70,6 +70,9 @@ int rge_print_usage(const char *msg);
 #define RGEERR_BADEDGES                 15
 #define RGEERR_INVALIDFMTNLAYERS        16
 #define RGEERR_INVALIDACCEPTANCEOPT     17
+#define RGEERR_INVALIDPID               18
+#define RGEERR_TOOMANYNUMBERS           19
+#define RGEERR_BADBINNING               20
 // --+  50 -  99 file errors +--------------------------------------------------
 #define RGEERR_NOINPUTFILE              50
 #define RGEERR_NOSAMPFRACFILE           51
@@ -101,6 +104,7 @@ int rge_print_usage(const char *msg);
 #define RGEERR_INVALIDBANKID           153
 #define RGEERR_UNSUPPORTEDTYPE         154
 #define RGEERR_INVALIDENTRY            155
+#define RGEERR_WRONGENTRYTYPE          156
 // --+ 200 - 249 particle errors +----------------------------------------------
 #define RGEERR_PIDNOTFOUND             201
 #define RGEERR_UNSUPPORTEDPID          202

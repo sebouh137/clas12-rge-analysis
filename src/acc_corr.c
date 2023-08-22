@@ -40,8 +40,6 @@ static const char *USAGE_MESSAGE =
 " * -s simfile : simulated events ROOT file.\n"
 " * -d datadir : location where sampling fraction files are found. Default is\n"
 "                data.\n"
-" * -F         : flag to tell program to use FMT data instead of DC data from\n"
-"                the simulation file.\n"
 " * -D         : flag to tell program that generated events are in degrees\n"
 "                instead of radians.\n\n"
 "    Get the 5-dimensional acceptance correction factors for Q2, nu, z_h,\n"
@@ -52,6 +50,34 @@ static const char *USAGE_MESSAGE =
 
 /** Data tree name in generated (thrown) file. */
 #define RGE_TREENAMETHRN "ntuple_thrown"
+#define RGE_TREENAMETHRNELECTRONS "ntuple_thrown_electrons"
+
+/**
+ * List of PIDs that can appear in thrown events, but are not interesting for
+ * SIDIS analysis.
+ */
+#define BADPIDS_SIZE 11
+static int BADPIDS[BADPIDS_SIZE] = {
+        2112, -2112, 2212, -2212, -12, 12, -13, 13, 321, -321, 130
+};
+
+/**
+ * Thrown file variable names, in case they are not the same as the ones in
+ * constants.
+ */
+#define THROWN_Q2    "Q2"
+#define THROWN_NU    "#nu"
+#define THROWN_ZH    "z_{h}"
+#define THROWN_PT2   "Pt2"
+#define THROWN_PHIPQ "#phi_{PQ}"
+#define THROWN_W     "W"
+#define THROWN_YB    "y"
+
+/** Available entry count types. */
+#define THROWN_ELECTRON -2
+#define THROWN_HADRON   -1
+#define SIMUL_HADRON     1
+#define SIMUL_ELECTRON   2
 
 /**
 * Return position of value v inside a doubles array b of size s. If v is not
@@ -73,14 +99,25 @@ static int find_pos(double v, double *b, int size) {
  * @param edges:  2-dimensional array of edges.
  * @param in_deg: boolean telling us if thrown events are in degrees -- default
  *                is radians.
- * @param simul:  boolean. False if we're processing thrown data, true if it's
- *                simulated data.
+ * @param type:   int describing type of processing to be done.
+ *                  * -2: thrown electron.
+ *                  * -1: thrown hadron.
+ *                  *  1: simulated hadron.
+ *                  *  2: simulated electron.
  * @return:       success code (0).
  */
 static int count_entries(
         FILE *file, TTree *tree, int pid, luint *nbins, double **edges,
-        bool in_deg, bool simul
+        bool in_deg, int type
 ) {
+    if (
+            type != THROWN_ELECTRON && type != SIMUL_ELECTRON &&
+            type != THROWN_HADRON   && type != SIMUL_HADRON
+    ) {
+        rge_errno = RGEERR_WRONGENTRYTYPE;
+        return 1;
+    }
+
     // Store total number of bins for simplicity.
     luint total_nbins = 1;
     for (int i = 0; i < 5; ++i) total_nbins *= nbins[i];
@@ -88,51 +125,107 @@ static int count_entries(
     // Create and initialize evn_cnt.
     // NOTE. Variable-length arrays (vla) are technically not permitted in C++
     //       (-Werror=vla from -pedantic), but *we know* that the array won't be
-    //       ridiculously large, and I'd rather have my memory contiguous than
+    //       rambunctiously large, and I'd rather have my memory contiguous than
     //       keeping a 5D array of non-contiguous pointers or -- even worse --
     //       C++ vectors.
     //          -Bruno
-    __extension__ int evn_cnt[nbins[0]][nbins[1]][nbins[2]][nbins[3]][nbins[4]];
-    int *iterator = &evn_cnt[0][0][0][0][0];
+    int evn_cnt[nbins[0]][nbins[1]][nbins[2]][nbins[3]][nbins[4]];
+    int *iterator = &evn_cnt[0][0][0][0][0]; // Auxiliary iterator for evn_cnt.
+
+    // Set everything in evn_cnt to 0.
     for (luint bin_i = 0; bin_i < total_nbins; ++bin_i) {
         *iterator = 0;
         ++iterator;
     }
 
-    Float_t s_pid, s_W, s_W2;
+    // Get PID.
+    Float_t s_pid;
+    if (type == THROWN_ELECTRON || type == SIMUL_ELECTRON) {
+        s_pid = 11;
+    }
+    else {
+        tree->SetBranchAddress(RGE_PID.name, &s_pid);
+    }
+
+    // Get W2.
+    Float_t s_W, s_W2;
+    if (type == THROWN_ELECTRON || type == THROWN_HADRON) {
+        tree->SetBranchAddress(THROWN_W, &s_W);
+    }
+    else {
+        tree->SetBranchAddress(RGE_W2.name, &s_W2);
+    }
+
+    // Get Yb.
+    Float_t s_Yb;
+    if (type == THROWN_ELECTRON || type == THROWN_HADRON) {
+        tree->SetBranchAddress(THROWN_YB, &s_Yb);
+    }
+    else {
+        tree->SetBranchAddress(RGE_YB.name, &s_Yb);
+    }
+
+    // Get binning variables: Q2, nu, zh, Pt2, phiPQ.
     Float_t s_bin[5] = {0, 0, 0, 0, 0};
-    tree->SetBranchAddress(RGE_PID.name,   &s_pid);
-    tree->SetBranchAddress(RGE_Q2.name,    &(s_bin[0]));
-    tree->SetBranchAddress(RGE_NU.name,    &(s_bin[1]));
-    tree->SetBranchAddress(RGE_ZH.name,    &(s_bin[2]));
-    tree->SetBranchAddress(RGE_PT2.name,   &(s_bin[3]));
-    tree->SetBranchAddress(RGE_PHIPQ.name, &(s_bin[4]));
-    if (!simul) tree->SetBranchAddress("W", &s_W);
-    if (simul)  tree->SetBranchAddress(RGE_W2.name, &s_W2);
+    if (type == THROWN_ELECTRON || type == THROWN_HADRON) {
+        tree->SetBranchAddress(THROWN_Q2, &(s_bin[0]));
+        tree->SetBranchAddress(THROWN_NU, &(s_bin[1]));
+    }
+    if (type == THROWN_HADRON) {
+        tree->SetBranchAddress(THROWN_ZH,    &(s_bin[2]));
+        tree->SetBranchAddress(THROWN_PT2,   &(s_bin[3]));
+        tree->SetBranchAddress(THROWN_PHIPQ, &(s_bin[4]));
+    }
+    if (type == SIMUL_ELECTRON || type == SIMUL_HADRON) {
+        tree->SetBranchAddress(RGE_Q2.name, &(s_bin[0]));
+        tree->SetBranchAddress(RGE_NU.name, &(s_bin[1]));
+    }
+    if (type == SIMUL_HADRON) {
+        tree->SetBranchAddress(RGE_ZH.name,    &(s_bin[2]));
+        tree->SetBranchAddress(RGE_PT2.name,   &(s_bin[3]));
+        tree->SetBranchAddress(RGE_PHIPQ.name, &(s_bin[4]));
+    }
 
     for (int evn = 0; evn < tree->GetEntries(); ++evn) {
         tree->GetEntry(evn);
 
         // Only count the selected PID.
-        if (pid-0.5 < s_pid && s_pid < pid+0.5) continue;
+        if (pid - 0.5 >= s_pid || s_pid > pid + 0.5) continue;
+
+        // Apply Q2 cut.
+        if (s_bin[0] < RGE_Q2CUT) continue; // Q2 > 1.
+
+        // Apply W2 cut.
+        if (type == THROWN_ELECTRON || type == THROWN_HADRON) {
+            s_W2 = s_W * s_W;
+        }
+        if (s_W2 < RGE_W2CUT) continue; // W2 > 4.
+
+        // Apply Yb cut.
+        if (s_Yb > RGE_YBCUT) continue; // Yb < 0.85.
 
         // Remove kinematic variables == 0.
-        for (int s_i = 0; s_i < 5; ++s_i) if (s_bin[s_i] == 0) continue;
+        if (s_bin[1] == 0) continue;
+        if (
+                (type == THROWN_HADRON || type == SIMUL_HADRON) &&
+                (s_bin[2] == 0 || s_bin[3] == 0 || s_bin[4] == 0)
+        ) {
+            continue;
+        }
 
-        // Apply DIS cuts.
-        if (s_bin[0]       < RGE_Q2CUT) continue; // Q2 > 1.
-        if (!simul && s_W  < RGE_WCUT)  continue; // W  > 2.
-        if (simul  && s_W2 < RGE_W2CUT) continue; // W2 > 4.
-
-        // Find position of event.
+        // Convert phiPQ to radians if necessary.
         if (in_deg) {
-            double tmp; // s_bin is Float_t, so we need a conversion step.
+            double tmp; // s_bin[4] is Float_t, so we need this conversion step.
             if (rge_to_rad(s_bin[4], &tmp)) return 1;
             s_bin[4] = tmp;
         }
-        int idx[5];
+
+        // Find position of event.
+        int idx[5] = {0, 0, 0, 0, 0};
         bool kill = false; // If kill is true, var falls outside of bin range.
-        for (int bi = 0; bi < 5 && !kill; ++bi) {
+        // Hadrons use 5 kinematic variables, electrons can only use 2.
+        int nvars = (type == THROWN_HADRON || type == SIMUL_HADRON) ? 5 : 2;
+        for (int bi = 0; bi < nvars && !kill; ++bi) {
             idx[bi] = find_pos(s_bin[bi], edges[bi], nbins[bi]);
             if (idx[bi] < 0) kill = true;
         }
@@ -165,8 +258,9 @@ static int run(
         rge_errno = RGEERR_WRONGGENFILE;
         return 1;
     }
-    TNtuple *thrown   = thrown_file->Get<TNtuple>(RGE_TREENAMETHRN);
-    if (thrown == NULL) {
+    TNtuple *thrown    = thrown_file->Get<TNtuple>(RGE_TREENAMETHRN);
+    TNtuple *thrown_el = thrown_file->Get<TNtuple>(RGE_TREENAMETHRNELECTRONS);
+    if (thrown == NULL || thrown_el == NULL) {
         rge_errno = RGEERR_BADGENFILE;
         return 1;
     }
@@ -213,17 +307,33 @@ static int run(
     int pidlist_size = 0;
     thrown->SetBranchAddress(RGE_PID.name, &s_pid);
 
+    // Add electron to PID list.
+    pidlist[pidlist_size++] = 11;
+
     for (int evn = 0; evn < thrown->GetEntries(); ++evn) {
         thrown->GetEntry(evn);
-        bool found = false;
-        for (int pid_i = 0; pid_i < pidlist_size; ++pid_i) {
-            if (pidlist[pid_i] - .5 <= s_pid && s_pid <= pidlist[pid_i] + .5) {
-                found = true;
+        bool skip = false;
+
+        // Check that PID is useful for SIDIS analysis.
+        for (int pid_i = 0; pid_i < BADPIDS_SIZE; ++pid_i) {
+            if (BADPIDS[pid_i] - .5 <= s_pid && s_pid <= BADPIDS[pid_i] + .5) {
+                skip = true;
+                break;
             }
         }
-        if (found) continue;
-        pidlist[pidlist_size] = s_pid;
-        ++pidlist_size;
+        if (skip) continue;
+
+        // Check if we have already found this PID.
+        for (int pid_i = 0; pid_i < pidlist_size; ++pid_i) {
+            if (pidlist[pid_i] - .5 <= s_pid && s_pid <= pidlist[pid_i] + .5) {
+                skip = true;
+                break;
+            }
+        }
+        if (skip) continue;
+
+        // Add PID to list.
+        pidlist[pidlist_size++] = s_pid;
     }
 
     // Write list of PIDs to output file.
@@ -245,10 +355,32 @@ static int run(
         printf("Working on PID %5d (%2d/%2d)...\n", pid, pid_i+1, pidlist_size);
 
         printf("  Counting thrown events...\n");
-        count_entries(out_file, thrown, pid, nbins, edges, in_deg, false);
+        int err = 0;
+        if (pid_i == 0) { // electron.
+            err = count_entries(
+                    out_file, thrown_el, pid, nbins, edges, in_deg,
+                    THROWN_ELECTRON
+            );
+        }
+        else {
+            err = count_entries(
+                    out_file, thrown, pid, nbins, edges, in_deg, THROWN_HADRON
+            );
+        }
+        if (err != 0) return 1;
 
         printf("  Counting simulated events...\n");
-        count_entries(out_file, simul,  pid, nbins, edges, false, true);
+        if (pid_i == 0) {
+            err = count_entries(
+                    out_file, simul, pid, nbins, edges, false, SIMUL_ELECTRON
+            );
+        }
+        else {
+            err = count_entries(
+                    out_file, simul, pid, nbins, edges, false, SIMUL_HADRON
+            );
+        }
+        if (err != 0) return 1;
 
         printf("  Done!\n");
     }
