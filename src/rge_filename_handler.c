@@ -63,8 +63,8 @@ int get_beam_energy(int run_no, double *beam_energy) {
             *beam_energy = RGE_BE12933;
             break;
         default:
-            rge_errno = RGEERR_UNIMPLEMENTEDBEAMENERGY;
-            return 1;
+            *beam_energy = RGE_BE;
+            break;
     }
 
     return 0;
