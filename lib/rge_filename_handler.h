@@ -37,6 +37,7 @@ typedef long int lint;
 #define RGE_BE12016 10.3894 /** 250 nA. */
 #define RGE_BE12439  2.1864 /**  15 nA. */
 #define RGE_BE12933 10.4057 /** 250 nA. */
+#define RGE_BE 10.5473
 
 /**
  * Get run number from a filename, assuming the filename is in format
