@@ -18,7 +18,7 @@
 // --+ library +----------------------------------------------------------------
 const char *RGE_VARS[RGE_VARS_SIZE] = {
         RGE_RUNNO.name, RGE_EVENTNO.name, RGE_BEAME.name,
-        RGE_PID.name, RGE_STATUS.name, RGE_CHARGE.name, RGE_MASS.name,
+        RGE_PID.name, RGE_CHARGE.name, RGE_STATUS.name, RGE_MASS.name,
                 RGE_VX.name, RGE_VY.name, RGE_VZ.name, RGE_PX.name, RGE_PY.name,
                 RGE_PZ.name, RGE_P.name, RGE_THETA.name, RGE_PHI.name,
                 RGE_BETA.name, RGE_TRIGGERSTATUS.name,
