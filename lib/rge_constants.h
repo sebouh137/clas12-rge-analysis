@@ -79,7 +79,7 @@ const RGE_VAR RGE_P      = {.addr = 13, .name = "p"}; // Unit: GeV
 const RGE_VAR RGE_THETA  = {.addr = 14, .name = "theta"}; // Unit: rad
 const RGE_VAR RGE_PHI    = {.addr = 15, .name = "phi"};  // Unit: rad
 const RGE_VAR RGE_BETA   = {.addr = 16, .name = "beta"};
-const RGE_VAR RGE_TRIGGERSTATUS   = {.addr = 17, .name = "trigger_status"};
+const RGE_VAR RGE_TRIGGERSTATUS   = {.addr = 17, .name = "trigger_status"}; // 0 if particle is not the trigger electron, 1 if particle is the trigger electron
 
 /** Tracking variables. */
 const RGE_VAR RGE_CHI2 = {.addr = 18, .name = "chi2"};
