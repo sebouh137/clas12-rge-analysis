@@ -1,7 +1,7 @@
 #!/bin/bash
 
 data_directory=(/volatile/clas12/rg-e/production/calib/v1/calib/recon/020046/*)
-working_directory=/work/clas12/rmilton/backup-clas12-rge-analysis
+working_directory=.
 num_files=573
 run_num=020046
 for FILE in "${data_directory[@]::${num_files}}"
