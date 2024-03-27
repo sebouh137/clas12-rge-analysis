@@ -283,7 +283,6 @@ int rge_set_pid(
                 e_check, htcc_signal_check, htcc_pion_threshold
         )) return 1;
     }
-
     // Check if particle is trigger electron and define mass from PID.
     particle->is_trigger = (particle->pid == 11 && status < 0);
     if (rge_get_mass(particle->pid, &(particle->mass))) return 1;
@@ -306,7 +305,6 @@ int rge_fill_ntuples_arr(
     arr[RGE_RUNNO.addr]   = static_cast<Float_t>(run_no);
     arr[RGE_EVENTNO.addr] = static_cast<Float_t>(evn);
     arr[RGE_BEAME.addr]   = beam_E;
-
     // Particle.
     arr[RGE_PID.addr]    = static_cast<Float_t>(p.pid);
     arr[RGE_CHARGE.addr] = p.charge;
@@ -322,6 +320,7 @@ int rge_fill_ntuples_arr(
     arr[RGE_THETA.addr]  = theta_lab(p);
     arr[RGE_PHI.addr]    = phi_lab(p);
     arr[RGE_BETA.addr]   = p.beta;
+    arr[RGE_TRIGGERSTATUS.addr] = p.is_trigger;
 
     // Tracking.
     arr[RGE_CHI2.addr] = chi2;
