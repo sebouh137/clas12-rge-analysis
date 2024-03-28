@@ -321,6 +321,7 @@ int rge_fill_ntuples_arr(
     arr[RGE_PHI.addr]    = phi_lab(p);
     arr[RGE_BETA.addr]   = p.beta;
     arr[RGE_TRIGGERSTATUS.addr] = p.is_trigger;
+    arr[RGE_SECTOR.addr] = p.sector;
 
     // Tracking.
     arr[RGE_CHI2.addr] = chi2;
@@ -353,6 +354,5 @@ int rge_fill_ntuples_arr(
     arr[RGE_PL2.addr]     = Pl2(p, e, beam_E);
     arr[RGE_PHIPQ.addr]   = phi_pq(p, e, beam_E);
     arr[RGE_THETAPQ.addr] = theta_pq(p, e, beam_E);
-
     return 0;
 }
