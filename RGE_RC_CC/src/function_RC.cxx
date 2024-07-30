@@ -1,6 +1,6 @@
 /*
 This function's goal is to obatin the Radiative Correction Factors (SigmaRad/SigmaBorn) and the Coulomb Correction factors as well.
-Inside the main function we have the function 'extractRCfactor'that takes as input a TGraph2DErrors that contains the case of interest and the values of Eprime and polar angle Theta (in degrees).
+Inside the main function we have the function 'Get_RC_RATIO'that takes as input a String with the target information and the values of Eprime and polar angle Theta (in degrees).
 The factors are calculated using a 1D interpolation.
 */
 #include <iostream>
@@ -20,46 +20,62 @@ double extractRCfactor(TGraph2DErrors* gr2D_SigmaRad ,  double Eprime, double th
 TGraph2DErrors* createGraph2D( const std::vector<double>& V2, const std::vector<double>& V3, const std::vector<double>& VData, int size);
 bool areEqual(double a, double b, double tolerance);
 double linearInterpolation(double x0, double y0, double x1, double y1, double x);
+double Get_RC_RATIO(TString target , double Eprime, double thetadeg);
+double Get_CC_RATIO(TString target , double Eprime, double thetadeg);
 
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 int main(int argc, char** argv){
 
-  // INITIALIZING THE ARRAYS TO READ THE TABLES, WE HAVE TO DO THIS ONLY ONCE IN THE CODE.
-
-  vector<double>   V1_lt,V2_lt,V3_lt,V4_lt,V5_lt,V6_lt,V7_lt,V8_lt,V9_lt,V10_lt,V11_lt,V12_lt,V13_lt;
-  vector<double>   V1_st,V2_st,V3_st,V4_st,V5_st,V6_st,V7_st,V8_st,V9_st,V10_st,V11_st,V12_st,V13_st;
-
-  ImportRadcor(  V1_lt,V2_lt,V3_lt,V4_lt,V5_lt,V6_lt,V7_lt,V8_lt,V9_lt,V10_lt,V11_lt,V12_lt,V13_lt   ,  "cryo2.out"  );  
-  ImportRadcor(  V1_st,V2_st,V3_st,V4_st,V5_st,V6_st,V7_st,V8_st,V9_st,V10_st,V11_st,V12_st,V13_st   ,  "carbon12.out"     );
-
-  const int size_st= V1_st.size();
-  const int size_lt= V1_lt.size();
-
-  TGraph2DErrors* gr2D_SigmaRad_ST  = createGraph2D(V2_st, V3_st, V9_st, size_st);
-  TGraph2DErrors* gr2D_SigmaBorn_ST = createGraph2D(V2_st, V3_st, V6_st, size_st);
-  TGraph2DErrors* gr2D_SigmaRad_LT  = createGraph2D(V2_lt, V3_lt, V9_lt, size_lt);
-  TGraph2DErrors* gr2D_SigmaBorn_LT = createGraph2D(V2_lt, V3_lt, V6_lt, size_lt);
-  TGraph2DErrors* gr2D_CoulombCorrection_ST     = createGraph2D(V2_st, V3_st, V13_st,size_st);
-
-  // just an example of values
   
-  double  Eprime   = 3.3  ;
-  double  thetadeg = 15.0 ;
+  double RC_factor = Get_RC_RATIO("carbon12", 3.3 , 15.0);  // example of Eprime and Theta values
+  double CC_factor = Get_CC_RATIO("carbon12", 3.3 , 15.0);
 
-  // inside your for loop
-
-  double sigmaRad_LT  = extractRCfactor( gr2D_SigmaRad_LT , Eprime, thetadeg );
-  double sigmaRad_ST  = extractRCfactor( gr2D_SigmaRad_ST , Eprime, thetadeg );
-  double sigmaBorn_LT = extractRCfactor( gr2D_SigmaBorn_LT, Eprime, thetadeg );
-  double sigmaBorn_ST = extractRCfactor( gr2D_SigmaBorn_ST, Eprime, thetadeg );
-
-
-  cout<< "The RC factor (Rad to Born ratio) is : " << sigmaRad_LT/sigmaBorn_LT << " for D2 , and "<< sigmaRad_ST/sigmaBorn_ST <<" for solid target." << endl;
+  cout<< "The RC factor is " << RC_factor << endl;
+  cout<< "The CC factor is " << CC_factor << endl;
 
   return 0;
 }
 
 
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+double Get_CC_RATIO(TString target , double Eprime, double thetadeg){
+  vector<double>   V1_st,V2_st,V3_st,V4_st,V5_st,V6_st,V7_st,V8_st,V9_st,V10_st,V11_st,V12_st,V13_st;
+  ImportRadcor(  V1_st,V2_st,V3_st,V4_st,V5_st,V6_st,V7_st,V8_st,V9_st,V10_st,V11_st,V12_st,V13_st   ,  (const char*)Form ("%s.out", (const char*)target)     );
+  const int size_st= V1_st.size();
+  TGraph2DErrors* gr2D_CoulombCorrection_ST     = createGraph2D(V2_st, V3_st, V13_st,size_st);
+  double factor = extractRCfactor(gr2D_CoulombCorrection_ST, Eprime, thetadeg);
+  return factor;
+}
+
+double Get_RC_RATIO(TString target , double Eprime, double thetadeg){
+
+  vector<double>   V1_lt,V2_lt,V3_lt,V4_lt,V5_lt,V6_lt,V7_lt,V8_lt,V9_lt,V10_lt,V11_lt,V12_lt,V13_lt;
+  vector<double>   V1_st,V2_st,V3_st,V4_st,V5_st,V6_st,V7_st,V8_st,V9_st,V10_st,V11_st,V12_st,V13_st;
+
+  ImportRadcor(  V1_lt,V2_lt,V3_lt,V4_lt,V5_lt,V6_lt,V7_lt,V8_lt,V9_lt,V10_lt,V11_lt,V12_lt,V13_lt   ,  "cryo2.out"  );
+  ImportRadcor(  V1_st,V2_st,V3_st,V4_st,V5_st,V6_st,V7_st,V8_st,V9_st,V10_st,V11_st,V12_st,V13_st   ,  (const char*)Form ("%s.out", (const char*)target)     );
+
+  const int size_st= V1_st.size();
+  const int size_lt= V1_lt.size();
+
+  TGraph2DErrors* gr2D_SigmaRad_ST              = createGraph2D(V2_st, V3_st, V9_st, size_st);
+  TGraph2DErrors* gr2D_SigmaBorn_ST             = createGraph2D(V2_st, V3_st, V6_st, size_st);
+  TGraph2DErrors* gr2D_SigmaRad_LT              = createGraph2D(V2_lt, V3_lt, V9_lt, size_lt);
+  TGraph2DErrors* gr2D_SigmaBorn_LT             = createGraph2D(V2_lt, V3_lt, V6_lt, size_lt);
+  TGraph2DErrors* gr2D_CoulombCorrection_ST     = createGraph2D(V2_st, V3_st, V13_st,size_st);
+
+  double sigmaRad_LT  = extractRCfactor( gr2D_SigmaRad_LT , Eprime, thetadeg );
+  double sigmaRad_ST  = extractRCfactor( gr2D_SigmaRad_ST , Eprime, thetadeg );
+  double sigmaBorn_LT = extractRCfactor( gr2D_SigmaBorn_LT, Eprime, thetadeg );
+  double sigmaBorn_ST = extractRCfactor( gr2D_SigmaBorn_ST, Eprime, thetadeg );
+  double factor= (sigmaRad_ST/sigmaBorn_ST)/(sigmaRad_LT/sigmaBorn_LT);
+  return factor;
+
+}
 
 void ImportRadcor(vector<double> &v1,vector<double> &v2,vector<double> &v3,vector<double> &v4,vector<double> &v5,vector<double> &v6,vector<double> &v7,vector<double> &v8,vector<double> &v9, vector<double> &v10,vector<double> &v11,vector<double> &v12,vector<double> &v13, const char * filename){
 
