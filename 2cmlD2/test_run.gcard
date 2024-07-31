@@ -1,0 +1,16 @@
+<gcard>
+	<option name="geometry" value="1400x1200"/>
+	
+	<!-- other variations include: lH2, lD2, ND3, "elaborate"-->
+	<detector name="target"         factory="TEXT" variation="eg2-Pb-lD2"/>
+	<detector name="cad/"           factory="CAD"/>
+	<detector name="dt-structure/"  factory="CAD"/>
+
+	<option name="BEAM_P" value="e-, 11.0*GeV, 0*deg, 0*deg"/>
+	<option name="N"      value="5000"/>
+
+	<option name="PHYSICS"                 value="FTFP_BERT + STD"/>
+	<option name="RUNNO"                   value="11" />
+	<option name="DIGITIZATION_VARIATION"  value="rga_fall2018_mc" />
+	<option name="RECORD_OPTICALPHOTONS"   value="1"/>
+</gcard>
