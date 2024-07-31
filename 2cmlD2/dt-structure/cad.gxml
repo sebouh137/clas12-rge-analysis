@@ -1,0 +1,30 @@
+<gxml>
+	<!-- Torlon 4435 AKA Tracks-->
+	<volume name="torlon4435-track-1" mother="target" color="381008" position="0*mm 0*mm -240*mm" rotation="0*deg 0*deg 0*deg" material="torlon4435" sensitivity="flux" hitType="flux" identifiers="id manual 3 track"/>
+	<volume name="torlon4435-track-2" mother="target" color="381008" position="0*mm 0*mm -240*mm" rotation="0*deg 0*deg 0*deg" material="torlon4435" sensitivity="flux" hitType="flux" identifiers="id manual 3 track"/>
+	<volume name="torlon4435-track-3" mother="target" color="381008" position="0*mm 0*mm -240*mm" rotation="0*deg 0*deg 0*deg" material="torlon4435" sensitivity="flux" hitType="flux" identifiers="id manual 3 track"/>
+	<volume name="torlon4435-track-4" mother="target" color="381008" position="0*mm 0*mm -240*mm" rotation="0*deg 0*deg 0*deg" material="torlon4435" sensitivity="flux" hitType="flux" identifiers="id manual 3 track"/>
+
+	<!-- Torlon4203 -->
+	<volume name="torlon4203-ring-1"          mother="target" color="BAC23D" position="0*mm 0*mm -240*mm" rotation="0*deg 0*deg 0*deg" material="torlon4203" sensitivity="flux" hitType="flux" identifiers="id manual 3 torlonring1"/>
+	<volume name="torlon4203-ring-2"          mother="target" color="BAC23D" position="0*mm 0*mm -240*mm" rotation="0*deg 0*deg 0*deg" material="torlon4203" sensitivity="flux" hitType="flux" identifiers="id manual 3 torlonring2"/>
+	<volume name="torlon4203-encoder-fixer-1" mother="target" color="BAC23D" position="0*mm 0*mm -240*mm" rotation="0*deg 0*deg 0*deg" material="torlon4203" sensitivity="flux" hitType="flux" identifiers="id manual 3 torlonencoderfixer1"/>
+	<volume name="torlon4203-encoder-fixer-2" mother="target" color="BAC23D" position="0*mm 0*mm -240*mm" rotation="0*deg 0*deg 0*deg" material="torlon4203" sensitivity="flux" hitType="flux" identifiers="id manual 3 torlonencoderfixer2"/>
+
+	<!-- Encoder-->
+	<volume name="encoder"  mother="target" color="D9DAD9" position="0*mm 0*mm -240*mm" rotation="0*deg 0*deg 0*deg" material="G4_Al" sensitivity="flux" hitType="flux" identifiers="id manual 3 encoder"/>
+	
+	<!-- Carbon Fiber Ring -->
+	<volume name="carbon-fiber-ring"  mother="target" color="5C5B59" position="0*mm 0*mm -240*mm" rotation="0*deg 0*deg 0*deg" material="carbonFiber" sensitivity="flux" hitType="flux" identifiers="id manual 3 ring"/>
+
+	<!-- Ribbon -->
+	<volume name="ribbon"   mother="target" color="5C5B59" position="0*mm 0*mm -240*mm" rotation="0*deg 0*deg 0*deg" material="carbonFiber" sensitivity="flux" hitType="flux" identifiers="id manual 3 ribbon"/>
+
+	<!-- Piezomotor -->
+	<volume name="piezomotor1"   mother="target" color="D9DAD9" position="0*mm 0*mm -240*mm" rotation="0*deg 0*deg 0*deg" material="G4_Al" sensitivity="flux" hitType="flux" identifiers="id manual 3 piezomotor"/>
+	<volume name="piezomotor2"   mother="target" color="D9DAD9" position="0*mm 0*mm -240*mm" rotation="0*deg 0*deg 0*deg" material="G4_Al" sensitivity="flux" hitType="flux" identifiers="id manual 3 piezomotor"/>
+	<volume name="piezomotor3"   mother="target" color="D9DAD9" position="0*mm 0*mm -240*mm" rotation="0*deg 0*deg 0*deg" material="G4_Al" sensitivity="flux" hitType="flux" identifiers="id manual 3 piezomotor"/>
+	<volume name="piezomotor4"   mother="target" color="D9DAD9" position="0*mm 0*mm -240*mm" rotation="0*deg 0*deg 0*deg" material="G4_Al" sensitivity="flux" hitType="flux" identifiers="id manual 3 piezomotor"/>
+	<volume name="piezomotor5"   mother="target" color="D9DAD9" position="0*mm 0*mm -240*mm" rotation="0*deg 0*deg 0*deg" material="G4_Al" sensitivity="flux" hitType="flux" identifiers="id manual 3 piezomotor"/>
+	<volume name="piezomotor6"   mother="target" color="D9DAD9" position="0*mm 0*mm -240*mm" rotation="0*deg 0*deg 0*deg" material="G4_Al" sensitivity="flux" hitType="flux" identifiers="id manual 3 piezomotor"/>
+</gxml>
