@@ -1,0 +1,19 @@
+C++ version:
+
+to compile the example.cxx file:
+
+g++ -o example example.cxx functions_RC.cxx $(root-config --cflags --glibs)
+
+that should give you the executable 'example'
+To run it, just type : './example'
+
+
+PYTHON version:
+
+just type 'python example.py'
+
+
+Both programs should output this:
+
+The RC factor is 0.997984
+The CC factor is 1.0006
