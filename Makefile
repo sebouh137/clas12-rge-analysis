@@ -44,7 +44,7 @@ RLIBS       := $(shell root-config --libs) -lEG
 RXX         := $(CXX) $(ROOTCFLAGS)
 
 # HIPO.
-HIPOCFLAGS  := -isystem$(HIPO)/hipo4
+HIPOCFLAGS  := -isystem$(HIPO)/include/hipo4
 HLIBS       := $(RLIBS) -L$(HIPO)/lib -lhipo4
 HXX         := $(RXX) $(HIPOCFLAGS)
 
