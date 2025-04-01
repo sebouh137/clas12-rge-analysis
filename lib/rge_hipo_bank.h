@@ -33,6 +33,7 @@
 // rge-analysis.
 #include "rge_err_handler.h"
 
+#include <string>
 // typedefs.
 typedef unsigned int uint;
 typedef long unsigned int luint;
@@ -45,6 +46,8 @@ typedef long int lint;
 #define RGE_RECCHERENKOV    "REC::Cherenkov"
 #define RGE_RECSCINTILLATOR "REC::Scintillator"
 #define RGE_FMTTRACKS       "FMT::Tracks"
+#define RGE_MCPARTICLE      "MC::Particle"
+#define RGE_MCEVENT         "MC::Event"
 
 /** ECAL layer IDs in CLAS12 banks. */
 #define PCAL_LYR 1

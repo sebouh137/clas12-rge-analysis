@@ -100,6 +100,8 @@ static const std::map<uint, const char *> ERRMAP = {
             "Failed to create output root file."},
     {RGEERR_OUTPUTTEXTFAILED,
             "Failed to create output text file."},
+    {RGEERR_NOMC,
+            "MC::Particles not found in banks root file"},
 
     // Detector errors.
     {RGEERR_INVALIDCALLAYER,
@@ -111,6 +113,7 @@ static const std::map<uint, const char *> ERRMAP = {
     {RGEERR_NOFMTBANK,
             "FMT::Tracks bank not found in input. No FMT analysis is available "
             "for this input file."},
+        
 
     // Program errors.
     {RGEERR_UNIMPLEMENTEDBEAMENERGY,

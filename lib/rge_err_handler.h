@@ -92,6 +92,7 @@ int rge_print_usage(const char *msg);
 #define RGEERR_OUTFILEEXISTS            65
 #define RGEERR_OUTPUTROOTFAILED         66
 #define RGEERR_OUTPUTTEXTFAILED         67
+#define RGEERR_NOMC                     68
 // --+ 100 - 149 detector errors +----------------------------------------------
 #define RGEERR_INVALIDCALLAYER         100
 #define RGEERR_INVALIDCALSECTOR        101

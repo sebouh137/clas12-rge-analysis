@@ -21,6 +21,7 @@
 #include <TFile.h>
 #include <TNtuple.h>
 #include <TROOT.h>
+#include <TObjArray.h>
 
 // rge-analysis.
 #include "../lib/rge_constants.h"
@@ -273,7 +274,7 @@ static int apply_fmtgeomtry_cut(rge_particle *p) {
 /** run() function of the program. Check USAGE_MESSAGE for details. */
 static int run(
         char *filename_in, char *work_dir, char *data_dir, bool debug,
-        lint fmt_nlayers, bool fmt_cut, lint n_events, int run_no,
+        lint fmt_nlayers, bool fmt_cut, bool save_MC, lint n_events, int run_no,
         double energy_beam
 ) {
     // Get sampling fraction.
@@ -312,13 +313,42 @@ static int run(
         rge_errno = RGEERR_BADINPUTFILE;
         return 1;
     }
-
-    // If fmt_nlayers != 0, check that FMT::Tracks bank exists.
-    if (fmt_nlayers != 0 && file_in->GetListOfKeys()->Contains(RGE_FMTTRACKS)) {
-        rge_errno = RGEERR_NOFMTBANK;
+    // Create TTree and TNTuples.
+    TTree *tree_in = file_in->Get<TTree>(RGE_TREENAMEDATA);
+    if (tree_in == NULL) {
+        rge_errno = RGEERR_BADROOTFILE;
         return 1;
     }
 
+    // Checking whether the MC and FMT branches exist if we want to save them
+    TObjArray *branch_list = tree_in->GetListOfBranches();
+    bool found_fmt = false, found_mc = false;
+    if ( fmt_nlayers != 0 || save_MC)
+    {
+        for( int i = 0; i < branch_list->GetEntries(); i++)
+        {
+            std::string branch_name = branch_list->At(i)->GetName();
+            if ( fmt_nlayers != 0 && branch_name.find(RGE_FMTTRACKS) != std::string::npos)
+                found_fmt = true;
+            else if ( save_MC && branch_name.find(RGE_MCPARTICLE) != std::string::npos)
+                found_mc = true;
+            // Ending search early conditions
+            if ( (found_fmt && found_mc) || (found_fmt && !save_MC) || (found_mc && fmt_nlayers == 0) )
+                break;
+        }
+    }
+
+    // If fmt_nlayers != 0, check that FMT::Tracks bank exists.
+    if (fmt_nlayers != 0 && !found_fmt) {
+        rge_errno = RGEERR_NOFMTBANK;
+        return 1;
+    }
+    // If we want to save MC but the MC::Particle banks doesn't exit, throw error
+    if (save_MC && !found_mc)
+    {
+        rge_errno = RGEERR_NOMC;
+        return 1;
+    }
     // Return to top directory (weird root stuff).
     gROOT->cd();
 
@@ -328,15 +358,20 @@ static int run(
         vars_string.Append(Form("%s", RGE_VARS[var_i]));
         if (var_i != RGE_VARS_SIZE-1) vars_string.Append(":");
     }
-
-    // Create TTree and TNTuples.
-    TTree *tree_in = file_in->Get<TTree>(RGE_TREENAMEDATA);
-    if (tree_in == NULL) {
-        rge_errno = RGEERR_BADROOTFILE;
-        return 1;
+    TString MC_vars_string("");
+    if (save_MC)
+    {   
+        for (int var_i = 0; var_i < RGE_MC_VARS_SIZE; ++var_i) {
+            MC_vars_string.Append(Form("%s", RGE_MC_VARS[var_i]));
+            if (var_i != RGE_MC_VARS_SIZE-1) MC_vars_string.Append(":");
+        }
     }
+
     TNtuple *tree_out;
     tree_out = new TNtuple(RGE_TREENAMEDATA, RGE_TREENAMEDATA, vars_string);
+
+    TNtuple *MC_tree_out;
+    MC_tree_out = new TNtuple(RGE_MCTREENAME, RGE_MCTREENAME, MC_vars_string);
 
     // Change n_events to number of entries if it is equal to -1 or invalid.
     if (n_events == -1 || n_events > tree_in->GetEntries()) {
@@ -349,8 +384,16 @@ static int run(
     rge_hipobank bcal  = rge_hipobank_init(RGE_RECCALORIMETER,  tree_in);
     rge_hipobank bchkv = rge_hipobank_init(RGE_RECCHERENKOV,    tree_in);
     rge_hipobank bsci  = rge_hipobank_init(RGE_RECSCINTILLATOR, tree_in);
-    rge_hipobank bfmt  = rge_hipobank_init(RGE_FMTTRACKS,       tree_in);
-
+    // Optional hipo banks
+    rge_hipobank bfmt, bmcpart, bmcevent;
+    if (fmt_nlayers != 0)
+        bfmt  = rge_hipobank_init(RGE_FMTTRACKS, tree_in);
+    if (save_MC)
+    {
+        bmcpart  = rge_hipobank_init(RGE_MCPARTICLE, tree_in);
+        bmcevent  = rge_hipobank_init(RGE_MCEVENT, tree_in);
+    }
+    
     // Iterate through input file. Each TTree entry is one event.
     printf("Processing %ld events from %s.\n", n_events, filename_in);
 
@@ -375,6 +418,11 @@ static int run(
         rge_get_entries(&bchkv, tree_in, event);
         rge_get_entries(&bsci,  tree_in, event);
         if (fmt_nlayers != 0) rge_get_entries(&bfmt, tree_in, event);
+        if (save_MC) 
+        {
+            rge_get_entries(&bmcpart, tree_in, event);
+            rge_get_entries(&bmcevent, tree_in, event);
+        }
 
         // Filter events without the necessary banks.
         if (bpart.nrows == 0 || btrk.nrows == 0) continue;
@@ -520,6 +568,52 @@ static int run(
             if (part.pid ==  211) ++pionp_counter;
             if (part.pid == -211) ++pionm_counter;
         }
+        if (!save_MC) continue;
+        int npart      = rge_get_double(&bmcevent, "npart", 0);
+        int atarget    = rge_get_double(&bmcevent, "atarget", 0);
+        int ztarget    = rge_get_double(&bmcevent, "ztarget", 0);
+        double ptarget = rge_get_double(&bmcevent, "ptarget", 0);
+        double pbeam   = rge_get_double(&bmcevent, "pbeam", 0);
+        int btype      = rge_get_double(&bmcevent, "btype", 0);
+        double ebeam   = rge_get_double(&bmcevent, "ebeam", 0);
+        int targetid   = rge_get_double(&bmcevent, "targetid", 0);
+        int processid  = rge_get_double(&bmcevent, "processid", 0);
+        double weight  = rge_get_double(&bmcevent, "weight", 0);
+        for (uint pos = 0; pos < bmcpart.nrows; ++pos)
+        {
+            Float_t arr[RGE_MC_VARS_SIZE];
+            int    pid = rge_get_double(&bmcpart, "pid", pos);
+            double px  = rge_get_double(&bmcpart, "px",  pos);
+            double py  = rge_get_double(&bmcpart, "py",  pos);
+            double pz  = rge_get_double(&bmcpart, "pz",  pos);
+            double vx  = rge_get_double(&bmcpart, "vx",  pos);
+            double vy  = rge_get_double(&bmcpart, "vy",  pos);
+            double vz  = rge_get_double(&bmcpart, "vz",  pos);
+            double vt  = rge_get_double(&bmcpart, "vt",  pos);
+            
+            arr[RGE_MC_RUNNO.addr] = static_cast<Float_t>(run_no);
+            arr[RGE_MC_EVENTNO.addr] = static_cast<Float_t>(event);
+            arr[RGE_MC_PID.addr] = static_cast<Float_t>(pid);
+            arr[RGE_MC_PX.addr] = px;
+            arr[RGE_MC_PY.addr] = py;
+            arr[RGE_MC_PZ.addr] = pz;
+            arr[RGE_MC_VX.addr] = vx;
+            arr[RGE_MC_VY.addr] = vy;
+            arr[RGE_MC_VZ.addr] = vz;
+            arr[RGE_MC_VT.addr] = vt;
+            arr[RGE_MC_NPART.addr] = static_cast<Float_t>(npart);
+            arr[RGE_MC_ATARGET.addr] = static_cast<Float_t>(atarget);
+            arr[RGE_MC_ZTARGET.addr] = static_cast<Float_t>(ztarget);
+            arr[RGE_MC_PTARGET.addr] = ptarget;
+            arr[RGE_MC_PBEAM.addr] = pbeam;
+            arr[RGE_MC_BTYPE.addr] = static_cast<Float_t>(btype);
+            arr[RGE_MC_EBEAM.addr] = ebeam;
+            arr[RGE_MC_TARGETID.addr] = static_cast<Float_t>(targetid);
+            arr[RGE_MC_PROCESSID.addr] = static_cast<Float_t>(processid);
+            arr[RGE_MC_WEIGHT.addr] = weight;
+            MC_tree_out->Fill(arr);
+        }
+
     }
 
     // Print number of particles found to detect errors early.
@@ -543,6 +637,8 @@ static int run(
     // Write to output file.
     file_out->cd();
     tree_out->Write();
+    if (save_MC)
+        MC_tree_out->Write();
 
     // Clean up after ourselves.
     file_in ->Close();
@@ -556,11 +652,11 @@ static int run(
 static int handle_args(
         int argc, char **argv, char **filename_in, char **work_dir,
         char **data_dir, bool *debug, lint *fmt_nlayers, bool *fmt_cut,
-        lint *n_events, int *run_no, double *energy_beam
+        bool *save_MC, lint *n_events, int *run_no, double *energy_beam
 ) {
     // Handle arguments.
     int opt;
-    while ((opt = getopt(argc, argv, "-hDf:cn:w:d:")) != -1) {
+    while ((opt = getopt(argc, argv, "-hDf:csn:w:d:")) != -1) {
         switch (opt) {
             case 'h':
                 rge_errno = RGEERR_USAGE;
@@ -573,6 +669,9 @@ static int handle_args(
                 break;
             case 'c':
                 *fmt_cut = true;
+                break;
+            case 's':
+                *save_MC = true;
                 break;
             case 'n':
                 if (rge_process_nentries(n_events, optarg)) return 1;
@@ -628,20 +727,21 @@ int main(int argc, char **argv) {
     bool debug         = false;
     lint fmt_nlayers   = 0;
     bool fmt_cut       = false;
+    bool save_MC        = false;
     lint n_events      = -1;
     int run_no         = -1;
     double energy_beam = -1;
 
     int err = handle_args(
             argc, argv, &filename_in, &work_dir, &data_dir, &debug,
-            &fmt_nlayers, &fmt_cut, &n_events, &run_no, &energy_beam
+            &fmt_nlayers, &fmt_cut, &save_MC, &n_events, &run_no, &energy_beam
     );
 
     // Run.
     if (rge_errno == RGEERR_UNDEFINED && err == 0) {
         run(
                 filename_in, work_dir, data_dir, debug, fmt_nlayers, fmt_cut,
-                n_events, run_no, energy_beam
+                save_MC, n_events, run_no, energy_beam
         );
     }
 

@@ -41,7 +41,7 @@ typedef struct {
 // --+ library +----------------------------------------------------------------
 /** Data tree name used by various programs. */
 #define RGE_TREENAMEDATA "data"
-
+#define RGE_MCTREENAME "MC"
 /** Detector constants. */
 #define RGE_NSECTORS     6 /** # of CLAS12 sectors. */
 #define RGE_NSFPARAMS    4 /** # of sampling fraction parameters. */
@@ -58,6 +58,8 @@ typedef struct {
 /** Variable array data. */
 #define RGE_VARS_SIZE 38
 extern const char *RGE_VARS[RGE_VARS_SIZE];
+#define RGE_MC_VARS_SIZE 20
+extern const char *RGE_MC_VARS[RGE_MC_VARS_SIZE];
 
 /** Metadata variables. */
 const RGE_VAR RGE_RUNNO   = {.addr = 0, .name = "run_num"};
@@ -111,5 +113,27 @@ const RGE_VAR RGE_PT2     = {.addr = 34, .name = "p_T2"}; // Unit: GeV^2
 const RGE_VAR RGE_PL2     = {.addr = 35, .name = "p_L2"}; // Unit: GeV^2
 const RGE_VAR RGE_PHIPQ   = {.addr = 36, .name = "phi_PQ"}; // Unit: rad
 const RGE_VAR RGE_THETAPQ = {.addr = 37, .name = "theta_PQ"}; // Unit: rad
+
+/** MC variables */
+const RGE_VAR RGE_MC_RUNNO   = {.addr = 0, .name = "run_num"};
+const RGE_VAR RGE_MC_EVENTNO = {.addr = 1, .name = "event_num"};
+const RGE_VAR RGE_MC_PID = {.addr = 2, .name = "MC_pid"};
+const RGE_VAR RGE_MC_PX  = {.addr = 3, .name = "MC_px"};
+const RGE_VAR RGE_MC_PY  = {.addr = 4, .name = "MC_py"};
+const RGE_VAR RGE_MC_PZ  = {.addr = 5, .name = "MC_pz"};
+const RGE_VAR RGE_MC_VX  = {.addr = 6, .name = "MC_vx"};
+const RGE_VAR RGE_MC_VY  = {.addr = 7, .name = "MC_vy"};
+const RGE_VAR RGE_MC_VZ  = {.addr = 8, .name = "MC_vz"};
+const RGE_VAR RGE_MC_VT  = {.addr = 9, .name = "MC_vt"};
+const RGE_VAR RGE_MC_NPART = {.addr = 10, .name = "MC_vt"};
+const RGE_VAR RGE_MC_ATARGET = {.addr = 11, .name = "MC_atarget"};
+const RGE_VAR RGE_MC_ZTARGET = {.addr = 12, .name = "MC_ztarget"};
+const RGE_VAR RGE_MC_PTARGET = {.addr = 13, .name = "MC_ptarget"};
+const RGE_VAR RGE_MC_PBEAM = {.addr = 14, .name = "MC_pbeam"};
+const RGE_VAR RGE_MC_BTYPE = {.addr = 15, .name = "MC_btype"};
+const RGE_VAR RGE_MC_EBEAM = {.addr = 16, .name = "MC_ebeam"};
+const RGE_VAR RGE_MC_TARGETID = {.addr = 17, .name = "MC_targetid"};
+const RGE_VAR RGE_MC_PROCESSID = {.addr = 18, .name = "MC_processid"};
+const RGE_VAR RGE_MC_WEIGHT = {.addr = 19, .name = "MC_weight"};
 
 #endif

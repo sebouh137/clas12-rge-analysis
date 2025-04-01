@@ -30,3 +30,25 @@ const char *RGE_VARS[RGE_VARS_SIZE] = {
         RGE_ZH.name, RGE_PT2.name, RGE_PL2.name, RGE_PHIPQ.name,
                 RGE_THETAPQ.name
 };
+const char *RGE_MC_VARS[RGE_MC_VARS_SIZE] = {
+        RGE_MC_RUNNO.name,
+        RGE_MC_EVENTNO.name,
+        RGE_MC_PID.name,
+        RGE_MC_PX.name,
+        RGE_MC_PY.name,
+        RGE_MC_PZ.name,
+        RGE_MC_VX.name,
+        RGE_MC_VY.name,
+        RGE_MC_VZ.name,
+        RGE_MC_VT.name,
+        RGE_MC_NPART.name,
+        RGE_MC_ATARGET.name,
+        RGE_MC_ZTARGET.name,
+        RGE_MC_PTARGET.name,
+        RGE_MC_PBEAM.name,
+        RGE_MC_BTYPE.name,
+        RGE_MC_EBEAM.name,
+        RGE_MC_TARGETID.name,
+        RGE_MC_PROCESSID.name,
+        RGE_MC_WEIGHT.name
+};

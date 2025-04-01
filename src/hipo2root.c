@@ -34,11 +34,19 @@
 #include "../lib/rge_io_handler.h"
 #include "../lib/rge_progress.h"
 
+#include <iostream>
+#include <vector>
+#include <string>
+
 static const char *USAGE_MESSAGE =
 "Usage: hipo2root [-hfn:w:] infile\n"
 " * -h         : show this message and exit.\n"
 " * -f         : set this to true to process FMT::Tracks bank. If this is set\n"
 "                and FMT::Tracks bank is not present in the HIPO file, the\n"
+"                program will crash.\n"
+" * -s         : set this to true to save MC banks.\n"
+"                Should only be used for simulation files. If this is set\n"
+"                and MC banks are not present in the HIPO file, the\n"
 "                program will crash.\n"
 " * -n nevents : number of events.\n"
 " * -w workdir : location where output root files are to be stored. Default\n"
@@ -49,28 +57,34 @@ static const char *USAGE_MESSAGE =
 "    lib/rge_hipo_bank.h file.\n";
 
 /** Number of banks in BANKLIST. */
-static const uint NBANKS       = 6;
-static const uint NBANKS_NOFMT = 5;
-
+static const uint NBANKS       = 8;
+static const uint NBANKS_NOFMT_NOMC = 5;
+static const uint NBANKS_NOFMT_WITHMC = 7;
+static const uint NBANKS_WITHFMT_NOMC = 6;
 /** List of banks hipo2root is capable of processing. */
-static const char *BANKLIST[NBANKS] = {
+std::vector<std::string> BANKVECTOR = {
     RGE_RECPARTICLE, RGE_RECTRACK, RGE_RECCALORIMETER, RGE_RECCHERENKOV,
-    RGE_RECSCINTILLATOR, RGE_FMTTRACKS
+    RGE_RECSCINTILLATOR
 };
-
 /** run() function of the program. Check USAGE_MESSAGE for details. */
 static int run(
-        char *in_filename, char *work_dir, bool use_fmt, int run_no,
+        char *in_filename, char *work_dir, bool use_fmt, bool is_MC, int run_no,
         lint nevents
 ) {
     // Number of banks to read/write depends on type of analysis.
-    uint nbanks = use_fmt ? NBANKS : NBANKS_NOFMT;
+    if (use_fmt) BANKVECTOR.push_back(RGE_FMTTRACKS);
+    if (is_MC)
+    {
+        BANKVECTOR.push_back(RGE_MCPARTICLE);
+        BANKVECTOR.push_back(RGE_MCEVENT);
+    }
+    const int nbanks = BANKVECTOR.size();
 
     // Access input sources.
     hipo::reader reader;
     hipo::dictionary factory;
     hipo::event event;
-
+    
     reader.open(in_filename);
     reader.readDictionary(factory);
 
@@ -85,12 +99,11 @@ static int run(
     hipo::bank   hbanks[nbanks];
     rge_hipobank rbanks[nbanks];
 
-    for (uint i = 0; i < nbanks; ++i) {
-        // Initialize hipo banks.
-        hbanks[i] = hipo::bank(factory.getSchema(BANKLIST[i]));
-
+    for ( int i = 0; i < nbanks; i++ )
+    {
+        hbanks[i] = hipo::bank(factory.getSchema(BANKVECTOR[i].c_str()));
         // Initialize rge banks.
-        rbanks[i] = rge_hipobank_init(BANKLIST[i]);
+        rbanks[i] = rge_hipobank_init(BANKVECTOR[i].c_str());
         if (rge_errno != RGEERR_UNDEFINED) return 1;
         rge_link_branches(&(rbanks[i]), out_tree);
     }
@@ -137,17 +150,20 @@ static int run(
  */
 static int handle_args(
         int argc, char **argv, char **in_filename, char **work_dir,
-        bool *use_fmt, int *run_no, lint *nevents
+        bool *use_fmt, bool *is_MC, int *run_no, lint *nevents
 ) {
     // Handle arguments.
     int opt;
-    while ((opt = getopt(argc, argv, "-hfn:w:")) != -1) {
+    while ((opt = getopt(argc, argv, "-hfsn:w:")) != -1) {
         switch (opt) {
             case 'h':
                 rge_errno = RGEERR_USAGE;
                 return 1;
             case 'f':
                 *use_fmt = true;
+                break;
+            case 's':
+                *is_MC = true;
                 break;
             case 'n':
                 if (rge_process_nentries(nevents, optarg)) return 1;
@@ -189,16 +205,17 @@ int main(int argc, char **argv) {
     char *in_filename  = NULL;
     char *work_dir     = NULL;
     bool use_fmt       = false;
+    bool is_MC         = false;
     int  run_no        = -1;
     lint nevents       = -1;
 
     handle_args(
-            argc, argv, &in_filename, &work_dir, &use_fmt, &run_no, &nevents
+            argc, argv, &in_filename, &work_dir, &use_fmt, &is_MC, &run_no, &nevents
     );
 
     // Run.
     if (rge_errno == RGEERR_UNDEFINED) {
-        run(in_filename, work_dir, use_fmt, run_no, nevents);
+        run(in_filename, work_dir, use_fmt, is_MC, run_no, nevents);
     }
 
     // Free up memory.

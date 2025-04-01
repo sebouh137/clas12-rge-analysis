@@ -100,7 +100,29 @@ static std::map<
         {"p0_x",   entry_init("FMT::Tracks::px",    FLOAT)},
         {"p0_y",   entry_init("FMT::Tracks::py",    FLOAT)},
         {"p0_z",   entry_init("FMT::Tracks::pz",    FLOAT)}
-    }}
+    }},
+    {RGE_MCPARTICLE, {
+        {"pid",   entry_init("MC::Particle::pid", INT)},
+        {"px",    entry_init("MC::Particle::px",  FLOAT)},
+        {"py",    entry_init("MC::Particle::py",  FLOAT)},
+        {"pz",    entry_init("MC::Particle::pz",  FLOAT)},
+        {"vx",    entry_init("MC::Particle::vx",  FLOAT)},
+        {"vy",    entry_init("MC::Particle::vy",  FLOAT)},
+        {"vz",    entry_init("MC::Particle::vz",  FLOAT)},
+        {"vt",    entry_init("MC::Particle::vt",  FLOAT)}
+    }},
+    {RGE_MCEVENT, {
+        {"npart",     entry_init("MC::Event::npart",     SHORT)},
+        {"atarget",   entry_init("MC::Event::atarget",   SHORT)},
+        {"ztarget",   entry_init("MC::Event::ztarget",   SHORT)},
+        {"ptarget",   entry_init("MC::Event::ptarget",   FLOAT)},
+        {"pbeam",     entry_init("MC::Event::pbeam",     FLOAT)},
+        {"btype",     entry_init("MC::Event::btype",     INT)},
+        {"ebeam",     entry_init("MC::Event::ebeam",     FLOAT)},
+        {"targetid",  entry_init("MC::Event::targetid",  INT)},
+        {"processid", entry_init("MC::Event::processid", INT)},
+        {"weight",    entry_init("MC::Event::weight",    FLOAT)}
+    }},
 };
 
 // --+ library +----------------------------------------------------------------
